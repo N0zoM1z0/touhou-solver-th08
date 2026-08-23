@@ -6,6 +6,7 @@ import struct
 import time
 from dataclasses import replace
 
+from th08_enemy_collision import enemy_contact_size_to_lethal_half_extent
 from th08_live.bullet_decode import finite
 from th08_live.enemy_combat_progress import (
     decode_enemy_combat_progress_inventory,
@@ -101,9 +102,9 @@ def _decode_enemy_body_geometry(
         # world-position derivative before this body reaches planning.
         vx=0.0,
         vy=0.0,
-        # Native path: full contact size * 1.5, then center +/- size/2.
-        half_width=0.75 * contact_width,
-        half_height=0.75 * contact_height,
+        # Target 0x42C290 stores raw / 1.5f before 0x44A360 halves it.
+        half_width=enemy_contact_size_to_lethal_half_extent(contact_width),
+        half_height=enemy_contact_size_to_lethal_half_extent(contact_height),
         flags=flags,
         internal_vx=internal_vx,
         internal_vy=internal_vy,
@@ -149,12 +150,20 @@ def decode_spell_enemy_body_guard(
     body = _decode_enemy_body_geometry(blob, pointer=pointer)
     if body is None:
         return None
+    contact_offset = ENEMY_CONTACT_SIZE_OFFSET - ENEMY_BODY_READ_OFFSET
+    raw_contact_width, raw_contact_height = struct.unpack_from(
+        "<ff",
+        blob,
+        contact_offset,
+    )
     return SpellEnemyBodyGuard(
         body=body,
         contact_enabled=bool(
             body.flags & ENEMY_CONTACT_ENABLED_FLAG
             and not body.flags & ENEMY_CONTACT_BLOCKING_FLAGS
         ),
+        raw_contact_width=raw_contact_width,
+        raw_contact_height=raw_contact_height,
     )
 
 
@@ -228,8 +237,12 @@ def decode_enemy_bodies(
                 y=y,
                 vx=0.0,
                 vy=0.0,
-                half_width=0.75 * contact_width,
-                half_height=0.75 * contact_height,
+                half_width=enemy_contact_size_to_lethal_half_extent(
+                    contact_width
+                ),
+                half_height=enemy_contact_size_to_lethal_half_extent(
+                    contact_height
+                ),
                 flags=flags,
                 internal_vx=internal_vx,
                 internal_vy=internal_vy,

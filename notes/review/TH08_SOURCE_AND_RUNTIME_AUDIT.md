@@ -3,10 +3,11 @@
 Last updated: 2026-08-23.
 
 This ledger tracks discrepancies found while rebasing the live solver on the
-exact Japanese TH08 1.00d executable and the independently reconstructed
-source tree at `../th08`. It is intentionally separate from historical run
-dossiers: entries remain open until the responsible solver path is fixed and
-validated.
+exact Japanese TH08 1.00d executable, using the independently reconstructed
+source tree at `../th08` only as a semantic reference. Rebuilding that source
+tree is not part of this solver task. This ledger is intentionally separate
+from historical run dossiers: entries remain open until the responsible solver
+path is fixed and validated.
 
 Evidence labels follow the repository contract:
 
@@ -32,7 +33,7 @@ Statuses are `OPEN`, `FIXED-OFFLINE`, `VALIDATED-PHYSICAL`, or `REJECTED`.
 
 ### AUD-001 — Enemy lethal body half-extents are inflated by 2.25x
 
-Status: **OPEN**
+Status: **FIXED-OFFLINE**
 
 **Observed:** ECL opcode 77 writes its two operands directly to enemy contact
 size fields `+0x2D70/+0x2D74`. Exact target function `0x0042C290` passes that
@@ -72,30 +73,41 @@ Acceptance:
 4. a physical trace confirms observed body geometry and records the effect on
    empty action sets and hits.
 
-### AUD-002 — Reconstruction comparator toolchain is not provisioned here
+**Fixed offline:** `scripts/th08_enemy_collision.py` now preserves the target's
+binary32 store between `/ 1.5f` and AABB halving. Live pool decoding, the
+spell-owner guard, and ordinary ECL future projection share that conversion.
+The spell guard separately retains raw contact dimensions for the unscaled
+player-shot damage AABB. Focused collision/controller/future-source/trace
+regression passed 156 tests. Acceptance item 4 remains pending, so this is not
+yet `VALIDATED-PHYSICAL`.
 
-Status: **OPEN**
+### AUD-002 — Reconstruction build/comparator is outside solver scope
+
+Status: **REJECTED**
 
 **Observed:** `../th08/resources/th08.exe` is locally bound to the exact target,
 but `../th08/scripts/prefix` is absent. The focused VC7 objdiff build therefore
 produces no object. `th08run.bat` currently masks this command-not-found
 failure because `%errorlevel%` is expanded before `%*` runs.
 
-**Impact:** retained `config/matches.csv` records the gameplay functions as
-exact, and target disassembly is usable now, but this VPS cannot yet regenerate
-those exact-match reports. Do not describe a newly run comparator as passing
-until the toolchain is provisioned and the batch wrapper fails correctly.
+**Scope decision:** the user explicitly designated `../th08` as reference
+material, not an artifact that this work needs to rebuild. The solver audit
+therefore uses the exact shipped executable and physical traces as primary
+evidence and does not provision or modify the reconstruction toolchain. No new
+comparator pass is claimed.
 
 ### AUD-003 — Solver Python environment is missing its only declared dependency
 
-Status: **OPEN**
+Status: **FIXED-OFFLINE**
 
 **Observed:** system Python 3.11 cannot import NumPy; `requirements.txt`
 declares `numpy>=1.24`. Focused tests fail at import before executing solver
 code.
 
-Acceptance: create a repository-local ignored virtual environment, install the
-pinned/recorded dependency set, and pass focused tests plus import smoke.
+**Fixed:** created ignored `.venv`, installed NumPy 2.4.6 under Python 3.11.2,
+and passed the 131-test enemy-decoder/future-source baseline before changing
+the model. The corrected model's post-change test evidence is recorded with
+AUD-001.
 
 ### AUD-004 — Windows native planner assumes x86-64
 
@@ -142,4 +154,3 @@ At audit start, another TH06 Wine workload was active on display `:97` with
 its own prefix. No signal, prefix mutation, affinity change, or shared cleanup
 was performed. TH08 must use a distinct prefix and a free display selected at
 launch time.
-

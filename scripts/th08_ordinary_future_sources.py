@@ -35,6 +35,7 @@ from itertools import product
 from typing import Any
 
 from th08_ecl_tool.core import EclFile, SubInstruction
+from th08_enemy_collision import enemy_contact_size_to_lethal_half_extent
 from th08_future_birth_envelope import FloatInterval, FutureDirectFire
 from th08_future_hazard_projection import (
     OrdinaryFutureHazardProjection,
@@ -54,7 +55,7 @@ from touhou_control.corridor import AabbHazard, AabbTrajectoryHazard
 
 
 ORDINARY_FUTURE_SOURCE_SEMANTICS_VERSION = (
-    "th08-ordinary-future-sources-v15-reached-arithmetic-transform-return"
+    "th08-ordinary-future-sources-v16-native-enemy-contact-division"
 )
 _PROJECTION_SCHEMA = "th08-native-snapshot-collision-control-projection-v14"
 _DIRECT_FIRE_OPCODES = frozenset(range(0x60, 0x69))
@@ -2119,8 +2120,12 @@ def _execute_main(
             )
             if width.lower < 0.0 or height.lower < 0.0:
                 _fail("enemy hitbox interval crosses negative")
-            source.body_half_width = 0.75 * width.upper
-            source.body_half_height = 0.75 * height.upper
+            source.body_half_width = enemy_contact_size_to_lethal_half_extent(
+                width.upper
+            )
+            source.body_half_height = enemy_contact_size_to_lethal_half_extent(
+                height.upper
+            )
         elif opcode in (0x4F, 0x50, 0x51):
             _apply_enemy_flag_opcode(source, instruction)
         elif opcode == 0x5C:

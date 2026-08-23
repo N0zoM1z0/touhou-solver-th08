@@ -141,7 +141,10 @@ def _promote_enemy_body_candidates(
                 },
                 {
                     "address": "0x42c33f",
-                    "meaning": "enemy contact size is scaled by 1.5",
+                    "meaning": (
+                        "enemy contact size is divided by 1.5f and stored "
+                        "before deadly-contact testing"
+                    ),
                 },
                 {
                     "address": "0x44a360",

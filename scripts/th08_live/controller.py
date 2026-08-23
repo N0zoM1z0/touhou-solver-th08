@@ -50,6 +50,10 @@ from th08_ecl_runtime import (
 )
 from th08_ecl_vm_state import float32_from_bits
 from th08_ecl_tool.core import parse_ecl
+from th08_enemy_collision import (
+    enemy_contact_size_to_damage_half_extent,
+    enemy_lethal_to_damage_half_extent,
+)
 from th08_future_hazard_projection import (
     OrdinaryFutureHazardProjection,
     condition_future_hazard_projection_on_player_paths,
@@ -6139,11 +6143,20 @@ def _run_live_session(
                     + boss_body.vx
                     * (player_to_hazard_lag + args.horizon)
                 )
-                # Enemy-body contact expands the native full size by 1.5.
-                # Player-shot damage uses the unexpanded AABB.
-                damage_target_half_width = (
-                    spell_enemy_body_guard.body.half_width * (2.0 / 3.0)
-            )
+                # Damage uses the raw contact AABB at 0x00451670; lethal
+                # body contact separately divides that size by 1.5f.
+                if spell_enemy_body_guard.raw_contact_width is not None:
+                    damage_target_half_width = (
+                        enemy_contact_size_to_damage_half_extent(
+                            spell_enemy_body_guard.raw_contact_width
+                        )
+                    )
+                else:
+                    damage_target_half_width = (
+                        enemy_lethal_to_damage_half_extent(
+                            spell_enemy_body_guard.body.half_width
+                        )
+                    )
                 damageable = boss_phase_progress.state.damageable
             plan_started = time.perf_counter()
             local_proposal = (

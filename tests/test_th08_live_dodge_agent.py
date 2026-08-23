@@ -472,7 +472,10 @@ class LiveDodgeAgentTests(unittest.TestCase):
         body = decode_enemy_body(bytes(blob), pointer=0x5826C0)
         self.assertIsNotNone(body)
         assert body is not None
-        self.assertEqual((body.half_width, body.half_height), (24.0, 18.0))
+        self.assertEqual(
+            (body.half_width, body.half_height),
+            (10.666666984558105, 8.0),
+        )
         self.assertEqual((body.vx, body.vy), (0.0, 0.0))
         self.assertEqual((body.internal_vx, body.internal_vy), (1.5, -0.5))
         struct.pack_into(
@@ -524,7 +527,7 @@ class LiveDodgeAgentTests(unittest.TestCase):
         )
         self.assertEqual(
             (bodies[0].half_width, bodies[0].half_height),
-            (15.0, 9.0),
+            (6.666666507720947, 4.0),
         )
 
     def test_ce_0094_prefix_retains_latent_contact_disabled_body(self) -> None:
@@ -577,7 +580,7 @@ class LiveDodgeAgentTests(unittest.TestCase):
         )
         self.assertEqual(
             (latent[0].half_width, latent[0].half_height),
-            (18.0, 18.0),
+            (8.0, 8.0),
         )
 
         class Reader:
@@ -895,6 +898,10 @@ class LiveDodgeAgentTests(unittest.TestCase):
         guard = decode_spell_enemy_body_guard(bytes(blob), pointer=pointer)
         self.assertIsNotNone(guard)
         assert guard is not None
+        self.assertEqual(
+            (guard.raw_contact_width, guard.raw_contact_height),
+            (32.0, 24.0),
+        )
         self.assertFalse(guard.contact_enabled)
         stale = EnemyBody(pointer, 180.0, 80.0, 0.0, 0.0, 1.0, 1.0, 5)
         other = EnemyBody(pointer + ENEMY_STRIDE, 40.0, 40.0, 0.0, 0.0, 2.0, 2.0, 5)

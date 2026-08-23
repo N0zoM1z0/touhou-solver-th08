@@ -157,8 +157,8 @@ def _payload() -> dict[str, object]:
             {
                 "pointer": SOURCE_POINTER,
                 "flags": 0x01000049,
-                "half_width": 18.0,
-                "half_height": 18.0,
+                "half_width": 8.0,
+                "half_height": 8.0,
             }
         ],
         "main_ecl_vm_inventory": _inventory([main_row]),
@@ -1306,7 +1306,7 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
         self.assertIsNotNone(sample)
         assert sample is not None
         self.assertEqual((sample.x, sample.y), (60.0, 32.0))
-        self.assertEqual((sample.half_width, sample.half_height), (18.0, 18.0))
+        self.assertEqual((sample.half_width, sample.half_height), (8.0, 8.0))
 
     def test_installed_callback_fails_closed(self) -> None:
         payload = _payload()

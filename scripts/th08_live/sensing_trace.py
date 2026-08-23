@@ -382,6 +382,18 @@ def build_sensing_trace_fields(
                     (trace_input.spell_enemy_body_guard.body,)
                 )[0],
                 "contact_enabled": (trace_input.spell_enemy_body_guard.contact_enabled),
+                "raw_contact_size": [
+                    getattr(
+                        trace_input.spell_enemy_body_guard,
+                        "raw_contact_width",
+                        None,
+                    ),
+                    getattr(
+                        trace_input.spell_enemy_body_guard,
+                        "raw_contact_height",
+                        None,
+                    ),
+                ],
                 "anticipatory": (
                     not trace_input.spell_enemy_body_guard.contact_enabled
                 ),

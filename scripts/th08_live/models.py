@@ -211,6 +211,8 @@ class SpellEnemyBodyGuard:
 
     body: EnemyBody
     contact_enabled: bool
+    raw_contact_width: float | None = None
+    raw_contact_height: float | None = None
 
 
 @dataclass(frozen=True)
