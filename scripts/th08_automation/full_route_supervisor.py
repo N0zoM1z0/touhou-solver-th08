@@ -459,7 +459,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--game-dir",
         type=Path,
-        default=Path(os.environ.get("TH08_GAME_DIR", DEFAULT_GAME_DIR)),
+        default=(
+            type(DEFAULT_GAME_DIR)(os.environ["TH08_GAME_DIR"])
+            if "TH08_GAME_DIR" in os.environ
+            else DEFAULT_GAME_DIR
+        ),
     )
     parser.add_argument("--launch-bat", type=Path)
     parser.add_argument("--launch-timeout", type=float, default=25.0)

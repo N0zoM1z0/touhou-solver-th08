@@ -27,7 +27,7 @@ class OrdinaryFactorizedPrefixGateTests(unittest.TestCase):
     def test_factorized_semantic_gate_passes(self) -> None:
         self.assertTrue(self.report["semantic_gate_passed"])
         self.assertTrue(self.report["native_worker_limit_applied"])
-        self.assertEqual(self.report["native_workers"], 16)
+        self.assertEqual(self.report["native_workers"], 8)
         self.assertTrue(
             all(
                 point["source_closure_complete"]

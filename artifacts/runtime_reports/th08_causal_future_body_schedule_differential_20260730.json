@@ -281,7 +281,7 @@
   "source_sha256": {
     "scripts/analysis/th08_causal_future_body_schedule_differential.py": "c2feabec96c538228223c75815aa6f9485bac978affbdfec9cbc046504a9032a",
     "scripts/th08_causal_future_body_schedule.py": "882daa54615e0669a0a89b1d751442c3983d84f323a81aa67df0bf8aed65db4d",
-    "scripts/th08_enemy_mode.py": "fa045f5bde2c65c1d837d07f9dde19a6032d895165691bad6346fb698061041a",
+    "scripts/th08_enemy_mode.py": "176d94378761d375fc76e8109a543da0108375e9f28512644f2f1523791fcddc",
     "scripts/th08_future_body_schedule.py": "fca82d3bc42342d86cd73eec8228f5f0bbc13763ee5a0d0a57994c956438e1db",
     "scripts/touhou_control/ordered_input_transaction_oracle.py": "a5446a1bedcf4dbc2bb33fd5ea43e2337e34a0603f97244e192ed9bc66a483c9"
   }

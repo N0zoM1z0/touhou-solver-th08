@@ -137,6 +137,41 @@ therefore failed even before a Wine run.
 **Fixed:** the symbol is now in the manifest, and Linux plus both Windows
 architecture export checks consume the same 45-symbol list.
 
+### AUD-008 — Three retained offline gates are internally stale
+
+Status: **FIXED-OFFLINE**
+
+**Observed:** both future-body differential JSON files differed from their
+deterministic builders only in the recorded SHA-256 for the already-tracked
+`scripts/th08_enemy_mode.py`. The factorized-prefix report records an applied
+8-worker limit, while its test still asserted 16 after an older report update.
+
+**Fixed:** refreshed only the two provenance hashes to the current tracked
+source hash and aligned the worker assertion with the retained report. No
+semantic output, authority flag, winning action, or timing record changed.
+
+### AUD-009 — Supervisor parser rebuilds a foreign concrete Path class
+
+Status: **FIXED-OFFLINE**
+
+**Observed:** the Linux test that exercises the Windows-only supervisor path
+temporarily changes `os.name` to `nt`. Both supervisors then wrapped their
+already-created `PosixPath` default in a new generic `Path`, which attempts to
+instantiate `WindowsPath` and fails before the mocked runtime starts.
+
+**Fixed:** environment overrides now use the same concrete path class as the
+import-time default, while the no-override path reuses that default directly.
+This preserves real Windows behavior and makes the platform-boundary test
+independent of global `pathlib` dispatch.
+
+## Offline Verification Record
+
+After the Linux native build and fixes above, the complete repository suite
+passed on this VPS: 1,328 tests run, 5 conditionally skipped, zero failures or
+errors. The Win32 planner build separately produced a PE32 i386 DLL with all
+45 manifest exports. These are offline/build gates, not substitutes for the
+pending Wine and physical gameplay checks.
+
 ### AUD-005 — TH08 lacks a prefix-scoped Wine host runner
 
 Status: **OPEN**

@@ -1523,7 +1523,7 @@
   },
   "source_sha256": {
     "scripts/analysis/th08_future_body_schedule_differential.py": "100d500eb73cee1f4a614a7f5bfeaafbf226f9d8a9a61a47082d8a4fd4922010",
-    "scripts/th08_enemy_mode.py": "fa045f5bde2c65c1d837d07f9dde19a6032d895165691bad6346fb698061041a",
+    "scripts/th08_enemy_mode.py": "176d94378761d375fc76e8109a543da0108375e9f28512644f2f1523791fcddc",
     "scripts/th08_future_body_schedule.py": "fca82d3bc42342d86cd73eec8228f5f0bbc13763ee5a0d0a57994c956438e1db",
     "scripts/touhou_control/ordered_input_transaction_oracle.py": "a5446a1bedcf4dbc2bb33fd5ea43e2337e34a0603f97244e192ed9bc66a483c9"
   }
