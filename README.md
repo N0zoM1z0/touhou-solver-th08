@@ -72,6 +72,9 @@ python3 scripts/tools/build_native_planner.py --target windows
 python3 scripts/tools/build_native_planner.py --target windows-x86
 ```
 
+Isolated VPS Wine setup and launch are documented in
+[`notes/operations/TH08_WINE_VPS.md`](notes/operations/TH08_WINE_VPS.md).
+
 Physical launch is user-authorized only:
 
 ```bat

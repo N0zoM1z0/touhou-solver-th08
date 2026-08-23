@@ -174,7 +174,7 @@ pending Wine and physical gameplay checks.
 
 ### AUD-005 — TH08 lacks a prefix-scoped Wine host runner
 
-Status: **OPEN**
+Status: **FIXED-OFFLINE**
 
 **Observed:** the existing full-route supervisor is Windows-native and its BAT
 wrapper assumes WindowsApps Python. The TH06 workspace has the required host
@@ -182,9 +182,15 @@ isolation pattern: refuse a live target prefix/display, set a dedicated
 `WINEPREFIX` and X display, and run cleanup through only that prefix's
 `wineserver`.
 
-Acceptance: a TH08 runner owns a dedicated prefix/display, never sends a
-generic Wine cleanup signal, attests no leftover prefix processes, and keeps
-game/controller CPU resources bounded away from system-wide saturation.
+**Fixed offline:** `scripts/tools/run_th08_wine.py` now refuses a busy or
+unmarked prefix, allocates a free private X display, confines the Wine tree to
+an explicit CPU list, and sends cleanup only with its exact `WINEPREFIX`. The
+Windows-side smoke verifies 32-bit Python/NumPy, the PE32 native planner, exact
+game identity, patch byte, window focus, and native title state. The preparer
+pins all binary inputs and refuses replacement of unrecognized runtime data.
+
+Acceptance still requires an actual smoke report with zero leftover prefix
+processes; a complete route is the later physical policy gate.
 
 ### AUD-006 — Query-local adaptive refinement is implemented but not live
 

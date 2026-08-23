@@ -725,6 +725,10 @@ Use `TOUHOU_DISABLE_NATIVE_PLANNER=1` only for an explicit rollback/ablation.
 
 ### Physical trials
 
+For this VPS's prefix-scoped Wine path, prepare and smoke-test via
+[`notes/operations/TH08_WINE_VPS.md`](notes/operations/TH08_WINE_VPS.md)
+before invoking the full-route supervisor.
+
 Run only with explicit user authorization from Windows:
 
 ```bat
