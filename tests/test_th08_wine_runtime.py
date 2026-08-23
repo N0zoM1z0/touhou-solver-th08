@@ -143,6 +143,12 @@ class Th08WinePreparationTests(unittest.TestCase):
 
 
 class Th08WineRunnerTests(unittest.TestCase):
+    def test_wine_full_route_budget_covers_sub_realtime_vps(self) -> None:
+        args = runner.build_parser().parse_args(["--mode", "full-route"])
+        self.assertEqual(args.agent_duration, 7200.0)
+        self.assertEqual(args.trial_timeout, 7350.0)
+        self.assertGreater(args.trial_timeout, args.agent_duration)
+
     def test_pty_bridge_provides_console_handles_and_propagates_status(
         self,
     ) -> None:

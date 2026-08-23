@@ -47,6 +47,8 @@ NATIVE_LIBRARY_SHA256 = (
     "4c8c3a34485ec22437224d0fa8a5ad631d3d64f952d66bc9e621147cedf41603"
 )
 PREFIX_MARKER = ".th08-wine-win32-ready-v1.json"
+WINE_FULL_ROUTE_AGENT_DURATION_SECONDS = 7200.0
+WINE_FULL_ROUTE_TRIAL_TIMEOUT_SECONDS = 7350.0
 
 
 def sha256(path: Path) -> str:
@@ -280,8 +282,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--artifact-dir", type=Path)
     parser.add_argument("--timeout", type=float)
-    parser.add_argument("--agent-duration", type=float, default=4500.0)
-    parser.add_argument("--trial-timeout", type=float, default=4650.0)
+    parser.add_argument(
+        "--agent-duration",
+        type=float,
+        default=WINE_FULL_ROUTE_AGENT_DURATION_SECONDS,
+    )
+    parser.add_argument(
+        "--trial-timeout",
+        type=float,
+        default=WINE_FULL_ROUTE_TRIAL_TIMEOUT_SECONDS,
+    )
     parser.add_argument("--kill-before-saturation", action="store_true")
     parser.add_argument("--ordinary-preexhaustion-authority", action="store_true")
     return parser

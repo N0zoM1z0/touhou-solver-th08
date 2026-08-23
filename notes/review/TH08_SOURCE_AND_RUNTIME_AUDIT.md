@@ -253,6 +253,24 @@ record. The strict helper remains available to the legacy/manual path.
 contract with `caps_lock_bootstrap.required=false`, exact target termination,
 and zero dedicated-prefix processes.
 
+### AUD-011 — Native-Windows route timeout is too short for Wine VPS cadence
+
+Status: **FIXED-OFFLINE**
+
+**Observed physical:** calibration run
+`lunatic_route2_fullrun_unattended_20260823_165837` reached manager frame
+4,293 in about 84 seconds (roughly 51 frames/s) before an intentional clean
+stop. The retained complete route ends near frame 239,827. The inherited
+4,500-second native-Windows agent budget requires at least 53.3 frames/s and
+would therefore predictably terminate before Final-B, with less headroom as
+later stages become denser. The calibration summary is retained, but it is not
+a policy result.
+
+**Fixed offline:** the Wine host defaults to a 7,200-second agent budget and
+7,350-second trial timeout. This changes only the outer wall-clock watchdog;
+game frames, solver horizons, menu path, policy flags, and hit metric are
+unchanged. Physical full-route acceptance remains pending.
+
 ## Runtime Isolation Record
 
 At audit start, another TH06 Wine workload was active on display `:97` with
