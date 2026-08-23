@@ -290,7 +290,6 @@ def run_trial(
     batch_log = None
     agent: AgentHotkey | None = None
     try:
-        session["caps_lock_changed"] = ensure_caps_lock_enabled(api)
         agent = AgentHotkey(
             expected_difficulty=difficulty.menu_index,
             expected_stage=stage.route_index,
@@ -348,6 +347,7 @@ def run_trial(
         session["target"] = identity
         session["pid"] = pid
         focus_target_window(api, pid, timeout_seconds=args.focus_timeout)
+        session["caps_lock_changed"] = ensure_caps_lock_enabled(api)
         time.sleep(args.startup_settle)
         menu_native_trace: list[dict[str, object]] = []
         executed_menu_taps: list[dict[str, object]] = []

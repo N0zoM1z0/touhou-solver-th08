@@ -236,7 +236,6 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
     agent: AgentHotkey | None = None
     accepted = False
     try:
-        session["caps_lock_changed"] = ensure_caps_lock_enabled(api)
         agent = AgentHotkey(
             expected_difficulty=difficulty.menu_index,
             expected_stage=0,
@@ -276,6 +275,7 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
         session["target"] = identity
         session["pid"] = pid
         focus_target_window(api, pid, timeout_seconds=args.focus_timeout)
+        session["caps_lock_changed"] = ensure_caps_lock_enabled(api)
         time.sleep(args.startup_settle)
 
         menu_trace: list[dict[str, object]] = []

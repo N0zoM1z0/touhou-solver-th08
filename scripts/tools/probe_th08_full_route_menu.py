@@ -70,7 +70,6 @@ def main() -> int:
     batch_log = None
     states = []
     try:
-        ensure_caps_lock_enabled(api)
         terminate_exact_target(api, expected_exe)
         batch_process, batch_log = launch_patch_batch(
             game_dir=game_dir,
@@ -83,6 +82,7 @@ def main() -> int:
             timeout_seconds=25.0,
         )
         focus_target_window(api, pid, timeout_seconds=10.0)
+        ensure_caps_lock_enabled(api)
         time.sleep(1.0)
         states.append(
             {

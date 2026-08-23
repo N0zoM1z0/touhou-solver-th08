@@ -222,6 +222,23 @@ coarse empty/ambiguous root cells. The refined result may narrow uncertainty
 or recover a sound nonempty lower set; it may never revive center-only
 occupancy or widen an exact losing result without proof.
 
+### AUD-010 — Caps Lock bootstrap precedes any Wine foreground window
+
+Status: **FIXED-OFFLINE**
+
+**Observed physical:** first full-route attempt
+`lunatic_route2_fullrun_unattended_20260823_165320` failed before launching
+TH08 because `ensure_caps_lock_enabled()` sent and read the global toggle
+before Wine had created a focusable window. The same ordering works on a
+native interactive Windows desktop but not on a fresh private Xvfb/Wine
+desktop. The attempt produced no gameplay trace and cleanup observed no
+dedicated-prefix process.
+
+**Fixed offline:** both unattended supervisors and the menu probe now launch,
+identity/patch-verify, and focus the exact TH08 window before establishing the
+Caps Lock precondition. The Windows smoke now exercises this ordering.
+Physical smoke acceptance remains pending.
+
 ## Runtime Isolation Record
 
 At audit start, another TH06 Wine workload was active on display `:97` with
