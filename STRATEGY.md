@@ -1,6 +1,6 @@
 # Touhou Solver Strategy Ledger
 
-Last updated: 2026-08-01.
+Last updated: 2026-08-23.
 
 This file records current action authority, not chronology. Evidence belongs
 in compact reports, run dossiers, and counterexamples.
@@ -17,9 +17,9 @@ Promotion requires one immutable causal hypothesis, same-root evidence,
 deadline-safe integration, a fail-safe fallback, rotated physical validation,
 and an explicit edit here.
 
-The active physical objective is Hard Route-2 NMNB. Lunatic/Extra are
-deferred, and fixed-root wind-tunnel results cannot promote a change without
-the named Hard physical mechanism.
+The active physical objective is Lunatic Sakuya/Remilia Route-2 Final-B NMNB.
+Extra is deferred, and fixed-root wind-tunnel results cannot promote a change
+without a named original-engine physical mechanism.
 
 ## Live
 

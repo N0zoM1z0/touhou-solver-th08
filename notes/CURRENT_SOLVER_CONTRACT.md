@@ -1,14 +1,14 @@
 # Current TH08 Solver Contract
 
-Last updated: 2026-08-01.
+Last updated: 2026-08-23.
 
 This is the compact authority boundary for the active solver. Historical
 derivations are recoverable from tag `pre-workspace-prune-20260731`.
 
 ## Physical Problem
 
-Control Sakuya/Remilia through original TH08 Hard Route 2 without misses or
-Bombs. Lunatic and Extra are deferred until Hard closes. Survival is a hard
+Control Sakuya/Remilia through original TH08 Lunatic Route 2 Final-B without
+misses or Bombs. Extra is deferred until Lunatic closes. Survival is a hard
 constraint. Within the viable set, prefer useful position, damage, Power
 collection, and shorter dangerous nonspell exposure.
 

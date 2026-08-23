@@ -1,0 +1,145 @@
+# TH08 Source And Runtime Audit
+
+Last updated: 2026-08-23.
+
+This ledger tracks discrepancies found while rebasing the live solver on the
+exact Japanese TH08 1.00d executable and the independently reconstructed
+source tree at `../th08`. It is intentionally separate from historical run
+dossiers: entries remain open until the responsible solver path is fixed and
+validated.
+
+Evidence labels follow the repository contract:
+
+- **Observed:** read directly from the exact executable, runtime, or retained
+  trace.
+- **Inferred:** follows from observed facts but has not yet received a direct
+  physical falsifier.
+- **Hypothesized:** a candidate explanation or improvement awaiting evidence.
+
+Statuses are `OPEN`, `FIXED-OFFLINE`, `VALIDATED-PHYSICAL`, or `REJECTED`.
+
+## Target And Scope
+
+- Active target: Sakuya/Remilia, Lunatic, Route 2, Final-B, hard no-Bomb.
+- Baseline: full route `lunatic_route2_fullrun_unattended_20260730_222529`,
+  68 native hit edges, stage counts `2/3/5/20/15/23`, zero Bomb input.
+- Exact executable: Japanese TH08 1.00d, 840,704 bytes, SHA-256
+  `330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924`.
+- The no-life-decrement patch is allowed for diagnostics. Native hit edges,
+  not remaining lives, are the hit metric.
+
+## Findings
+
+### AUD-001 — Enemy lethal body half-extents are inflated by 2.25x
+
+Status: **OPEN**
+
+**Observed:** ECL opcode 77 writes its two operands directly to enemy contact
+size fields `+0x2D70/+0x2D74`. Exact target function `0x0042C290` passes that
+vector through `Float3 / 1.5f` before calling player deadly-contact function
+`0x0044A360`. That function constructs bounds as `center +/- size / 2`.
+Therefore the lethal enemy-body half-extents are:
+
+```text
+raw ECL contact size / 1.5 / 2 = raw contact size / 3
+```
+
+The target instructions at `0x0042C333` push float bits `0x3FC00000`
+(`1.5f`) into the division helper; `0x0044A386..0x0044A3D3` divides both
+dimensions by the target's `2.0f` constant.
+
+**Observed solver discrepancy:** both live enemy decoding and ordinary future
+source projection use `0.75 * raw contact size` as each half-extent. The old
+2026-07-23 note explicitly derived this from a mistaken multiply-by-1.5
+interpretation.
+
+Affected paths:
+
+- `scripts/th08_live/enemy_sensor.py`
+- `scripts/th08_ordinary_future_sources.py`
+- enemy-body decoder and future-source regression fixtures
+
+**Inferred impact:** body hazards are 2.25x too wide and high. This can create
+false collisions, false empty viability sets, and unnecessary boundary-seeking
+actions. It does not by itself explain every bullet/laser hit.
+
+Acceptance:
+
+1. one shared, source-cited conversion implements raw-size to lethal
+   half-extent;
+2. live and future paths use it;
+3. focused decoder/future-source tests pass;
+4. a physical trace confirms observed body geometry and records the effect on
+   empty action sets and hits.
+
+### AUD-002 — Reconstruction comparator toolchain is not provisioned here
+
+Status: **OPEN**
+
+**Observed:** `../th08/resources/th08.exe` is locally bound to the exact target,
+but `../th08/scripts/prefix` is absent. The focused VC7 objdiff build therefore
+produces no object. `th08run.bat` currently masks this command-not-found
+failure because `%errorlevel%` is expanded before `%*` runs.
+
+**Impact:** retained `config/matches.csv` records the gameplay functions as
+exact, and target disassembly is usable now, but this VPS cannot yet regenerate
+those exact-match reports. Do not describe a newly run comparator as passing
+until the toolchain is provisioned and the batch wrapper fails correctly.
+
+### AUD-003 — Solver Python environment is missing its only declared dependency
+
+Status: **OPEN**
+
+**Observed:** system Python 3.11 cannot import NumPy; `requirements.txt`
+declares `numpy>=1.24`. Focused tests fail at import before executing solver
+code.
+
+Acceptance: create a repository-local ignored virtual environment, install the
+pinned/recorded dependency set, and pass focused tests plus import smoke.
+
+### AUD-004 — Windows native planner assumes x86-64
+
+Status: **OPEN**
+
+**Observed:** the game is PE32. This host provides
+`i686-w64-mingw32-g++` but not `x86_64-w64-mingw32-g++`. The build tool and
+runtime loader nevertheless hard-code `windows-x86_64/touhou_viability.dll`.
+
+Acceptance: support an explicit Win32 target and select the DLL by controller
+pointer width without changing Linux or existing x86-64 behavior.
+
+### AUD-005 — TH08 lacks a prefix-scoped Wine host runner
+
+Status: **OPEN**
+
+**Observed:** the existing full-route supervisor is Windows-native and its BAT
+wrapper assumes WindowsApps Python. The TH06 workspace has the required host
+isolation pattern: refuse a live target prefix/display, set a dedicated
+`WINEPREFIX` and X display, and run cleanup through only that prefix's
+`wineserver`.
+
+Acceptance: a TH08 runner owns a dedicated prefix/display, never sends a
+generic Wine cleanup signal, attests no leftover prefix processes, and keeps
+game/controller CPU resources bounded away from system-wide saturation.
+
+### AUD-006 — Query-local adaptive refinement is implemented but not live
+
+Status: **OPEN**
+
+**Observed:** `scripts/touhou_control/corridor/dual_refinement/` and its scalar
+and vectorized tests exist, but no live controller or corridor adapter imports
+the refinement entry points. The retained 16px whole-cell lower kernel is
+sound but physically produced many empty queried sets.
+
+**Hypothesized next use:** invoke bounded query-local refinement only for
+coarse empty/ambiguous root cells. The refined result may narrow uncertainty
+or recover a sound nonempty lower set; it may never revive center-only
+occupancy or widen an exact losing result without proof.
+
+## Runtime Isolation Record
+
+At audit start, another TH06 Wine workload was active on display `:97` with
+its own prefix. No signal, prefix mutation, affinity change, or shared cleanup
+was performed. TH08 must use a distinct prefix and a free display selected at
+launch time.
+

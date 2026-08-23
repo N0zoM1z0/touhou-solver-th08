@@ -1,6 +1,6 @@
 # Touhou Solver Current Handoff
 
-Last updated: 2026-08-01.
+Last updated: 2026-08-23.
 
 This is the only volatile entrypoint. Read `AGENTS.md`, `GOAL.MD`, then this
 file, `STRATEGY.md`, and the focused task card in
@@ -12,19 +12,20 @@ authority.
 
 ## Active Scope Override
 
-The active completion target is now a fresh full-game Sakuya/Remilia **Hard
-Route-2 NMNB**. Lunatic and Extra are deferred. Fixed-root wind tunnels may
-help inspect an already named semantic mismatch, but they are not an
-optimization or promotion gate. Physical Hard evidence leads the iteration.
+The active completion target is a fresh full-game Sakuya/Remilia **Lunatic
+Route-2 Final-B NMNB**. The user explicitly restored this scope on 2026-08-23
+and authorized isolated Wine gameplay on the current VPS. Extra remains
+deferred. Fixed-root wind tunnels remain diagnostic; original-engine Lunatic
+evidence leads iteration.
 
-Active implementation work moved to the independent TH06 solver workspace on
-2026-08-01. Preserve this repository as the final reviewed TH08 checkpoint;
-do not silently promote or simplify its hard-authority contracts when work
-resumes.
+The 2026-08-01 Hard/pause state is historical. Preserve its useful physical
+and authority evidence, but do not let its stale scope override the current
+user request. New source/runtime discrepancies are tracked in
+`notes/review/TH08_SOURCE_AND_RUNTIME_AUDIT.md`.
 
 ## Checkpoint
 
-- Branch: `main`.
+- Branch: `codex/th08-lunatic-source-audit`.
 - Last retained physical checkpoint:
   `hard_route2_stage4a_unattended_20260801_191508`. It completed Hard Stage
   4A with 18 hits, first hit 1975, zero Bombs, accepted replay, and complete

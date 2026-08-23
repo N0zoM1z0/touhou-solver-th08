@@ -1,15 +1,12 @@
 # TH08 Sakuya/Remilia Lunatic NMNB Research Taskbook
 
-Last updated: 2026-07-31.
+Last updated: 2026-08-23.
 
-> Active scope override (2026-08-01): the user has made Hard Route-2 NMNB the
-> current completion target. Lunatic and Extra items below are retained as
-> deferred backlog, not current authority. Physical Hard evidence leads;
-> fixed-root wind-tunnel results are diagnostic only.
->
-> Workspace pause (2026-08-01): active implementation moved to the independent
-> TH06 solver. TH08 resumes only from the retained no-scale-writer mechanism
-> pass and uniform coarse-cell physical falsifier recorded in `START_HERE.md`.
+> Active scope override (2026-08-23): the user restored Lunatic Sakuya/Remilia
+> Route-2 Final-B NMNB as the current target and resumed implementation on the
+> VPS. The 2026-08-01 Hard/pause text elsewhere is historical evidence, not
+> current authority. Source/runtime findings are tracked in
+> `notes/review/TH08_SOURCE_AND_RUNTIME_AUDIT.md`.
 
 ## 1. Program Objective
 
