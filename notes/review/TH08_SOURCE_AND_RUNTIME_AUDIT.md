@@ -224,7 +224,7 @@ occupancy or widen an exact losing result without proof.
 
 ### AUD-010 — Caps Lock bootstrap precedes any Wine foreground window
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-PHYSICAL**
 
 **Observed physical:** first full-route attempt
 `lunatic_route2_fullrun_unattended_20260823_165320` failed before launching
@@ -246,7 +246,12 @@ hotkey bootstrap, whereas both unattended supervisors now call `arm()`
 directly. The unattended supervisors and menu smoke no longer gate gameplay on
 this unrelated desktop toggle and write an explicit `required: false` session
 record. The strict helper remains available to the legacy/manual path.
-Physical smoke acceptance remains pending.
+
+**Validated physical:** ignored report
+`artifacts/wine-th08/smoke-20260823T165759Z/report.json`, bound to commit
+`137d9c7a23b32a91595f3340abef21f02a05b013`, passed the complete smoke
+contract with `caps_lock_bootstrap.required=false`, exact target termination,
+and zero dedicated-prefix processes.
 
 ## Runtime Isolation Record
 
