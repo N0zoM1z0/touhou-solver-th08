@@ -12,6 +12,7 @@ from pathlib import Path
 import shutil
 import struct
 import subprocess
+import sys
 import time
 from typing import Any
 
@@ -338,6 +339,7 @@ def run(args: argparse.Namespace) -> int:
             windows_python,
             native,
             ROOT / "scripts" / "tools" / "run_th08_wine_launch.bat",
+            ROOT / "scripts" / "tools" / "exec_with_pty.py",
             ROOT / "scripts" / "tools" / "th08_attach_no_life_decrement.py",
         )
         if args.mode == "full-route":
@@ -518,14 +520,21 @@ def run(args: argparse.Namespace) -> int:
                 args.ordinary_preexhaustion_authority
             ),
         )
+        wine_command = [
+            str(wine),
+            *windows_command,
+        ]
         host_command = [
             "taskset",
             "-c",
             args.cpu_list,
-            str(wine),
-            *windows_command,
+            sys.executable,
+            str(ROOT / "scripts" / "tools" / "exec_with_pty.py"),
+            "--",
+            *wine_command,
         ]
         report["windows_controller_command"] = windows_command
+        report["wine_controller_command"] = wine_command
         report["host_controller_command"] = host_command
         controller_process = subprocess.Popen(
             host_command,

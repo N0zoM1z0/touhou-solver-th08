@@ -4,6 +4,8 @@ import hashlib
 import json
 from pathlib import Path
 import struct
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -141,6 +143,30 @@ class Th08WinePreparationTests(unittest.TestCase):
 
 
 class Th08WineRunnerTests(unittest.TestCase):
+    def test_pty_bridge_provides_console_handles_and_propagates_status(
+        self,
+    ) -> None:
+        bridge = runner.ROOT / "scripts" / "tools" / "exec_with_pty.py"
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(bridge),
+                "--",
+                sys.executable,
+                "-c",
+                (
+                    "import os, sys; "
+                    "print(os.isatty(0), os.isatty(1)); "
+                    "sys.exit(7)"
+                ),
+            ],
+            check=False,
+            capture_output=True,
+            timeout=10.0,
+        )
+        self.assertEqual(completed.returncode, 7)
+        self.assertIn(b"True True", completed.stdout)
+
     def test_windows_path_uses_wine_z_drive(self) -> None:
         self.assertEqual(
             runner.windows_path(Path("/tmp/th08 test")),

@@ -47,6 +47,11 @@ The smoke must prove all of the following before gameplay:
 5. one exact TH08 window reaching the native title state;
 6. exact-prefix cleanup with no remaining processes.
 
+Wine 8 requires valid console handles for the embeddable Windows CPython. The
+host therefore gives the controller a private PTY and records all forwarded
+output; the game launched by the Windows controller remains separately
+redirected to its batch log.
+
 ## Lunatic Sakuya/Remilia Route 2
 
 ```bash

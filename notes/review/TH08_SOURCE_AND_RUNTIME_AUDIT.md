@@ -188,6 +188,8 @@ an explicit CPU list, and sends cleanup only with its exact `WINEPREFIX`. The
 Windows-side smoke verifies 32-bit Python/NumPy, the PE32 native planner, exact
 game identity, patch byte, window focus, and native title state. The preparer
 pins all binary inputs and refuses replacement of unrecognized runtime data.
+The host supplies the console-subsystem controller with its own PTY, required
+by Wine 8, while the launched game remains redirected away from that PTY.
 
 Acceptance still requires an actual smoke report with zero leftover prefix
 processes; a complete route is the later physical policy gate.
