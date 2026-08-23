@@ -22,8 +22,11 @@ Statuses are `OPEN`, `FIXED-OFFLINE`, `VALIDATED-PHYSICAL`, or `REJECTED`.
 ## Target And Scope
 
 - Active target: Sakuya/Remilia, Lunatic, Route 2, Final-B, hard no-Bomb.
-- Baseline: full route `lunatic_route2_fullrun_unattended_20260730_222529`,
-  68 native hit edges, stage counts `2/3/5/20/15/23`, zero Bomb input.
+- Current VPS baseline: full route
+  `lunatic_route2_fullrun_unattended_20260823_170206`, 85 native hit edges,
+  stage counts `1/8/14/14/18/30`, zero Bomb input. Historical comparator
+  `lunatic_route2_fullrun_unattended_20260730_222529` recorded 68 hits with
+  stage counts `2/3/5/20/15/23`.
 - Exact executable: Japanese TH08 1.00d, 840,704 bytes, SHA-256
   `330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924`.
 - The no-life-decrement patch is allowed for diagnostics. Native hit edges,
@@ -166,10 +169,114 @@ import-time default, while the no-override path reuses that default directly.
 This preserves real Windows behavior and makes the platform-boundary test
 independent of global `pathlib` dispatch.
 
+### AUD-012 — VPS/source-corrected full-route baseline is 85 hits
+
+Status: **VALIDATED-PHYSICAL**
+
+**Observed physical:** run
+`lunatic_route2_fullrun_unattended_20260823_170206` completed all six Route-2
+stages through Final-B at manager frame 231,289. It issued 51,411 decisions,
+recorded 85 native hit edges and no Bomb input, and terminated by
+`route_complete`. The isolated Wine host report passed with controller return
+code zero, exact-prefix leftovers `[]`, no duration/stall termination, display
+`:98`, CPU set `24-47`, and clean repository commit `1de7add`.
+
+The historical exact full route recorded 68 hits, so the observed delta is
+`+17`. This is not a paired-seed causal estimate: RNG path, code revision,
+host, and cadence differ. It answers only that the source-corrected solver can
+finish physically on this VPS; it does not establish that more cores alone
+caused the improvement.
+
+### AUD-013 — Global corridor compute has no authority before an exact scale schedule
+
+Status: **FIXED-OFFLINE**
+
+**Observed:** the baseline produced 9,894 completed four-worker corridor
+solutions and 50,760 query-bearing decisions, but
+`global_constraint_applicable_count=0`. Every pre-target Final-B schedule was
+tagged `experimental_pretarget_unit_transport_unknown_direction`; the hard
+authority gate correctly stripped targets, allowed actions, repair volumes,
+and recovery distances before local action selection. Median/p95 corridor
+solve time was 122.08/283.18ms. Consequently, assigning more VPS cores to this
+shadow calculation could not improve a single issued action in the observed
+route.
+
+**Fixed:** `--authority-only-corridor` now suppresses submissions while the
+time-scale schedule is diagnostic-only, without weakening the existing hard
+gate. A solve is still submitted once the exact source schedule grants hard
+action authority. The isolated Wine full-route runner enables this policy by
+default and records it in both host and controller telemetry; generic/manual
+controller behavior remains opt-in compatible. Physical cadence and hit
+acceptance are pending the post-fix route.
+
+### AUD-014 — Disabled item objectives still copy and decode 1.55MB per decision
+
+Status: **FIXED-OFFLINE**
+
+**Observed:** `ITEM_OBJECTIVES_ENABLED=False`, and planner preparation reduces
+the selected-item set to empty before any action scoring. Nevertheless every
+baseline decision copied all `2096 * 0x2E4 = 1,551,040` item bytes through
+Wine and decoded them solely for optional telemetry. Item-pool read time alone
+had median 1.33ms; it had no control consumer.
+
+**Fixed:** the live sensor can omit the item buffer/read, and the controller
+does so unless item objectives are enabled or the new explicit
+`--trace-items` diagnostic is requested. Trace records use `null`, rather than
+a false zero, when the active item count was not observed. Bullet and laser
+near-player evidence under `--trace-radius` remains enabled. Physical cadence
+and hit acceptance are pending the post-fix route.
+
+### AUD-015 — Retained auditors misclassify deadline holds and schema evolution
+
+Status: **FIXED-OFFLINE**
+
+**Observed:** the issue audit reported 104
+`selected_action_guard_mismatch` violations. All 104 rows first selected the
+fresh-recertified guard action correctly, then legitimately suppressed the
+expired write and emitted the observed held command with the
+`+deadline_hold` suffix. Separately, the corridor-priority audit aborted at
+controller-config line 2 after the main and ordinary worker priority fields
+were split.
+
+**Fixed and replayed:** the issue audit now verifies the guard transaction and
+post-guard deadline override as separate contracts, including label, mask,
+and no-write dispatch. Replaying all 51,411 decisions yields 13,522
+recertified transactions, 104 audited deadline holds, zero violations, and
+zero Bomb violations. The priority audit treats the absent post-split main
+field as an explicit disabled request while validating the distinct ordinary
+field; it scans all 9,894 unique solutions instead of crashing.
+
+### AUD-016 — Wider local beams are slower without a safety signal
+
+Status: **REJECTED**
+
+**Observed offline replay:** on 1,024 baseline roots, widening the local beam
+from 24 to 96 raised median/p95 planning time from 17.33/23.83ms to
+37.01/58.57ms. In losing/pre-hit contexts the compared hard vector improved
+three times and worsened eleven times. The 96-wide reference is a sensitivity
+probe, not an oracle, but it supplies no evidence for promotion and would
+increase the already-observed action lag. More VPS CPU is therefore not used
+to widen this serial beam in the post-fix run.
+
+### AUD-017 — Player and laser lethal geometry matches authoritative source
+
+Status: **REJECTED**
+
+**Observed source cross-check:** Sakuya and Remilia SHT headers both specify a
+2-unit player hitbox width, hence one-unit lethal half-extents already used by
+the solver. `BulletManager::OnUpdate` constructs active laser size as visible
+length (or the source's 0.7 tail reduction) by half the raw laser width;
+`Player::CalcLaserHitbox` then halves those full dimensions and performs the
+same inclusive, origin-rotated AABB test implemented in
+`th08_laser_model.py`. Warmup/fade fallthrough, collision thresholds, and the
+source's unusual longitudinal ramp also match. The four observed laser hits
+remain real policy failures; no geometry correction is justified by current
+evidence.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the complete repository suite
-passed on this VPS: 1,337 tests run, 5 conditionally skipped, zero failures or
+passed on this VPS: 1,345 tests run, 5 conditionally skipped, zero failures or
 errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.
@@ -205,8 +312,8 @@ host observed zero processes for the dedicated prefix. `wineserver -k`
 returned the documented idle-prefix status 1; no other Wine prefix was
 signalled or mutated.
 
-A complete Route-2 run remains the later physical policy gate, not part of
-this runner acceptance item.
+The later 85-hit complete Route-2 baseline also passed this isolation contract
+with exact-prefix leftovers `[]`.
 
 ### AUD-006 — Query-local adaptive refinement is implemented but not live
 
@@ -255,7 +362,7 @@ and zero dedicated-prefix processes.
 
 ### AUD-011 — Native-Windows route timeout is too short for Wine VPS cadence
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-PHYSICAL**
 
 **Observed physical:** calibration run
 `lunatic_route2_fullrun_unattended_20260823_165837` reached manager frame
@@ -270,8 +377,11 @@ a policy result.
 86,400-second agent budget and 86,700-second trial timeout. Normal termination
 is `route_complete`; the separate 120-second trace-stall gate remains active.
 This changes only the outer wall-clock watchdog; game frames, solver horizons,
-menu path, policy flags, and hit metric are unchanged. Physical full-route
-acceptance remains pending.
+menu path, policy flags, and hit metric are unchanged.
+
+**Validated physical:** the 85-hit baseline ran to `route_complete` without a
+duration or stall termination. The host runner then observed zero processes
+under the exact TH08 prefix.
 
 ## Runtime Isolation Record
 
