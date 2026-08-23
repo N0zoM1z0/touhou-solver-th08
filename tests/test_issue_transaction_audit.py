@@ -111,6 +111,50 @@ class IssueTransactionAuditTests(unittest.TestCase):
             codes,
         )
 
+    def test_deadline_hold_is_an_audited_post_guard_override(self) -> None:
+        row = _row()
+        row["action"] = "right_fast+deadline_hold"
+        row["mask"] = 0x61
+        row["deadline_guard"] = {
+            "missed": True,
+            "input_suppressed": True,
+            "planned_action": "left",
+            "issued_action": "right_fast+deadline_hold",
+            "issued_mask": 0x61,
+        }
+        row["input_dispatch"] = {
+            "previous_mask": 0x61,
+            "target_mask": 0x61,
+            "write_required": False,
+        }
+
+        report = audit_rows([row])
+
+        self.assertEqual(report["deadline_hold_count"], 1)
+        self.assertEqual(report["violation_count"], 0)
+
+    def test_unlabeled_deadline_override_is_rejected(self) -> None:
+        row = _row()
+        row["action"] = "right_fast"
+        row["mask"] = 0x61
+        row["deadline_guard"] = {
+            "missed": True,
+            "input_suppressed": True,
+            "planned_action": "left",
+            "issued_action": "right_fast",
+            "issued_mask": 0x61,
+        }
+        row["input_dispatch"] = {
+            "previous_mask": 0x61,
+            "target_mask": 0x61,
+            "write_required": False,
+        }
+
+        report = audit_rows([row])
+        codes = {item["code"] for item in report["violations"]}
+
+        self.assertIn("deadline_hold_action_not_labeled", codes)
+
 
 if __name__ == "__main__":
     unittest.main()

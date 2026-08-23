@@ -35,6 +35,7 @@ def audit_rows(rows: Iterable[dict[str, object]]) -> dict[str, object]:
     fresh_intersection_nonempty = 0
     fresh_empty_relaxations = 0
     inherited_relaxations = 0
+    deadline_holds = 0
     outside_global = 0
     silent_outside_global = 0
     no_bomb_violations = 0
@@ -78,11 +79,39 @@ def audit_rows(rows: Iterable[dict[str, object]]) -> dict[str, object]:
 
         if planned != str(guard.get("planned_action_before_guard")):
             reject(frame, "planned_action_guard_mismatch")
-        if (
-            selected != str(guard.get("action_after_guard"))
-            or selected != str(row.get("action"))
-        ):
+        if selected != str(guard.get("action_after_guard")):
             reject(frame, "selected_action_guard_mismatch")
+
+        deadline_guard = row.get("deadline_guard")
+        deadline_guard = (
+            deadline_guard if isinstance(deadline_guard, dict) else {}
+        )
+        deadline_suppressed = bool(deadline_guard.get("input_suppressed"))
+        if deadline_suppressed:
+            deadline_holds += 1
+            issued_action = str(deadline_guard.get("issued_action"))
+            issued_mask = deadline_guard.get("issued_mask")
+            dispatch = row.get("input_dispatch")
+            dispatch = dispatch if isinstance(dispatch, dict) else {}
+            if not bool(deadline_guard.get("missed")):
+                reject(frame, "deadline_hold_without_miss")
+            if str(deadline_guard.get("planned_action")) != selected:
+                reject(frame, "deadline_hold_planned_action_mismatch")
+            if not issued_action.endswith("+deadline_hold"):
+                reject(frame, "deadline_hold_action_not_labeled")
+            if (
+                str(row.get("action")) != issued_action
+                or row.get("mask") != issued_mask
+            ):
+                reject(frame, "deadline_hold_output_mismatch")
+            if (
+                bool(dispatch.get("write_required"))
+                or dispatch.get("previous_mask") != issued_mask
+                or dispatch.get("target_mask") != issued_mask
+            ):
+                reject(frame, "deadline_hold_dispatch_mismatch")
+        elif selected != str(row.get("action")):
+            reject(frame, "selected_action_output_mismatch")
 
         guidance = row.get("planner_guidance")
         guidance = guidance if isinstance(guidance, dict) else {}
@@ -255,6 +284,7 @@ def audit_rows(rows: Iterable[dict[str, object]]) -> dict[str, object]:
             fresh_empty_relaxations
         ),
         "inherited_constraint_relaxation_count": inherited_relaxations,
+        "deadline_hold_count": deadline_holds,
         "selected_outside_global_count": outside_global,
         "silent_outside_global_count": silent_outside_global,
         "no_bomb_violation_count": no_bomb_violations,

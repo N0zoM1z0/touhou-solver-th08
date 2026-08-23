@@ -23,6 +23,14 @@ def _config(*, requested: bool = True) -> dict[str, object]:
     }
 
 
+def _split_config() -> dict[str, object]:
+    return {
+        "kind": "controller_config",
+        "ordinary_authority_background_low_priority": True,
+        "corridor_native_viability_workers": 4,
+    }
+
+
 def _decision(
     frame: int,
     source_frame: int,
@@ -119,6 +127,27 @@ class CorridorPriorityAuditTests(unittest.TestCase):
                 "no controller_config",
             ):
                 audit_trace(trace)
+
+    def test_worker_policy_split_means_main_corridor_was_not_requested(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as directory:
+            trace = Path(directory) / "trial.jsonl"
+            self._write_trace(
+                trace,
+                [_split_config(), _decision(81, 80, priority_lowered=False)],
+            )
+            report = audit_trace(trace)
+
+        self.assertFalse(
+            report["configuration"]["corridor_background_low_priority"]
+        )
+        self.assertEqual(
+            report["configuration"][
+                "corridor_background_low_priority_source"
+            ],
+            "implicit_disabled_after_ordinary_worker_split",
+        )
 
 
 if __name__ == "__main__":

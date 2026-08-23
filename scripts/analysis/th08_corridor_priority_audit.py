@@ -79,6 +79,40 @@ def _required_int(
     return value
 
 
+def _corridor_priority_request(
+    controller_config: dict[str, Any],
+    *,
+    line_number: int,
+) -> tuple[bool, str]:
+    """Read the main-corridor request across the worker-policy split.
+
+    New traces only carry ``ordinary_authority_background_low_priority``.
+    That setting belongs to the separate ordinary-authority worker; absence
+    of the legacy main-corridor field therefore means the main request is
+    disabled, not malformed.
+    """
+
+    if "corridor_background_low_priority" in controller_config:
+        return (
+            _required_bool(
+                controller_config,
+                "corridor_background_low_priority",
+                line_number=line_number,
+            ),
+            "explicit_main_corridor_field",
+        )
+    if "ordinary_authority_background_low_priority" in controller_config:
+        _required_bool(
+            controller_config,
+            "ordinary_authority_background_low_priority",
+            line_number=line_number,
+        )
+        return False, "implicit_disabled_after_ordinary_worker_split"
+    raise CorridorPriorityAuditError(
+        f"line {line_number}: corridor background priority policy is absent"
+    )
+
+
 def _fraction(numerator: int, denominator: int) -> float | None:
     if denominator == 0:
         return None
@@ -240,9 +274,8 @@ def audit_trace(trace_path: Path) -> dict[str, object]:
         raise CorridorPriorityAuditError(
             "trace has no controller_config record"
         )
-    requested = _required_bool(
+    requested, request_source = _corridor_priority_request(
         controller_config,
-        "corridor_background_low_priority",
         line_number=controller_config_line,
     )
     configured_workers = _required_int(
@@ -363,6 +396,7 @@ def audit_trace(trace_path: Path) -> dict[str, object]:
         },
         "configuration": {
             "corridor_background_low_priority": requested,
+            "corridor_background_low_priority_source": request_source,
             "corridor_native_viability_workers": configured_workers,
         },
         "counts": {
