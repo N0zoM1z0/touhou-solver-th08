@@ -27,6 +27,11 @@ Statuses are `OPEN`, `FIXED-OFFLINE`, `VALIDATED-PHYSICAL`, or `REJECTED`.
   stage counts `1/8/14/14/18/30`, zero Bomb input. Historical comparator
   `lunatic_route2_fullrun_unattended_20260730_222529` recorded 68 hits with
   stage counts `2/3/5/20/15/23`.
+- Post-fix full route:
+  `lunatic_route2_fullrun_unattended_20260823_183138`, 58 native hit edges,
+  stage counts `4/6/5/13/9/21`, zero Bomb input. This is 27 fewer hits than
+  the same-day 85-hit baseline, but remains a single non-seed-paired physical
+  comparison.
 - Exact executable: Japanese TH08 1.00d, 840,704 bytes, SHA-256
   `330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924`.
 - The no-life-decrement patch is allowed for diagnostics. Native hit edges,
@@ -189,7 +194,7 @@ caused the improvement.
 
 ### AUD-013 — Global corridor compute has no authority before an exact scale schedule
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-PHYSICAL**
 
 **Observed:** the baseline produced 9,894 completed four-worker corridor
 solutions and 50,760 query-bearing decisions, but
@@ -206,12 +211,22 @@ time-scale schedule is diagnostic-only, without weakening the existing hard
 gate. A solve is still submitted once the exact source schedule grants hard
 action authority. The isolated Wine full-route runner enables this policy by
 default and records it in both host and controller telemetry; generic/manual
-controller behavior remains opt-in compatible. Physical cadence and hit
-acceptance are pending the post-fix route.
+controller behavior remains opt-in compatible.
+
+**Validated physical:** all 55,024 decisions in post-fix run `...183138`
+reported `authority_blocked_submission=true`; hard submission authority was
+available zero times, and submission/completion counts were both zero. The
+route ended after spell 182, before the deliberately narrow spell-190 exact
+source contract, so none of the removed work could have constrained a live
+action in this run. Compared with the baseline, `observe_to_input` median/p95
+fell from 50.99/78.37ms to 47.59/67.28ms, and action-lag median/p95/max fell
+from `2/4/13` to `2/3/6` frames. Local-plan median rose from 28.29 to 30.35ms,
+while p95 was nearly unchanged (46.46 versus 46.13ms), which distinguishes the
+removed asynchronous/global load from the serial local planner.
 
 ### AUD-014 — Disabled item objectives still copy and decode 1.55MB per decision
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-PHYSICAL**
 
 **Observed:** `ITEM_OBJECTIVES_ENABLED=False`, and planner preparation reduces
 the selected-item set to empty before any action scoring. Nevertheless every
@@ -221,14 +236,23 @@ had median 1.33ms; it had no control consumer.
 
 **Fixed:** the live sensor can omit the item buffer/read, and the controller
 does so unless item objectives are enabled or the new explicit
-`--trace-items` diagnostic is requested. Trace records use `null`, rather than
-a false zero, when the active item count was not observed. Bullet and laser
-near-player evidence under `--trace-radius` remains enabled. Physical cadence
-and hit acceptance are pending the post-fix route.
+`--trace-items` diagnostic is requested. Planner-objective telemetry uses
+`null`, rather than a false observed count, when item capture is disabled;
+the serialized item list is empty by contract. Bullet and laser near-player
+evidence under `--trace-radius` remains enabled.
+
+**Physical integration correction:** the first attempted post-fix launch
+exposed one stale unconditional decoder call (`index out of bounds on
+dimension 1`) when the deliberately empty item buffer reached the controller.
+`_decode_items_if_captured` now prevents that call, with a regression proving
+the disabled branch never invokes the fixed-size decoder. In completed run
+`...183138`, item read and decode median/p95/max were all exactly 0ms, versus
+baseline medians 1.33ms and 0.35ms. Aggregate pool-read median/p95 fell from
+12.15/15.43ms to 10.47/12.17ms.
 
 ### AUD-015 — Retained auditors misclassify deadline holds and schema evolution
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-PHYSICAL**
 
 **Observed:** the issue audit reported 104
 `selected_action_guard_mismatch` violations. All 104 rows first selected the
@@ -245,6 +269,15 @@ recertified transactions, 104 audited deadline holds, zero violations, and
 zero Bomb violations. The priority audit treats the absent post-split main
 field as an explicit disabled request while validating the distinct ordinary
 field; it scans all 9,894 unique solutions instead of crashing.
+
+**Second physical replay:** the post-fix trace initially produced one
+`deadline_hold_dispatch_mismatch` at frame 163,552. The retained row proves the
+deadline hold preserved movement/focus and a later auto-confirm release changed
+only the `SHOT` bit (`0x05 -> 0x04`). The audit now admits only a correctly
+labeled `press`/`release` transition whose mask delta is confined to `SHOT`;
+movement changes still fail. Replaying all 55,024 decisions yields 14,326
+recertified transactions, one audited deadline/auto-confirm overlap, zero
+violations, and zero Bomb violations.
 
 ### AUD-016 — Wider local beams are slower without a safety signal
 
@@ -273,10 +306,56 @@ source's unusual longitudinal ramp also match. The four observed laser hits
 remain real policy failures; no geometry correction is justified by current
 evidence.
 
+### AUD-018 — Authority-only/item-skip full route records 58 hits
+
+Status: **VALIDATED-PHYSICAL**
+
+**Observed physical:** run
+`lunatic_route2_fullrun_unattended_20260823_183138` completed Route 2 through
+Final-B at manager frame 233,818, issued 55,024 decisions, recorded 58 native
+hit edges, and passed the hard no-Bomb gate. Stage hit counts were
+`4/6/5/13/9/21`; versus the same-day baseline the deltas were
+`+3/-2/-9/-1/-9/-9`, totaling `-27` (31.8% fewer). Exact witnesses classify
+17 bullet overlaps, two laser overlaps, zero enemy-body contacts, and 39
+modeled committed-prefix collisions. Spell 170's baseline nine-hit cluster
+fell to four hits in the post-fix route.
+
+The trace terminated with the exact Final-B `terminal_unload` record and
+`route_complete`; the dedicated Wine prefix had no leftover processes. Four
+unrelated TH105 Wine workers on displays `:120..:123` remained outside the
+TH08 prefix/display/cleanup scope.
+
+**Interpretation limit:** this is a strong physical result, not a controlled
+RNG/seed experiment. The two promoted changes had no intended policy authority
+in either run: global guidance was already stripped before action selection,
+and item objectives were disabled. Their measured effect is reduced compute
+and latency. The 27-hit improvement is consistent with better cadence, but a
+single run cannot assign the whole delta causally to either optimization or to
+VPS compute capacity.
+
+### AUD-019 — Full-route comparison assumes solver percentiles always exist
+
+Status: **FIXED-OFFLINE**
+
+**Observed physical trigger:** gameplay for `...183138` completed and its
+dossier was generated, but postprocessing raised `TypeError: 'NoneType' object
+is not subscriptable`. The authority-only run correctly represented absent
+global-solver `solve_ms` and first-age distributions as `null`; the comparator
+unconditionally indexed them. The host runner therefore returned 78 even
+though the retained trace and Windows session had already accepted
+`route_complete`. Exact-prefix cleanup still reported leftovers `[]`.
+
+**Fixed and replayed:** percentile comparison now preserves each missing side
+as `baseline/candidate/delta`, with `delta=null`, rather than fabricating a
+zero or crashing. The real 85-hit and 58-hit dossiers now generate the compact
+comparison successfully, and the pending session was recovered to
+`status=completed` while retaining the original exception in an explicit
+`artifact_recovery` record.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the complete repository suite
-passed on this VPS: 1,345 tests run, 5 conditionally skipped, zero failures or
+passed on this VPS: 1,349 tests run, 5 conditionally skipped, zero failures or
 errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.
@@ -389,3 +468,8 @@ At audit start, another TH06 Wine workload was active on display `:97` with
 its own prefix. No signal, prefix mutation, affinity change, or shared cleanup
 was performed. TH08 must use a distinct prefix and a free display selected at
 launch time.
+
+During the post-fix full route, four unrelated TH105 workers used displays
+`:120..:123` and their own prefixes. TH08 remained on its auto-selected `:98`,
+CPU set `24-47`, and dedicated `reference/wine-prefixes/th08-retail` prefix;
+cleanup resolved and checked only that exact prefix.
