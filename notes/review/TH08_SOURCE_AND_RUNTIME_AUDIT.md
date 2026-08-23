@@ -190,6 +190,8 @@ game identity, patch byte, window focus, and native title state. The preparer
 pins all binary inputs and refuses replacement of unrecognized runtime data.
 The host supplies the console-subsystem controller with its own PTY, required
 by Wine 8, while the launched game remains redirected away from that PTY.
+Cleanup authority is the exact-prefix `/proc` scan: Wine 8 can return status 1
+from `wineserver -k` merely because the prefix server already exited.
 
 Acceptance still requires an actual smoke report with zero leftover prefix
 processes; a complete route is the later physical policy gate.

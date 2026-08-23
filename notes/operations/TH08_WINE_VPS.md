@@ -68,6 +68,9 @@ The default affinity is CPUs `24-47`, bounding the whole Wine/controller tree
 to 24 of the VPS's 96 logical CPUs. Override with `--cpu-list` when necessary.
 The runner never calls a generic Wine cleanup: every `wineserver -k` receives
 the exact dedicated `WINEPREFIX`, and cleanup is attested from `/proc`.
+Wine 8 may return status 1 when that server is already idle, so the recorded
+return code is advisory; any actual exact-prefix process left in `/proc` fails
+the run.
 
 Host reports and Wine logs live under ignored `artifacts/wine-th08/`. The
 existing supervisor writes compact route session/dossier evidence under

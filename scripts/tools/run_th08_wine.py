@@ -589,10 +589,10 @@ def run(args: argparse.Namespace) -> int:
                     stderr=subprocess.DEVNULL,
                     timeout=30.0,
                 )
-                if stopped.returncode:
-                    cleanup_errors.append(
-                        f"wineserver -k exited with {stopped.returncode}"
-                    )
+                # Wine 8 returns 1 when the per-prefix server has already
+                # exited. Record that advisory status, but make observed
+                # exact-prefix processes the cleanup authority below.
+                report["wineserver_k_returncode"] = stopped.returncode
             except BaseException as error:
                 cleanup_errors.append(
                     f"{type(error).__name__} stopping wineserver: {error}"
