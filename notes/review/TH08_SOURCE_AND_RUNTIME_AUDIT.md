@@ -111,7 +111,7 @@ AUD-001.
 
 ### AUD-004 — Windows native planner assumes x86-64
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-PHYSICAL**
 
 **Observed:** the game is PE32. This host provides
 `i686-w64-mingw32-g++` but not `x86_64-w64-mingw32-g++`. The build tool and
@@ -122,8 +122,10 @@ host's `i686-w64-mingw32-g++` and writes
 `native/build/windows-x86/touhou_viability.dll`. The loader selects x86 or
 x86-64 by the controlling Python process's pointer width while preserving the
 existing Linux and `--target windows` paths. The host produced a PE32 i386 DLL
-whose 45 exports match the checked-in manifest; Wine load smoke remains the
-runtime acceptance check.
+whose 45 exports match the checked-in manifest. The 2026-08-23 Wine smoke ran
+under 32-bit Windows Python, loaded that exact DLL (SHA-256
+`4c8c3a34485ec22437224d0fa8a5ad631d3d64f952d66bc9e621147cedf41603`),
+and successfully applied its native worker-limit ABI call.
 
 ### AUD-007 — Native ABI manifest omits a shipped export
 
@@ -167,14 +169,14 @@ independent of global `pathlib` dispatch.
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the complete repository suite
-passed on this VPS: 1,328 tests run, 5 conditionally skipped, zero failures or
+passed on this VPS: 1,337 tests run, 5 conditionally skipped, zero failures or
 errors. The Win32 planner build separately produced a PE32 i386 DLL with all
-45 manifest exports. These are offline/build gates, not substitutes for the
-pending Wine and physical gameplay checks.
+45 manifest exports. These offline/build gates are supplemented by the Wine
+smoke record below; full-route policy validation remains separate.
 
 ### AUD-005 — TH08 lacks a prefix-scoped Wine host runner
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-PHYSICAL**
 
 **Observed:** the existing full-route supervisor is Windows-native and its BAT
 wrapper assumes WindowsApps Python. The TH06 workspace has the required host
@@ -193,8 +195,18 @@ by Wine 8, while the launched game remains redirected away from that PTY.
 Cleanup authority is the exact-prefix `/proc` scan: Wine 8 can return status 1
 from `wineserver -k` merely because the prefix server already exited.
 
-Acceptance still requires an actual smoke report with zero leftover prefix
-processes; a complete route is the later physical policy gate.
+**Validated physical:** ignored host report
+`artifacts/wine-th08/smoke-20260823T165134Z/report.json`, bound to commit
+`0ab24f830cd3c03f76624fe0f53b98dc7ab1b03f`, passed on Wine 8.0. The
+Windows record proved 32-bit Python 3.11.9, NumPy 1.26.4, the PE32 native ABI,
+exact executable identity, patch address `0x0044D0FA` byte `0x00`, one focused
+game window, and native title state. The exact target was terminated and the
+host observed zero processes for the dedicated prefix. `wineserver -k`
+returned the documented idle-prefix status 1; no other Wine prefix was
+signalled or mutated.
+
+A complete Route-2 run remains the later physical policy gate, not part of
+this runner acceptance item.
 
 ### AUD-006 — Query-local adaptive refinement is implemented but not live
 
