@@ -133,6 +133,52 @@ class IssueTransactionAuditTests(unittest.TestCase):
         self.assertEqual(report["deadline_hold_count"], 1)
         self.assertEqual(report["violation_count"], 0)
 
+    def test_deadline_hold_allows_auto_confirm_shot_release(self) -> None:
+        row = _row()
+        row["action"] = "left+deadline_hold"
+        row["mask"] = 0x40
+        row["auto_confirm"] = "release"
+        row["deadline_guard"] = {
+            "missed": True,
+            "input_suppressed": True,
+            "planned_action": "left",
+            "issued_action": "left+deadline_hold",
+            "issued_mask": 0x40,
+        }
+        row["input_dispatch"] = {
+            "previous_mask": 0x41,
+            "target_mask": 0x40,
+            "write_required": True,
+        }
+
+        report = audit_rows([row])
+
+        self.assertEqual(report["deadline_hold_count"], 1)
+        self.assertEqual(report["violation_count"], 0)
+
+    def test_deadline_hold_rejects_auto_confirm_movement_change(self) -> None:
+        row = _row()
+        row["action"] = "right_fast+deadline_hold"
+        row["mask"] = 0x20
+        row["auto_confirm"] = "release"
+        row["deadline_guard"] = {
+            "missed": True,
+            "input_suppressed": True,
+            "planned_action": "left",
+            "issued_action": "right_fast+deadline_hold",
+            "issued_mask": 0x20,
+        }
+        row["input_dispatch"] = {
+            "previous_mask": 0x41,
+            "target_mask": 0x20,
+            "write_required": True,
+        }
+
+        report = audit_rows([row])
+        codes = {item["code"] for item in report["violations"]}
+
+        self.assertIn("deadline_hold_auto_confirm_mismatch", codes)
+
     def test_unlabeled_deadline_override_is_rejected(self) -> None:
         row = _row()
         row["action"] = "right_fast"

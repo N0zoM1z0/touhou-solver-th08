@@ -91,6 +91,7 @@ def audit_rows(rows: Iterable[dict[str, object]]) -> dict[str, object]:
             deadline_holds += 1
             issued_action = str(deadline_guard.get("issued_action"))
             issued_mask = deadline_guard.get("issued_mask")
+            auto_confirm_event = row.get("auto_confirm")
             dispatch = row.get("input_dispatch")
             dispatch = dispatch if isinstance(dispatch, dict) else {}
             if not bool(deadline_guard.get("missed")):
@@ -104,10 +105,25 @@ def audit_rows(rows: Iterable[dict[str, object]]) -> dict[str, object]:
                 or row.get("mask") != issued_mask
             ):
                 reject(frame, "deadline_hold_output_mismatch")
-            if (
-                bool(dispatch.get("write_required"))
-                or dispatch.get("previous_mask") != issued_mask
-                or dispatch.get("target_mask") != issued_mask
+            previous_mask = dispatch.get("previous_mask")
+            target_mask = dispatch.get("target_mask")
+            write_required = bool(dispatch.get("write_required"))
+            if auto_confirm_event in {"press", "release"}:
+                shot_bit = 0x01
+                expected_shot_set = auto_confirm_event == "press"
+                if (
+                    not isinstance(previous_mask, int)
+                    or not isinstance(target_mask, int)
+                    or target_mask != issued_mask
+                    or write_required != (previous_mask != target_mask)
+                    or bool(target_mask & shot_bit) != expected_shot_set
+                    or bool((previous_mask ^ target_mask) & ~shot_bit)
+                ):
+                    reject(frame, "deadline_hold_auto_confirm_mismatch")
+            elif (
+                write_required
+                or previous_mask != issued_mask
+                or target_mask != issued_mask
             ):
                 reject(frame, "deadline_hold_dispatch_mismatch")
         elif selected != str(row.get("action")):
