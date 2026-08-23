@@ -24,7 +24,6 @@ from th08_practice_supervisor import (
     _read_title_menu_state,
     _stop_batch_process,
     drive_menu_plan,
-    ensure_caps_lock_enabled,
     focus_target_window,
     launch_patch_batch,
     terminate_exact_target,
@@ -82,7 +81,6 @@ def main() -> int:
             timeout_seconds=25.0,
         )
         focus_target_window(api, pid, timeout_seconds=10.0)
-        ensure_caps_lock_enabled(api)
         time.sleep(1.0)
         states.append(
             {

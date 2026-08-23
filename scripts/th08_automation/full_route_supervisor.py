@@ -47,7 +47,6 @@ from th08_practice_supervisor import (
     _read_title_menu_state,
     _stop_batch_process,
     drive_menu_plan,
-    ensure_caps_lock_enabled,
     focus_target_window,
     launch_patch_batch,
     monitor_trial,
@@ -229,6 +228,10 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
         "viability_audit": False,
         "agent_duration_seconds": args.agent_duration,
         "leave_game_running": args.leave_game_running,
+        "caps_lock_bootstrap": {
+            "required": False,
+            "reason": "direct supervisor arm has no Caps Lock dependency",
+        },
         "started_at": datetime.now().astimezone().isoformat(),
     }
     batch_process: subprocess.Popen[bytes] | None = None
@@ -275,7 +278,6 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
         session["target"] = identity
         session["pid"] = pid
         focus_target_window(api, pid, timeout_seconds=args.focus_timeout)
-        session["caps_lock_changed"] = ensure_caps_lock_enabled(api)
         time.sleep(args.startup_settle)
 
         menu_trace: list[dict[str, object]] = []

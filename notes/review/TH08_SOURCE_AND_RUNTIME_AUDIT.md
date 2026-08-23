@@ -234,9 +234,18 @@ native interactive Windows desktop but not on a fresh private Xvfb/Wine
 desktop. The attempt produced no gameplay trace and cleanup observed no
 dedicated-prefix process.
 
-**Fixed offline:** both unattended supervisors and the menu probe now launch,
-identity/patch-verify, and focus the exact TH08 window before establishing the
-Caps Lock precondition. The Windows smoke now exercises this ordering.
+Moving the toggle after exact-window focus did not resolve it: follow-up Wine
+smoke `smoke-20260823T165627Z` again observed `GetKeyState(VK_CAPITAL) & 1 ==
+0` after the injected scan-code transition, while exact game launch, patching,
+and termination still succeeded.
+
+**Fixed offline:** repository-wide use inspection found no Caps Lock read in
+the solver, direct `AgentHotkey.arm()` path, input dispatcher, or game
+configuration. It was a stale convenience inherited from the earlier manual
+hotkey bootstrap, whereas both unattended supervisors now call `arm()`
+directly. The unattended supervisors and menu smoke no longer gate gameplay on
+this unrelated desktop toggle and write an explicit `required: false` session
+record. The strict helper remains available to the legacy/manual path.
 Physical smoke acceptance remains pending.
 
 ## Runtime Isolation Record

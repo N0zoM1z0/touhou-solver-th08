@@ -18,7 +18,6 @@ from th08_automation.practice_supervisor import (
     _matching_targets,
     _read_title_menu_state,
     _stop_batch_process,
-    ensure_caps_lock_enabled,
     focus_target_window,
     launch_patch_batch,
     terminate_exact_target,
@@ -86,7 +85,10 @@ def run(args: argparse.Namespace) -> int:
             pid,
             timeout_seconds=args.focus_timeout,
         )
-        report["caps_lock_changed"] = ensure_caps_lock_enabled(api)
+        report["caps_lock_bootstrap"] = {
+            "required": False,
+            "reason": "direct supervisor arm has no Caps Lock dependency",
+        }
         wait_for_title_menu(
             api,
             pid,

@@ -60,10 +60,8 @@ from th08_automation.practice_native_menu import (  # noqa: F401
 from th08_automation.practice_windows import (  # noqa: F401
     WNDENUMPROC,
     build_patch_batch_command,
-    caps_lock_enabled,
     configure_supervisor_api as _configure_supervisor_api,
     drive_menu_plan,
-    ensure_caps_lock_enabled,
     focus_target_window,
     launch_patch_batch,
     matching_targets as _matching_targets,
@@ -284,6 +282,10 @@ def run_trial(
         "bullet_decode_backend": args.bullet_decode_backend,
         "save_replay_slot": args.save_replay_slot,
         "replay_save_timeout": args.replay_save_timeout,
+        "caps_lock_bootstrap": {
+            "required": False,
+            "reason": "direct supervisor arm has no Caps Lock dependency",
+        },
         "started_at": datetime.now().astimezone().isoformat(),
     }
     batch_process: subprocess.Popen[bytes] | None = None
@@ -347,7 +349,6 @@ def run_trial(
         session["target"] = identity
         session["pid"] = pid
         focus_target_window(api, pid, timeout_seconds=args.focus_timeout)
-        session["caps_lock_changed"] = ensure_caps_lock_enabled(api)
         time.sleep(args.startup_settle)
         menu_native_trace: list[dict[str, object]] = []
         executed_menu_taps: list[dict[str, object]] = []
