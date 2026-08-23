@@ -780,6 +780,16 @@ def _corridor_submission_policy_allows(
     return not authority_only or time_scale_hard_authority
 
 
+def _decode_items_if_captured(
+    item_blob: bytes | bytearray | memoryview,
+    *,
+    captured: bool,
+) -> tuple[Item, ...]:
+    if not captured:
+        return ()
+    return decode_items(item_blob)
+
+
 def _diagnostic_constant_root_time_scale(
     schedule: Th08TimeScaleSchedule,
 ) -> Th08TimeScaleSchedule:
@@ -4366,11 +4376,21 @@ def _run_live_session(
             laser_decode_ms = (
                 time.perf_counter() - laser_decode_started
             ) * 1000.0
-            item_decode_started = time.perf_counter()
-            items = decode_items(item_blob)
-            item_decode_ms = (
-                time.perf_counter() - item_decode_started
-            ) * 1000.0
+            if item_sensor_enabled:
+                item_decode_started = time.perf_counter()
+                items = _decode_items_if_captured(
+                    item_blob,
+                    captured=True,
+                )
+                item_decode_ms = (
+                    time.perf_counter() - item_decode_started
+                ) * 1000.0
+            else:
+                items = _decode_items_if_captured(
+                    item_blob,
+                    captured=False,
+                )
+                item_decode_ms = 0.0
             decode_ms = (time.perf_counter() - decode_started) * 1000.0
             player = state["player"]
             control_root_player = {

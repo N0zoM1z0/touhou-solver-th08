@@ -87,6 +87,7 @@ from th08_live_dodge_agent import (
     _corridor_submit_due,
     _corridor_target,
     _corridor_viability_query,
+    _decode_items_if_captured,
     _estimate_live_action_hold,
     _enemy_sensor_submit_due,
     _frozen_auto_confirm_eligible,
@@ -1700,6 +1701,16 @@ class LiveDodgeAgentTests(unittest.TestCase):
             decode_items(memoryview(persistent).cast("B")),
             decode_items(bytes(blob)),
         )
+
+    def test_omitted_item_capture_does_not_enter_the_fixed_pool_decoder(
+        self,
+    ) -> None:
+        with patch("th08_live.controller.decode_items") as decoder:
+            self.assertEqual(
+                _decode_items_if_captured(memoryview(b""), captured=False),
+                (),
+            )
+        decoder.assert_not_called()
 
     def test_laser_broad_phase_discards_only_segments_beyond_risk_radius(
         self,
