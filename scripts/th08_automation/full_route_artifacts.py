@@ -46,11 +46,14 @@ def _change(before: float | int, after: float | int) -> dict[str, float | int]:
 
 
 def _percentile_change(
-    before: dict[str, object],
-    after: dict[str, object],
+    before: dict[str, object] | None,
+    after: dict[str, object] | None,
 ) -> dict[str, object]:
     return {
-        key: _change(float(before[key]), float(after[key]))
+        key: _optional_change(
+            before.get(key) if before is not None else None,
+            after.get(key) if after is not None else None,
+        )
         for key in ("median", "p95", "max")
     }
 

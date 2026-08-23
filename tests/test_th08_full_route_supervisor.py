@@ -21,6 +21,33 @@ from th08_full_route_supervisor import (
 
 
 class FullRouteSupervisorTests(unittest.TestCase):
+    def test_percentile_comparison_preserves_missing_solver_metrics(self) -> None:
+        result = full_route_artifacts._percentile_change(
+            {"median": 10.0, "p95": 20.0, "max": 30.0},
+            None,
+        )
+
+        self.assertEqual(
+            result,
+            {
+                "median": {
+                    "baseline": 10.0,
+                    "candidate": None,
+                    "delta": None,
+                },
+                "p95": {
+                    "baseline": 20.0,
+                    "candidate": None,
+                    "delta": None,
+                },
+                "max": {
+                    "baseline": 30.0,
+                    "candidate": None,
+                    "delta": None,
+                },
+            },
+        )
+
     def test_wrapper_resolves_supervisor_relative_to_itself(self) -> None:
         root = Path(__file__).resolve().parents[1]
         wrapper = (root / "run_th08_full_route_agent.bat").read_text(
