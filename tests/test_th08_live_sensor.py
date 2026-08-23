@@ -108,6 +108,31 @@ class SensorTests(unittest.TestCase):
             ("read_into", ITEM_MANAGER_BASE),
         )
 
+    def test_item_pool_can_be_omitted_when_it_has_no_consumer(self) -> None:
+        reader = _FakeReader()
+        ticks = iter((0.000, 0.001, 0.002, 0.004))
+        sensor = Sensor(
+            reader,
+            capture_items=False,
+            clock=lambda: next(ticks),
+        )
+
+        capture = sensor.capture_raw_pools()
+
+        self.assertEqual(len(capture.item_blob), 0)
+        self.assertEqual(capture.item_pool_read_ms, 0.0)
+        self.assertNotIn(
+            ("allocate", ITEM_POOL_SIZE * ITEM_STRIDE),
+            reader.events,
+        )
+        self.assertFalse(
+            any(
+                event[0:2] == ("read_into", ITEM_MANAGER_BASE)
+                for event in reader.events
+                if isinstance(event, tuple)
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

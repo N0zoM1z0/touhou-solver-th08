@@ -204,6 +204,14 @@ def build_live_parser(
         help="disable the corridor layer for controlled A/B runs",
     )
     parser.add_argument(
+        "--authority-only-corridor",
+        action="store_true",
+        help=(
+            "submit expensive corridor solves only when the current exact "
+            "time-scale schedule can grant their output action authority"
+        ),
+    )
+    parser.add_argument(
         "--wait-gameplay",
         action="store_true",
         help="warm up at the menu and arm when idle route-2 gameplay begins",
@@ -257,6 +265,14 @@ def build_live_parser(
         help=(
             "include native projectile/item geometry within this player "
             "radius"
+        ),
+    )
+    parser.add_argument(
+        "--trace-items",
+        action="store_true",
+        help=(
+            "also capture and serialize nearby items for --trace-radius; "
+            "disabled by default when items cannot affect control"
         ),
     )
     parser.add_argument(

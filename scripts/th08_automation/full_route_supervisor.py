@@ -212,6 +212,7 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
         "runtime_ecl_static_sha256": args.runtime_ecl_static_sha256,
         "safety_value_horizon": 0,
         "trace_transform_runtime": False,
+        "trace_items": args.trace_items,
         "trace_enemy_mode_transitions": (
             args.trace_enemy_mode_transitions
         ),
@@ -222,6 +223,7 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
         "ordinary_preexhaustion_authority": (
             args.ordinary_preexhaustion_authority
         ),
+        "authority_only_corridor": args.authority_only_corridor,
         "diagnostic_continue_root_only_scale": (
             args.diagnostic_continue_root_only_scale
         ),
@@ -243,6 +245,7 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
             expected_difficulty=difficulty.menu_index,
             expected_stage=0,
             terminal_stage=None,
+            trace_items=args.trace_items,
             trace_enemy_mode_transitions=(
                 args.trace_enemy_mode_transitions
             ),
@@ -253,6 +256,7 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
             ordinary_preexhaustion_authority=(
                 args.ordinary_preexhaustion_authority
             ),
+            authority_only_corridor=args.authority_only_corridor,
             diagnostic_continue_root_only_scale=(
                 args.diagnostic_continue_root_only_scale
             ),
@@ -496,6 +500,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--trace-items",
+        action="store_true",
+        help=(
+            "capture nearby item geometry even though the survival-only "
+            "controller does not consume it"
+        ),
+    )
+    parser.add_argument(
         "--trace-enemy-lifecycle-events",
         action="store_true",
         help=(
@@ -518,6 +530,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "enable the signed ordinary prepublication predecessor; "
             "incomplete future birth/event coverage remains fail-closed"
+        ),
+    )
+    parser.add_argument(
+        "--authority-only-corridor",
+        action="store_true",
+        help=(
+            "skip diagnostic global solves until their exact time-scale "
+            "schedule grants action authority"
         ),
     )
     parser.add_argument(

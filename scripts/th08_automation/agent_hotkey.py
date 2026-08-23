@@ -62,10 +62,12 @@ class AgentHotkey:
         expected_stage: int | None = None,
         terminal_stage: int | None = None,
         trace_transform_runtime: bool = False,
+        trace_items: bool = False,
         trace_enemy_mode_transitions: bool = False,
         trace_enemy_lifecycle_events: bool = False,
         kill_before_saturation: bool = False,
         ordinary_preexhaustion_authority: bool = False,
+        authority_only_corridor: bool = False,
         diagnostic_continue_root_only_scale: bool = False,
         runtime_ecl_static_image: Path | None = None,
         runtime_ecl_static_sha256: str | None = None,
@@ -152,6 +154,7 @@ class AgentHotkey:
         self.expected_stage = expected_stage
         self.terminal_stage = terminal_stage
         self.trace_transform_runtime = trace_transform_runtime
+        self.trace_items = trace_items
         self.trace_enemy_mode_transitions = trace_enemy_mode_transitions
         self.trace_enemy_lifecycle_events = (
             trace_enemy_lifecycle_events
@@ -160,6 +163,7 @@ class AgentHotkey:
         self.ordinary_preexhaustion_authority = (
             ordinary_preexhaustion_authority
         )
+        self.authority_only_corridor = authority_only_corridor
         self.diagnostic_continue_root_only_scale = (
             diagnostic_continue_root_only_scale
         )
@@ -308,6 +312,7 @@ class AgentHotkey:
                 expected_stage=self.expected_stage,
                 terminal_stage=self.terminal_stage,
                 trace_transform_runtime=self.trace_transform_runtime,
+                trace_items=self.trace_items,
                 trace_enemy_mode_transitions=(
                     self.trace_enemy_mode_transitions
                 ),
@@ -318,6 +323,7 @@ class AgentHotkey:
                 ordinary_preexhaustion_authority=(
                     self.ordinary_preexhaustion_authority
                 ),
+                authority_only_corridor=self.authority_only_corridor,
                 diagnostic_continue_root_only_scale=(
                     self.diagnostic_continue_root_only_scale
                 ),

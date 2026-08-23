@@ -201,6 +201,8 @@ def build_windows_controller_command(
     trial_timeout: float,
     kill_before_saturation: bool,
     ordinary_preexhaustion_authority: bool,
+    authority_only_corridor: bool,
+    trace_items: bool,
 ) -> list[str]:
     launcher = ROOT / "scripts" / "tools" / "run_th08_wine_launch.bat"
     if mode == "smoke":
@@ -237,6 +239,10 @@ def build_windows_controller_command(
         command.append("--kill-before-saturation")
     if ordinary_preexhaustion_authority:
         command.append("--ordinary-preexhaustion-authority")
+    if authority_only_corridor:
+        command.append("--authority-only-corridor")
+    if trace_items:
+        command.append("--trace-items")
     return command
 
 
@@ -294,6 +300,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--kill-before-saturation", action="store_true")
     parser.add_argument("--ordinary-preexhaustion-authority", action="store_true")
+    parser.add_argument(
+        "--authority-only-corridor",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument("--trace-items", action="store_true")
     return parser
 
 
@@ -313,6 +325,8 @@ def run(args: argparse.Namespace) -> int:
         "artifact_dir": str(artifact_dir),
         "display_requested": args.display,
         "cpu_list": args.cpu_list,
+        "authority_only_corridor": args.authority_only_corridor,
+        "trace_items": args.trace_items,
         "wine_prefix": str(args.wine_prefix.resolve()),
         "status": "failed",
         "controller_returncode": None,
@@ -529,6 +543,8 @@ def run(args: argparse.Namespace) -> int:
             ordinary_preexhaustion_authority=(
                 args.ordinary_preexhaustion_authority
             ),
+            authority_only_corridor=args.authority_only_corridor,
+            trace_items=args.trace_items,
         )
         wine_command = [
             str(wine),

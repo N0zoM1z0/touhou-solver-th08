@@ -25,7 +25,7 @@ class DecisionControlTraceInput:
     damage_target_x: float | None
     damage_target_half_width: float
     damageable: bool
-    active_item_count: int
+    active_item_count: int | None
     item_objectives_enabled: bool
     corridor_context_changed: bool
     policy_guidance: Any

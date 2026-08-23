@@ -22,6 +22,7 @@ from th08_live.controller import (
     DIAGNOSTIC_ROOT_ONLY_SCALE_HORIZON,
     MAX_SENSOR_EPOCH_EXTENT_FRAMES,
     _corridor_scale_schedule_supported,
+    _corridor_submission_policy_allows,
     _diagnostic_constant_root_time_scale,
 )
 from th08_corridor_adapter import TH08_CORRIDOR_CONFIG
@@ -325,6 +326,28 @@ class NoScaleWriterScheduleAuthorityTests(unittest.TestCase):
 
 
 class FinalBScaleScheduleAuthorityTests(unittest.TestCase):
+    def test_authority_only_submission_skips_diagnostic_schedules(
+        self,
+    ) -> None:
+        self.assertFalse(
+            _corridor_submission_policy_allows(
+                authority_only=True,
+                time_scale_hard_authority=False,
+            )
+        )
+        self.assertTrue(
+            _corridor_submission_policy_allows(
+                authority_only=True,
+                time_scale_hard_authority=True,
+            )
+        )
+        self.assertTrue(
+            _corridor_submission_policy_allows(
+                authority_only=False,
+                time_scale_hard_authority=False,
+            )
+        )
+
     def test_not_due_remains_root_only(self) -> None:
         service = _TraceService(_origin(), due=False)
         resolution = _resolve(FinalBScaleScheduleAuthority(service))

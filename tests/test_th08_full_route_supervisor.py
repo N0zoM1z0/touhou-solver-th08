@@ -81,6 +81,17 @@ class FullRouteSupervisorTests(unittest.TestCase):
         self.assertFalse(default_args.trace_enemy_lifecycle_events)
         self.assertTrue(enabled_args.trace_enemy_lifecycle_events)
 
+    def test_compute_only_diagnostics_are_explicit(self) -> None:
+        default_args = build_parser().parse_args([])
+        enabled_args = build_parser().parse_args(
+            ["--trace-items", "--authority-only-corridor"]
+        )
+
+        self.assertFalse(default_args.trace_items)
+        self.assertFalse(default_args.authority_only_corridor)
+        self.assertTrue(enabled_args.trace_items)
+        self.assertTrue(enabled_args.authority_only_corridor)
+
     def test_ordinary_nonspell_control_options_are_explicit(self) -> None:
         default_args = build_parser().parse_args([])
         enabled_args = build_parser().parse_args(

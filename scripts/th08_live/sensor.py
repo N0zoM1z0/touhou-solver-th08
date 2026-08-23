@@ -41,18 +41,22 @@ class Sensor:
         self,
         reader: Any,
         *,
+        capture_items: bool = True,
         clock: Callable[[], float] = time.perf_counter,
     ) -> None:
         self._reader = reader
         self._clock = clock
+        self._capture_items = capture_items
         self._bullet_buffer = reader.allocate_buffer(
             BULLET_POOL_SIZE * BULLET_STRIDE
         )
         self._laser_buffer = reader.allocate_buffer(
             LASER_POOL_SIZE * LASER_STRIDE
         )
-        self._item_buffer = reader.allocate_buffer(
-            ITEM_POOL_SIZE * ITEM_STRIDE
+        self._item_buffer = (
+            reader.allocate_buffer(ITEM_POOL_SIZE * ITEM_STRIDE)
+            if capture_items
+            else bytearray()
         )
         self._bullet_blob = memoryview(self._bullet_buffer).cast("B")
         self._laser_blob = memoryview(self._laser_buffer).cast("B")
@@ -73,9 +77,12 @@ class Sensor:
         self._reader.read_into(LASER_POOL_BASE, self._laser_buffer)
         laser_pool_read_ms = (self._clock() - started) * 1000.0
 
-        started = self._clock()
-        self._reader.read_into(ITEM_MANAGER_BASE, self._item_buffer)
-        item_pool_read_ms = (self._clock() - started) * 1000.0
+        if self._capture_items:
+            started = self._clock()
+            self._reader.read_into(ITEM_MANAGER_BASE, self._item_buffer)
+            item_pool_read_ms = (self._clock() - started) * 1000.0
+        else:
+            item_pool_read_ms = 0.0
 
         return RawPoolCapture(
             bullet_blob=self._bullet_blob,

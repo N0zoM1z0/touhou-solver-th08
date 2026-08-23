@@ -148,6 +148,8 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertEqual(args.agent_duration, 86_400.0)
         self.assertEqual(args.trial_timeout, 86_700.0)
         self.assertGreater(args.trial_timeout, args.agent_duration)
+        self.assertTrue(args.authority_only_corridor)
+        self.assertFalse(args.trace_items)
 
     def test_pty_bridge_provides_console_handles_and_propagates_status(
         self,
@@ -217,12 +219,16 @@ class Th08WineRunnerTests(unittest.TestCase):
                 trial_timeout=4650.0,
                 kill_before_saturation=False,
                 ordinary_preexhaustion_authority=False,
+                authority_only_corridor=True,
+                trace_items=False,
             )
         self.assertIn("--armed", command)
         self.assertIn("--refuse-existing", command)
         self.assertIn("--enable-finalb-scale-source-authority", command)
         self.assertNotIn("--kill-before-saturation", command)
         self.assertNotIn("--ordinary-preexhaustion-authority", command)
+        self.assertIn("--authority-only-corridor", command)
+        self.assertNotIn("--trace-items", command)
 
     def test_pe_machine_reads_i386_coff_header(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

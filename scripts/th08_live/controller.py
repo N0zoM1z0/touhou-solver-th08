@@ -772,6 +772,14 @@ def _corridor_scale_schedule_supported(
     )
 
 
+def _corridor_submission_policy_allows(
+    *,
+    authority_only: bool,
+    time_scale_hard_authority: bool,
+) -> bool:
+    return not authority_only or time_scale_hard_authority
+
+
 def _diagnostic_constant_root_time_scale(
     schedule: Th08TimeScaleSchedule,
 ) -> Th08TimeScaleSchedule:
@@ -3083,6 +3091,18 @@ def _run_live_session(
                         if not ITEM_OBJECTIVES_ENABLED
                         else "certified_viable_tiebreaker"
                     ),
+                    "item_sensor_enabled": (
+                        ITEM_OBJECTIVES_ENABLED or bool(args.trace_items)
+                    ),
+                    "item_sensor_role": (
+                        "control_objective"
+                        if ITEM_OBJECTIVES_ENABLED
+                        else (
+                            "explicit_trace_only"
+                            if args.trace_items
+                            else "disabled_no_control_consumer"
+                        )
+                    ),
                     "boss_phase_sensor": (
                         "native_registry_health_timer_and_damage_gate"
                     ),
@@ -3271,6 +3291,12 @@ def _run_live_session(
                         if not args.local_only
                         else "disabled"
                     ),
+                    "corridor_submission_policy": (
+                        "hard_time_scale_authority_only"
+                        if args.authority_only_corridor
+                        else "diagnostic_and_authoritative"
+                    ),
+                    "corridor_background_low_priority": False,
                     "viability_grid_step": (
                         TH08_CORRIDOR_CONFIG.grid_step
                     ),
@@ -3474,7 +3500,10 @@ def _run_live_session(
             reader,
         )
         enemy_last_submit = int(state["enemy_manager_frame"])
-        sensor = Sensor(reader)
+        item_sensor_enabled = ITEM_OBJECTIVES_ENABLED or bool(
+            args.trace_items
+        )
+        sensor = Sensor(reader, capture_items=item_sensor_enabled)
         deadline = time.perf_counter() + args.duration
         while time.perf_counter() < deadline:
             if args.stop_file is not None and args.stop_file.exists():
@@ -4833,6 +4862,11 @@ def _run_live_session(
                     horizon=corridor_required_scale_horizon,
                 )
             )
+            corridor_time_scale_hard_authority = (
+                _time_scale_schedule_hard_authority(
+                    captured_iteration.time_scale_schedule
+                )
+            )
             corridor_submission_due = _corridor_submit_due(
                 current_frame=counter_after_read,
                 last_submit_frame=corridor_last_submit,
@@ -4870,6 +4904,12 @@ def _run_live_session(
                 )
                 and corridor_scale_schedule_supported
                 and corridor_submission_due
+                and _corridor_submission_policy_allows(
+                    authority_only=args.authority_only_corridor,
+                    time_scale_hard_authority=(
+                        corridor_time_scale_hard_authority
+                    ),
+                )
                 and (
                     not ordinary_submission
                     or ordinary_future_projection is not None
@@ -5022,11 +5062,7 @@ def _run_live_session(
             )
             safety_value_query = policy_queries.safety_value_query
             policy_guidance = policy_queries.guidance
-            corridor_action_authority = (
-                _time_scale_schedule_hard_authority(
-                    captured_iteration.time_scale_schedule
-                )
-            )
+            corridor_action_authority = corridor_time_scale_hard_authority
             if (
                 corridor_action_authority
                 and ordinary_preexhaustion_authority
@@ -7800,6 +7836,17 @@ def _run_live_session(
                     "completed_this_decision": corridor_completed,
                     "submitted_this_decision": corridor_submitted,
                     "submission_due": corridor_submission_due,
+                    "submission_authority_required": bool(
+                        args.authority_only_corridor
+                    ),
+                    "submission_authority_available": (
+                        corridor_time_scale_hard_authority
+                    ),
+                    "authority_blocked_submission": bool(
+                        args.authority_only_corridor
+                        and corridor_submission_due
+                        and not corridor_time_scale_hard_authority
+                    ),
                     "ordinary_source_ready_for_submission": (
                         ordinary_future_projection is not None
                         if ordinary_submission
@@ -7847,7 +7894,9 @@ def _run_live_session(
                             damage_target_half_width
                         ),
                         damageable=damageable,
-                        active_item_count=len(items),
+                        active_item_count=(
+                            len(items) if item_sensor_enabled else None
+                        ),
                         item_objectives_enabled=ITEM_OBJECTIVES_ENABLED,
                         corridor_context_changed=(
                             corridor_context_changed
