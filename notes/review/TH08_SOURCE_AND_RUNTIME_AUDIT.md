@@ -266,10 +266,12 @@ would therefore predictably terminate before Final-B, with less headroom as
 later stages become denser. The calibration summary is retained, but it is not
 a policy result.
 
-**Fixed offline:** the Wine host defaults to a 7,200-second agent budget and
-7,350-second trial timeout. This changes only the outer wall-clock watchdog;
-game frames, solver horizons, menu path, policy flags, and hit metric are
-unchanged. Physical full-route acceptance remains pending.
+**Fixed offline:** the Wine host defaults to a deliberately nonbinding
+86,400-second agent budget and 86,700-second trial timeout. Normal termination
+is `route_complete`; the separate 120-second trace-stall gate remains active.
+This changes only the outer wall-clock watchdog; game frames, solver horizons,
+menu path, policy flags, and hit metric are unchanged. Physical full-route
+acceptance remains pending.
 
 ## Runtime Isolation Record
 

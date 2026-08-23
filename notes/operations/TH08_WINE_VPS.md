@@ -64,10 +64,12 @@ Sakuya/Remilia team selection. The baseline command does not enable the
 experimental ordinary pre-exhaustion authority or kill-before-saturation
 objective. Add those flags only for a declared comparison.
 
-The Wine runner uses a 7,200-second agent budget and 7,350-second trial
-timeout. The retained route is about 239,000 game frames; this accommodates
-the VPS's measured sub-realtime Wine rate without changing any in-game timing
-or policy parameter.
+The Wine runner uses a deliberately nonbinding 24-hour agent budget and a
+24-hour-plus-five-minute trial timeout. Normal termination is `route_complete`;
+the independent 120-second trace-stall gate still stops a genuinely frozen
+run. The retained route is about 239,000 game frames, so this avoids coupling
+acceptance to the VPS's sub-realtime Wine rate without changing any in-game
+timing or policy parameter.
 
 The default affinity is CPUs `24-47`, bounding the whole Wine/controller tree
 to 24 of the VPS's 96 logical CPUs. Override with `--cpu-list` when necessary.
