@@ -17,6 +17,17 @@ _FUNCTION_CACHE: dict[str, Any] = {}
 _FUNCTION_GROUP_CACHE: dict[str, tuple[Any, ...]] = {}
 
 
+def _windows_build_directory(pointer_size: int | None = None) -> str:
+    """Select the native DLL architecture of the current Python process."""
+
+    size = ctypes.sizeof(ctypes.c_void_p) if pointer_size is None else pointer_size
+    if size == 4:
+        return "windows-x86"
+    if size == 8:
+        return "windows-x86_64"
+    raise RuntimeError(f"unsupported Windows pointer size: {size}")
+
+
 def library_path() -> Path:
     """Return the platform-specific native planner library path."""
 
@@ -25,7 +36,7 @@ def library_path() -> Path:
             ROOT
             / "native"
             / "build"
-            / "windows-x86_64"
+            / _windows_build_directory()
             / "touhou_viability.dll"
         )
     return (

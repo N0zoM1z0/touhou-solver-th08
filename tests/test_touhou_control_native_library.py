@@ -44,6 +44,18 @@ class NativeLibraryTests(unittest.TestCase):
         self.assertEqual(library.library_path().name, expected_name)
         self.assertEqual(library.library_path().parents[2], library.ROOT / "native")
 
+    def test_windows_library_directory_follows_python_pointer_width(self) -> None:
+        self.assertEqual(
+            library._windows_build_directory(4),
+            "windows-x86",
+        )
+        self.assertEqual(
+            library._windows_build_directory(8),
+            "windows-x86_64",
+        )
+        with self.assertRaisesRegex(RuntimeError, "pointer size"):
+            library._windows_build_directory(16)
+
     def test_disable_environment_skips_load_without_poisoning_retry(self) -> None:
         sentinel = object()
         with (

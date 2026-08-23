@@ -69,6 +69,7 @@ Native build:
 ```bash
 python3 scripts/tools/build_native_planner.py --target linux
 python3 scripts/tools/build_native_planner.py --target windows
+python3 scripts/tools/build_native_planner.py --target windows-x86
 ```
 
 Physical launch is user-authorized only:

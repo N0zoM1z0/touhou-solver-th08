@@ -111,14 +111,31 @@ AUD-001.
 
 ### AUD-004 — Windows native planner assumes x86-64
 
-Status: **OPEN**
+Status: **FIXED-OFFLINE**
 
 **Observed:** the game is PE32. This host provides
 `i686-w64-mingw32-g++` but not `x86_64-w64-mingw32-g++`. The build tool and
 runtime loader nevertheless hard-code `windows-x86_64/touhou_viability.dll`.
 
-Acceptance: support an explicit Win32 target and select the DLL by controller
-pointer width without changing Linux or existing x86-64 behavior.
+**Fixed offline:** `build_native_planner.py --target windows-x86` now uses the
+host's `i686-w64-mingw32-g++` and writes
+`native/build/windows-x86/touhou_viability.dll`. The loader selects x86 or
+x86-64 by the controlling Python process's pointer width while preserving the
+existing Linux and `--target windows` paths. The host produced a PE32 i386 DLL
+whose 45 exports match the checked-in manifest; Wine load smoke remains the
+runtime acceptance check.
+
+### AUD-007 — Native ABI manifest omits a shipped export
+
+Status: **FIXED-OFFLINE**
+
+**Observed:** the public header, implementation, Python binding, and built
+Linux library all contain `touhou_annular_sector_frame_clearance_v1`, but
+`native/abi_symbols_v1.txt` omitted it. The authoritative header/manifest test
+therefore failed even before a Wine run.
+
+**Fixed:** the symbol is now in the manifest, and Linux plus both Windows
+architecture export checks consume the same 45-symbol list.
 
 ### AUD-005 — TH08 lacks a prefix-scoped Wine host runner
 

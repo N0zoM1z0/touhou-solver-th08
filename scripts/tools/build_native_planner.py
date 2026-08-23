@@ -89,7 +89,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--target",
-        choices=("linux", "windows", "all"),
+        choices=("linux", "windows", "windows-x86", "all"),
         default="linux",
     )
     parser.add_argument(
@@ -137,6 +137,27 @@ def main(argv: list[str] | None = None) -> int:
                 / "native"
                 / "build"
                 / "windows-x86_64"
+                / "touhou_viability.dll"
+            ),
+            windows=True,
+            profile=args.profile,
+        )
+    if args.target == "windows-x86":
+        compiler = (
+            os.environ.get("MINGW32_CXX")
+            or shutil.which("i686-w64-mingw32-g++")
+        )
+        if compiler is None:
+            parser.error(
+                "i686-w64-mingw32-g++ is required for the Win32 backend"
+            )
+        _build(
+            compiler=compiler,
+            output=(
+                ROOT
+                / "native"
+                / "build"
+                / "windows-x86"
                 / "touhou_viability.dll"
             ),
             windows=True,

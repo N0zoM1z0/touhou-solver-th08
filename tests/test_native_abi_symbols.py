@@ -30,16 +30,19 @@ def _binary_symbols(*, tool: str, library: Path) -> tuple[str, ...]:
         capture_output=True,
         text=True,
     )
-    return tuple(
-        sorted(
-            fields[-1]
-            for line in completed.stdout.splitlines()
-            if (
-                (fields := line.split())
-                and fields[-1].startswith("touhou_")
-            )
-        )
-    )
+    symbols: list[str] = []
+    for line in completed.stdout.splitlines():
+        fields = line.split()
+        if not fields:
+            continue
+        symbol = fields[-1]
+        # i686 PE/COFF's object symbol table prefixes cdecl names with one
+        # underscore even though the DLL export table exposes them undecorated.
+        if symbol.startswith("_touhou_"):
+            symbol = symbol[1:]
+        if symbol.startswith("touhou_"):
+            symbols.append(symbol)
+    return tuple(sorted(symbols))
 
 
 class NativeAbiSymbolTests(unittest.TestCase):
@@ -341,7 +344,7 @@ class NativeAbiSymbolTests(unittest.TestCase):
     def test_built_libraries_match_checked_in_export_manifest(self) -> None:
         expected = _manifest_symbols()
         self.assertEqual(expected, tuple(sorted(set(expected))))
-        self.assertEqual(len(expected), 44)
+        self.assertEqual(len(expected), 45)
         targets = (
             (
                 shutil.which("nm"),
@@ -357,6 +360,14 @@ class NativeAbiSymbolTests(unittest.TestCase):
                 / "native"
                 / "build"
                 / "windows-x86_64"
+                / "touhou_viability.dll",
+            ),
+            (
+                shutil.which("i686-w64-mingw32-nm"),
+                ROOT
+                / "native"
+                / "build"
+                / "windows-x86"
                 / "touhou_viability.dll",
             ),
         )

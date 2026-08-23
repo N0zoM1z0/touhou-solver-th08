@@ -714,7 +714,12 @@ performance gates concurrently.
 ```bash
 python3 scripts/tools/build_native_planner.py --target linux
 python3 scripts/tools/build_native_planner.py --target windows
+python3 scripts/tools/build_native_planner.py --target windows-x86
 ```
+
+`windows` preserves the existing x86-64 target. Use `windows-x86` for the
+32-bit embeddable Python process that controls the PE32 TH08 executable under
+Wine; the runtime loader selects between them from Python's pointer width.
 
 Use `TOUHOU_DISABLE_NATIVE_PLANNER=1` only for an explicit rollback/ablation.
 
