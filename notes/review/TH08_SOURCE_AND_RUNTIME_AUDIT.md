@@ -677,7 +677,7 @@ tracked in `TH08_SOURCE_AUTHORITATIVE_SOLVER_AUDIT.md`.
 
 ### AUD-030 — Direct-fire fan parity and automatic player aim diverge from source
 
-Status: **CONFIRMED-SOURCE; OFFLINE FIX NEXT**
+Status: **FIXED-OFFLINE; NOT YET LIVE ACTION AUTHORITY**
 
 `BulletManager::FUN_0042f5f0` uses `descriptor->count1 & 1` to center fan
 modes 0 and 1.  The future-birth envelope instead uses instruction flags.  A
@@ -687,13 +687,30 @@ decoded Route-2 fan sites with literal count1, 42 have count/flag parity
 disagreement; of the 45 fully literal sites, 22 are affected.
 
 The same source function automatically adds `angleToPlayer` in modes 0, 2,
-and 4.  The ordinary source builder currently sets `aim_angle=0.0` for every
-event, and causal future conditioning consequently preserves a false zero
-rather than recomputing aim from each candidate player path.  Fix both in one
-versioned spawn-semantics change and gate it with an independent source
-transcription, decoded-ECL atlas differential, and 1,536-bullet density stress.
+and 4.  The pre-fix ordinary source builder set `aim_angle=0.0` for every
+event, and causal future conditioning consequently preserved a false zero
+rather than recomputing aim from each candidate player path.  The versioned
+spawn-semantics change is gated with an independent source transcription,
+decoded-ECL atlas differential, and 1,536-bullet density stress.
 Do not alter the signed-low-word count decoder: `BulletSpawnDescriptor`
 stores count1/count2 as signed 16-bit fields, so that behavior is correct.
+
+The versioned fix now uses count1 parity, computes native mode aim from the
+descriptor origin (`enemy position + emission offset`), recomputes that
+independent dependency for each causal player path, and uses the source
+binary32 `ZUN_PI`/`ZUN_2PI` values.  The tracked
+`th08_source_spawn_pattern_differential_20260824.json` independently
+transcribes deterministic source modes 0..5.  It reproduces 9,792 legacy
+failures in 58,752 synthetic samples and records zero corrected failures at a
+`2e-6` tolerance; maximum corrected speed/angle errors are
+`1.967e-7/8.600e-7`.  Across 64 fully literal deterministic Route-2 sites and
+1,643 spawned samples it again records zero failures, with maximum errors
+`3.725e-7/4.172e-7`.
+
+The 80-frame pool stress lowers all 1,536 requested births to 1,536 unique,
+finite sector envelopes and checks 122,880 active radial samples.  This closes
+spawn-pattern math only.  Runtime ECL reachability, rank, RNG modes 6..8,
+transforms, lifecycle, and live strategy remain outside its authority.
 
 ### AUD-031 — GEO-001B complete route exposes material Stage-5 false hazards
 

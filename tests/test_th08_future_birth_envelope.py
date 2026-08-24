@@ -9,6 +9,7 @@ import unittest
 from th08_future_birth_envelope import (
     FloatInterval,
     FutureDirectFire,
+    _pattern_speed_angle,
     lower_future_direct_fire,
     lower_future_direct_fire_sectors,
     state2_position_coefficient,
@@ -71,6 +72,55 @@ def _angular_velocity_program(*, acceleration: float = 0.5) -> bytes:
 
 
 class FutureBirthEnvelopeTests(unittest.TestCase):
+    def test_fan_centering_uses_count_parity_not_flag_parity(self) -> None:
+        odd_count_even_flags = _h1_event(
+            count1=3,
+            original_flags=0,
+            angle1=FloatInterval.point(0.25),
+            angle2=FloatInterval.point(0.4),
+        )
+        _speed, angle = _pattern_speed_angle(
+            odd_count_even_flags,
+            bullet_index=0,
+            ring_index=0,
+        )
+        self.assertEqual(angle, FloatInterval.point(0.25))
+
+        even_count_odd_flags = _h1_event(
+            count1=2,
+            original_flags=1,
+            angle1=FloatInterval.point(0.25),
+            angle2=FloatInterval.point(0.4),
+        )
+        _speed, angle = _pattern_speed_angle(
+            even_count_odd_flags,
+            bullet_index=0,
+            ring_index=0,
+        )
+        self.assertEqual(angle, FloatInterval.point(0.45))
+
+    def test_mode_four_uses_source_binary32_pi_constants(self) -> None:
+        source_pi = struct.unpack("<f", struct.pack("<f", math.pi))[0]
+        source_two_pi = struct.unpack(
+            "<f", struct.pack("<f", source_pi * 2.0)
+        )[0]
+        event = _h1_event(
+            mode=4,
+            count1=3,
+            original_flags=0,
+            angle1=FloatInterval.point(0.0),
+            angle2=FloatInterval.point(0.0),
+        )
+
+        _speed, angle = _pattern_speed_angle(
+            event,
+            bullet_index=2,
+            ring_index=0,
+        )
+
+        expected = source_pi / 3 + 2 * source_two_pi / 3
+        self.assertEqual(angle, FloatInterval.point(expected))
+
     def test_native_state2_coefficients_retain_half_step_completion(self) -> None:
         self.assertEqual(state2_position_coefficient(1), -3.5)
         self.assertEqual(state2_position_coefficient(9), 0.5)

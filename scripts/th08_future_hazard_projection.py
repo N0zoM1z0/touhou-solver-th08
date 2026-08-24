@@ -8,6 +8,7 @@ import math
 from dataclasses import dataclass, field
 
 from th08_future_birth_envelope import (
+    AUTOMATIC_PLAYER_AIM_MODES,
     FUTURE_BIRTH_SECTOR_SEMANTICS_VERSION,
     FloatInterval,
     FutureDirectFire,
@@ -29,7 +30,7 @@ from touhou_control.pipeline_identity import VersionIdentity
 
 
 ORDINARY_FUTURE_HAZARD_PROJECTION_SCHEMA = (
-    "th08-ordinary-future-hazard-projection-v4-causal-events"
+    "th08-ordinary-future-hazard-projection-v5-source-auto-aim"
 )
 
 _TWO_PI = 2.0 * math.pi
@@ -318,7 +319,7 @@ def _build_projection(
         ).encode("utf-8")
     ).hexdigest()
     version = VersionIdentity.from_mapping(
-        "th08-ordinary-future-hazard-projection-v4",
+        "th08-ordinary-future-hazard-projection-v5",
         {
             "root_frame": root_frame,
             "horizon_frames": horizon_frames,
@@ -548,11 +549,14 @@ def condition_future_hazard_projection_on_player_paths(
                             event.angle2_player_aim_coefficient
                         )
                     ),
-                    # The analyzer already folds native player-aim operands
-                    # into angle1/angle2 and publishes zero here. Preserve
-                    # any independently proven mode offset instead of
-                    # manufacturing a second player dependency.
-                    aim_angle=event.aim_angle,
+                    # Modes 0/2/4 add angleToPlayer inside the native spawn
+                    # helper, independently of any ECL operand that already
+                    # reads the same player-aim variable.
+                    aim_angle=(
+                        causal_aim
+                        if event.mode in AUTOMATIC_PLAYER_AIM_MODES
+                        else event.aim_angle
+                    ),
                     half_width=event.half_width,
                     half_height=event.half_height,
                     original_flags=event.original_flags,

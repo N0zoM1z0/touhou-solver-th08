@@ -36,7 +36,11 @@ from typing import Any
 
 from th08_ecl_tool.core import EclFile, SubInstruction
 from th08_enemy_collision import enemy_contact_size_to_lethal_half_extent
-from th08_future_birth_envelope import FloatInterval, FutureDirectFire
+from th08_future_birth_envelope import (
+    AUTOMATIC_PLAYER_AIM_MODES,
+    FloatInterval,
+    FutureDirectFire,
+)
 from th08_future_hazard_projection import (
     OrdinaryFutureHazardProjection,
     complete_future_hazard_projection,
@@ -55,7 +59,7 @@ from touhou_control.corridor import AabbHazard, AabbTrajectoryHazard
 
 
 ORDINARY_FUTURE_SOURCE_SEMANTICS_VERSION = (
-    "th08-ordinary-future-sources-v16-native-enemy-contact-division"
+    "th08-ordinary-future-sources-v17-source-spawn-pattern"
 )
 _PROJECTION_SCHEMA = "th08-native-snapshot-collision-control-projection-v14"
 _DIRECT_FIRE_OPCODES = frozenset(range(0x60, 0x69))
@@ -1449,6 +1453,30 @@ def _direct_fire_events(
         half_width=half_width,
         half_height=half_height,
     )
+    mode = int(instruction.opcode) - 0x60
+    if mode in AUTOMATIC_PLAYER_AIM_MODES:
+        compact_state = payload.get("compact_state")
+        if not isinstance(compact_state, dict):
+            _fail("compact root is absent for automatic direct-fire aim")
+        root_player_x = compact_state.get("player_x")
+        root_player_y = compact_state.get("player_y")
+        if not isinstance(root_player_x, (int, float)) or not isinstance(
+            root_player_y, (int, float)
+        ):
+            _fail("compact player root is absent for automatic direct-fire aim")
+        _finite(
+            (root_player_x, root_player_y),
+            label="compact player root",
+        )
+        mode_aim_angle = _aim_interval(
+            source_x=origin_x,
+            source_y=origin_y,
+            root_player_x=float(root_player_x),
+            root_player_y=float(root_player_y),
+            frame=frame,
+        )
+    else:
+        mode_aim_angle = FloatInterval.point(0.0)
     return (
         FutureDirectFire(
             source=(
@@ -1458,14 +1486,14 @@ def _direct_fire_events(
             activation_frames=(frame,),
             origin_x=origin_x,
             origin_y=origin_y,
-            mode=int(instruction.opcode) - 0x60,
+            mode=mode,
             count1=count1,
             count2=count2,
             speed1=speed1,
             speed2=speed2,
             angle1=angle1,
             angle2=angle2,
-            aim_angle=FloatInterval.point(0.0),
+            aim_angle=mode_aim_angle,
             half_width=half_width,
             half_height=half_height,
             original_flags=original_flags,

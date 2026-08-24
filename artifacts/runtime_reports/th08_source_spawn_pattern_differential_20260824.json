@@ -1,0 +1,160 @@
+{
+  "authority": {
+    "accepted_for": "deterministic direct-fire modes 0..5, fan count parity, automatic mode-aim presence, source pi constants, decoded source-owned site inventory, and 1536-birth finite lowering",
+    "not_accepted_for": "runtime ECL reachability, rank adjustment, RNG modes 6..8, pool allocation order after saturation, transforms, ANM lifecycle, executable x87 excess precision, or live action authority"
+  },
+  "pool_density_stress": {
+    "active_radial_sample_count": 122880,
+    "all_values_finite": true,
+    "count1": 384,
+    "count2": 4,
+    "horizon_frames": 80,
+    "lowered_envelope_count": 1536,
+    "native_pool_capacity": 1536,
+    "requested_birth_count": 1536,
+    "unique_pattern_index_count": 1536
+  },
+  "report_digest": "9135f2d761dd65a79ab416f0e8af71f64c72b5ae314518e22e1aaddf595bc9c3",
+  "route2_source_atlas": {
+    "path": "/home/yann/yann/touhou/th08-research/touhou-solver-th08/artifacts/runtime_reports/th08_source_emission_program_atlas_20260731.json",
+    "route": {
+      "automatic_player_aim_sites": 128,
+      "fan_count_flag_parity_disagreement_sites": 42,
+      "fan_fully_literal_parity_disagreement_sites": 22,
+      "fan_fully_literal_sites": 45,
+      "fan_literal_count_sites": 83,
+      "fixed_mismatch_count": 0,
+      "fully_literal_deterministic_sites_sampled": 64,
+      "fully_literal_spawn_samples": 1643,
+      "maximum_fixed_speed_absolute_error": 3.725290298461914e-07,
+      "maximum_fixed_wrapped_angle_error": 4.172325134277344e-07,
+      "maximum_numeric_witness": {
+        "angle_error": 4.172325134277344e-07,
+        "bullet_index": 30,
+        "count1": 48,
+        "count2": 3,
+        "mode": 2,
+        "ring_index": 0,
+        "speed_error": 0.0,
+        "stage": "stage3",
+        "symbolic_id": "ecldata3.ecl:sub:2:0x00000758"
+      },
+      "representative_automatic_aim_angle": 0.8125
+    },
+    "schema": "th08-source-emission-program-atlas-v1",
+    "sha256": "6ae9494a40ff5a08143564c653b3c2007e1125063a16b1108854db84f74531b5",
+    "source_owned_site_deduplication": "symbolic_id",
+    "stages": [
+      {
+        "automatic_player_aim_sites": 42,
+        "fan_count_flag_parity_disagreement_sites": 6,
+        "fan_fully_literal_parity_disagreement_sites": 5,
+        "fan_fully_literal_sites": 13,
+        "fan_literal_count_sites": 26,
+        "key": "stage1",
+        "label": "Stage 1"
+      },
+      {
+        "automatic_player_aim_sites": 22,
+        "fan_count_flag_parity_disagreement_sites": 11,
+        "fan_fully_literal_parity_disagreement_sites": 8,
+        "fan_fully_literal_sites": 15,
+        "fan_literal_count_sites": 18,
+        "key": "stage2",
+        "label": "Stage 2"
+      },
+      {
+        "automatic_player_aim_sites": 16,
+        "fan_count_flag_parity_disagreement_sites": 10,
+        "fan_fully_literal_parity_disagreement_sites": 5,
+        "fan_fully_literal_sites": 8,
+        "fan_literal_count_sites": 13,
+        "key": "stage3",
+        "label": "Stage 3"
+      },
+      {
+        "automatic_player_aim_sites": 43,
+        "fan_count_flag_parity_disagreement_sites": 3,
+        "fan_fully_literal_parity_disagreement_sites": 0,
+        "fan_fully_literal_sites": 4,
+        "fan_literal_count_sites": 11,
+        "key": "stage4a",
+        "label": "Stage 4A / Reimu"
+      },
+      {
+        "automatic_player_aim_sites": 4,
+        "fan_count_flag_parity_disagreement_sites": 5,
+        "fan_fully_literal_parity_disagreement_sites": 0,
+        "fan_fully_literal_sites": 1,
+        "fan_literal_count_sites": 8,
+        "key": "stage5",
+        "label": "Stage 5"
+      },
+      {
+        "automatic_player_aim_sites": 1,
+        "fan_count_flag_parity_disagreement_sites": 7,
+        "fan_fully_literal_parity_disagreement_sites": 4,
+        "fan_fully_literal_sites": 4,
+        "fan_literal_count_sites": 7,
+        "key": "final_b",
+        "label": "Final B / Kaguya"
+      }
+    ]
+  },
+  "schema": "th08-source-spawn-pattern-differential-v1",
+  "source_authority": {
+    "automatic_player_aim_modes": [
+      0,
+      2,
+      4
+    ],
+    "fan_centering_operand": "descriptor.count1 & 1",
+    "function": "BulletManager::FUN_0042f5f0",
+    "matching_ledger": "../th08/config/matches.csv",
+    "source_path": "../th08/src/BulletManager.cpp",
+    "source_pi_bits": "0x40490fdb",
+    "source_two_pi_bits": "0x40c90fdb"
+  },
+  "synthetic_differential": {
+    "count1_range": [
+      1,
+      17
+    ],
+    "count2_values": [
+      1,
+      2,
+      5,
+      8
+    ],
+    "first_legacy_witness": {
+      "bullet_index": 0,
+      "count1": 1,
+      "count2": 1,
+      "legacy_angle_error": 0.06499999761581421,
+      "mode": 0,
+      "original_flags": 0,
+      "ring_index": 0
+    },
+    "fixed_mismatch_count": 0,
+    "legacy_mismatch_count": 9792,
+    "maximum_fixed_speed_absolute_error": 1.9669532780319798e-07,
+    "maximum_fixed_wrapped_angle_error": 8.600098748701157e-07,
+    "maximum_legacy_wrapped_angle_error": 0.06500005722045898,
+    "modes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "original_flags": [
+      0,
+      1,
+      514,
+      515
+    ],
+    "sample_count": 58752,
+    "semantic_tolerance": 2e-06
+  }
+}

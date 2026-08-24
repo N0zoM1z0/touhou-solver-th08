@@ -179,6 +179,47 @@ class FutureHazardProjectionTests(unittest.TestCase):
             FloatInterval.point(0.0),
         )
 
+    def test_causal_path_recomputes_automatic_mode_aim(self) -> None:
+        event = replace(
+            _event(),
+            activation_frames=(2,),
+            mode=0,
+            angle1=FloatInterval.point(0.0),
+            angle2=FloatInterval.point(0.0),
+            aim_angle=FloatInterval(-math.pi, math.pi),
+            angle1_player_aim_coefficient=0.0,
+            angle1_player_aim_residual=FloatInterval.point(0.0),
+            angle2_player_aim_coefficient=0.0,
+            angle2_player_aim_residual=FloatInterval.point(0.0),
+        )
+        projection = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=10,
+            events=(event,),
+            source_semantics_version="test-source-auto-aim-v1",
+        )
+        paths = tuple((((200.0, 80.0),)) for _ in range(11))
+
+        conditioned = condition_future_hazard_projection_on_player_paths(
+            projection,
+            source_frame=100,
+            horizon_frames=10,
+            player_positions_by_step=paths,
+        )
+
+        causal = conditioned.direct_fire_events[0]
+        self.assertLess(causal.aim_angle.upper - causal.aim_angle.lower, 1e-3)
+        wrapped_midpoint = (
+            (causal.aim_angle.midpoint + math.pi) % (2.0 * math.pi)
+            - math.pi
+        )
+        self.assertAlmostEqual(wrapped_midpoint, 0.0, places=5)
+        self.assertLess(
+            conditioned.trajectories[0].maximum_angle
+            - conditioned.trajectories[0].minimum_angle,
+            1e-3,
+        )
+
     def test_causal_player_path_fails_closed_without_affine_metadata(self) -> None:
         projection = complete_future_hazard_projection(
             root_frame=100,

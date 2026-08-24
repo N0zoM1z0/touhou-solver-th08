@@ -334,6 +334,15 @@ rather than Python's double-precision `math.pi`.  Rank adjustment is a
 separate pending correction: source adds the full adjustment to nonzero
 `speed1`, half to `speed2`, and clamps each adjusted speed to 0.3.
 
+AUD-030 now fixes and versions these three spawn semantics.  Its independent
+source transcription reports zero corrected mismatches in 58,752 synthetic
+samples and 1,643 samples from 64 fully literal deterministic source-owned
+Route-2 sites.  The former flag-parity implementation produces 9,792 failures
+on the same synthetic sweep.  A full-pool 1,536-birth, 80-frame stress lowers
+all births into unique finite envelopes.  This is a source-exact offline
+component gate, not a claim that the still-disabled ordinary model covers
+active spells or that the global planner may consume it.
+
 ## Proposed Simpler Architecture
 
 ```text

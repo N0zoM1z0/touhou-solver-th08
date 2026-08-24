@@ -4,6 +4,7 @@ import math
 import struct
 import unittest
 from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -1275,6 +1276,8 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
         self.assertEqual(closure.auxiliary_count, 1)
         self.assertEqual(len(closure.direct_fire_events), 1)
         event = closure.direct_fire_events[0]
+        self.assertEqual(event.mode, 1)
+        self.assertEqual(event.aim_angle, FloatInterval.point(0.0))
         self.assertGreater(event.angle1.upper, event.angle1.lower)
         self.assertEqual(event.angle1_player_aim_coefficient, 1.0)
         self.assertIsNotNone(event.angle1_player_aim_residual)
@@ -1288,6 +1291,46 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
             len(closure.direct_fire_events),
         )
         self.assertTrue(closure.projection.coverage.complete)
+
+    def test_automatic_aim_mode_retains_native_player_angle(self) -> None:
+        payload = _payload()
+        payload["enemy_manager_template_source"]["emission_state"]["rows"][
+            0
+        ]["emission_offset"] = [100.0, 0.0, 0.0]
+        replaced = False
+        subroutines = []
+        for subroutine in ECL.subroutines:
+            instructions = []
+            for instruction in subroutine.instructions:
+                if instruction.offset == 0x2E7C:
+                    instruction = replace(instruction, opcode=0x60)
+                    replaced = True
+                instructions.append(instruction)
+            subroutines.append(
+                replace(subroutine, instructions=tuple(instructions))
+            )
+        self.assertTrue(replaced)
+        aimed_ecl = replace(ECL, subroutines=tuple(subroutines))
+
+        closure = project_ordinary_future_sources(
+            payload,
+            aimed_ecl,
+            horizon_frames=1,
+        )
+
+        self.assertEqual(len(closure.direct_fire_events), 1)
+        event = closure.direct_fire_events[0]
+        self.assertEqual(event.mode, 0)
+        self.assertGreater(event.aim_angle.upper, event.aim_angle.lower)
+        self.assertNotEqual(event.aim_angle, FloatInterval.point(0.0))
+        descriptor_root_angle = math.atan2(432.0 - 32.0, 192.0 - 160.0)
+        source_center_angle = math.atan2(432.0 - 32.0, 192.0 - 60.0)
+        self.assertLessEqual(event.aim_angle.lower, descriptor_root_angle)
+        self.assertGreaterEqual(event.aim_angle.upper, descriptor_root_angle)
+        self.assertGreater(
+            abs(event.aim_angle.midpoint - source_center_angle),
+            0.1,
+        )
 
     def test_active_hostile_body_motion_is_consumed_from_root(self) -> None:
         payload = deepcopy(_payload())

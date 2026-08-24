@@ -21,12 +21,15 @@ from touhou_control.corridor import (
 
 
 FUTURE_BIRTH_ENVELOPE_SEMANTICS_VERSION = (
-    "th08-future-birth-envelope-v3-motion-transform-disc"
+    "th08-future-birth-envelope-v4-source-spawn-pattern"
 )
 FUTURE_BIRTH_SECTOR_SEMANTICS_VERSION = (
-    "th08-future-birth-sector-v3-motion-transform-disc-envelope"
+    "th08-future-birth-sector-v4-source-spawn-pattern"
 )
 _TWO_PI = 2.0 * math.pi
+_ZUN_PI = struct.unpack("<f", struct.pack("<f", math.pi))[0]
+_ZUN_TWO_PI = struct.unpack("<f", struct.pack("<f", _ZUN_PI * 2.0))[0]
+AUTOMATIC_PLAYER_AIM_MODES = frozenset((0, 2, 4))
 _STATE2_COMPLETION_AGE = 10
 _KNOWN_NONPROGRAM_FLAGS = 0x0203
 _TRANSFORM_PROGRAM_LENGTH = 18
@@ -415,7 +418,7 @@ def _pattern_speed_angle(
     speed = _speed_for_ring(event, ring_index)
     angle = event.angle1
     if event.mode in (0, 1):
-        if event.original_flags & 1:
+        if event.count1 & 1:
             lateral = event.angle2.scale((bullet_index + 1) // 2)
         else:
             lateral = event.angle2.scale(bullet_index // 2 + 0.5)
@@ -427,7 +430,7 @@ def _pattern_speed_angle(
     elif event.mode in (2, 3):
         angle = angle.add(
             FloatInterval.point(
-                bullet_index * _TWO_PI / event.count1
+                bullet_index * _ZUN_TWO_PI / event.count1
             )
         ).add(event.angle2.scale(ring_index))
         if event.mode == 2:
@@ -435,8 +438,8 @@ def _pattern_speed_angle(
     elif event.mode in (4, 5):
         angle = angle.add(
             FloatInterval.point(
-                math.pi / event.count1
-                + bullet_index * _TWO_PI / event.count1
+                _ZUN_PI / event.count1
+                + bullet_index * _ZUN_TWO_PI / event.count1
             )
         )
         if event.mode == 4:
@@ -453,7 +456,7 @@ def _pattern_speed_angle(
         )
         angle = angle.add(
             FloatInterval.point(
-                bullet_index * _TWO_PI / event.count1
+                bullet_index * _ZUN_TWO_PI / event.count1
             )
         ).add(event.angle2.scale(ring_index))
     elif event.mode == 8:
@@ -695,6 +698,7 @@ def lower_complete_future_birth_sectors(
 
 
 __all__ = [
+    "AUTOMATIC_PLAYER_AIM_MODES",
     "FUTURE_BIRTH_ENVELOPE_SEMANTICS_VERSION",
     "FUTURE_BIRTH_SECTOR_SEMANTICS_VERSION",
     "FloatInterval",
