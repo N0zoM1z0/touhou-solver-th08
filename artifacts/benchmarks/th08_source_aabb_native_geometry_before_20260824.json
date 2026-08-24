@@ -1,0 +1,82 @@
+{
+  "schema": "th08-local-hazard-geometry-benchmark-v1",
+  "label": "source_aabb_before_optimization",
+  "environment": {
+    "platform": "Linux-6.1.0-52-cloud-amd64-x86_64-with-glibc2.36",
+    "native_library": "/home/yann/yann/touhou/th08-research/touhou-solver-th08/native/build/linux-x86_64/libtouhou_viability.so"
+  },
+  "boundary": "Ten sequential local hazard queries over fixed already-projected float32 geometry. Includes ctypes validation/conversion and output allocation; excludes pool decode, lifecycle lowering, beam reduction, and action selection.",
+  "samples": 50,
+  "warmup": 8,
+  "results": {
+    "certificate_laser_storm": {
+      "position_count": 81,
+      "bullet_count": 111,
+      "laser_count": 210,
+      "body_count": 5,
+      "sequence_steps": 10,
+      "native": {
+        "median_ms": 1.1862795217894018,
+        "p95_ms": 1.3942080549895763,
+        "max_ms": 9.192646015435457
+      },
+      "python": {
+        "median_ms": 3.7979670451022685,
+        "p95_ms": 4.134383983910084,
+        "max_ms": 4.134383983910084
+      },
+      "parity": {
+        "collision_exact": true,
+        "clearance_sign_exact": true,
+        "maximum_risk_absolute_difference": 0.02709171849710401,
+        "maximum_clearance_absolute_difference": 0.0
+      }
+    },
+    "beam_laser_storm": {
+      "position_count": 240,
+      "bullet_count": 600,
+      "laser_count": 210,
+      "body_count": 5,
+      "sequence_steps": 10,
+      "native": {
+        "median_ms": 16.0460764891468,
+        "p95_ms": 16.22933999169618,
+        "max_ms": 16.322960960678756
+      },
+      "python": {
+        "median_ms": 40.908315451815724,
+        "p95_ms": 41.670712060295045,
+        "max_ms": 41.670712060295045
+      },
+      "parity": {
+        "collision_exact": true,
+        "clearance_sign_exact": true,
+        "maximum_risk_absolute_difference": 0.022677951375953853,
+        "maximum_clearance_absolute_difference": 9.5367431640625e-07
+      }
+    },
+    "certificate_irrelevant_segments": {
+      "position_count": 81,
+      "bullet_count": 111,
+      "laser_count": 240,
+      "body_count": 5,
+      "sequence_steps": 10,
+      "native": {
+        "median_ms": 0.8121164864860475,
+        "p95_ms": 0.9607620304450393,
+        "max_ms": 1.1643359903246164
+      },
+      "python": {
+        "median_ms": 2.3924644920043647,
+        "p95_ms": 2.8271080227568746,
+        "max_ms": 2.8271080227568746
+      },
+      "parity": {
+        "collision_exact": true,
+        "clearance_sign_exact": true,
+        "maximum_risk_absolute_difference": 0.00041087080808210885,
+        "maximum_clearance_absolute_difference": 1.9073486328125e-06
+      }
+    }
+  }
+}

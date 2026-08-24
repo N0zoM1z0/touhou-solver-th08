@@ -27,6 +27,12 @@ continue to live in `TH08_SOURCE_AND_RUNTIME_AUDIT.md`.
   source-authoritative under the current contract, so its lower local latency
   and useful-but-unsound guidance are diagnostic rather than promotion
   authority.
+- Latest source-AABB physical route:
+  `lunatic_route2_fullrun_unattended_20260824_094658`, 93 hit edges, stage
+  counts `4/7/5/20/31/26`, zero Bomb input, route complete.  It retains the
+  correct physical AABB but rejects geometry-only promotion as a survival
+  candidate: Stage-5 hit-row delay escaped the model and exposed a latency
+  feedback loop.
 - Different natural RNG roots make route hit totals observational.  A change
   is evaluated first by its named mechanism and timing counters; hits and
   per-stage distribution determine whether the next causal investigation is
@@ -50,6 +56,13 @@ For every gameplay or live-runtime optimization:
 7. Keep, reject, or revise the change from evidence.  Start the next item only
    after that disposition is explicit.
 
+Practice mode may replace a full route for fast localization after the focused
+offline gates.  Its full-power root is never promotion evidence by itself:
+the candidate must also pass retained low-power roots and the next complete
+route.  The solver remains generic-first.  A stage/spell adapter requires a
+repeated residual after shared source-kernel coverage, latency, and global
+delivery gates pass.
+
 The physical route is a global interaction check requested for this campaign;
 it is not a same-root causal A/B test.  A lower hit count alone does not prove
 the mechanism, and a higher hit count alone does not falsify a latency-only
@@ -62,10 +75,11 @@ change when its semantic and timing gate passes.
 | OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | VALIDATED-PHYSICAL | 61 hits; both prefix medians down about 1.2 ms; keep |
 | OPT-002 | sensing latency | Coalesce input and position fields inside the existing bracketed player-control root, preserving duplicate before/after observations | low-medium | VALIDATED-MECHANISM | 67 hits; read latency down, semantic sensor evidence clean; keep, but route exposed OPT-002A |
 | OPT-002A | control-delay correctness | Close the post-reset deadline-miss feedback self-lock without weakening issue freshness | medium | VALIDATED-PHYSICAL | 60 hits; ten misses recovered, no causal-hit miss or self-lock; keep |
-| GEO-001 | source-exact geometry shadow | Retain runtime player half-extents and bullet lifecycle fields; compare legacy/exact hazards and action sets without changing input | low, shadow | IN-PROGRESS-SHADOW | root differential complete; route-wide complete-schema corpus pending |
-| GEO-002 | source-exact geometry promotion | Use runtime player AABB, lethal bullet state/callback gate, finite rotated laser rectangle, and corrected body expansion | medium | BLOCKED ON GEO-001 | pending |
+| GEO-001 | source-exact geometry shadow | Retain runtime player half-extents and bullet lifecycle fields; compare legacy/exact hazards and action sets without changing input | low, shadow | COMPLETE | 57-hit route; 21.39M lifecycle observations retained |
+| GEO-002A | conservative source geometry promotion | Exact bullet/body player AABB plus irreversible state-5 removal; retain activatable states and approximate laser | medium | VALIDATED-SEMANTICS; REJECTED-AS-STANDALONE-POLICY | 93 hits; Stage 5 31; keep physical truth, repair exposed timing |
+| TIME-001 | capture/control timing | Separate bulk-pool epoch and realized issue-delay uncertainty from physical hitboxes; bound repeated certificates | medium | IN-PROGRESS | capture span secondary; Stage-5 hit lag 7/10 versus 2/4 baseline |
 | MOT-001 | exact current entities | Replace heuristic transformed-bullet projection with the matching native update/transform semantics | medium-high | QUEUED | pending |
-| GD-001 | global delivery shadow | Establish per-stage hard scale roots, submit jobs in shadow, and add a complete spell-future-coverage authority gate | medium, shadow | QUEUED | pending |
+| GD-001 | global delivery shadow | Establish per-stage hard scale roots, submit jobs in shadow, and add complete future-coverage plus solution-version authority gates | medium, shadow | ROOT CAUSE CONFIRMED | one Final-B/Stage-1 mismatch; 50,669/50,669 due jobs blocked |
 | FB-001 | future births | Capture a coherent VM/emitter/RNG root and implement one generic exact ECL/timeline/emitter kernel, starting with reached direct-fire producers | high | QUEUED | pending |
 | FB-002 | future births | Extend the same kernel through periodic/deferred fire, aim/RNG, transforms, lasers, child VMs, callbacks, and timeline births | high | QUEUED | pending |
 | FB-003 | global authority | Publish exact versioned hazard futures, promote adaptive viability only with complete coverage, then use VPS parallelism | high | QUEUED | pending |
@@ -390,11 +404,12 @@ callback aux, and it contains no lasers or enemy bodies. State-1 bullets are
 therefore conservatively kept lethal and the report explicitly refuses live
 authority or hit-count claims.
 
-Next gate: capture a complete-schema route corpus with player geometry,
-per-bullet callback aux/lifecycle, lasers, and bodies, then run the same-root
-legacy/source action differential on actual pre-hit windows. GEO-002 remains
-blocked until that coverage is complete and source fixtures plus replay show
-no exact-kernel disagreement.
+That gate is now complete.  GEO-001B retained 21.39 million lifecycle
+observations, and the conservative GEO-002A promotion passed the exact-kernel
+differential.  Its physical route nevertheless regressed from 57 to 93 hits,
+with Stage-5 hit-row lag outside the model.  The source predicate is retained,
+but the next live change is TIME-001 rather than a wider lifecycle/laser
+promotion.  AUD-036 through AUD-040 contain the disposition.
 
 ## Future-Birth Simplification Contract
 

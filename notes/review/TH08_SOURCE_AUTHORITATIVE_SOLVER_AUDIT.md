@@ -2,7 +2,7 @@
 
 Last updated: 2026-08-24.
 
-Status: **AUDIT COMPLETE; BEHAVIOR CHANGE NOT YET PROMOTED**
+Status: **AUDIT ACTIVE; SOURCE AABB PROMOTED, TIMING/GLOBAL ROOTS OPEN**
 
 ## Scope And Verdict
 
@@ -21,11 +21,12 @@ The central verdict is:
    local controller. Fifty-seven of 60 deaths are preceded by robust action-set
    exhaustion; the controller sees the trap, but usually only after every
    short-prefix action has become losing.
-3. The local hazard set is not source-exact. It inflates the player lethal
-   half-extents from the observed `(1,1)` to `(2,2)`, treats nonlethal bullet
-   lifecycle states as lethal, and lowers the native finite rotated laser
-   rectangle to a capsule. These are confirmed implementation divergences,
-   not speculative tuning complaints.
+3. The live bullet/body predicate now uses the source-exact `(1,1)` player
+   half-extents, inclusive binary32 AABBs, and irreversible state-5 removal.
+   The first physical promotion nevertheless regressed to 93 hits because
+   realized action delay escaped the model in dense phases. Capture-epoch
+   uncertainty, activatable lifecycle states, and finite laser geometry remain
+   incomplete rather than being hidden inside an inflated player radius.
 4. The current future-birth work is not connected to spell planning. The only
    generic ECL birth analyzer is trace-only, stops before most interesting VM
    behavior, and has no controller caller. The large ordinary-source model is
@@ -37,11 +38,11 @@ The central verdict is:
    be compiled from that kernel, not implemented as independent handwritten
    simulators.
 
-The immediate next behavioral candidate is the source-exact collision and
-lifecycle kernel, but only after a shadow differential records which legacy
-hazards are false-positive or false-negative. Simply enabling the existing
-global worker is unsafe because its active-spell requests omit future births
-while the authority gate checks only time-scale provenance.
+The immediate sequence is now to retain the correct physical predicate while
+bounding local/issue latency, then establish route-wide ECL/scale identities
+and submit global work in shadow. Simply enabling global action authority is
+unsafe because active-spell requests omit future births while the old gate
+checks only time-scale provenance.
 
 ## Evidence Base
 
@@ -79,6 +80,13 @@ shadow-only and changed no action, the total and stage redistribution are not
 a controlled geometry-policy effect.  Stage-4A read and plan median/p95
 improved from `9.450/11.543` and `32.465/50.844 ms` to `8.619/10.370` and
 `31.410/49.044 ms`; action-lag median/p95 stayed `2/3` frames.
+
+The first source-AABB live route `...094658` completed with 93 hits and stage
+counts `4/7/5/20/31/26`.  Its source geometry remained stable and exact, but
+Stage-5 hit-row action lag changed from `2/4` to `7/10` frames and sixteen of
+31 Stage-5 hits exceeded modeled delay support.  This is a rejected survival
+candidate but a valid exposure of the old radius-2 margin's hidden timing
+dependency; see AUD-036 through AUD-040 in the runtime audit.
 
 OPT-002A did close its intended mechanism. Only ten decisions missed the
 modeled issue deadline, all recovered, no miss is on a hit's causal row, and
@@ -137,9 +145,10 @@ old radius-2 box concealed.  A retained frame-3254 physical-hit precursor now
 has `+0.2908877px` modeled pipeline clearance with the exact `(1,1)` player
 box, even though contact follows.  The source predicate confirms the smaller
 box, so this is evidence for capture/update/issue-timing error, not a reason to
-restore geometric inflation.  The next full route must separately count
-sub-pixel-positive contact precursors while the global planner problem below
-addresses the much larger early-exhaustion class.
+restore geometric inflation.  The subsequent 93-hit route separately measured
+capture spans and timing windows: capture crossings were secondary, while
+realized issue delay outside the model was dominant in Stage 5.  The global
+planner problem below remains the larger early-exhaustion mechanism.
 
 ### Boundary and fast-mode labels are correlates
 
@@ -213,9 +222,9 @@ latency.
 
 | Area | Authoritative behavior | Current live behavior | Finding |
 | --- | --- | --- | --- |
-| Player lethal box | Runtime SHT half-extents; inclusive AABB | One scalar `PLAYER_RADIUS=2.0` | **Confirmed overinflation** |
+| Player lethal box | Runtime SHT half-extents; inclusive AABB | Exact `(1,1)` binary32 AABB for bullets/bodies; legacy radius retained only in approximate laser/corridor paths | **Promoted locally; remaining consumers open** |
 | Bullet extents | Runtime width/height divided by two | Same | Correct |
-| Bullet lethal lifecycle | State 1 only, and only when callback aux byte `+0x10B4` is zero | Every nonzero pool state is selected; lifecycle fields do not gate collision | **Confirmed false hazards** |
+| Bullet lethal lifecycle | State 1 only, and only when callback aux byte `+0x10B4` is zero | State 5 removed; states 2/3/4 and callback transitions retained conservatively pending future ANM/callback stepping | **Safe partial promotion** |
 | Bullet update order | Transform handlers, velocity move, cull, lethal check, timer increments | State-2 recurrence plus mostly linear future motion and uncertainty | Partial |
 | Laser collision | Player center rotated into laser-local space; inclusive AABB against finite rectangle | Lifecycle geometry lowered to segment/capsule radius | **Confirmed shape mismatch** |
 | Enemy body | Full size divided by 1.5, then halved by player AABB helper | Enemy half-size is correct; player radius is 2 | Partial |
@@ -229,19 +238,22 @@ uses that AABB in `FUN_0044a230`. All 60 stable hit-contact captures in the
 OPT-002A dossier reconstruct half-extents `(1,1)`; 58 are bit-exact and two
 differ only by float subtraction roundoff.
 
-The live planner instead imports `PLAYER_RADIUS=2.0` into local bullet/body
-checks, native packed hazard calls, global semantic generation/shrink, and
-controller safety probes. `th08_laser_runtime.py` separately repeats the same
-constant. Delay uncertainty is already represented elsewhere, so the extra
-pixel is not a source-derived delay margin. It can erase two pixels of total
-corridor width per axis and bias both local and global viable sets.
+Before GEO-002A, the live planner imported `PLAYER_RADIUS=2.0` into all of
+those paths.  Local NumPy/native bullet and body checks now use the exact
+separate `(1,1)` extents and binary32 inclusive predicate.  The legacy scalar
+remains in approximate laser/corridor consumers, which are not yet granted
+new authority.  Delay and capture uncertainty must remain separate from these
+physical extents; reusing the old extra pixel would erase two pixels of total
+corridor width per axis and bias viable sets.
 
 ### Bullet lifecycle
 
 `planning_bullet_active_slots()` selects all records whose native state is
-nonzero. The decoder already retains `native_state`, state timer, and callback
-aux state, but `_build_bullet_frames()` only treats state 2 specially and the
-hazard kernels never filter collision eligibility.
+nonzero. The decoder retains `native_state`, state timer, and callback aux;
+`_build_bullet_frames()` projects the observed state-2 recurrence and the live
+kernel now removes only irreversible state 5. States 2/3/4 and callback-aux
+records remain conservative hazards because their reached future ANM/callback
+transitions are not yet stepped exactly.
 
 In `BulletManager::OnUpdate`, only case 1 reaches the lethal
 `Player::FUN_0044a230` block, and the entire collision block is skipped while

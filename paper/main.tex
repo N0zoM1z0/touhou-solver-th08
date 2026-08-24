@@ -1,0 +1,191 @@
+\documentclass[10pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+
+\title{A Source-Authoritative Hierarchical Autoplay Solver for Touhou 8}
+\author{TH08 Solver Research Project}
+\date{August 2026}
+
+\newcommand{\unknown}{\textsc{unknown}}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study hard no-bomb autoplay for the Sakuya/Remilia Lunatic Route~2 of
+Touhou~8.  The objective is empirical survival, not cross-game or cross-route
+generalization.  A reconstructed, function-matched code base makes exact
+collision, update, emission, and scripting semantics available, while the
+shipped executable and isolated Wine observations remain the physical
+authority.  Our principal finding is architectural: more compute cannot help
+when strategic jobs are never submitted, and exact collision geometry cannot
+improve survival when sensing and issue latency push the realized control
+delay outside the planner's support.  We therefore separate source-exact
+world projection, parallel long-horizon viability, short-horizon robust
+control, and fresh input publication.  Unsupported future producers become
+\unknown{} rather than silently safe.  The design is generic first; a
+stage- or spell-specific adapter is admitted only after practice and full-route
+evidence falsifies the shared kernel or policy.
+\end{abstract}
+
+\section{Objective and Evidence Discipline}
+
+The target is completion of one fixed route with as few native hit edges as
+possible under a hard no-bomb policy and a no-life-decrement patch.  The patch
+permits complete-route measurement but does not erase the causal effect of a
+hit: power loss changes damage, phase duration, and all later state roots.
+Consequently, route totals are global outcomes rather than independent Bernoulli
+trials.
+
+We distinguish three kinds of evidence.  Functions marked as exact matches
+define engine semantics.  Runtime roots provide RNG, VM, player, enemy, and
+phase state that static source cannot infer.  Complete isolated Wine routes
+validate latency, input, cleanup, and aggregate survival.  A model receives
+action authority only over the intersection of these claims; everything else
+may run in shadow for measurement.
+
+\section{Failure of the Previous Architecture}
+
+The historical solver combined a ten-frame local beam with a nominal
+eighty-frame corridor solver.  In the retained complete routes, however, every
+corridor submission was blocked by time-scale provenance, so no worker job or
+global policy query existed.  The VPS therefore accelerated neither strategy
+nor future avoidance.
+
+Promoting the source-correct $1\times1$ player half-extents and inclusive
+binary32 AABB predicate exposed a second defect.  The old inflated radius was
+an accidental safety margin.  In the first complete promoted route, hit-row
+control delay and observe-to-input latency rose sharply, especially in Stage~5,
+and many realized delays exceeded the modeled upper bound.  The correct
+response is not to restore false geometry: physical occupancy and uncertainty
+about when that occupancy was observed or controlled must be represented as
+different quantities.
+
+\section{Hierarchical Solver}
+
+The proposed generic pipeline has five layers:
+
+\begin{enumerate}
+  \item \textbf{Coherent runtime root.} Capture the stage-selected ECL image,
+  main and child VMs, RNG, emitters, enemies, bullets, lasers, player movement
+  state, time scale, and input transaction state under explicit frame brackets.
+  \item \textbf{Source-exact forward kernel.} Execute only reached scripting,
+  emission, transform, lifecycle, and geometry paths using binary32 update
+  order.  An unsupported reached dependency terminates coverage with
+  \unknown{}; it never means ``no hazard.''
+  \item \textbf{Versioned hazard field.} Merge current entities and future
+  births into occupancy intervals.  Physical hitboxes remain exact while
+  capture-span, root-age, transform, and control uncertainty are separate
+  envelopes with separate provenance.
+  \item \textbf{Parallel global viability.} Native workers compute a
+  time-expanded backward winning set and escape-volume values.  Work is
+  partitioned by time slabs or independent root hypotheses and published only
+  when all required versions agree.
+  \item \textbf{Robust local issue.} A short-horizon controller intersects the
+  global winning actions with all active/held/pending input-delay hypotheses,
+  then performs a bounded fresh recertification before publishing input.
+\end{enumerate}
+
+For root $r$, action $a$, and delay hypothesis $d$, hard action authority is
+
+\[
+  A(r,a) = E_{\mathrm{root}} \land E_{\mathrm{scale}}
+  \land E_{\mathrm{births}} \land E_{\mathrm{geometry}}
+  \land \bigwedge_{d\in D} E_{\mathrm{prefix}}(r,a,d),
+\]
+
+where each term includes a semantic version and a covered frame interval.  A
+cached global solution is advisory when its scale, birth, geometry, or policy
+version differs from the current root.
+
+\section{Using the VPS}
+
+The main controller is latency-sensitive and should not perform long global
+search under the Python GIL.  Immutable capsules are sent to low-priority
+native worker processes pinned away from the Wine sensing/issue core.  Workers
+preallocate geometry buffers and reuse spell-independent transition tables.
+The global horizon may scale with available cores; local issue latency may not.
+Throughput, queue age, coverage, and publication compatibility are recorded
+separately so that ``many CPU cycles'' cannot be confused with useful action
+authority.
+
+\section{Generic First, Specialization by Evidence}
+
+One ECL/timeline/emitter kernel, one bullet/laser stepper, and one viability
+solver are the default.  Source-derived stage tables may select an ECL image,
+reachable opcode subset, producer cache, or horizon without changing semantics.
+A hand-written stage or spell policy is justified only if both conditions hold:
+
+\begin{enumerate}
+  \item practice-mode replay repeatedly identifies a residual failure after
+  generic coverage and timing gates pass; and
+  \item the special rule is derived from a stable source/runtime invariant and
+  remains safe at the lower-power roots observed in full routes.
+\end{enumerate}
+
+Practice mode is therefore an efficient localization tool, not the promotion
+criterion.  Its full-power damage shortens phases and can hide survival
+failures.  Every specialized candidate must be replayed with low-power or
+power-branched roots and finally in the complete route.
+
+\section{Experimental Hypotheses}
+
+\begin{center}
+\begin{tabular}{p{0.08\linewidth}p{0.62\linewidth}p{0.22\linewidth}}
+\toprule
+ID & Hypothesis & Primary falsifier \\
+\midrule
+H1 & A route-wide ECL identity dispatcher and proven no-writer schedules make
+global jobs submit in every supported stage. & Any due supported decision with
+no submitted or pending job. \\
+H2 & Complete future-birth coverage converts early local action-set exhaustion
+into viable escape guidance. & Coverage is complete and fresh, but warning
+lead and hits do not improve. \\
+H3 & Separating sensor/control uncertainty from physical geometry prevents
+sub-pixel and over-model-delay contacts without restoring false hitboxes. &
+Same-root differential or physical contacts remain outside the envelope. \\
+H4 & Native process-parallel search uses VPS cores without increasing local
+issue latency. & Queue throughput rises while hit-row delay or p95 issue
+latency regresses. \\
+H5 & Generic source semantics cover most stages; specialization is needed only
+for a small, measured residual. & Repeated per-spell unsupported coverage or
+policy failure after the generic gates pass. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Preliminary Results and Interpretation}
+
+A shadow-only route with the old live collision behavior completed with 57
+hits.  The first route after promoting exact bullet/body AABBs completed with
+93 hits.  This does not falsify the source geometry: runtime player boxes were
+stable at $1\times1$, and large differential tests matched the source predicate.
+Instead, the promoted route revealed a latency--policy feedback loop.  Stage~5
+hit-row delay frequently exceeded the configured model, long local
+recertification delayed input, hits reduced power, and the changed future root
+created more difficult exposure.  Cross-frame bullet-pool capture existed but
+covered only a minority of hit windows, so it is a correctness fix rather than
+a sufficient explanation.
+
+The global result is unambiguous: numerical scale horizons were present on
+every decision, but hard scale provenance was absent; a Final-B static image
+was compared once against the Stage~1 runtime image and never retried, and
+future hostile-birth coverage remained unknown.  Thus global worker count was
+zero in effect despite four configured workers.  The next experiment first
+repairs route-wide identity and shadow delivery, then adds complete producer
+coverage before granting control.
+
+\section{Conclusion}
+
+The path to fewer hits is not a larger monolithic search.  It is a smaller set
+of source-derived transition kernels, explicit uncertainty and coverage,
+parallel long-horizon viability, and a bounded low-latency issue layer.  This
+architecture makes the VPS useful while preserving a falsifiable boundary
+between physical truth, conservative uncertainty, and incomplete prediction.
+
+\end{document}

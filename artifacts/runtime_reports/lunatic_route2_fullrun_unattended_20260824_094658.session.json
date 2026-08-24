@@ -1,0 +1,236 @@
+{
+  "schema": "th08-unattended-full-route-session-v1",
+  "run_id": "lunatic_route2_fullrun_unattended_20260824_094658",
+  "game_dir": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\reference\\th08-game-original\\th08",
+  "launch_bat": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\scripts\\tools\\run_th08_wine_launch.bat",
+  "difficulty": "Lunatic",
+  "difficulty_key": "lunatic",
+  "difficulty_index": 3,
+  "team": "Sakuya/Remilia",
+  "route_id": 2,
+  "expected_stage_sequence": [
+    0,
+    1,
+    2,
+    3,
+    5,
+    7
+  ],
+  "hard_no_bomb": true,
+  "finalb_scale_source_authority": true,
+  "runtime_ecl_static_image": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\decoded\\ecldata7.ecl",
+  "runtime_ecl_static_sha256": "20b35dca3820438f0b90ae44e3362a7af27d2fc1ac7ae5888c477dc1c89a3734",
+  "safety_value_horizon": 0,
+  "trace_transform_runtime": false,
+  "trace_items": false,
+  "trace_enemy_mode_transitions": false,
+  "trace_enemy_lifecycle_events": false,
+  "kill_before_saturation": false,
+  "ordinary_preexhaustion_authority": false,
+  "authority_only_corridor": true,
+  "diagnostic_continue_root_only_scale": false,
+  "viability_audit": false,
+  "agent_duration_seconds": 86400.0,
+  "leave_game_running": false,
+  "caps_lock_bootstrap": {
+    "required": false,
+    "reason": "direct supervisor arm has no Caps Lock dependency"
+  },
+  "started_at": "2026-08-24T09:46:58.573287+00:00",
+  "target": {
+    "pid": 284,
+    "image_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\reference\\th08-game-original\\th08\\th08.exe",
+    "sha256": "330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924",
+    "runtime_patch": {
+      "address": 4509946,
+      "byte": 0,
+      "no_life_decrement": true
+    }
+  },
+  "pid": 284,
+  "menu_native_trace": [
+    {
+      "label": "main",
+      "manager": 82035448,
+      "mode": 0,
+      "substate": 1,
+      "screen_age": 7,
+      "cursor": 0,
+      "difficulty_cursor": 3,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 1
+    },
+    {
+      "label": "game_start_selected",
+      "manager": 82035448,
+      "mode": 0,
+      "substate": 1,
+      "screen_age": 37,
+      "cursor": 0,
+      "difficulty_cursor": 3,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 1
+    },
+    {
+      "label": "difficulty_screen_entered",
+      "manager": 82035448,
+      "mode": 4,
+      "substate": 1,
+      "screen_age": 43,
+      "cursor": 3,
+      "difficulty_cursor": 3,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 1
+    },
+    {
+      "label": "lunatic_selected",
+      "manager": 82035448,
+      "mode": 4,
+      "substate": 1,
+      "screen_age": 43,
+      "cursor": 3,
+      "difficulty_cursor": 3,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 1
+    },
+    {
+      "label": "team_screen_entered",
+      "manager": 82035448,
+      "mode": 5,
+      "substate": 1,
+      "screen_age": 45,
+      "cursor": 0,
+      "difficulty_cursor": 3,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 1
+    },
+    {
+      "label": "team_selected",
+      "manager": 82035448,
+      "mode": 5,
+      "substate": 1,
+      "screen_age": 75,
+      "cursor": 2,
+      "difficulty_cursor": 3,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 1
+    }
+  ],
+  "executed_menu_taps": [
+    {
+      "key": "down",
+      "purpose": "leave possibly stale Game Start selection",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "up",
+      "purpose": "return to Game Start",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "confirm",
+      "purpose": "enter Game Start",
+      "wait_after_ms": 700
+    },
+    {
+      "key": "confirm",
+      "purpose": "accept native-verified Lunatic",
+      "wait_after_ms": 700
+    },
+    {
+      "key": "right",
+      "purpose": "select Sakuya/Remilia feedback step 1",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "right",
+      "purpose": "select Sakuya/Remilia feedback step 2",
+      "wait_after_ms": 180
+    }
+  ],
+  "menu_native_state": {
+    "manager": 82035448,
+    "mode": 5,
+    "substate": 1,
+    "screen_age": 75,
+    "cursor": 2,
+    "difficulty_cursor": 3,
+    "difficulty_index": 0,
+    "route_id": 0,
+    "stage_route_index": 0,
+    "practice_stage_availability_mask": 1
+  },
+  "agent_armed_at": "2026-08-24T09:47:09.500514+00:00",
+  "agent_summary": {
+    "decision_count": null,
+    "first_frame": null,
+    "last_frame": 228477,
+    "termination_reason": "route_complete",
+    "counter_gaps": 695,
+    "hit_count": 93,
+    "hit_frames": []
+  },
+  "trial_accepted": true,
+  "completion_scene": {
+    "kind": "scene_inactive",
+    "frame": 228477,
+    "engine_flags": 240144,
+    "stage_route_index": 7,
+    "transition_from_stage": 7,
+    "expected_stage": null,
+    "status": "terminal_unload"
+  },
+  "game_terminated_after_trial": true,
+  "game_left_running_after_trial": false,
+  "status": "completed",
+  "finished_at": "2026-08-24T10:43:48.373271+00:00",
+  "artifacts": {
+    "dossier_json": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_094658.dossier.json",
+    "dossier_markdown": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\notes\\runs\\lunatic_route2_fullrun_unattended_20260824_094658.md",
+    "deaths_csv": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_094658.deaths.csv",
+    "regressions_json": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_094658.regressions.json",
+    "regression_summary": {
+      "run_id": "lunatic_route2_fullrun_unattended_20260824_094658",
+      "case_count": 93,
+      "stage_counts": {
+        "Stage 1": 4,
+        "Stage 2": 7,
+        "Stage 3": 5,
+        "Stage 4A / Reimu": 20,
+        "Stage 5": 31,
+        "Final B / Kaguya": 26
+      },
+      "cause_counts": {
+        "modeled_committed_prefix_collision": 53,
+        "observed_bullet_overlap": 36,
+        "sensor_gap_or_unmodeled_hazard": 4
+      },
+      "factor_counts": {
+        "playfield_boundary": 63,
+        "fast_mode": 48,
+        "action_lag_over_model": 28,
+        "pool_density_over_1000": 19
+      },
+      "deathbomb_count": 0,
+      "exact_bullet_witnesses": 36,
+      "exact_laser_witnesses": 0,
+      "exact_enemy_body_witnesses": 0
+    },
+    "comparison_json": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_094658.comparison.json",
+    "comparison_baseline": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_074407.dossier.json",
+    "run_note": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\notes\\runs\\lunatic_route2_fullrun_unattended_20260824_094658.md",
+    "summary_json": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_094658.summary.json"
+  }
+}

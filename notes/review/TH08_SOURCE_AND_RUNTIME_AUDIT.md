@@ -875,6 +875,107 @@ promotion as a complete safety proof; compare sub-pixel-positive hit precursors
 and timing windows in the next route, then repair the timing/root projection
 rather than padding all bullets by one pixel.
 
+### AUD-036 — The first source-AABB route regressed from 57 to 93 hits
+
+Status: **VALIDATED-PHYSICAL; CORRECT GEOMETRY RETAINED, POLICY PROMOTION REJECTED**
+
+Run `lunatic_route2_fullrun_unattended_20260824_094658` completed the exact
+Sakuya/Remilia Lunatic Route-2 target at manager frame 228477 with 50,669
+decisions and 93 native hit edges.  Hard no-Bomb and isolated-prefix cleanup
+passed.  Stage hits were `4/7/5/20/31/26`, compared with
+`3/7/4/15/10/18` in the 57-hit GEO-001B shadow route.  Stage 5 is the dominant
+regression, not Stage 4A.
+
+The route-wide source ledger observed the stable native player half-extents
+`(1,1)` on every decision.  Across 17,333,626 decoded nonzero bullet-state
+observations, 2,296,938 (13.2513%) were legacy-only lifecycle candidates;
+state 5 was the only irreversible class removed from live collision.  The
+high-density binary32 differential remains exact.  Therefore the physical
+geometry correction is retained; reverting to radius 2 would restore a proven
+engine mismatch.  What is rejected is the claim that geometry promotion by
+itself is a safe survival optimization.
+
+### AUD-037 — Bullet-pool capture span is trace-only, but not the main regression
+
+Status: **CONFIRMED-MODEL-GAP; SECONDARY IN THIS ROUTE**
+
+`HazardEpochAlignment` records the manager frame before and after the bulk
+bullet-pool read, but `bullet_capture_span` has no planning consumer.  A read
+that crosses a frame can therefore contain records from different update
+epochs while every bullet center is treated as the final epoch.  The packed
+bullet path, used at high density, also has no per-axis trajectory-uncertainty
+arrays.
+
+The new streamed timing audit prevents this real defect from becoming a
+catch-all explanation.  Only 2,429 of 50,669 decisions (4.7939%) crossed one
+manager frame.  Eight of 93 hit rows did so; 30 of 93 four-decision hit windows
+contained any crossing.  A conservative axis envelope
+`abs(velocity_axis) * capture_span` changes a source-safe current overlap in
+only one retained hit window.  Capture-epoch interval containment should be
+implemented and fuzzed, but it cannot explain most of the 36 additional hits.
+
+### AUD-038 — Stage-5 latency escaped the configured delay support
+
+Status: **CONFIRMED-PHYSICAL ROOT CAUSE**
+
+The 57-hit route's hit-row action lag had median/p95 `2/4` frames and no death
+occurred beyond the modeled delay support.  The 93-hit route rose to `4/9`
+overall; its Stage-5 hit rows rose from `2/4` to `7/10`.  Hit-row
+observe-to-input median rose from 86.80ms to 125.43ms overall and from 87.98ms
+to 160.75ms in Stage 5.  Twenty-three route hits, including sixteen of the 31
+Stage-5 hits, missed the configured upper delay at the hit row.
+
+Timing decomposition locates the cost in repeated geometry certificates, not
+pool decoding.  Stage-5 initial-plan median/p95 changed from `29.93/44.92ms`
+to `39.89/73.52ms`; hit-row issue recertification changed from
+`6.29/13.00ms` to `28.74/51.28ms`.  The resulting hit-row total plan median is
+97.45ms.  A fixed synthetic native geometry benchmark attributes only about a
+6.6% beam-workload median increase to the exact AABB kernel itself.  The much
+larger physical regression is therefore a route/workload and repeated-
+certificate feedback: late local avoidance changes the root, hits lower
+power, and later dense phases keep the issue path outside its own delay model.
+
+The correction must bound local/recertification work and represent any
+remaining realized delay; simply widening the delay set can increase compute
+again and is not accepted without a latency gate.
+
+### AUD-039 — Full-route runtime ECL identity was attempted once against the wrong stage
+
+Status: **CONFIRMED-IMPLEMENTATION BUG**
+
+The full-route host supplied only `ecldata7.ecl`.  At Stage-1 decision frame 1,
+the one-shot identity service compared its 67,324-byte Final-B image
+(`20b35d...`) with the 45,844-byte runtime Stage-1 image (`6b44a0...`) and
+reported `byte_mismatch`.  It never retried on stages `(1,2,3,5,7)`.  In
+addition, `NO_SCALE_WRITER_STAGE_ROUTE_INDICES = range(5)` incorrectly names
+runtime index 4 and excludes the real Stage-5 index 5.  Static no-writer audits
+are complete for `ecldata1/2/3/4a/5`; Final B remains dynamic because spell
+190 reaches scale writers.
+
+The fix is a route-wide stage dispatcher over runtime indices
+`(0,1,2,3,5,7)`, with a pinned static identity and independently versioned
+scale authority per stage.  Final-B dynamic authority must not contaminate
+the five earlier no-writer stages.
+
+### AUD-040 — Global delivery needs future-birth and solution-version gates
+
+Status: **CONFIRMED-HIDDEN AUTHORITY BUG; ZERO-JOB ROOT LOCATED**
+
+All 50,669 decisions had a due global submission and a numerically sufficient
+scale horizon, but hard scale authority was false, so submissions, completions,
+queries, and publications were all zero.  Every local pipeline root also
+reported future hazard coverage `model_unknown` beginning at the next frame.
+
+The submission gate currently treats hard time-scale authority as sufficient
+for active-spell action authority when the optional ordinary future projection
+is absent.  A published solution stores `time_scale_identity`, but consumption
+does not require it to equal the current schedule version.  Unblocking only
+the scale gate could therefore make current-entity-only spell forecasts hard.
+Every result must instead carry and match root, scale, future-birth, geometry,
+and policy versions; incomplete future coverage may submit and solve in
+shadow, but may not constrain action.  Background workers must also run below
+the latency-sensitive Wine sensing/issue path.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
