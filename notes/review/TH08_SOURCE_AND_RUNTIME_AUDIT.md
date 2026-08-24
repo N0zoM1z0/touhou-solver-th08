@@ -1,6 +1,6 @@
 # TH08 Source And Runtime Audit
 
-Last updated: 2026-08-23.
+Last updated: 2026-08-24.
 
 This ledger tracks discrepancies found while rebasing the live solver on the
 exact Japanese TH08 1.00d executable, using the independently reconstructed
@@ -8,6 +8,9 @@ source tree at `../th08` only as a semantic reference. Rebuilding that source
 tree is not part of this solver task. This ledger is intentionally separate
 from historical run dossiers: entries remain open until the responsible solver
 path is fixed and validated.
+
+The ordered one-change-at-a-time implementation and physical experiment
+sequence is tracked in `TH08_LUNATIC_OPTIMIZATION_CAMPAIGN.md`.
 
 Evidence labels follow the repository contract:
 
