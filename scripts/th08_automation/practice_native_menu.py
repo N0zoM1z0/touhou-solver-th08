@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ctypes
+from ctypes import wintypes
 import time
 from collections.abc import Callable
 
@@ -22,6 +24,8 @@ from th08_runtime_agent import (
 ADDR_TITLE_MENU_MANAGER = 0x018BDE08
 ADDR_TITLE_DIFFICULTY_CURSOR = 0x017CE891
 ADDR_PRACTICE_STAGE_AVAILABILITY = 0x0164B9AE
+PROCESS_VM_OPERATION = 0x0008
+PROCESS_VM_WRITE = 0x0020
 TITLE_CURSOR_OFFSET = 0
 TITLE_SUBSTATE_OFFSET = 12
 TITLE_MODE_OFFSET = 82_984
@@ -30,6 +34,127 @@ TITLE_MODE_MAIN = 0
 TITLE_MODE_PRACTICE_DIFFICULTY = 8
 TITLE_MODE_PRACTICE_TEAM = 9
 TITLE_MODE_PRACTICE_STAGE = 11
+
+
+def practice_stage_availability_address(
+    route_id: int,
+    difficulty_index: int,
+) -> int:
+    if not 0 <= route_id <= 12:
+        raise ValueError("practice route/shot index is outside 0..12")
+    if not 0 <= difficulty_index <= 4:
+        raise ValueError("practice difficulty index is outside 0..4")
+    # Source Clrd is 0x24 bytes (18 u16 values). This base is
+    # difficultiesClearedWithRetries[0] for shot/route zero.
+    return ADDR_PRACTICE_STAGE_AVAILABILITY + 2 * (
+        18 * route_id + difficulty_index
+    )
+
+
+def write_process_u16(api: Win32, pid: int, address: int, value: int) -> None:
+    if not 0 <= value <= 0xFFFF:
+        raise ValueError("u16 process write is outside 0..65535")
+    api.kernel32.WriteProcessMemory.argtypes = [
+        wintypes.HANDLE,
+        wintypes.LPVOID,
+        wintypes.LPCVOID,
+        ctypes.c_size_t,
+        ctypes.POINTER(ctypes.c_size_t),
+    ]
+    api.kernel32.WriteProcessMemory.restype = wintypes.BOOL
+    handle = api.kernel32.OpenProcess(
+        PROCESS_VM_OPERATION | PROCESS_VM_WRITE,
+        False,
+        pid,
+    )
+    if not handle:
+        raise ctypes.WinError(
+            ctypes.get_last_error(),
+            f"OpenProcess({pid}) for practice-stage unlock",
+        )
+    try:
+        payload = ctypes.c_ushort(value)
+        written = ctypes.c_size_t()
+        if not api.kernel32.WriteProcessMemory(
+            handle,
+            ctypes.c_void_p(address),
+            ctypes.byref(payload),
+            ctypes.sizeof(payload),
+            ctypes.byref(written),
+        ):
+            raise ctypes.WinError(
+                ctypes.get_last_error(),
+                f"WriteProcessMemory(0x{address:08X})",
+            )
+        if written.value != ctypes.sizeof(payload):
+            raise RuntimeError(
+                "short practice-stage unlock write: "
+                f"{written.value}/{ctypes.sizeof(payload)}"
+            )
+    finally:
+        api.kernel32.CloseHandle(handle)
+
+
+def unlock_requested_practice_stage(
+    api: Win32,
+    pid: int,
+    *,
+    stage_index: int,
+    expected_route_id: int,
+    expected_difficulty_index: int,
+    timeout_seconds: float,
+) -> dict[str, int | bool]:
+    if not 0 <= stage_index < 8:
+        raise ValueError("practice stage index is outside 0..7")
+    state = wait_for_title_menu(
+        api,
+        pid,
+        mode=TITLE_MODE_PRACTICE_STAGE,
+        timeout_seconds=timeout_seconds,
+    )
+    if state["route_id"] != expected_route_id:
+        raise RuntimeError(
+            "practice-stage unlock route mismatch: "
+            f"expected {expected_route_id}, got {state['route_id']}"
+        )
+    if state["difficulty_cursor"] != expected_difficulty_index:
+        raise RuntimeError(
+            "practice-stage unlock difficulty mismatch: "
+            f"expected {expected_difficulty_index}, "
+            f"got {state['difficulty_cursor']}"
+        )
+    address = practice_stage_availability_address(
+        state["route_id"],
+        state["difficulty_cursor"],
+    )
+    before = state["practice_stage_availability_mask"]
+    requested_bit = 1 << stage_index
+    after = before | requested_bit
+    wrote = after != before
+    if wrote:
+        write_process_u16(api, pid, address, after)
+        verified = read_title_menu_state(api, pid)
+        if (
+            verified["mode"] != TITLE_MODE_PRACTICE_STAGE
+            or verified["substate"] != 1
+            or verified["route_id"] != expected_route_id
+            or verified["difficulty_cursor"] != expected_difficulty_index
+            or verified["practice_stage_availability_mask"] != after
+        ):
+            raise RuntimeError(
+                "practice-stage unlock verification failed: "
+                f"expected mask 0x{after:04X}, got {verified}"
+            )
+    return {
+        "requested": True,
+        "address": address,
+        "stage_index": stage_index,
+        "requested_bit": requested_bit,
+        "mask_before": before,
+        "mask_after": after,
+        "wrote": wrote,
+        "verified": True,
+    }
 
 
 def read_menu_selection(api: Win32, pid: int) -> dict[str, int]:
@@ -61,8 +186,10 @@ def read_title_menu_state(api: Win32, pid: int) -> dict[str, int]:
             "route_id": route_id,
             "stage_route_index": reader.u32(ADDR_STAGE_ROUTE_INDEX),
             "practice_stage_availability_mask": reader.u16(
-                ADDR_PRACTICE_STAGE_AVAILABILITY
-                + 2 * (18 * route_id + difficulty_cursor)
+                practice_stage_availability_address(
+                    route_id,
+                    difficulty_cursor,
+                )
             ),
         }
     finally:

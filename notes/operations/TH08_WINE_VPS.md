@@ -66,7 +66,12 @@ The stage selector accepts `1/2/3/4a/4b/5/6a/6b`; difficulty and team remain
 fixed to Lunatic Sakuya/Remilia. Practice intentionally does not attach a
 route-wide static ECL image: until per-stage identity and scale authority are
 versioned correctly, it is a local-planner/timing gate rather than evidence
-for source-future global authority. The runner explicitly raises both the
+for source-future global authority. The supplied score template does not set
+every team/difficulty Practice clear bit. After native menu/route/difficulty
+verification, the Wine wrapper therefore opts into a data-only unlock that
+sets exactly the requested stage bit and reads it back. This follows source
+`Clrd::difficultiesClearedWithRetries` semantics; it does not patch the EXE or
+change gameplay resources. The runner explicitly raises both the
 inner live-agent budget to 86,400 seconds and the outer trial timeout to
 86,700 seconds, so neither is a practical route-length stop; the independent
 120-second trace-stall gate still detects a frozen run.

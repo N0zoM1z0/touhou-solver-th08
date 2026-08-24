@@ -256,6 +256,7 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertIn("--refuse-existing", command)
         self.assertEqual(command[command.index("--stage") + 1], "4b")
         self.assertEqual(command[command.index("--difficulty") + 1], "lunatic")
+        self.assertIn("--unlock-requested-stage", command)
         self.assertEqual(
             command[command.index("--agent-duration") + 1],
             "86400.0",

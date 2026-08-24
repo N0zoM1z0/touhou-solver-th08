@@ -228,6 +228,7 @@ def build_windows_controller_command(
             practice_stage,
             "--difficulty",
             "lunatic",
+            "--unlock-requested-stage",
             "--game-dir",
             windows_path(game_dir),
             "--launch-bat",

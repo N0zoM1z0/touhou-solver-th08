@@ -55,6 +55,7 @@ from th08_automation.practice_native_menu import (  # noqa: F401
     practice_stage_available,
     read_menu_selection as _read_menu_selection,
     read_title_menu_state as _read_title_menu_state,
+    unlock_requested_practice_stage,
     validate_practice_selection as _validate_practice_selection_impl,
     wait_for_title_menu,
 )
@@ -254,6 +255,7 @@ def run_trial(
             args.trace_enemy_lifecycle_events
         ),
         "kill_before_saturation": args.kill_before_saturation,
+        "unlock_requested_stage": args.unlock_requested_stage,
         "ordinary_preexhaustion_authority": (
             args.ordinary_preexhaustion_authority
         ),
@@ -447,6 +449,20 @@ def run_trial(
         )
         retain_taps((tap,))
         capture_menu_state("stage_screen_entered")
+        if args.unlock_requested_stage:
+            session["practice_stage_unlock"] = (
+                unlock_requested_practice_stage(
+                    api,
+                    pid,
+                    stage_index=stage.menu_index,
+                    expected_route_id=2,
+                    expected_difficulty_index=difficulty.menu_index,
+                    timeout_seconds=transition_timeout,
+                )
+            )
+            capture_menu_state("stage_unlock_verified")
+        else:
+            session["practice_stage_unlock"] = {"requested": False}
         state, taps = _navigate_title_cursor(
             api,
             pid,
@@ -616,6 +632,14 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=20.0,
         help="native-state wait deadline for an accepted replay save",
+    )
+    parser.add_argument(
+        "--unlock-requested-stage",
+        action="store_true",
+        help=(
+            "source-bounded opt-in that sets only the requested Practice "
+            "Start clear bit after route/difficulty/menu verification"
+        ),
     )
     parser.add_argument(
         "--agent-duration",

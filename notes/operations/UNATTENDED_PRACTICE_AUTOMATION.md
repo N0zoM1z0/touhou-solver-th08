@@ -16,9 +16,12 @@ run_th08_full_route_agent.bat
 ```
 
 The wrappers select Windows Python and add `--armed`. Practice accepts
-`--difficulty`, `--repeat`, and `--save-replay-slot 1..15`. The full-route
-wrapper pins the decoded Final-B ECL image and enables the exact scale
-schedule authority.
+`--difficulty`, `--repeat`, and `--save-replay-slot 1..15`. A prepared runtime
+whose score lacks the requested team/difficulty clear bit may explicitly add
+`--unlock-requested-stage`; after exact menu/route/difficulty validation it
+sets and rereads only that source-defined Practice availability bit. The
+full-route wrapper pins the decoded Final-B ECL image and enables the exact
+scale schedule authority.
 
 The diagnostic root-only scale continuation is explicit:
 

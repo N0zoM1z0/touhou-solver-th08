@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 import th08_practice_supervisor as supervisor
 from th08_automation import practice_artifacts
+from th08_automation import practice_native_menu
 from th08_automation.practice_menu import (
     build_practice_menu_plan,
     forward_menu_steps,
@@ -142,6 +143,52 @@ class PracticeSupervisorTests(unittest.TestCase):
         self.assertEqual(final_a.menu_index, 6)
         self.assertFalse(practice_stage_available(0xBF, final_a.menu_index))
         self.assertTrue(practice_stage_available(0xFF, final_a.menu_index))
+
+    def test_requested_stage_unlock_sets_only_one_source_clear_bit(self) -> None:
+        initial = {
+            "manager": 0x1234,
+            "mode": practice_native_menu.TITLE_MODE_PRACTICE_STAGE,
+            "substate": 1,
+            "screen_age": 46,
+            "cursor": 0,
+            "difficulty_cursor": 3,
+            "difficulty_index": 0,
+            "route_id": 2,
+            "stage_route_index": 0,
+            "practice_stage_availability_mask": 0x0001,
+        }
+        verified = dict(initial)
+        verified["practice_stage_availability_mask"] = 0x0021
+        api = object()
+        with (
+            patch.object(
+                practice_native_menu,
+                "wait_for_title_menu",
+                return_value=initial,
+            ),
+            patch.object(
+                practice_native_menu,
+                "read_title_menu_state",
+                return_value=verified,
+            ),
+            patch.object(
+                practice_native_menu,
+                "write_process_u16",
+            ) as write,
+        ):
+            result = practice_native_menu.unlock_requested_practice_stage(
+                api,
+                284,
+                stage_index=5,
+                expected_route_id=2,
+                expected_difficulty_index=3,
+                timeout_seconds=3.0,
+            )
+        address = practice_native_menu.practice_stage_availability_address(2, 3)
+        write.assert_called_once_with(api, 284, address, 0x0021)
+        self.assertEqual(result["mask_before"], 0x0001)
+        self.assertEqual(result["mask_after"], 0x0021)
+        self.assertTrue(result["wrote"])
 
     def test_parser_accepts_repeatable_stage_selection(self) -> None:
         args = build_parser().parse_args(

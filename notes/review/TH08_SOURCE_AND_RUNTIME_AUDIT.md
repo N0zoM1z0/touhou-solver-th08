@@ -1009,6 +1009,27 @@ that workload.  This is performance/mechanism
 evidence, not a hit claim.  A Stage-5 practice diagnostic and then the complete
 isolated route remain the physical gate.
 
+### AUD-042 — The prepared Wine score does not unlock arbitrary Practice stages
+
+Status: **CONFIRMED BOOTSTRAP FAILURE; SOURCE-BOUNDED FIX OFFLINE-VALIDATED;
+PHYSICAL RETRY PENDING**
+
+- **Observed:** isolated Wine attempt `lunatic_route2_stage5_unattended_20260824_114355`
+  reached the interactive Practice stage menu with exact EXE/patch, Lunatic,
+  Route 2, and Sakuya/Remilia, but read availability `0x0001` and failed before
+  gameplay. Cleanup left no exact-prefix process. The failed session is
+  retained separately.
+- **Source authority:** `TitleScreen::OnUpdatePracticeStageSelect` reads
+  `Clrd::difficultiesClearedWithRetries` for the selected shot/team and
+  configured difficulty; it makes only Stage 1 available when the value is
+  zero. A filename or archive label cannot establish these per-selection
+  bits.
+- **Correction boundary:** Wine Practice explicitly enables only the requested
+  bit after native route/difficulty/menu checks, writes the `u16` data field,
+  and immediately rereads the same state. Full route, EXE bytes, Power, lives,
+  Bomb stock, and action authority are unchanged. Focused tests pass 47/47;
+  physical retry is the falsifier.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
