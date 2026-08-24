@@ -49,6 +49,7 @@ NATIVE_LIBRARY_SHA256 = (
 PREFIX_MARKER = ".th08-wine-win32-ready-v1.json"
 WINE_FULL_ROUTE_AGENT_DURATION_SECONDS = 86_400.0
 WINE_FULL_ROUTE_TRIAL_TIMEOUT_SECONDS = 86_700.0
+PRACTICE_STAGE_KEYS = ("1", "2", "3", "4a", "4b", "5", "6a", "6b")
 
 
 def sha256(path: Path) -> str:
@@ -203,6 +204,7 @@ def build_windows_controller_command(
     ordinary_preexhaustion_authority: bool,
     authority_only_corridor: bool,
     trace_items: bool,
+    practice_stage: str = "5",
 ) -> list[str]:
     launcher = ROOT / "scripts" / "tools" / "run_th08_wine_launch.bat"
     if mode == "smoke":
@@ -215,6 +217,25 @@ def build_windows_controller_command(
             windows_path(launcher),
             "--report",
             windows_path(artifact_dir / "windows-smoke.json"),
+        ]
+    if mode == "practice":
+        return [
+            windows_path(python),
+            windows_path(ROOT / "scripts" / "th08_practice_supervisor.py"),
+            "--armed",
+            "--refuse-existing",
+            "--stage",
+            practice_stage,
+            "--difficulty",
+            "lunatic",
+            "--game-dir",
+            windows_path(game_dir),
+            "--launch-bat",
+            windows_path(launcher),
+            "--agent-duration",
+            str(agent_duration),
+            "--trial-timeout",
+            str(trial_timeout),
         ]
     command = [
         windows_path(python),
@@ -248,7 +269,17 @@ def build_windows_controller_command(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("smoke", "full-route"), default="smoke")
+    parser.add_argument(
+        "--mode",
+        choices=("smoke", "practice", "full-route"),
+        default="smoke",
+    )
+    parser.add_argument(
+        "--practice-stage",
+        choices=PRACTICE_STAGE_KEYS,
+        default="5",
+        help="Lunatic Sakuya/Remilia Practice Start stage",
+    )
     parser.add_argument(
         "--game-dir",
         type=Path,
@@ -322,9 +353,12 @@ def run(args: argparse.Namespace) -> int:
         "schema": "th08-isolated-wine-run-v1",
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "mode": args.mode,
+        "practice_stage": args.practice_stage if args.mode == "practice" else None,
         "artifact_dir": str(artifact_dir),
         "display_requested": args.display,
         "cpu_list": args.cpu_list,
+        "agent_duration_seconds": args.agent_duration,
+        "trial_timeout_seconds": args.trial_timeout,
         "authority_only_corridor": args.authority_only_corridor,
         "trace_items": args.trace_items,
         "wine_prefix": str(args.wine_prefix.resolve()),
@@ -352,7 +386,9 @@ def run(args: argparse.Namespace) -> int:
         validate_cpu_list(args.cpu_list)
         if args.timeout is not None and args.timeout <= 0.0:
             raise ValueError("timeout must be positive")
-        if args.mode == "full-route" and args.trial_timeout <= args.agent_duration:
+        if args.mode != "smoke" and args.agent_duration <= 0.0:
+            raise ValueError("agent duration must be positive")
+        if args.mode != "smoke" and args.trial_timeout <= args.agent_duration:
             raise ValueError("trial timeout must exceed agent duration")
         if not repository_clean():
             raise RuntimeError("Wine evidence run requires a clean worktree")
@@ -545,6 +581,7 @@ def run(args: argparse.Namespace) -> int:
             ),
             authority_only_corridor=args.authority_only_corridor,
             trace_items=args.trace_items,
+            practice_stage=args.practice_stage,
         )
         wine_command = [
             str(wine),

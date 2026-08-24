@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 from th08_agent_hotkey import AgentHotkey
+from th08_automation.agent_contract import LONG_RUN_DURATION_SECONDS
 from th08_automation.practice_artifacts import (
     TrialArtifacts,
     materialize_artifacts as _materialize_artifacts,
@@ -280,6 +281,8 @@ def run_trial(
         "local_hazard_backend": args.local_hazard_backend,
         "local_beam_reducer": args.local_beam_reducer,
         "bullet_decode_backend": args.bullet_decode_backend,
+        "agent_duration_seconds": args.agent_duration,
+        "trial_timeout_seconds": args.trial_timeout,
         "save_replay_slot": args.save_replay_slot,
         "replay_save_timeout": args.replay_save_timeout,
         "caps_lock_bootstrap": {
@@ -334,6 +337,7 @@ def run_trial(
             local_hazard_backend=args.local_hazard_backend,
             local_beam_reducer=args.local_beam_reducer,
             bullet_decode_backend=args.bullet_decode_backend,
+            duration_seconds=args.agent_duration,
             detailed_summary=True,
         )
         batch_process, batch_log = launch_patch_batch(
@@ -612,6 +616,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=20.0,
         help="native-state wait deadline for an accepted replay save",
+    )
+    parser.add_argument(
+        "--agent-duration",
+        type=float,
+        default=float(LONG_RUN_DURATION_SECONDS),
+        help="maximum live-agent duration in seconds",
     )
     parser.add_argument("--trial-timeout", type=float, default=4500.0)
     parser.add_argument(

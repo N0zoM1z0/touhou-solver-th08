@@ -153,6 +153,10 @@ class PracticeSupervisorTests(unittest.TestCase):
                 "--safety-value-horizon",
                 "32",
                 "--viability-audit",
+                "--agent-duration",
+                "86400",
+                "--trial-timeout",
+                "86700",
                 "--armed",
             ]
         )
@@ -163,6 +167,8 @@ class PracticeSupervisorTests(unittest.TestCase):
         self.assertTrue(args.kill_existing)
         self.assertEqual(args.safety_value_horizon, 32)
         self.assertTrue(args.viability_audit)
+        self.assertEqual(args.agent_duration, 86_400.0)
+        self.assertEqual(args.trial_timeout, 86_700.0)
         self.assertFalse(args.input_clock_boundary_shadow)
         self.assertEqual(args.input_clock_shadow_sample_ms, 1.0)
         self.assertEqual(args.difficulty.key, "lunatic")

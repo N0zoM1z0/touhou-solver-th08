@@ -151,6 +151,11 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertTrue(args.authority_only_corridor)
         self.assertFalse(args.trace_items)
 
+    def test_wine_practice_defaults_to_nonbinding_stage5_gate(self) -> None:
+        args = runner.build_parser().parse_args(["--mode", "practice"])
+        self.assertEqual(args.practice_stage, "5")
+        self.assertEqual(args.trial_timeout, 86_700.0)
+
     def test_pty_bridge_provides_console_handles_and_propagates_status(
         self,
     ) -> None:
@@ -229,6 +234,38 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertNotIn("--ordinary-preexhaustion-authority", command)
         self.assertIn("--authority-only-corridor", command)
         self.assertNotIn("--trace-items", command)
+
+    def test_practice_command_is_lunatic_stage_selectable_and_local_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            command = runner.build_windows_controller_command(
+                mode="practice",
+                python=root / "python.exe",
+                game_dir=root / "game",
+                artifact_dir=root / "artifacts",
+                agent_duration=86_400.0,
+                trial_timeout=86_700.0,
+                kill_before_saturation=False,
+                ordinary_preexhaustion_authority=False,
+                authority_only_corridor=True,
+                trace_items=False,
+                practice_stage="4b",
+            )
+        self.assertIn("th08_practice_supervisor.py", command[1])
+        self.assertIn("--armed", command)
+        self.assertIn("--refuse-existing", command)
+        self.assertEqual(command[command.index("--stage") + 1], "4b")
+        self.assertEqual(command[command.index("--difficulty") + 1], "lunatic")
+        self.assertEqual(
+            command[command.index("--agent-duration") + 1],
+            "86400.0",
+        )
+        self.assertEqual(
+            command[command.index("--trial-timeout") + 1],
+            "86700.0",
+        )
+        self.assertNotIn("--runtime-ecl-static-image", command)
+        self.assertNotIn("--enable-finalb-scale-source-authority", command)
 
     def test_pe_machine_reads_i386_coff_header(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
