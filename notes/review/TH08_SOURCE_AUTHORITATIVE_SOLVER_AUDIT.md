@@ -343,6 +343,23 @@ all births into unique finite envelopes.  This is a source-exact offline
 component gate, not a claim that the still-disabled ordinary model covers
 active spells or that the global planner may consume it.
 
+### Binary32 AABB and cancellation precheck
+
+The v2 source-collision kernel now separates exact collision booleans from the
+continuous risk metric.  An independent two-million-case binary32 edge fuzz
+finds zero corrected disagreements and 192,845 disagreements in the former
+double-center topology.  A 1,536-bullet by 4,096-position stress also has zero
+corrected pair or integrated collision-count disagreements.  These are
+adversarial numerical gates, not estimates of route frequency.
+
+The same source read narrows what “exact bullet collision” must mean in a
+future stepper.  Before the lethal AABB, `Player::FUN_00449ff0` checks active
+player cancel regions and may return result 2, causing the bullet to enter
+state 5 without player death.  Post-hit cooldown, enemy-death/time-orb logic,
+and Bomb code create those regions.  The current-frame pool already reflects
+the result, but exact multi-frame simulation needs the region pool and its
+reached creation/update roots.  Hard no-Bomb alone is not an emptiness proof.
+
 ## Proposed Simpler Architecture
 
 ```text
@@ -434,8 +451,13 @@ pool state/aux counts, and the tracked streaming audit quantifies the 12.5703%
 route-wide and 22.6220% Stage-5 legacy-only rates above.  It also records
 393,216 laser observations and end-to-end timing without loading the 2.22 GB
 trace into memory.  Exact route-wide geometry, future ANM/callback lifecycle,
-and binary32 collision predicates remain open; phase A is therefore narrowed,
-not complete.
+and executable-bit-exact laser collision remain open; phase A is therefore
+narrowed, not complete.
+
+The binary32 bullet/body AABB predicate is now closed offline by AUD-032, but
+the cached-root incoherence cases, rotated-laser oracle, cancel-region pool,
+and complete route geometry remain open.  This does not yet promote v2 into
+live action authority.
 
 1. Retain player lethal half-extents, bullet native state/timer/callback aux,
    exact laser-local rectangle, rank/subrank, RNG state, and the full reached

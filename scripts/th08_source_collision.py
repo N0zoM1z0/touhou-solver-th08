@@ -19,7 +19,9 @@ from th08_laser_runtime import Laser, PackedLaserFrame, pack_laser_frame
 from th08_live.models import EnemyBody
 
 
-TH08_SOURCE_COLLISION_SEMANTICS_VERSION = "th08-source-collision-v1"
+TH08_SOURCE_COLLISION_SEMANTICS_VERSION = (
+    "th08-source-collision-v2-binary32-inclusive-aabb"
+)
 
 
 def _require_player_half_extents(
@@ -84,6 +86,88 @@ def source_bullet_lethal_eligible(
     return native_state == 1 and callback_aux_state == 0
 
 
+def _source_aabb_bounds(
+    center: np.ndarray | float,
+    half_extent: np.ndarray | float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Store native Float3 center +/- half-extent in binary32."""
+
+    center32 = np.asarray(center, dtype=np.float32)
+    half32 = np.asarray(half_extent, dtype=np.float32)
+    if not np.all(np.isfinite(center32)) or not np.all(np.isfinite(half32)):
+        raise ValueError("source AABB values must be finite")
+    if np.any(half32 < 0.0):
+        raise ValueError("source AABB half-extents must be nonnegative")
+    return (
+        np.asarray(center32 - half32, dtype=np.float32),
+        np.asarray(center32 + half32, dtype=np.float32),
+    )
+
+
+def source_aabb_overlap_mask(
+    *,
+    player_x: np.ndarray | float,
+    player_y: np.ndarray | float,
+    player_half_width: np.ndarray | float,
+    player_half_height: np.ndarray | float,
+    hazard_x: np.ndarray | float,
+    hazard_y: np.ndarray | float,
+    hazard_half_width: np.ndarray | float,
+    hazard_half_height: np.ndarray | float,
+) -> np.ndarray:
+    """Reproduce source Float3 stores and inclusive separated-axis tests."""
+
+    player_left, player_right = _source_aabb_bounds(
+        player_x,
+        player_half_width,
+    )
+    player_top, player_bottom = _source_aabb_bounds(
+        player_y,
+        player_half_height,
+    )
+    hazard_left, hazard_right = _source_aabb_bounds(
+        hazard_x,
+        hazard_half_width,
+    )
+    hazard_top, hazard_bottom = _source_aabb_bounds(
+        hazard_y,
+        hazard_half_height,
+    )
+    return ~(
+        (player_left > hazard_right)
+        | (player_top > hazard_bottom)
+        | (player_right < hazard_left)
+        | (player_bottom < hazard_top)
+    )
+
+
+def source_aabb_overlaps(
+    *,
+    player_x: float,
+    player_y: float,
+    player_half_width: float,
+    player_half_height: float,
+    hazard_x: float,
+    hazard_y: float,
+    hazard_half_width: float,
+    hazard_half_height: float,
+) -> bool:
+    """Scalar binary32/inclusive collision result from FUN_0044a230."""
+
+    return bool(
+        source_aabb_overlap_mask(
+            player_x=player_x,
+            player_y=player_y,
+            player_half_width=player_half_width,
+            player_half_height=player_half_height,
+            hazard_x=hazard_x,
+            hazard_y=hazard_y,
+            hazard_half_width=hazard_half_width,
+            hazard_half_height=hazard_half_height,
+        )
+    )
+
+
 def source_aabb_clearance(
     *,
     player_x: float,
@@ -97,7 +181,16 @@ def source_aabb_clearance(
 ) -> float:
     """Signed inclusive-AABB clearance used by bullets and enemy bodies."""
 
-    _require_player_half_extents(player_half_width, player_half_height)
+    overlap = source_aabb_overlaps(
+        player_x=player_x,
+        player_y=player_y,
+        player_half_width=player_half_width,
+        player_half_height=player_half_height,
+        hazard_x=hazard_x,
+        hazard_y=hazard_y,
+        hazard_half_width=hazard_half_width,
+        hazard_half_height=hazard_half_height,
+    )
     dx = abs(player_x - hazard_x) - (
         player_half_width + hazard_half_width
     )
@@ -105,8 +198,12 @@ def source_aabb_clearance(
         player_half_height + hazard_half_height
     )
     if dx <= 0.0 and dy <= 0.0:
-        return max(dx, dy)
-    return math.hypot(max(dx, 0.0), max(dy, 0.0))
+        clearance = max(dx, dy)
+    else:
+        clearance = math.hypot(max(dx, 0.0), max(dy, 0.0))
+    if overlap:
+        return min(clearance, 0.0)
+    return max(clearance, math.nextafter(0.0, math.inf))
 
 
 def source_laser_rectangle_clearance(
@@ -141,6 +238,22 @@ def _clearance_field(dx: np.ndarray, dy: np.ndarray) -> np.ndarray:
         overlap,
         np.maximum(dx, dy),
         np.hypot(np.maximum(dx, 0.0), np.maximum(dy, 0.0)),
+    )
+
+
+def _align_clearance_sign(
+    clearance: np.ndarray,
+    overlap: np.ndarray,
+) -> np.ndarray:
+    """Keep the risk metric while making its sign match native booleans."""
+
+    zero = np.asarray(0.0, dtype=clearance.dtype)
+    positive_infinity = np.asarray(np.inf, dtype=clearance.dtype)
+    positive_epsilon = np.nextafter(zero, positive_infinity)
+    return np.where(
+        overlap,
+        np.minimum(clearance, zero),
+        np.maximum(clearance, positive_epsilon),
     )
 
 
@@ -215,9 +328,22 @@ def source_collision_hazards_for_positions(
             dy = np.abs(positions_y[:, None] - bullet_y[None, :]) - (
                 player_half_height + half_height[None, :]
             )
-            clearance = _clearance_field(dx, dy)
+            exact_overlap = source_aabb_overlap_mask(
+                player_x=positions_x[:, None],
+                player_y=positions_y[:, None],
+                player_half_width=player_half_width,
+                player_half_height=player_half_height,
+                hazard_x=bullet_x[None, :],
+                hazard_y=bullet_y[None, :],
+                hazard_half_width=half_width[None, :],
+                hazard_half_height=half_height[None, :],
+            )
+            clearance = _align_clearance_sign(
+                _clearance_field(dx, dy),
+                exact_overlap,
+            )
             collisions += (
-                (clearance <= 0.0) & position_relevant
+                exact_overlap & position_relevant
             ).sum(axis=1, dtype=np.int32)
             uncertainty = (
                 0.2 * math.sqrt(step)
@@ -304,8 +430,21 @@ def source_collision_hazards_for_positions(
         dy = np.abs(positions_y[:, None] - body_y[None, :]) - (
             player_half_height + half_height[None, :]
         )
-        clearance = _clearance_field(dx, dy)
-        collisions += (clearance <= 0.0).sum(axis=1, dtype=np.int32)
+        exact_overlap = source_aabb_overlap_mask(
+            player_x=positions_x[:, None],
+            player_y=positions_y[:, None],
+            player_half_width=player_half_width,
+            player_half_height=player_half_height,
+            hazard_x=body_x[None, :],
+            hazard_y=body_y[None, :],
+            hazard_half_width=half_width[None, :],
+            hazard_half_height=half_height[None, :],
+        )
+        clearance = _align_clearance_sign(
+            _clearance_field(dx, dy),
+            exact_overlap,
+        )
+        collisions += exact_overlap.sum(axis=1, dtype=np.int32)
         robust_clearance = clearance - min(12.0, 0.5 * step)
         minimum = np.minimum(minimum, robust_clearance.min(axis=1))
         danger = np.maximum(64.0 - robust_clearance, 0.0)
@@ -318,6 +457,8 @@ __all__ = [
     "TH08_SOURCE_COLLISION_SEMANTICS_VERSION",
     "player_half_extents_from_aabb",
     "source_aabb_clearance",
+    "source_aabb_overlap_mask",
+    "source_aabb_overlaps",
     "source_bullet_lethal_eligible",
     "source_collision_hazards_for_positions",
     "source_laser_rectangle_clearance",

@@ -744,10 +744,10 @@ and stepping those additional roots.
 
 ### AUD-032 — Collision booleans require binary32 storage and inclusive bounds
 
-Status: **CONFIRMED-SOURCE; REPRODUCIBLE ORACLE/FUZZ PENDING**
+Status: **FIXED-OFFLINE FOR AXIS-ALIGNED AABB; LASER SEPARATE**
 
 The source player-bullet predicate compares inclusive Float3 AABB bounds.
-The current shadow topology computes a symmetric double-precision clearance,
+The pre-v2 shadow topology computes a symmetric double-precision clearance,
 which is mathematically similar but not executable-bit-exact at touching
 edges.  An edge-focused two-million-case diagnostic found 135,386 boolean
 disagreements (134,938 current-false/source-true and 448 in the reverse
@@ -757,11 +757,52 @@ comparisons.  Laser collision has the additional `sinf`/`cosf` and rotated-
 Float3 boundary, so it must receive a separate oracle rather than inherit the
 bullet result.
 
+The source kernel is now versioned as
+`th08-source-collision-v2-binary32-inclusive-aabb`.  It explicitly stores
+player and hazard min/max bounds as binary32, applies the source separated-
+axis comparisons, and aligns the sign of the continuous risk clearance with
+that exact boolean.  The tracked independent report
+`th08_source_aabb_binary32_differential_20260824.json` runs two million
+edge-focused cases: the former double-center predicate disagrees 192,845
+times, while the corrected scalar/vector kernel has zero oracle mismatches.
+The rate is deliberately adversarial and is not a live-route estimate.
+
+A separate full-pool stress compares 1,536 bullets against 4,096 player
+positions (6,291,456 pairs), including 657 source-lifecycle-eligible bullets.
+The corrected pair mask has zero oracle mismatches and the integrated
+lifecycle-filtered collision count has zero mismatching positions.  Laser
+rotation remains outside this result and retains its own pending `sinf`/`cosf`
+oracle.
+
+Regenerating the retained root-2129 differential under v2 leaves its
+one-pixel grid counts and all 18 one-step safe actions unchanged.  Binary32
+correctness closes an authority defect at exact edges; it does not manufacture
+a route-level behavior effect where the retained root has no such edge case.
+
+### AUD-033 — Player cancel regions precede the lethal AABB call
+
+Status: **CONFIRMED-SOURCE; FUTURE ROOT/STEPPER MISSING**
+
+`Player::FUN_0044a230` first calls the separately 100%-matching
+`Player::FUN_00449ff0` over 192 `playerSlotsC` cancel regions.  A region hit
+returns collision result 2 without calling `Player::Die`; the bullet update
+then normally moves that bullet to state 5, except for its explicit transform-
+flag exception.  These regions are created not only by Bomb code, but also by
+the post-hit player-state cooldown and enemy-death/time-orb paths.  Hard
+no-Bomb therefore does not prove that the region pool is always empty.
+
+The current-frame lifecycle shadow observes the resulting bullet state after
+native update and remains valid.  A future bullet stepper that ignores active
+and future cancel regions can nonetheless preserve bullets that native code
+would remove, especially after damage-dependent enemy deaths or a modeled
+hit branch.  Retain the region pool and reached creation sources before
+granting multi-frame current-entity or future-birth action authority.
+
 ## Offline Verification Record
 
-After the Linux native build and fixes above, the complete repository suite
-passed on this VPS: 1,349 tests run, 5 conditionally skipped, zero failures or
-errors. The Win32 planner build separately produced a PE32 i386 DLL with all
+After the Linux native build and fixes above, the latest complete repository
+suite passed on this VPS: 1,386 tests run, 5 conditionally skipped, zero
+failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.
 

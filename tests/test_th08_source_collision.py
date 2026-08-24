@@ -16,6 +16,8 @@ from th08_live.local_hazards import _numpy_hazards_for_positions
 from th08_source_collision import (
     player_half_extents_from_aabb,
     source_aabb_clearance,
+    source_aabb_overlap_mask,
+    source_aabb_overlaps,
     source_bullet_lethal_eligible,
     source_collision_hazards_for_positions,
     source_laser_rectangle_clearance,
@@ -79,6 +81,62 @@ class SourceCollisionTests(unittest.TestCase):
                 hazard_half_height=3.0,
             ),
             0.0,
+        )
+
+    def test_aabb_uses_stored_binary32_bounds_at_touching_edge(self) -> None:
+        player_x = float(np.float32(129.168609619))
+        hazard_x = float(np.float32(121.566139221))
+        hazard_size = float(np.float32(13.204931259))
+        hazard_half_width = float(np.float32(hazard_size * 0.5))
+        naive_double_clearance = abs(player_x - hazard_x) - (
+            1.0 + hazard_half_width
+        )
+        self.assertGreater(naive_double_clearance, 0.0)
+        self.assertEqual(
+            np.float32(player_x - 1.0),
+            np.float32(hazard_x + hazard_half_width),
+        )
+
+        self.assertTrue(
+            source_aabb_overlaps(
+                player_x=player_x,
+                player_y=100.0,
+                player_half_width=1.0,
+                player_half_height=1.0,
+                hazard_x=hazard_x,
+                hazard_y=100.0,
+                hazard_half_width=hazard_half_width,
+                hazard_half_height=1.0,
+            )
+        )
+        self.assertEqual(
+            source_aabb_clearance(
+                player_x=player_x,
+                player_y=100.0,
+                player_half_width=1.0,
+                player_half_height=1.0,
+                hazard_x=hazard_x,
+                hazard_y=100.0,
+                hazard_half_width=hazard_half_width,
+                hazard_half_height=1.0,
+            ),
+            0.0,
+        )
+        np.testing.assert_array_equal(
+            source_aabb_overlap_mask(
+                player_x=np.asarray([[player_x]], dtype=np.float32),
+                player_y=np.asarray([[100.0]], dtype=np.float32),
+                player_half_width=1.0,
+                player_half_height=1.0,
+                hazard_x=np.asarray([[hazard_x]], dtype=np.float32),
+                hazard_y=np.asarray([[100.0]], dtype=np.float32),
+                hazard_half_width=np.asarray(
+                    [[hazard_half_width]],
+                    dtype=np.float32,
+                ),
+                hazard_half_height=1.0,
+            ),
+            np.asarray([[True]]),
         )
         self.assertGreater(
             source_aabb_clearance(

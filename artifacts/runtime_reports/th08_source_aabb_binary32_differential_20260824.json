@@ -1,0 +1,74 @@
+{
+  "authority": {
+    "accepted_for": "bullet/player and axis-aligned enemy/player binary32 AABB topology, inclusive edge booleans, lifecycle-filtered vectorized collision counts, and dense-pool numerical stress",
+    "edge_fuzz_rate_is_live_route_estimate": false,
+    "not_accepted_for": "player slot interception, laser rotation, multi-frame bullet motion/lifecycle, uncertainty calibration, hit causality, or live action authority"
+  },
+  "corrected_semantics_version": "th08-source-collision-v2-binary32-inclusive-aabb",
+  "density_stress": {
+    "all_outputs_finite": true,
+    "bullet_count": 1536,
+    "corrected_oracle_mismatch_count": 0,
+    "eligible_bullet_count": 657,
+    "integration_collision_count_mismatch_positions": 0,
+    "legacy_oracle_mismatch_count": 1450,
+    "maximum_integration_collision_count": 11,
+    "maximum_oracle_collision_count": 11,
+    "pair_count": 6291456,
+    "position_count": 4096,
+    "seed": 4498480
+  },
+  "edge_fuzz": {
+    "chunk_size": 250000,
+    "corrected_oracle_mismatch_count": 0,
+    "first_legacy_false_source_true": {
+      "axis": "y",
+      "construction": "symmetric_center",
+      "hazard_bounds": [
+        16.842327117919922,
+        363.1431579589844,
+        28.685623168945312,
+        392.9247131347656
+      ],
+      "hazard_half_height": 14.890771865844727,
+      "hazard_half_width": 5.921647548675537,
+      "hazard_x": 22.763975143432617,
+      "hazard_y": 378.033935546875,
+      "legacy_overlap": false,
+      "oracle_overlap": true,
+      "player_bounds": [
+        21.763975143432617,
+        392.9247131347656,
+        23.763975143432617,
+        398.9247131347656
+      ],
+      "player_half_height": 3.0,
+      "player_half_width": 1.0,
+      "player_x": 22.763975143432617,
+      "player_y": 395.9247131347656,
+      "side": -1,
+      "ulp_steps": 0
+    },
+    "first_legacy_true_source_false": null,
+    "legacy_false_source_true_count": 192845,
+    "legacy_oracle_mismatch_count": 192845,
+    "legacy_true_source_false_count": 0,
+    "sample_count": 2000000,
+    "seed": 4497968
+  },
+  "report_digest": "fcaa4d2738a82188384a01b3d5e8cf1fe5a6cbe5f3f71b3a65d8234935ef1955",
+  "schema": "th08-source-aabb-binary32-differential-v1",
+  "source_authority": {
+    "bounds_storage": "Float3 binary32",
+    "function": "Player::FUN_0044a230",
+    "matching_ledger": "../th08/config/matches.csv",
+    "separation_comparisons": [
+      ">",
+      ">",
+      "<",
+      "<"
+    ],
+    "source_path": "../th08/src/Player.cpp",
+    "touching_edges_overlap": true
+  }
+}
