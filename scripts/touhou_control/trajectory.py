@@ -27,6 +27,47 @@ class VelocityChange:
             raise ValueError("velocity changes must be finite")
 
 
+@dataclass(frozen=True, order=True)
+class CollisionStateChange:
+    """Replace a trajectory hazard's collision-enabled state.
+
+    As with :class:`VelocityChange`, frame zero is the observed state and a
+    change at frame one applies before the first projected collision query.
+    Keeping this independent from motion is important for native mechanics
+    such as TH08 callback 12, which changes velocity and collision state in
+    one transition.
+    """
+
+    frame: int
+    collision_enabled: bool
+
+    def __post_init__(self) -> None:
+        if self.frame <= 0:
+            raise ValueError(
+                "collision-state changes must occur after frame zero"
+            )
+
+
+def collision_enabled_at(
+    initial: bool,
+    changes: tuple[CollisionStateChange, ...],
+    frame: int,
+) -> bool:
+    """Return the collision state after changes through ``frame``."""
+
+    enabled = bool(initial)
+    previous = 0
+    for change in changes:
+        if change.frame <= previous:
+            raise ValueError(
+                "collision-state change frames must be strictly increasing"
+            )
+        previous = change.frame
+        if change.frame <= frame:
+            enabled = change.collision_enabled
+    return enabled
+
+
 @dataclass(frozen=True)
 class PiecewiseLinearTrajectory:
     """A point trajectory with finite, time-indexed velocity replacements."""

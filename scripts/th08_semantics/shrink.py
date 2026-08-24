@@ -86,36 +86,39 @@ def shrink_case(
         if attempts[0] >= maximum_attempts:
             return current, attempts[0]
 
-    # Remove individual piecewise transform events before simplifying their
-    # numeric state.  Each accepted edit is based on the latest current case,
-    # so a later edit cannot silently restore a previous reduction.
+    # Remove individual piecewise transform and collision-gate events before
+    # simplifying their numeric state.  Each accepted edit is based on the
+    # latest current case, so a later edit cannot silently restore a previous
+    # reduction.
     for bullet_index in range(len(current.bullets)):
         if attempts[0] >= maximum_attempts:
             return current, attempts[0]
-        changes = current.bullets[bullet_index].velocity_changes
-        if not changes:
-            continue
+        for field in ("velocity_changes", "collision_state_changes"):
+            changes = getattr(current.bullets[bullet_index], field)
+            if not changes:
+                continue
 
-        def update_changes(
-            values: tuple[object, ...],
-            *,
-            index: int = bullet_index,
-        ) -> SemanticCase:
-            bullets = list(current.bullets)
-            bullets[index] = replace(
-                bullets[index],
-                velocity_changes=tuple(values),
+            def update_changes(
+                values: tuple[object, ...],
+                *,
+                index: int = bullet_index,
+                field_name: str = field,
+            ) -> SemanticCase:
+                bullets = list(current.bullets)
+                bullets[index] = replace(
+                    bullets[index],
+                    **{field_name: tuple(values)},
+                )
+                return replace(current, bullets=tuple(bullets))
+
+            reduced_changes = _ddmin_tuple(
+                tuple(changes),
+                update=update_changes,
+                fails=fails,
+                attempts=attempts,
+                maximum_attempts=maximum_attempts,
             )
-            return replace(current, bullets=tuple(bullets))
-
-        reduced_changes = _ddmin_tuple(
-            tuple(changes),
-            update=update_changes,
-            fails=fails,
-            attempts=attempts,
-            maximum_attempts=maximum_attempts,
-        )
-        current = update_changes(reduced_changes)
+            current = update_changes(reduced_changes)
 
     retain(
         replace(
@@ -152,6 +155,7 @@ def shrink_case(
             replace(
                 bullet,
                 velocity_changes=(),
+                collision_state_changes=(),
                 trajectory_uncertainty_x=0.0,
                 trajectory_uncertainty_y=0.0,
             )

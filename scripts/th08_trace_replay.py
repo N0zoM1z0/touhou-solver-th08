@@ -15,7 +15,7 @@ from touhou_control.local_pipeline_oracle import LocalPipelineRoot
 from th08_update_order import (
     TH08_INPUT_PUBLICATION_TO_MOTION_LAG_FRAMES,
 )
-from touhou_control.trajectory import VelocityChange
+from touhou_control.trajectory import CollisionStateChange, VelocityChange
 
 
 def laser_from_trace(values: list[object]) -> Laser:
@@ -95,6 +95,7 @@ def bullet_from_trace(values: list[object]) -> Bullet:
         raw_changes = runtime[14] if len(runtime) > 14 else ()
         uncertainty_x = float(runtime[15]) if len(runtime) > 15 else 0.0
         uncertainty_y = float(runtime[16]) if len(runtime) > 16 else 0.0
+        raw_collision_changes = runtime[17] if len(runtime) > 17 else ()
     elif planning_projection:
         assert isinstance(projection, list)
         callback_phase = int(projection[3])
@@ -102,12 +103,14 @@ def bullet_from_trace(values: list[object]) -> Bullet:
         raw_changes = projection[5]
         uncertainty_x = float(projection[6])
         uncertainty_y = float(projection[7])
+        raw_collision_changes = projection[8] if len(projection) > 8 else ()
     else:
         callback_phase = 0
         callback_aux = 0
         raw_changes = ()
         uncertainty_x = 0.0
         uncertainty_y = 0.0
+        raw_collision_changes = ()
     if lifecycle is not None:
         callback_aux = int(lifecycle[3])
     changes = tuple(
@@ -117,6 +120,10 @@ def bullet_from_trace(values: list[object]) -> Bullet:
             float(change[2]),
         )
         for change in raw_changes
+    )
+    collision_changes = tuple(
+        CollisionStateChange(int(change[0]), bool(change[1]))
+        for change in raw_collision_changes
     )
     return Bullet(
         x=float(values[1]),
@@ -140,6 +147,7 @@ def bullet_from_trace(values: list[object]) -> Bullet:
         callback_phase_state=callback_phase,
         callback_aux_state=callback_aux,
         velocity_changes=changes,
+        collision_state_changes=collision_changes,
         trajectory_uncertainty_x=uncertainty_x,
         trajectory_uncertainty_y=uncertainty_y,
         original_transform_flags=(

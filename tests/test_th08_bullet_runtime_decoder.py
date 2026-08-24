@@ -52,9 +52,10 @@ from th08_live_dodge_agent import (
     decode_packed_bullets,
     serialize_bullet_trace,
 )
+from th08_live.local_hazards import _bullet_frame_without_retired_state
 from th08_live.models import BULLET_LIFECYCLE_TRACE_SCHEMA
 from th08_trace_replay import bullet_from_trace
-from touhou_control.trajectory import VelocityChange
+from touhou_control.trajectory import CollisionStateChange, VelocityChange
 
 
 def _record(
@@ -719,6 +720,27 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
         self.assertEqual(replayed.native_state_timer_elapsed, 0)
         self.assertEqual(replayed.callback_aux_state, 0)
 
+    def test_trace_roundtrip_retains_future_collision_gate(self) -> None:
+        bullet = Bullet(
+            1.0,
+            2.0,
+            0.0,
+            0.0,
+            2.0,
+            2.0,
+            collision_state_changes=(
+                CollisionStateChange(3, False),
+                CollisionStateChange(8, True),
+            ),
+        )
+
+        replayed = bullet_from_trace(serialize_bullet_trace(bullet))
+
+        self.assertEqual(
+            replayed.collision_state_changes,
+            bullet.collision_state_changes,
+        )
+
     def test_runtime_observation_is_behavior_neutral_until_projection_gate(
         self,
     ) -> None:
@@ -939,6 +961,10 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
             event_frame_uncertainty=1,
         )[0]
         self.assertEqual(attached.velocity_changes[0].frame, 5)
+        self.assertEqual(
+            attached.collision_state_changes,
+            (CollisionStateChange(5, False),),
+        )
         self.assertEqual(attached.trajectory_uncertainty_x, 2.0)
         frames = _build_bullet_frames(
             (attached,),
@@ -948,6 +974,17 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
         self.assertEqual(
             [float(frame[0][0]) for frame in frames],
             [12.0, 14.0, 16.0, 18.0, 18.0, 18.0],
+        )
+        self.assertEqual(
+            [int(frame[6][0]) for frame in frames],
+            [0, 0, 0, 0, 1, 1],
+        )
+        self.assertEqual(
+            [
+                _bullet_frame_without_retired_state(frame)[0].size
+                for frame in frames
+            ],
+            [1, 1, 1, 1, 0, 0],
         )
 
 

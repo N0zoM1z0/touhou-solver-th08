@@ -15,7 +15,7 @@ from th08_bullet_transform_model import (
 from th08_ecl_runtime import (
     EclVmSnapshot,
     TaggedVelocityToggle,
-    velocity_changes_for_tagged_bullet,
+    trajectory_changes_for_tagged_bullet,
 )
 from touhou_control import native_backend
 
@@ -533,7 +533,7 @@ def attach_tagged_velocity_toggles(
             bullet.original_transform_flags
             or (runtime.original_flags if runtime is not None else 0)
         )
-        changes = velocity_changes_for_tagged_bullet(
+        changes = trajectory_changes_for_tagged_bullet(
             tag_flags=tag_flags,
             phase_state=bullet.callback_phase_state,
             base_speed=bullet.speed,
@@ -545,7 +545,7 @@ def attach_tagged_velocity_toggles(
         uncertainty_y = bullet.trajectory_uncertainty_y
         previous_x = bullet.vx
         previous_y = bullet.vy
-        for change in changes:
+        for change in changes.velocity_changes:
             uncertainty_x += (
                 abs(change.velocity_x - previous_x)
                 * event_frame_uncertainty
@@ -559,11 +559,12 @@ def attach_tagged_velocity_toggles(
         attached.append(
             replace(
                 bullet,
-                velocity_changes=changes,
+                velocity_changes=changes.velocity_changes,
+                collision_state_changes=changes.collision_changes,
                 trajectory_uncertainty_x=uncertainty_x,
                 trajectory_uncertainty_y=uncertainty_y,
             )
-            if changes
+            if changes.velocity_changes or changes.collision_changes
             else bullet
         )
     return tuple(attached)

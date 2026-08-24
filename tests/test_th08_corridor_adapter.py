@@ -23,7 +23,7 @@ from th08_corridor_adapter import (
 from th08_live_dodge_agent import Bullet, EnemyBody, Laser
 from th08_laser_model import LaserPhase, spawn_laser_state
 from touhou_control.corridor import AabbHazard, AabbTrajectoryHazard
-from touhou_control.trajectory import VelocityChange
+from touhou_control.trajectory import CollisionStateChange, VelocityChange
 from touhou_control.packed_hazards import PackedSegmentFrames
 
 
@@ -162,6 +162,48 @@ class Th08CorridorAdapterTests(unittest.TestCase):
         self.assertEqual(trajectory.sample(1).x, 14.0)
         self.assertEqual(trajectory.sample(2).x, 13.0)
         self.assertEqual(trajectory.motion.changes[0].frame, 2)
+
+    def test_callback_collision_gate_removes_only_disabled_interval(self) -> None:
+        bullet = Bullet(
+            10.0,
+            20.0,
+            2.0,
+            0.0,
+            3.0,
+            4.0,
+            collision_state_changes=(
+                CollisionStateChange(3, False),
+                CollisionStateChange(6, True),
+            ),
+        )
+        trajectory = lower_bullet_trajectories(
+            (bullet,),
+            snapshot_lag=0,
+            horizon_frames=7,
+        )[0]
+
+        self.assertIsNotNone(trajectory.sample(2))
+        self.assertIsNone(trajectory.sample(3))
+        self.assertIsNone(trajectory.sample(5))
+        self.assertIsNotNone(trajectory.sample(6))
+
+        observed_disabled = replace(
+            bullet,
+            callback_aux_state=1,
+            collision_state_changes=(),
+        )
+        self.assertEqual(
+            lower_bullets((observed_disabled,), snapshot_lag=0),
+            (),
+        )
+        self.assertEqual(
+            lower_bullet_trajectories(
+                (observed_disabled,),
+                snapshot_lag=0,
+                horizon_frames=7,
+            ),
+            (),
+        )
 
     def test_laser_uncertainty_accounts_for_snapshot_age(self) -> None:
         trajectory = lower_lasers(

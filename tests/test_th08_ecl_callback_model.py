@@ -13,6 +13,7 @@ from th08_ecl_callback_model import (
     PortalBullet,
     TaggedBullet,
     callback_2_enemy_motion,
+    callback_12_phase_transition,
     callback_12_toggle_tagged_bullet,
     callback_14_cycle_tagged_bullet,
     callback_16_triggers_linked_enemy,
@@ -60,8 +61,23 @@ class EclCallbackModelTests(unittest.TestCase):
         )
         self.assertTrue(changed)
         self.assertEqual((result.phase_state, result.animation_index), (0, 26))
+        self.assertEqual(result.aux_byte, 1)
         self.assertAlmostEqual(result.vx, 0.0, places=6)
         self.assertAlmostEqual(result.vy, 4.0)
+
+        restored, changed = callback_12_toggle_tagged_bullet(
+            result, 0x20, math.pi / 2, 8.0, 0.5
+        )
+        self.assertTrue(changed)
+        self.assertEqual(restored.phase_state, 1)
+        self.assertEqual(restored.aux_byte, 0)
+        self.assertEqual(
+            callback_12_phase_transition(1).collision_enabled,
+            False,
+        )
+        self.assertTrue(
+            callback_12_phase_transition(0).collision_enabled
+        )
 
     def test_callback_14_cycles_zero_to_two_without_velocity_change(self) -> None:
         bullet = TaggedBullet(True, 1, 0, 0, 10, 0, 3.0, 4.0, 0.0, 5.0)
@@ -83,4 +99,3 @@ class EclCallbackModelTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

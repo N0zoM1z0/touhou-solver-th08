@@ -38,8 +38,10 @@ from touhou_control.packed_hazards import PackedSegmentFrames
 from touhou_control.query_survival import SurvivalQueryProblem
 from touhou_control.viability import ControlAction
 from touhou_control.trajectory import (
+    CollisionStateChange,
     PiecewiseLinearTrajectory,
     VelocityChange,
+    collision_enabled_at,
 )
 
 
@@ -51,7 +53,9 @@ class BulletSnapshot(Protocol):
     half_width: float
     half_height: float
     transform_flags: int
+    callback_aux_state: int
     velocity_changes: tuple[VelocityChange, ...]
+    collision_state_changes: tuple[CollisionStateChange, ...]
     trajectory_uncertainty_x: float
     trajectory_uncertainty_y: float
 
@@ -179,7 +183,9 @@ def lower_bullets(
     read_uncertainty = 0.2 * math.sqrt(lag)
     hazards = []
     for bullet in bullets:
-        if bullet.velocity_changes:
+        if bullet.velocity_changes or bullet.collision_state_changes:
+            continue
+        if bullet.callback_aux_state != 0:
             continue
         growth = 0.35 if bullet.transform_flags else 0.05
         hazards.append(
@@ -221,7 +227,7 @@ def lower_bullet_trajectories(
     read_uncertainty = 0.2 * math.sqrt(lag)
     trajectories: list[PiecewiseAabbHazard] = []
     for bullet in bullets:
-        if not bullet.velocity_changes:
+        if not bullet.velocity_changes and not bullet.collision_state_changes:
             continue
         motion = PiecewiseLinearTrajectory(
             bullet.x,
@@ -240,6 +246,15 @@ def lower_bullet_trajectories(
                 change.velocity_y,
             )
             for change in motion.changes
+            if change.frame > elapsed
+            and change.frame - elapsed <= horizon_frames
+        )
+        remaining_collision_changes = tuple(
+            CollisionStateChange(
+                change.frame - elapsed,
+                change.collision_enabled,
+            )
+            for change in bullet.collision_state_changes
             if change.frame > elapsed
             and change.frame - elapsed <= horizon_frames
         )
@@ -262,6 +277,12 @@ def lower_bullet_trajectories(
                 ),
                 base_uncertainty=read_uncertainty + 0.05 * forecast,
                 uncertainty_per_frame=0.05,
+                collision_enabled=collision_enabled_at(
+                    bullet.callback_aux_state == 0,
+                    bullet.collision_state_changes,
+                    elapsed,
+                ),
+                collision_state_changes=remaining_collision_changes,
             )
         )
     return tuple(trajectories)

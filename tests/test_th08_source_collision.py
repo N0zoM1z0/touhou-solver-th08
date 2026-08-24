@@ -192,7 +192,9 @@ class SourceCollisionTests(unittest.TestCase):
             positions_x,
             positions_y,
             step=1,
-            bullet_frame=frame,
+            # This assertion isolates geometry.  Lifecycle-bearing frames are
+            # now filtered by both live and source paths.
+            bullet_frame=frame[:5],
             lasers=(),
             enemy_bodies=(),
         )

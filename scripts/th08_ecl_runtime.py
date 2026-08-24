@@ -13,7 +13,8 @@ import struct
 from dataclasses import dataclass
 from typing import Callable, Protocol
 
-from touhou_control.trajectory import VelocityChange
+from th08_ecl_callback_model import callback_12_phase_transition
+from touhou_control.trajectory import CollisionStateChange, VelocityChange
 from th08_ecl_vm_state import (
     ECL_VM_FLOAT_LOCALS_OFFSET,
     ECL_VM_INTEGER_LOCALS_OFFSET,
@@ -130,6 +131,14 @@ class TaggedVelocityToggle:
     tag_mask: int
     alternate_velocity_x: float
     alternate_velocity_y: float
+
+
+@dataclass(frozen=True)
+class TaggedBulletTrajectoryChanges:
+    """Motion and collision changes produced by reached callback-12 events."""
+
+    velocity_changes: tuple[VelocityChange, ...]
+    collision_changes: tuple[CollisionStateChange, ...]
 
 
 @dataclass(frozen=True)
@@ -524,7 +533,28 @@ def velocity_changes_for_tagged_bullet(
     time_scale: float,
     toggles: tuple[TaggedVelocityToggle, ...],
 ) -> tuple[VelocityChange, ...]:
-    """Lower TH08 callback-12 toggles to game-neutral velocity changes."""
+    """Compatibility view of callback-12 motion changes."""
+
+    return trajectory_changes_for_tagged_bullet(
+        tag_flags=tag_flags,
+        phase_state=phase_state,
+        base_speed=base_speed,
+        base_angle=base_angle,
+        time_scale=time_scale,
+        toggles=toggles,
+    ).velocity_changes
+
+
+def trajectory_changes_for_tagged_bullet(
+    *,
+    tag_flags: int,
+    phase_state: int,
+    base_speed: float | None,
+    base_angle: float | None,
+    time_scale: float,
+    toggles: tuple[TaggedVelocityToggle, ...],
+) -> TaggedBulletTrajectoryChanges:
+    """Lower callback 12 without dropping its native collision gate."""
 
     if (
         base_speed is None
@@ -534,22 +564,32 @@ def velocity_changes_for_tagged_bullet(
         or not math.isfinite(time_scale)
         or time_scale <= 0.0
     ):
-        return ()
+        return TaggedBulletTrajectoryChanges((), ())
     state = phase_state
     changes: list[VelocityChange] = []
+    collision_changes: list[CollisionStateChange] = []
     for toggle in toggles:
         if toggle.callback_index != CALLBACK_TOGGLE_TAGGED_BULLET:
             continue
         if not tag_flags & toggle.tag_mask:
             continue
-        if state == 1:
-            state = 0
+        transition = callback_12_phase_transition(state)
+        state = transition.next_phase_state
+        if transition.use_callback_velocity:
             velocity_x = toggle.alternate_velocity_x
             velocity_y = toggle.alternate_velocity_y
         else:
-            state = 1
             speed = base_speed * time_scale
             velocity_x = math.cos(base_angle) * speed
             velocity_y = math.sin(base_angle) * speed
         changes.append(VelocityChange(toggle.frame, velocity_x, velocity_y))
-    return tuple(changes)
+        collision_changes.append(
+            CollisionStateChange(
+                toggle.frame,
+                transition.collision_enabled,
+            )
+        )
+    return TaggedBulletTrajectoryChanges(
+        tuple(changes),
+        tuple(collision_changes),
+    )

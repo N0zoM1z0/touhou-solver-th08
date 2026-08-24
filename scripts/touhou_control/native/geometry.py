@@ -610,6 +610,15 @@ def apply_piecewise_aabb_clearance(
 ) -> np.ndarray | None:
     """Project sparse velocity events and apply their AABBs natively."""
 
+    # ABI v1 has no collision-state event channel. Falling back preserves
+    # exact omission/re-enable semantics instead of treating callback-hidden
+    # bullets as continuously lethal.
+    if any(
+        not hazard.collision_enabled or hazard.collision_state_changes
+        for hazard in piecewise_aabbs
+    ):
+        return None
+
     function = _load_piecewise_aabb_clearance_function()
     if function is None:
         return None

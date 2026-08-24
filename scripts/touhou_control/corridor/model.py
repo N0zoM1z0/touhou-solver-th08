@@ -9,7 +9,11 @@ from typing import Callable
 import numpy as np
 
 from ..query_survival import SurvivalQueryProblem
-from ..trajectory import PiecewiseLinearTrajectory
+from ..trajectory import (
+    CollisionStateChange,
+    PiecewiseLinearTrajectory,
+    collision_enabled_at,
+)
 from ..viability import (
     ControlAction,
     RobustSafetyValuePolicy,
@@ -226,6 +230,8 @@ class PiecewiseAabbHazard:
     half_height: float
     base_uncertainty: float = 0.0
     uncertainty_per_frame: float = 0.0
+    collision_enabled: bool = True
+    collision_state_changes: tuple[CollisionStateChange, ...] = ()
 
     def __post_init__(self) -> None:
         if min(
@@ -237,9 +243,20 @@ class PiecewiseAabbHazard:
             raise ValueError(
                 "hazard dimensions and uncertainty cannot be negative"
             )
+        collision_enabled_at(
+            self.collision_enabled,
+            self.collision_state_changes,
+            0,
+        )
 
     def sample(self, frame: int) -> AabbHazard | None:
         if frame < 0:
+            return None
+        if not collision_enabled_at(
+            self.collision_enabled,
+            self.collision_state_changes,
+            frame,
+        ):
             return None
         x, y = self.motion.position(frame)
         return AabbHazard(

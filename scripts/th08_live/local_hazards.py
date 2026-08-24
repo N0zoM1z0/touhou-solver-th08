@@ -109,12 +109,15 @@ def _align_clearance_sign(
 def _bullet_frame_without_retired_state(
     bullet_frame: tuple[np.ndarray, ...],
 ) -> tuple[np.ndarray, ...]:
-    """Remove only native state 5, which cannot reactivate in OnUpdate."""
+    """Remove native-retired and callback-disabled collision states."""
 
     if len(bullet_frame) < 6:
         return bullet_frame
     native_state = np.asarray(bullet_frame[5])
     retained = native_state != _RETIRED_BULLET_STATE
+    if len(bullet_frame) >= 7:
+        callback_aux = np.asarray(bullet_frame[6])
+        retained &= callback_aux == 0
     if np.all(retained):
         return bullet_frame
     return tuple(np.asarray(field)[retained] for field in bullet_frame)
@@ -296,6 +299,9 @@ def _build_bullet_frames(
     event_frames: list[int] = []
     event_velocity_x: list[float] = []
     event_velocity_y: list[float] = []
+    collision_event_indices: list[int] = []
+    collision_event_frames: list[int] = []
+    collision_event_enabled: list[bool] = []
     if not isinstance(bullets, PackedBulletSnapshot):
         for bullet_index, bullet in enumerate(bullets):
             for change in bullet.velocity_changes:
@@ -303,16 +309,33 @@ def _build_bullet_frames(
                 event_frames.append(change.frame)
                 event_velocity_x.append(change.velocity_x)
                 event_velocity_y.append(change.velocity_y)
+            for change in bullet.collision_state_changes:
+                collision_event_indices.append(bullet_index)
+                collision_event_frames.append(change.frame)
+                collision_event_enabled.append(change.collision_enabled)
     packed_event_indices = np.asarray(event_indices, dtype=np.intp)
     packed_event_frames = np.asarray(event_frames, dtype=np.int32)
     packed_event_velocity_x = np.asarray(event_velocity_x, dtype=np.float32)
     packed_event_velocity_y = np.asarray(event_velocity_y, dtype=np.float32)
+    packed_collision_event_indices = np.asarray(
+        collision_event_indices,
+        dtype=np.intp,
+    )
+    packed_collision_event_frames = np.asarray(
+        collision_event_frames,
+        dtype=np.int32,
+    )
+    packed_collision_event_enabled = np.asarray(
+        collision_event_enabled,
+        dtype=np.bool_,
+    )
     projected_x = base_x.copy()
     projected_y = base_y.copy()
     current_velocity_x = velocity_x.copy()
     current_velocity_y = velocity_y.copy()
     projected_native_state = native_state.copy()
     projected_state_timer_elapsed = native_state_timer_elapsed.copy()
+    callback_aux = callback_aux.copy()
     projected_elapsed = 0
     for step in range(1, horizon + 1):
         elapsed = snapshot_lag + step
@@ -331,6 +354,17 @@ def _build_bullet_frames(
                     )
                     current_velocity_y[packed_event_indices[active]] = (
                         packed_event_velocity_y[active]
+                    )
+                collision_active = (
+                    packed_collision_event_frames == projected_elapsed
+                )
+                if np.any(collision_active):
+                    callback_aux[
+                        packed_collision_event_indices[collision_active]
+                    ] = np.where(
+                        packed_collision_event_enabled[collision_active],
+                        0,
+                        1,
                     )
                 # Native bullet motion stores binary32 after every update.
                 # State 2 is a distinct spawn-animation recurrence: a
@@ -390,7 +424,7 @@ def _build_bullet_frames(
                 half_height,
                 transformed,
                 projected_native_state.copy(),
-                callback_aux,
+                callback_aux.copy(),
             )
         )
     return tuple(frames)

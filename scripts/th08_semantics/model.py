@@ -9,10 +9,11 @@ import json
 import th08_live_dodge_agent as live
 from th08_laser_model import LaserPhase, LaserState
 from th08_laser_runtime import Laser
-from touhou_control.trajectory import VelocityChange
+from touhou_control.trajectory import CollisionStateChange, VelocityChange
 
 
-SCHEMA = "th08-semantic-case-v1"
+SCHEMA = "th08-semantic-case-v2-stateful-collision"
+_SUPPORTED_SCHEMAS = frozenset(("th08-semantic-case-v1", SCHEMA))
 FAMILIES = (
     "aimed_fan",
     "radial_ring",
@@ -118,7 +119,7 @@ class SemanticCase:
 
     @classmethod
     def from_payload(cls, payload: dict[str, object]) -> SemanticCase:
-        if payload.get("schema") != SCHEMA:
+        if payload.get("schema") not in _SUPPORTED_SCHEMAS:
             raise ValueError("unsupported TH08 semantic case schema")
         unsigned = dict(payload)
         digest = unsigned.pop("sha256", None)
@@ -190,6 +191,10 @@ def _bullet_payload(bullet: live.Bullet) -> list[object]:
         bullet.trajectory_uncertainty_x,
         bullet.trajectory_uncertainty_y,
         bullet.original_transform_flags,
+        [
+            [change.frame, int(change.collision_enabled)]
+            for change in bullet.collision_state_changes
+        ],
     ]
 
 
@@ -214,6 +219,10 @@ def _bullet_from_payload(values: list[object]) -> live.Bullet:
         trajectory_uncertainty_x=float(values[13]),
         trajectory_uncertainty_y=float(values[14]),
         original_transform_flags=int(values[15]),
+        collision_state_changes=tuple(
+            CollisionStateChange(int(change[0]), bool(change[1]))
+            for change in (values[16] if len(values) > 16 else ())
+        ),
     )
 
 

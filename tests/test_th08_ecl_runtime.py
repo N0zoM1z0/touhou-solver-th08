@@ -30,6 +30,7 @@ from th08_ecl_runtime import (
     analyze_tagged_velocity_toggles,
     predict_tagged_velocity_toggles,
     read_main_ecl_vm_snapshot,
+    trajectory_changes_for_tagged_bullet,
     velocity_changes_for_tagged_bullet,
 )
 from th08_ecl_vm_state import EclVmLocalProjection
@@ -518,6 +519,25 @@ class EclRuntimeTests(unittest.TestCase):
         self.assertEqual(changes[1].frame, 110)
         self.assertAlmostEqual(changes[1].velocity_x, 0.0, places=6)
         self.assertAlmostEqual(changes[1].velocity_y, 2.0)
+
+        trajectory_changes = trajectory_changes_for_tagged_bullet(
+            tag_flags=0x100202,
+            phase_state=1,
+            base_speed=2.0,
+            base_angle=math.pi / 2,
+            time_scale=snapshot.time_scale,
+            toggles=(
+                TaggedVelocityToggle(10, 12, 0x100000, 0.0, 0.0),
+                TaggedVelocityToggle(110, 12, 0x100000, 0.0, 0.0),
+            ),
+        )
+        self.assertEqual(
+            [
+                (change.frame, change.collision_enabled)
+                for change in trajectory_changes.collision_changes
+            ],
+            [(10, False), (110, True)],
+        )
 
     def test_instruction_limit_prefix_cannot_be_consumed_as_complete(self) -> None:
         base = 0x700000

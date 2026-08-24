@@ -12,7 +12,7 @@ from th08_bullet_transform_model import (
     BulletTransformRuntime,
     TransformRecord,
 )
-from touhou_control.trajectory import VelocityChange
+from touhou_control.trajectory import CollisionStateChange, VelocityChange
 
 if TYPE_CHECKING:
     from th08_live.enemy_combat_progress import EnemyCombatProgressInventory
@@ -39,6 +39,7 @@ class Bullet:
     callback_phase_state: int = 0
     callback_aux_state: int = 0
     velocity_changes: tuple[VelocityChange, ...] = ()
+    collision_state_changes: tuple[CollisionStateChange, ...] = ()
     trajectory_uncertainty_x: float = 0.0
     trajectory_uncertainty_y: float = 0.0
     original_transform_flags: int = 0
@@ -149,62 +150,72 @@ def serialize_bullet_trace(bullet: Bullet) -> list[object]:
         if (
             bullet.original_transform_flags
             or bullet.velocity_changes
+            or bullet.collision_state_changes
             or bullet.trajectory_uncertainty_x
             or bullet.trajectory_uncertainty_y
         ):
+            planning_projection: list[object] = [
+                bullet.speed,
+                bullet.angle,
+                bullet.original_transform_flags,
+                bullet.callback_phase_state,
+                bullet.callback_aux_state,
+                [
+                    [
+                        change.frame,
+                        change.velocity_x,
+                        change.velocity_y,
+                    ]
+                    for change in bullet.velocity_changes
+                ],
+                bullet.trajectory_uncertainty_x,
+                bullet.trajectory_uncertainty_y,
+            ]
+            if bullet.collision_state_changes:
+                planning_projection.append(
+                    [
+                        [change.frame, int(change.collision_enabled)]
+                        for change in bullet.collision_state_changes
+                    ]
+                )
             values = [
                 *legacy,
                 None,
-                [
-                    bullet.speed,
-                    bullet.angle,
-                    bullet.original_transform_flags,
-                    bullet.callback_phase_state,
-                    bullet.callback_aux_state,
-                    [
-                        [
-                            change.frame,
-                            change.velocity_x,
-                            change.velocity_y,
-                        ]
-                        for change in bullet.velocity_changes
-                    ],
-                    bullet.trajectory_uncertainty_x,
-                    bullet.trajectory_uncertainty_y,
-                ],
+                planning_projection,
             ]
             return [*values, lifecycle] if lifecycle is not None else values
         values = [*legacy, None]
         return [*values, lifecycle] if lifecycle is not None else values
-    values = [
-        *legacy,
+    runtime_payload: list[object] = [
+        bullet.speed,
+        bullet.angle,
+        runtime.original_flags,
+        runtime.queue_cursor,
+        serialize_transform_record(runtime.next_record),
+        runtime.timer_fraction,
+        runtime.timer_elapsed,
+        runtime.duration,
+        runtime.resume_speed,
+        runtime.angle_operand,
+        runtime.repeat_limit,
+        runtime.repeat_count,
+        bullet.callback_phase_state,
+        bullet.callback_aux_state,
         [
-            bullet.speed,
-            bullet.angle,
-            runtime.original_flags,
-            runtime.queue_cursor,
-            serialize_transform_record(runtime.next_record),
-            runtime.timer_fraction,
-            runtime.timer_elapsed,
-            runtime.duration,
-            runtime.resume_speed,
-            runtime.angle_operand,
-            runtime.repeat_limit,
-            runtime.repeat_count,
-            bullet.callback_phase_state,
-            bullet.callback_aux_state,
-            [
-                [
-                    change.frame,
-                    change.velocity_x,
-                    change.velocity_y,
-                ]
-                for change in bullet.velocity_changes
-            ],
-            bullet.trajectory_uncertainty_x,
-            bullet.trajectory_uncertainty_y,
+            [change.frame, change.velocity_x, change.velocity_y]
+            for change in bullet.velocity_changes
         ],
+        bullet.trajectory_uncertainty_x,
+        bullet.trajectory_uncertainty_y,
     ]
+    if bullet.collision_state_changes:
+        runtime_payload.append(
+            [
+                [change.frame, int(change.collision_enabled)]
+                for change in bullet.collision_state_changes
+            ]
+        )
+    values = [*legacy, runtime_payload]
     return [*values, lifecycle] if lifecycle is not None else values
 
 

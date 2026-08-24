@@ -211,6 +211,47 @@ class TaggedBullet:
     base_speed: float
 
 
+@dataclass(frozen=True)
+class Callback12PhaseTransition:
+    """Source-exact non-geometric state selected by callback 12."""
+
+    next_phase_state: int
+    use_callback_velocity: bool
+    collision_enabled: bool
+    presentation_mask: int
+    animation_delta: int
+    aux_byte: int
+
+
+def callback_12_phase_transition(
+    phase_state: int,
+) -> Callback12PhaseTransition:
+    """Return the shared callback-12 transition before velocity evaluation.
+
+    ``EclExIns.cpp`` address 0x424A20 branches only on equality with phase
+    state one.  Its +0x10B4 write is gameplay state: ``BulletManager`` skips
+    the bullet collision block while that byte is nonzero.
+    """
+
+    if phase_state == 1:
+        return Callback12PhaseTransition(
+            next_phase_state=0,
+            use_callback_velocity=True,
+            collision_enabled=False,
+            presentation_mask=0x10,
+            animation_delta=16,
+            aux_byte=1,
+        )
+    return Callback12PhaseTransition(
+        next_phase_state=1,
+        use_callback_velocity=False,
+        collision_enabled=True,
+        presentation_mask=0,
+        animation_delta=-16,
+        aux_byte=0,
+    )
+
+
 def _polar(angle: float, speed: float) -> tuple[float, float]:
     return math.cos(angle) * speed, math.sin(angle) * speed
 
@@ -224,28 +265,23 @@ def callback_12_toggle_tagged_bullet(
 ) -> tuple[TaggedBullet, bool]:
     if not bullet.active or not bullet.tag_flags & tag_mask:
         return bullet, False
-    if bullet.phase_state == 1:
+    transition = callback_12_phase_transition(bullet.phase_state)
+    if transition.use_callback_velocity:
         vx, vy = _polar(callback_angle, callback_speed * time_scale)
-        return (
-            replace(
-                bullet,
-                phase_state=0,
-                presentation_flags=(bullet.presentation_flags & ~0x30) | 0x10,
-                animation_index=bullet.animation_index + 16,
-                aux_byte=1,
-                vx=vx,
-                vy=vy,
-            ),
-            True,
-        )
-    vx, vy = _polar(bullet.angle, bullet.base_speed * time_scale)
+    else:
+        vx, vy = _polar(bullet.angle, bullet.base_speed * time_scale)
     return (
         replace(
             bullet,
-            phase_state=1,
-            presentation_flags=bullet.presentation_flags & ~0x30,
-            animation_index=bullet.animation_index - 16,
-            aux_byte=0,
+            phase_state=transition.next_phase_state,
+            presentation_flags=(
+                (bullet.presentation_flags & ~0x30)
+                | transition.presentation_mask
+            ),
+            animation_index=(
+                bullet.animation_index + transition.animation_delta
+            ),
+            aux_byte=transition.aux_byte,
             vx=vx,
             vy=vy,
         ),
@@ -304,4 +340,3 @@ def callback_18_time_scale(divisor: int) -> float:
 
 def callback_31_item_type(global_flag: bool) -> int:
     return 3 if global_flag else 5
-
