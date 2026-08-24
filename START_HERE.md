@@ -531,12 +531,22 @@ forecaster is now disabled rather than used as an eligibility source.
 
 Latest full game-start Lunatic Route-2 run:
 
-- `lunatic_route2_fullrun_unattended_20260730_222529`
-- 68 hits, zero Bombs
-- stage counts `2/3/5/20/15/23`
+- `lunatic_route2_fullrun_unattended_20260824_022909`
+- 61 hits, zero Bomb inputs
+- stage counts `5/2/5/15/15/19`
 - reached `route_complete`
-- result-state replay save was unavailable after Final-B unload; do not rerun
-  solely for that replay.
+- physically validates OPT-001: planning and issue enemy-prefix medians fell
+  by 1.221 and 1.236 ms, and observe-to-input median fell by 2.505 ms versus
+  the immediate 58-hit reference;
+- the hit delta is different-RNG and observational. The 48 committed-prefix,
+  53 boundary, and 43 fast-mode attributions keep future guidance and
+  boundary/focus work open.
+
+The historical Windows run
+`lunatic_route2_fullrun_unattended_20260730_222529` had 68 hits with stage
+counts `2/3/5/20/15/23`, but used pretarget guidance that is not accepted as
+source-authoritative under the current contract. Treat its lower latency and
+guidance as diagnostic rather than promotion authority.
 
 Retained dossiers are under `notes/runs/`. Compact reports and valid
 practice replays remain under `artifacts/`.

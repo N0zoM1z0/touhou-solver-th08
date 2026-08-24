@@ -11,7 +11,11 @@ continue to live in `TH08_SOURCE_AND_RUNTIME_AUDIT.md`.
 ## Objective And Reference
 
 - Physical target: Sakuya/Remilia, Lunatic, Route 2, Final-B, hard no-Bomb.
-- Current integrated reference:
+- Current integrated checkpoint:
+  `lunatic_route2_fullrun_unattended_20260824_022909`, 61 native hit edges,
+  stage counts `5/2/5/15/15/19`, zero Bomb input, route complete. It ran the
+  OPT-001 implementation at commit `6305dabae9ee6f6b29f5ad1588e2dfab8a079bae`.
+- Immediate comparison reference:
   `lunatic_route2_fullrun_unattended_20260823_183138`, 58 native hit edges,
   stage counts `4/6/5/13/9/21`, zero Bomb input, route complete.
 - Historical Windows reference:
@@ -52,7 +56,7 @@ change when its semantic and timing gate passes.
 
 | ID | Track | Change | Risk | Status | Physical result |
 | --- | --- | --- | --- | --- | --- |
-| OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | FIXED-OFFLINE | pending |
+| OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | VALIDATED-PHYSICAL | 61 hits; both prefix medians down about 1.2 ms; keep |
 | OPT-002 | sensing latency | Replace repeated scalar player/control reads with one explicitly bracketed compact root capture, preserving duplicate before/after observations | medium | QUEUED | pending |
 | OPT-003 | local/issue latency | Share immutable action-conditioned hazard projection work between planning and issue recertification where versions are exact-equal | medium | QUEUED | pending |
 | FB-001 | future births | Build a source-guided, executable-validated producer inventory for the pre-spell-190 route and rank reached `UNKNOWN` causes by hit-window impact | low, shadow | QUEUED | pending |
@@ -67,7 +71,7 @@ selection.
 
 ## OPT-001 — Persistent Local Enemy-Prefix Destination
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-PHYSICAL**
 
 Global failure addressed: Wine sensing and fresh issue recertification consume
 several physical frames before input, reducing useful reaction horizon.
@@ -115,7 +119,42 @@ parity through decoded bodies, immutable snapshot lifetime after reuse,
 destination identity, frame/read ordering, enemy-mode forwarding, and
 fail-closed size/read-only validation. Affected tests pass 110/110, import
 smoke passes, and complete Linux discovery passes 1,353 tests with five skips.
-The implementation awaits its full-route physical timing gate.
+
+Physical gate: `lunatic_route2_fullrun_unattended_20260824_022909` completed
+the complete route naturally with 61 native hit edges, stage counts
+`5/2/5/15/15/19`, 55,915 decisions, and zero Bomb input. The controller
+configuration records `read_path: persistent_read_into` and the exact shared
+sequential destination. The host used the dedicated TH08 prefix/display,
+reported `status=passed`, and found no exact-prefix leftovers. The 86,400
+second controller duration and 86,700 second trial timeout were nonbinding;
+termination was `route_complete` at frame 224868.
+
+The retained 58-hit reference and OPT-001 trace give the following complete
+route timing comparison. Values are milliseconds except action lag:
+
+| Metric | 58-hit median / p95 | OPT-001 median / p95 | Delta median / p95 |
+| --- | ---: | ---: | ---: |
+| planning prefix capture | 2.764 / 3.317 | 1.543 / 1.929 | -1.221 / -1.388 |
+| issue prefix capture | 2.944 / 5.499 | 1.707 / 2.967 | -1.236 / -2.532 |
+| all pool reads | 10.468 / 12.168 | 9.371 / 11.358 | -1.097 / -0.810 |
+| issue path to input | 3.945 / 13.489 | 2.620 / 12.242 | -1.326 / -1.247 |
+| observe to input | 47.590 / 67.279 | 45.084 / 66.613 | -2.505 / -0.665 |
+| action lag, frames | 2 / 3 | 2 / 3 | 0 / 0 |
+
+Every stage's pool-read median improved, by 0.543 to 1.446 ms. Local-plan
+timing moved in both directions with the different route workload, while the
+named prefix-read mechanism improved globally and in every stage. Snapshot,
+CSV, dossier, and rendered death evidence remain internally consistent.
+
+Disposition: **keep**. The semantic-parity and activation gates passed, and
+the direct mechanism improved materially. The hit change from 58 to 61 is
+observational because the natural RNG roots differ; it is not evidence of a
+strategy improvement. The candidate still has 48 modeled committed-prefix
+collisions, 53 boundary-attributed hits, and 43 fast-mode-attributed hits.
+OPT-001 removes avoidable host-copy latency but does not solve the dominant
+future-guidance, viable-set, boundary, or focus failures. OPT-002 is therefore
+the next live change; FB-001 and BF-001 remain the first source/strategy shadow
+audits.
 
 ## Future-Birth Simplification Contract
 

@@ -357,7 +357,7 @@ comparison successfully, and the pending session was recovered to
 
 ### AUD-020 — Local enemy-prefix reads allocate and copy twice per decision
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-PHYSICAL**
 
 **Observed:** local planning and fresh issue recertification each read the
 64-slot enemy prefix through `ProcessReader.read()`. At stride `0x53D0`, each
@@ -379,8 +379,25 @@ path. `controller_config.enemy_prefix_sensor` records physical activation.
 **Verification:** immutable-snapshot parity, two-read destination identity,
 frame/read ordering, mode-capture forwarding, and invalid-buffer tests pass.
 Affected tests pass 110/110, import smoke passes, and complete Linux discovery
-passes 1,353 tests with five skips. Physical timing and route evidence remain
-pending under OPT-001.
+passes 1,353 tests with five skips.
+
+**Physical validation:** full Route-2 run
+`lunatic_route2_fullrun_unattended_20260824_022909` recorded the exact
+`persistent_read_into` activation marker, completed naturally at frame 224868,
+issued zero Bomb inputs, and left no processes in the dedicated Wine prefix.
+Against the retained 58-hit reference, planning-prefix median/p95 fell from
+2.764/3.317 ms to 1.543/1.929 ms, issue-prefix median/p95 fell from
+2.944/5.499 ms to 1.707/2.967 ms, and observe-to-input median fell from
+47.590 ms to 45.084 ms. Pool-read medians improved in every stage. Action-lag
+median/p95 remained 2/3 frames, so this closes the allocation/copy defect but
+does not close the wider Wine-to-input latency problem.
+
+The route recorded 61 hits versus 58 in the different-RNG reference. That
+aggregate is observational, not a causal strategy result. Its 48
+modeled-committed-prefix collisions and 53 boundary attributions show that the
+remaining dominant failures lie after this narrow sensing fix. Compact CSV,
+dossier, regression, summary, and rendered-note hit identities were also
+cross-checked: all 61 native hit frames are unique and consistent.
 
 ## Offline Verification Record
 
