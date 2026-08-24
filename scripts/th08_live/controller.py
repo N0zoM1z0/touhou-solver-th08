@@ -922,10 +922,27 @@ def _ordinary_submission_projection(
     *,
     policy_source_frame: int,
     policy_horizon_frames: int,
+    expected_spell_id: int | None,
 ) -> OrdinaryFutureHazardProjection | None:
-    """Return only a complete source slab that covers the proposed kernel."""
+    """Return a fresh, complete source slab covering the proposed kernel."""
 
-    projection = result.closure.projection if result is not None else None
+    if result is None:
+        return None
+    payload = result.snapshot.payload
+    compact = payload.get("compact_state") if isinstance(payload, dict) else None
+    if not isinstance(compact, dict):
+        return None
+    captured_spell_id = compact.get("spell_id")
+    if expected_spell_id is None:
+        if captured_spell_id is not None:
+            return None
+    elif (
+        type(expected_spell_id) is not int
+        or type(captured_spell_id) is not int
+        or captured_spell_id != expected_spell_id
+    ):
+        return None
+    projection = result.closure.projection
     if (
         projection is None
         or not projection.source_closure_complete
@@ -3165,6 +3182,9 @@ def _run_live_session(
                     "ordinary_preexhaustion_authority": {
                         "enabled": ordinary_preexhaustion_authority,
                         "scope": "ordinary_nonspell_only",
+                        "future_source_scope": (
+                            "all_phases_exact_captured_spell_id"
+                        ),
                         "authority": ORDINARY_PREEXHAUSTION_AUTHORITY,
                         "empty_kernel_causal_hold_authority": (
                             ORDINARY_CAUSAL_HOLD_AUTHORITY
@@ -3373,6 +3393,9 @@ def _run_live_session(
                     "ordinary_viability_authority": {
                         "enabled": ordinary_preexhaustion_authority,
                         "scope": "ordinary_nonspell_only",
+                        "future_source_scope": (
+                            "all_phases_exact_captured_spell_id"
+                        ),
                         "future_kernel": (
                             "4px_boolean_lower_cell_radius_inflated"
                             if ordinary_preexhaustion_authority
@@ -3972,14 +3995,15 @@ def _run_live_session(
             if previous_counter is not None and counter != previous_counter + 1:
                 gaps += 1
             spell_state = state["spell"]
+            observed_spell_id = (
+                int(spell_state["spell_id"])
+                if spell_state["active"]
+                else None
+            )
             corridor_context = (
                 gameplay_epoch,
                 int(state["stage_route_index"]),
-                (
-                    int(spell_state["spell_id"])
-                    if spell_state["active"]
-                    else None
-                ),
+                observed_spell_id,
             )
             corridor_context_changed = corridor_commitment.set_context(
                 corridor_context
@@ -4806,6 +4830,15 @@ def _run_live_session(
                         ordinary_future_source_future.result()
                     )
                     closure = ordinary_future_source_result.closure
+                    capture_compact = (
+                        ordinary_future_source_result.snapshot.payload.get(
+                            "compact_state"
+                        )
+                    )
+                    if not isinstance(capture_compact, dict):
+                        raise TypeError(
+                            "future source capture compact root is absent"
+                        )
                     trace_sink.emit(
                         {
                             "kind": "ordinary_future_source_projection",
@@ -4839,6 +4872,9 @@ def _run_live_session(
                             "capture_frscreen_update_serial": (
                                 ordinary_future_source_result.snapshot
                                 .update_serial_after
+                            ),
+                            "captured_spell_id": capture_compact.get(
+                                "spell_id"
                             ),
                             "source_closure_complete": (
                                 closure.projection.source_closure_complete
@@ -4884,7 +4920,6 @@ def _run_live_session(
                 ordinary_future_source_future = None
             ordinary_future_source_due = (
                 ordinary_preexhaustion_authority
-                and not bool(spell_state["active"])
                 and int(player["phase"]) not in (1, 2)
                 and ordinary_future_ecl is not None
                 and future_source_executor is not None
@@ -4990,14 +5025,13 @@ def _run_live_session(
             policy_hazard_horizon_frame = (
                 policy_source_frame + TH08_CORRIDOR_CONFIG.horizon_frames
             )
-            ordinary_submission = bool(
+            future_source_submission = bool(
                 ordinary_preexhaustion_authority
-                and not bool(spell_state["active"])
             )
             ordinary_future_projection: (
                 OrdinaryFutureHazardProjection | None
             ) = None
-            if ordinary_submission:
+            if future_source_submission:
                 ordinary_future_projection = (
                     _ordinary_submission_projection(
                         ordinary_future_source_result,
@@ -5005,6 +5039,7 @@ def _run_live_session(
                         policy_horizon_frames=(
                             TH08_CORRIDOR_CONFIG.horizon_frames
                         ),
+                        expected_spell_id=observed_spell_id,
                     )
                 )
             if (
@@ -5024,7 +5059,7 @@ def _run_live_session(
                     ),
                 )
                 and (
-                    not ordinary_submission
+                    not future_source_submission
                     or ordinary_future_projection is not None
                 )
             ):
@@ -5068,7 +5103,7 @@ def _run_live_session(
                     lasers=lasers,
                     enemy_bodies=(
                         exact_contact_enemy_bodies
-                        if ordinary_submission
+                        if future_source_submission
                         else enemy_bodies
                     ),
                     future_hazard_projection=(
@@ -7971,11 +8006,11 @@ def _run_live_session(
                     ),
                     "ordinary_source_ready_for_submission": (
                         ordinary_future_projection is not None
-                        if ordinary_submission
+                        if future_source_submission
                         else None
                     ),
                     "ordinary_source_blocked_submission": bool(
-                        ordinary_submission
+                        future_source_submission
                         and corridor_submission_due
                         and ordinary_future_projection is None
                     ),

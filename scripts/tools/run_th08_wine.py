@@ -255,6 +255,8 @@ def build_windows_controller_command(
         ]
         if stage_identity.scale_model == SCALE_MODEL_FINAL_B:
             command.append("--enable-finalb-scale-source-authority")
+        if ordinary_preexhaustion_authority:
+            command.append("--ordinary-preexhaustion-authority")
         if diagnostic_continue_root_only_scale:
             command.append("--diagnostic-continue-root-only-scale")
         return command

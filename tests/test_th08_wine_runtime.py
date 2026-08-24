@@ -247,7 +247,7 @@ class Th08WineRunnerTests(unittest.TestCase):
                 agent_duration=86_400.0,
                 trial_timeout=86_700.0,
                 kill_before_saturation=False,
-                ordinary_preexhaustion_authority=False,
+                ordinary_preexhaustion_authority=True,
                 authority_only_corridor=True,
                 trace_items=False,
                 practice_stage="4b",
@@ -259,6 +259,7 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertEqual(command[command.index("--stage") + 1], "4b")
         self.assertEqual(command[command.index("--difficulty") + 1], "lunatic")
         self.assertIn("--unlock-requested-stage", command)
+        self.assertIn("--ordinary-preexhaustion-authority", command)
         self.assertIn("--diagnostic-continue-root-only-scale", command)
         self.assertEqual(
             command[command.index("--agent-duration") + 1],

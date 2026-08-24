@@ -262,6 +262,89 @@ def _payload() -> dict[str, object]:
 
 
 class OrdinaryFutureSourceTests(unittest.TestCase):
+    def test_active_spell_metadata_uses_same_fail_closed_vm_kernel(self) -> None:
+        ordinary_payload = deepcopy(_payload())
+        spell_payload = deepcopy(ordinary_payload)
+        spell_payload["compact_state"]["spell_id"] = 103
+
+        ordinary = project_ordinary_future_sources(
+            ordinary_payload,
+            ECL,
+            horizon_frames=1,
+        )
+        spell = project_ordinary_future_sources(
+            spell_payload,
+            ECL,
+            horizon_frames=1,
+        )
+
+        self.assertTrue(ordinary.projection.source_closure_complete)
+        self.assertEqual(spell, ordinary)
+
+    def test_spell103_source_exact_root_closes_global_horizon(self) -> None:
+        payload = deepcopy(_payload())
+        payload["compact_state"]["spell_id"] = 103
+        manager = payload["enemy_manager_template_source"]
+        main = manager["main_ecl_vm_inventory"]["rows"][0]
+        # Route spell 103 is waiting at the first time-90 body instruction.
+        # The source-exact 0x2762 random angle is set-valued, not UNKNOWN.
+        main[3] = ECL_BASE + 0x6420
+        main[5] = 0
+        manager["auxiliary_ecl_contexts"]["rows"] = []
+        manager["phase_transition_state"]["rows"][0].update(
+            timeout_frame=3000,
+            timeout_subroutine=53,
+        )
+        payload["bullet_template_geometry"]["rows"].append(
+            {"type": 16, "half_width": 4.0, "half_height": 4.0}
+        )
+
+        closure = project_ordinary_future_sources(
+            payload,
+            ECL,
+            horizon_frames=80,
+        )
+
+        self.assertTrue(closure.projection.source_closure_complete)
+        self.assertEqual(closure.projection.horizon_frames, 80)
+        self.assertEqual(closure.direct_fire_events, ())
+
+    def test_spell103_random_angle_advances_to_tagged_birth_boundary(
+        self,
+    ) -> None:
+        payload = deepcopy(_payload())
+        payload["compact_state"]["spell_id"] = 103
+        manager = payload["enemy_manager_template_source"]
+        main = manager["main_ecl_vm_inventory"]["rows"][0]
+        main[3] = ECL_BASE + 0x6420
+        main[5] = 0
+        manager["auxiliary_ecl_contexts"]["rows"] = []
+        manager["phase_transition_state"]["rows"][0].update(
+            timeout_frame=3000,
+            timeout_subroutine=53,
+        )
+        payload["bullet_template_geometry"]["rows"].append(
+            {"type": 16, "half_width": 4.0, "half_height": 4.0}
+        )
+
+        closure = project_ordinary_future_sources(
+            payload,
+            ECL,
+            horizon_frames=139,
+        )
+
+        self.assertTrue(closure.projection.source_closure_complete)
+        self.assertEqual(closure.projection.horizon_frames, 90)
+        self.assertIn(
+            "unsupported future bullet flags",
+            closure.causal_prefix_reason,
+        )
+        self.assertNotIn(
+            "dynamic ECL float variable 10082",
+            closure.causal_prefix_reason,
+        )
+        self.assertEqual(closure.direct_fire_events, ())
+
     def test_reached_stage3_main_arithmetic_and_transform_wave_closes(
         self,
     ) -> None:
@@ -1038,6 +1121,28 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
         )
 
         self.assertEqual(value, FloatInterval.point(-1.25))
+
+    def test_native_random_angle_keeps_float32_endpoint_rounding(self) -> None:
+        vm = _VmState(
+            instruction_offset=0,
+            timer_elapsed=0,
+            integer_locals=[0] * 8,
+            float_locals=[FloatInterval.point(0.0)] * 8,
+            scratch_integers=[0] * 4,
+        )
+        bound = struct.unpack("<f", struct.pack("<f", 3.1415927))[0]
+
+        value = _eval_float_operand(
+            _bits(10082.0),
+            dynamic=True,
+            vm=vm,
+            aim_angle=FloatInterval.point(0.0),
+            source=SimpleNamespace(motion=SimpleNamespace(angle=0.0)),
+        )
+
+        self.assertEqual(value, FloatInterval(-bound, bound))
+        self.assertLess(value.lower, -math.pi)
+        self.assertGreater(value.upper, math.pi)
 
     def test_auxiliary_previous_and_fraction_do_not_block_unit_root(self) -> None:
         payload = deepcopy(_payload())

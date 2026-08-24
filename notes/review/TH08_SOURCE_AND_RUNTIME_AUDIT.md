@@ -1229,10 +1229,54 @@ auxiliary. Runtime VM locals/control/RNG still select the causal prefix, so the
 contract is an offline oracle and coverage denominator only, never action
 authority by itself.
 
+### AUD-049 — Active-spell future-source execution was rejected before semantics
+
+Status: **CONFIRMED MODEL/DELIVERY BUG; FIRST FAIL-CLOSED PREFIX VALIDATED
+OFFLINE; CALLBACK-TAGGED BIRTHS REMAIN UNKNOWN**
+
+The shared future-source VM previously rejected every snapshot whose compact
+root carried a non-null spell ID, before inspecting any reached ECL operation.
+The controller duplicated that artificial boundary by neither capturing nor
+submitting this source projection during a spell. This was not a
+source-derived limitation: spell and nonspell enemies use the same ECL VM and
+the same bullet constructor. It guaranteed zero spell producer coverage even
+when the reached prefix used only already-lowered semantics.
+
+That metadata rejection is removed. Capture now runs in every stable player
+phase when the legacy authority flag is enabled, and the corridor submission
+lane requires a complete projection covering its whole policy horizon. The
+consumer also compares the captured compact spell ID with the currently
+observed spell ID exactly. A result from spell 103 is therefore rejected after
+transition to spell 107 or to a nonspell, even if its frame interval would
+otherwise overlap. The isolated Practice command now propagates the same flag;
+this checkpoint deliberately performs no Wine run.
+
+The first reached Stage-5 root exposed a second, small but definite source
+model omission. `EclOperandsFloat.cpp` operand `0x2762` returns
+`GetRandomF32InRange(6.2831855f) - 3.1415927f`. It is now represented by the
+complete native float32 interval, including the RNG conversion's rounded
+endpoint, rather than UNKNOWN or the slightly narrower Python `math.pi`
+interval. On a source-exact route spell-103 VM fixture rooted at ECL offset
+`0x6420`, the offline executor now proves an exact 80-frame source prefix with
+no births. A 139-frame request advances to a complete 90-frame causal prefix
+and then stops before future frame 91 on bullet flags `0x104010`; it no longer
+stops on dynamic operand 10082. This fixture isolates VM semantics; it is not a
+retained physical capture.
+
+That new stop is intentional. The high tag bits cannot be declared inert:
+callback 12 later selects and transforms those tagged bullets. No tagged birth
+is emitted into action authority until its callback-aware future trajectory is
+lowered. The next resumable unit is therefore narrow and source-defined:
+model spell-103 tagged future births together with callback 12, then use the
+static producer contract to extend the same kernel to child VMs and callback
+14. Physical Practice remains withheld until an offline retained root yields
+a complete matching policy slab and changes a same-root global viability
+result.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,408 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,417 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

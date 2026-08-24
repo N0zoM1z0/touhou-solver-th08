@@ -535,8 +535,8 @@ metrics are nonzero and the candidate changes a same-root viability outcome.
 
 ## GLOBAL-001C — Mode-Correct Practice Image And Producer Census
 
-Status: **MODE IDENTITY AND STATIC PRODUCER CONTRACT CLOSED OFFLINE; RUNTIME
-PREFIX COVERAGE IN PROGRESS**
+Status: **FIRST ACTIVE-SPELL PREFIX CLOSED OFFLINE; CALLBACK-TAGGED BIRTHS
+ARE THE NEXT BLOCKER**
 
 The first retained-trace census exposed an infrastructure blocker before any
 producer extension: Practice Start loads the source-authoritative
@@ -548,7 +548,7 @@ workers receive useful work.
 
 Across the retained 28-hit Stage-5 trace, callback-12 lookahead already covers
 all 1,986 decisions in spells 103/107/111. Spell 115 has 721/732 incomplete
-rows at its unsupported callback-14 path. The next generic checkpoint is
+rows at its unsupported callback-14 path. The selected generic checkpoint was
 therefore not a wider callback-12 horizon: compile and test route/Practice
 spell producer topology, admit active-spell direct-fire prefixes into the
 existing fail-closed future-source kernel, and then lower child sources and
@@ -559,10 +559,31 @@ The machine-readable producer contract now pins both Stage-5 images and proves
 normalized program equivalence for route spells 103/107/111/115/118. It also
 provides the exact direct-fire/transform/child/callback site denominator and
 fails if a literal target becomes dynamic. This closes the static census but
-does not promote a lexical branch to a reached future. The next implementation
+does not promote a lexical branch to a reached future. The first implementation
 step reuses the captured VM-root executor to consume this topology, beginning
 with prefixes that stay within already-supported direct-fire semantics and
 truncating before every unlowered child or callback effect.
+
+That first runtime-prefix checkpoint is now closed offline. The unconditional
+active-spell rejection was removed, native random-angle operand `0x2762` was
+lifted to its exact conservative float32 range, and a source-exact route
+spell-103 VM fixture proves the full 80-frame global horizon before the
+first birth. Extending the request reaches a new, correctly classified
+boundary at future frame 91: the birth carries callback tag flags and is
+withheld rather than treated as an ordinary bullet. This fixture is
+source-exact but synthetic, not a retained physical capture. The model now
+stops on the first genuinely missing gameplay semantic, not spell metadata or
+RNG syntax.
+
+The delivery side is also ready but remains unexercised physically. Spell
+captures may feed the shared corridor only when the captured spell ID exactly
+matches the current phase and the complete causal prefix spans the requested
+policy slab. Practice launch now forwards the feature flag. The paused
+checkpoint has no hit-count claim and no Wine evidence. Resume with
+callback-12-aware trajectories for the tagged spell-103 births; do not clear
+the tag bits as globally nonprogrammatic. After retained-root projection and
+same-root viability differentials pass, run one focused Practice acceptance
+gate before considering a full route.
 
 ## Boundary And Focus Contract
 

@@ -292,7 +292,10 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
             horizon_frame=368,
         )
         result = SimpleNamespace(
-            closure=SimpleNamespace(projection=incomplete)
+            snapshot=SimpleNamespace(
+                payload={"compact_state": {"spell_id": None}}
+            ),
+            closure=SimpleNamespace(projection=incomplete),
         )
 
         self.assertIsNone(
@@ -300,6 +303,7 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
                 result,
                 policy_source_frame=180,
                 policy_horizon_frames=80,
+                expected_spell_id=None,
             )
         )
 
@@ -309,6 +313,7 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
                 result,
                 policy_source_frame=180,
                 policy_horizon_frames=80,
+                expected_spell_id=None,
             ),
             incomplete,
         )
@@ -320,7 +325,10 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
             horizon_frame=259,
         )
         result = SimpleNamespace(
-            closure=SimpleNamespace(projection=prefix)
+            snapshot=SimpleNamespace(
+                payload={"compact_state": {"spell_id": None}}
+            ),
+            closure=SimpleNamespace(projection=prefix),
         )
 
         self.assertIs(
@@ -328,6 +336,7 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
                 result,
                 policy_source_frame=179,
                 policy_horizon_frames=80,
+                expected_spell_id=None,
             ),
             prefix,
         )
@@ -336,5 +345,48 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
                 result,
                 policy_source_frame=180,
                 policy_horizon_frames=80,
+                expected_spell_id=None,
+            )
+        )
+
+    def test_submission_projection_requires_exact_captured_spell_id(self) -> None:
+        projection = SimpleNamespace(
+            source_closure_complete=True,
+            root_frame=100,
+            horizon_frame=260,
+        )
+        result = SimpleNamespace(
+            snapshot=SimpleNamespace(
+                payload={"compact_state": {"spell_id": 103}}
+            ),
+            closure=SimpleNamespace(projection=projection),
+        )
+
+        self.assertIs(
+            _ordinary_submission_projection(
+                result,
+                policy_source_frame=180,
+                policy_horizon_frames=80,
+                expected_spell_id=103,
+            ),
+            projection,
+        )
+        for expected_spell_id in (None, 107):
+            self.assertIsNone(
+                _ordinary_submission_projection(
+                    result,
+                    policy_source_frame=180,
+                    policy_horizon_frames=80,
+                    expected_spell_id=expected_spell_id,
+                )
+            )
+
+        result.snapshot.payload = {}
+        self.assertIsNone(
+            _ordinary_submission_projection(
+                result,
+                policy_source_frame=180,
+                policy_horizon_frames=80,
+                expected_spell_id=103,
             )
         )

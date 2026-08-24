@@ -59,7 +59,7 @@ from touhou_control.corridor import AabbHazard, AabbTrajectoryHazard
 
 
 ORDINARY_FUTURE_SOURCE_SEMANTICS_VERSION = (
-    "th08-ordinary-future-sources-v17-source-spawn-pattern"
+    "th08-ordinary-future-sources-v18-spell-prefix-random-angle"
 )
 _PROJECTION_SCHEMA = "th08-native-snapshot-collision-control-projection-v14"
 _DIRECT_FIRE_OPCODES = frozenset(range(0x60, 0x69))
@@ -73,9 +73,13 @@ _FLOAT_LOCAL_FIRST = 10016
 _FLOAT_LOCAL_LAST = 10023
 _RNG_UNIT_VARIABLE = 10033
 _RNG_SIGNED_UNIT_VARIABLE = 10035
+_RNG_ANGLE_VARIABLE = 10082
 _ANGLE_TO_PLAYER_VARIABLE = 10048
 _SOURCE_MOTION_ANGLE_VARIABLE = 10069
 _TWO_PI = 2.0 * math.pi
+_NATIVE_RNG_ANGLE_ABS_BOUND = struct.unpack(
+    "<f", struct.pack("<f", 3.1415927)
+)[0]
 _FLOAT32_ONE_BITS = 0x3F800000
 _PLAYER_MAX_AXIS_SPEED = 4.0
 _POSITION_TOLERANCE = 1.0e-3
@@ -868,6 +872,16 @@ def _eval_float_operand(
         return FloatInterval(0.0, 1.0)
     if variable == _RNG_SIGNED_UNIT_VARIABLE:
         return FloatInterval(-1.0, 1.0)
+    # EclOperandsFloat.cpp case 0x2762 consumes one RNG sample and returns
+    # GetRandomF32InRange(2*pi) - pi.  The closure intentionally lifts the
+    # unknown retained RNG value to its complete native float32 range.  The
+    # native RNG conversion can round its largest u32 root to 1.0f, so both
+    # endpoints are retained.
+    if variable == _RNG_ANGLE_VARIABLE:
+        return FloatInterval(
+            -_NATIVE_RNG_ANGLE_ABS_BOUND,
+            _NATIVE_RNG_ANGLE_ABS_BOUND,
+        )
     if variable == _ANGLE_TO_PLAYER_VARIABLE:
         return aim_angle
     # ecl_eval_float case 0x2755 reads enemy+0x2D94, the coherently
@@ -896,6 +910,7 @@ def _float_operand_aim_coefficient(
     if variable in (
         _RNG_UNIT_VARIABLE,
         _RNG_SIGNED_UNIT_VARIABLE,
+        _RNG_ANGLE_VARIABLE,
         _SOURCE_MOTION_ANGLE_VARIABLE,
     ):
         return 0.0
@@ -2707,8 +2722,6 @@ def _analyze(
     compact = payload.get("compact_state")
     if not isinstance(compact, dict):
         _fail("future source compact root is absent")
-    if compact.get("spell_id") is not None:
-        _fail("ordinary future source closure received an active spell")
     if int(compact.get("time_scale_bits", -1)) != _FLOAT32_ONE_BITS:
         _fail("future source closure currently requires exact unit time scale")
     player_x = float(compact["player_x"])
