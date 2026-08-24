@@ -12,14 +12,13 @@ from typing import Any
 import numpy as np
 
 from th08_ecl_runtime import ECL_LOOKAHEAD_SEMANTICS_VERSION
+from th08_global_authority import (
+    time_scale_schedule_hard_authority as _time_scale_schedule_hard_authority,
+)
 from th08_live.iteration import FreshIssueResult
 from th08_live.models import BULLET_LIFECYCLE_TRACE_SCHEMA
 from th08_native_timer import TH08_NATIVE_TIMER_SEMANTICS_VERSION
-from th08_time_scale import (
-    SCALE_COVERAGE_COMPLETE,
-    TH08_PLAYER_LASER_SCALE_SEMANTICS_VERSION,
-    Th08TimeScaleSchedule,
-)
+from th08_time_scale import TH08_PLAYER_LASER_SCALE_SEMANTICS_VERSION
 
 
 SOURCE_COLLISION_SHADOW_SCHEMA = "th08-source-collision-shadow-v1"
@@ -127,20 +126,6 @@ def _bullet_lifecycle_record(bullets: Sequence[Any]) -> dict[str, object]:
         "exception_trace_schema": BULLET_LIFECYCLE_TRACE_SCHEMA,
         "default_trace_state": [1, 0, 0],
     }
-
-
-def _time_scale_schedule_hard_authority(
-    schedule: Th08TimeScaleSchedule,
-) -> bool:
-    return (
-        schedule.coverage == SCALE_COVERAGE_COMPLETE
-        and not schedule.provenance.startswith(
-            "experimental_pretarget_unit_transport"
-        )
-        and not schedule.provenance.startswith(
-            "diagnostic_constant_current_root_unknown_direction"
-        )
-    )
 
 
 @dataclass(frozen=True)

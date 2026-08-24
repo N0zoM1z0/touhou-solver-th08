@@ -1137,10 +1137,49 @@ cases remain fail-closed. This establishes the scale prerequisite only; it
 does not grant global action authority without complete future-birth and
 solution-version coverage from AUD-040.
 
+### AUD-047 — Spell global authority omitted future births and a complete version join
+
+Status: **CONFIRMED ACTION-AUTHORITY BUG; OFFLINE FIX VALIDATED; PRODUCER
+COVERAGE OPEN**
+
+The old consumer initialized `corridor_action_authority` directly from hard
+time-scale authority. It added a future-hazard check only for the optional
+ordinary nonspell predecessor. Consequently, an active-spell solution could
+constrain input after planning only the entities present in its snapshot; no
+future-birth projection, ECL identity, geometry version, or policy version was
+required. Submission and solution metadata separately carried some of those
+facts, but no single immutable object joined them and no consumer checked the
+whole join. This is a structural false-authority path, independent of whether
+one particular spell happened to collide.
+
+Every solved corridor artifact now retains a content-addressed authority
+version over its exact input root, runtime ECL identity, time-scale schedule,
+future-hazard version, geometry semantics, and policy/configuration semantics.
+The root digest includes player state, current bullets/lasers/contact bodies,
+delay support, active action, frames, context, and gate constraint. Pipeline
+workspaces include the joined digest in their stale-version key.
+
+The live consumer is now unconditionally fail-closed. It requires the current
+runtime ECL identity and stage/epoch context, a semantically compatible
+re-rooted hard unit schedule, complete source closure covering the complete
+policy horizon, one projection version shared by the artifact, retained
+geometry, coverage slabs, and authority join, and matching geometry/policy
+versions. A current-entity-only spell job may still run in shadow so producer
+coverage can be measured, but it cannot provide a target or allowed action.
+
+The deterministic offline gate proves the positive case and independent
+falsifiers: an exact complete join accepts a re-rooted Stage-5-style unit
+schedule, while missing future births, a legacy artifact, stale ECL/context,
+changed scale provenance, changed projection, changed geometry, or changed
+policy config each withholds authority. The affected 40 focused tests pass.
+This closes publication correctness, not future-birth coverage or hit
+reduction; Stage-5 retained-root producer differentials are next and Wine
+remains deferred.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,403 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,408 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

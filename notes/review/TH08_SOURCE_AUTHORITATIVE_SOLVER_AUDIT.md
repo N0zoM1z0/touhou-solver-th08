@@ -528,6 +528,13 @@ not only Final B. Submit global jobs in shadow mode and require nonzero query,
 completion, and on-time publication counts. Add the missing complete-future-
 coverage authority gate before any action can consume a spell policy.
 
+The consumer-side gate is now closed offline. Every solution carries one
+content-addressed join over root, runtime ECL, scale, future hazards, geometry,
+and policy; active spells without complete future coverage remain shadow-only.
+Stage-5 exact identity and unit scale also pass offline. The remaining work in
+this section is producer coverage plus retained-root submission/completion and
+freshness measurement, not another authority bypass.
+
 ### E. Generic future births, producer family by producer family
 
 Start with direct-fire/no-transform reached producers, then periodic/deferred
@@ -548,6 +555,10 @@ share one projection version should global viable actions constrain input.
 Run focused Stage-4A/Stage-5/Final-B practices, then a complete route. VPS CPU
 is expected to matter here: multiple exact candidate branches and adaptive
 refinement finally produce work that can run on its cores.
+
+The version join and fail-closed consumer now enforce the first sentence, but
+do not satisfy it: Stage-5 spell producer coverage is still absent. No Wine or
+hit claim follows from this checkpoint.
 
 ## Success Metrics And Nonclaims
 

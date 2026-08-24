@@ -688,8 +688,9 @@ future births:
    windows rather than only the root-2129 lower bound;
 3. promote only after exact fixtures and retained-root replay agree, commit,
    then run one complete isolated Lunatic Route-2 gate;
-4. build source-authoritative time-scale and future-producer coverage in
-   shadow before allowing any active-spell global action authority;
+4. retain the offline-closed Stage-5 time-scale and immutable global-version
+   join; build source-authoritative future-producer coverage in shadow before
+   allowing any active-spell global action authority;
 5. converge on one generic ECL/timeline/emitter simulator and adaptive global
    viability planner. Per-spell compiled metadata/caches are encouraged;
    handwritten waypoints are not authority.

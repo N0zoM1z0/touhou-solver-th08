@@ -21,6 +21,10 @@ from th08_corridor_adapter import (
     prepare_lowered_th08_corridor,
 )
 from th08_future_hazard_projection import OrdinaryFutureHazardProjection
+from th08_global_authority import (
+    RuntimeEclVersion,
+    build_th08_global_authority_version,
+)
 from th08_corridor_audit import submit_corridor_audit
 from th08_time_scale import (
     TH08_UNIT_TIME_SCALE_BITS,
@@ -134,6 +138,7 @@ def solve_corridor(
     enemy_bodies: tuple[PointerHazard, ...],
     future_aabb_trajectories: tuple[AabbTrajectoryHazard, ...] = (),
     future_hazard_projection: OrdinaryFutureHazardProjection | None = None,
+    runtime_ecl_version: RuntimeEclVersion | None = None,
     snapshot_lag: int,
     control_delay_candidates: tuple[int, ...],
     nominal_control_delay: int,
@@ -177,6 +182,26 @@ def solve_corridor(
             "schedule; nonunit or varying coverage is UNKNOWN"
         )
     time_scale_identity = time_scale_schedule.serialized_identity
+    authority_version = build_th08_global_authority_version(
+        source_frame=source_frame,
+        snapshot_frame=snapshot_frame,
+        forecast_lead_frames=forecast_lead_frames,
+        player_x=player_x,
+        player_y=player_y,
+        bullets=bullets,
+        lasers=lasers,
+        enemy_bodies=enemy_bodies,
+        snapshot_lag=snapshot_lag,
+        control_delay_candidates=control_delay_candidates,
+        nominal_control_delay=nominal_control_delay,
+        active_action=active_action,
+        required_gate_lane=required_gate_lane,
+        context_key=context_key,
+        runtime_ecl_version=runtime_ecl_version,
+        time_scale_schedule=time_scale_schedule,
+        future_hazard_projection=future_hazard_projection,
+        corridor_config=corridor_config,
+    )
     background_priority_lowered = (
         lower_current_thread_priority()
         if background_low_priority
@@ -306,6 +331,7 @@ def solve_corridor(
                 if future_hazard_projection is not None
                 else None
             ),
+            authority_version=authority_version,
         ),
         publication=CorridorPublication(
             audit_capsule=audit.capsule,
@@ -399,12 +425,15 @@ def corridor_viability_query(
 def _pipeline_policy_version(
     solution: CorridorSolution,
 ) -> tuple[object, ...]:
-    return (
+    legacy = (
         solution.source_frame,
         solution.snapshot_frame,
         solution.context_key,
         solution.time_scale_identity,
     )
+    if solution.authority_version is None:
+        return legacy
+    return (*legacy, solution.authority_version.digest)
 
 
 def prepare_pipeline_survival_workspace(

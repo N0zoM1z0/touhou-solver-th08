@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 from ..query_survival import PipelineSurvivalWorkspace
 from ..hazard_coverage import HazardCoverageAssessment
 from ..pipeline_identity import VersionIdentity
+from ..policy_authority import PolicyAuthorityVersion
 from .model import CorridorPlan
 
 
@@ -30,6 +31,7 @@ class CorridorPolicyArtifact:
     time_scale_identity: tuple[object, ...] | None = None
     future_hazard_version: VersionIdentity | None = None
     future_hazard_coverage: HazardCoverageAssessment | None = None
+    authority_version: PolicyAuthorityVersion | None = None
 
 
 @dataclass(frozen=True)
@@ -85,6 +87,7 @@ class CorridorSolution:
         time_scale_identity: tuple[object, ...] | None = None,
         future_hazard_version: VersionIdentity | None = None,
         future_hazard_coverage: HazardCoverageAssessment | None = None,
+        authority_version: PolicyAuthorityVersion | None = None,
         *,
         artifact: CorridorPolicyArtifact | None = None,
         publication: CorridorPublication | None = None,
@@ -117,6 +120,7 @@ class CorridorSolution:
                 time_scale_identity=time_scale_identity,
                 future_hazard_version=future_hazard_version,
                 future_hazard_coverage=future_hazard_coverage,
+                authority_version=authority_version,
             )
             publication = CorridorPublication(
                 audit_capsule=audit_capsule,
@@ -185,6 +189,10 @@ class CorridorSolution:
     @property
     def future_hazard_coverage(self) -> HazardCoverageAssessment | None:
         return self.artifact.future_hazard_coverage
+
+    @property
+    def authority_version(self) -> PolicyAuthorityVersion | None:
+        return self.artifact.authority_version
 
     @property
     def future_hazard_projection(self) -> object | None:

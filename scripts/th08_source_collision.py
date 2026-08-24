@@ -15,13 +15,9 @@ from collections.abc import Sequence
 
 import numpy as np
 
+from th08_collision_versions import TH08_SOURCE_COLLISION_SEMANTICS_VERSION
 from th08_laser_runtime import Laser, PackedLaserFrame, pack_laser_frame
 from th08_live.models import EnemyBody
-
-
-TH08_SOURCE_COLLISION_SEMANTICS_VERSION = (
-    "th08-source-collision-v2-binary32-inclusive-aabb"
-)
 
 
 def _require_player_half_extents(

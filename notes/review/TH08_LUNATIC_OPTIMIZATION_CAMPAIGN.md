@@ -509,6 +509,30 @@ differentials. Wine is reserved for the final Stage-5 delivery/survival gate
 after shadow submissions, completions, freshness checks, and complete producer
 coverage are all nonzero offline.
 
+## GLOBAL-001B — Immutable Global Authority Join
+
+Status: **VERSION/CONSUMPTION GATE CLOSED OFFLINE; STAGE-5 FUTURE PRODUCERS
+OPEN**
+
+The first post-scale audit found that active spells inherited action authority
+from the time-scale gate alone. Future-hazard coverage was checked only on the
+optional ordinary-nonspell lane, so a current-entity-only spell solve could
+constrain live input. The correction does not stop useful shadow computation.
+Instead, each job publishes one immutable join over the exact solver root,
+runtime ECL, schedule, future hazards, geometry, and policy. The consumer must
+match every member and require complete source coverage through the policy
+horizon before exposing a global target or action set.
+
+Five dedicated deterministic cases establish the positive join and the
+missing-future, legacy-artifact, stale ECL/context/scale, projection, geometry,
+and policy falsifiers. Re-rooting a proven constant Stage-5 unit schedule is
+accepted semantically rather than rejected merely because its observation
+frame changed. Together with the affected runtime/scale/pipeline tests, 40
+focused tests pass. This is an authority-integrity improvement, not a survival
+claim. GLOBAL-001C now measures reached Stage-5 producer coverage and shadow
+delivery on retained roots; physical Practice remains withheld until those
+metrics are nonzero and the candidate changes a same-root viability outcome.
+
 ## Boundary And Focus Contract
 
 Boundary/focus work begins with shadow attribution, not a new score.  It must

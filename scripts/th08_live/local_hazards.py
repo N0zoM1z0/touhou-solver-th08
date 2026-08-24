@@ -6,6 +6,7 @@ import math
 
 import numpy as np
 
+from th08_collision_versions import LIVE_LOCAL_COLLISION_SEMANTICS_VERSION
 from th08_laser_runtime import (
     Laser,
     PackedLaserFrame as _PackedLaserFrame,
@@ -17,11 +18,6 @@ from th08_live.movement import (
     PLAYER_LETHAL_HALF_WIDTH,
 )
 from touhou_control import native_backend
-
-
-LIVE_LOCAL_COLLISION_SEMANTICS_VERSION = (
-    "th08-live-local-v2-source-binary32-aabb-player1-state5-only"
-)
 
 
 # Observed in the retained native root2129 H=8 lifecycle differential:

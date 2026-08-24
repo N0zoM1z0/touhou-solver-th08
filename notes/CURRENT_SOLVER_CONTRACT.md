@@ -47,6 +47,16 @@ must fail this certificate. Stage-4A `184903` physically restored 3,599
 constrained decisions, including every reached spell phase, with zero Bombs.
 That promotes only the finite unit schedule, not the global corridor outcome.
 
+Hard scale is no longer sufficient global action authority. Every corridor
+artifact carries one immutable version join over its exact solver root,
+runtime ECL image, time-scale schedule, future-hazard projection, geometry,
+and policy configuration. The consumer must match the current ECL/context,
+semantically compatible finite unit schedule, complete future-source closure
+through the policy horizon, every coverage-slab version, and current
+geometry/policy identities. Missing future births make active-spell policies
+shadow-only; they may still run to measure producer and delivery coverage.
+Legacy or partially versioned artifacts are never uplifted.
+
 Every authority labelled exact corridor, ordinary predecessor, constant-hold,
 delayed issue, or continuation lease is non-relaxable by the coarse terminal-
 threat fallback. `184903` exposed 57 such relaxations; `191508` retained zero.

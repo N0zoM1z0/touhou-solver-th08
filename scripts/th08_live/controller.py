@@ -58,6 +58,7 @@ from th08_future_hazard_projection import (
     OrdinaryFutureHazardProjection,
     condition_future_hazard_projection_on_player_paths,
 )
+from th08_global_authority import assess_th08_global_action_authority
 from th08_ordinary_future_sources import (
     ORDINARY_FUTURE_SOURCE_SEMANTICS_VERSION,
 )
@@ -5073,6 +5074,11 @@ def _run_live_session(
                     future_hazard_projection=(
                         ordinary_future_projection
                     ),
+                    runtime_ecl_version=(
+                        runtime_ecl_identity_service.accepted_version
+                        if runtime_ecl_identity_service is not None
+                        else None
+                    ),
                     snapshot_lag=hazard_snapshot_age,
                     control_delay_candidates=policy_delay_support,
                     observed_control_delay_candidates=(
@@ -5174,17 +5180,32 @@ def _run_live_session(
             )
             safety_value_query = policy_queries.safety_value_query
             policy_guidance = policy_queries.guidance
-            corridor_action_authority = corridor_time_scale_hard_authority
-            if (
-                corridor_action_authority
-                and ordinary_preexhaustion_authority
-                and not bool(spell_state["active"])
-            ):
-                corridor_action_authority = (
-                    _ordinary_solution_hazard_authority(
-                        corridor_solution
-                    )
+            corridor_authority_assessment = (
+                assess_th08_global_action_authority(
+                    corridor_solution,
+                    current_frame=counter_after_read,
+                    context_key=corridor_context,
+                    runtime_ecl_version=(
+                        runtime_ecl_identity_service.accepted_version
+                        if runtime_ecl_identity_service is not None
+                        else None
+                    ),
+                    time_scale_schedule=(
+                        captured_iteration.time_scale_schedule
+                    ),
+                    corridor_config=(
+                        ORDINARY_AUTHORITY_CORRIDOR_CONFIG
+                        if (
+                            ordinary_preexhaustion_authority
+                            and not bool(spell_state["active"])
+                        )
+                        else TH08_CORRIDOR_CONFIG
+                    ),
                 )
+            )
+            corridor_action_authority = (
+                corridor_authority_assessment.allowed
+            )
             if corridor_action_authority:
                 actionable_corridor_target = corridor_target
                 actionable_policy_guidance = policy_guidance
@@ -7972,6 +7993,9 @@ def _run_live_session(
                         captured_iteration.player_projection_authority
                     ),
                     "action_authority": corridor_action_authority,
+                    "action_authority_assessment": (
+                        corridor_authority_assessment.record()
+                    ),
                     "allowed_action_authority": (
                         allowed_action_authority
                     ),
