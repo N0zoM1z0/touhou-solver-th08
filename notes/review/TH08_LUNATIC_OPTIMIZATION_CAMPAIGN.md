@@ -348,11 +348,18 @@ passes 1,365 tests with five skips. Controller import smoke passes, and a
 bullets measured about 0.022 ms per call on this VPS. This is a latency sanity
 check, not a gameplay-performance claim.
 
-Next gate: exercise the retained fields in isolated Wine, then build a pure
-source-exact current-collision kernel and replay identical roots through both
-legacy and exact membership/action-set classifiers. GEO-002 remains blocked
-until fixtures and retained-root differentials make false-positive and
-false-negative counts explicit.
+The isolated Wine smoke at exact commit `4cd5777` passed on private display
+`:98`: exact executable/patch identity, Win32 Python/NumPy, native DLL, title
+state, termination, and exact-prefix cleanup all passed with no leftovers.
+The concurrently running TH105 Wine tree on `:121` and its separate prefix was
+untouched. This is an import/launch gate; it does not claim that title-screen
+state exercised gameplay collision telemetry.
+
+Next gate: build a pure source-exact current-collision kernel and replay
+identical retained native roots through both legacy and exact
+membership/action-set classifiers. GEO-002 remains blocked until fixtures and
+retained-root differentials make false-positive and false-negative counts
+explicit.
 
 ## Future-Birth Simplification Contract
 
