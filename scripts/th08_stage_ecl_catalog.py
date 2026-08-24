@@ -1,8 +1,11 @@
-"""Pinned decoded ECL identities for original-game Practice Start stages.
+"""Pinned decoded ECL identities for original-game stage execution modes.
 
 The route index is the value exposed by the shipped runtime.  The digest pins
 the decoded image that is compared with the relocated runtime image before any
-source-derived planning fact may receive action authority.
+source-derived planning fact may receive action authority.  Practice Start
+sets the native game-manager practice flag and therefore loads ``*sp.ecl``;
+route play loads the corresponding ordinary ``*.ecl`` image.  Keeping those
+identities separate is mandatory because their subroutine layouts differ.
 """
 
 from __future__ import annotations
@@ -25,7 +28,7 @@ class StageEclIdentity:
     scale_model: str
 
 
-PRACTICE_STAGE_ECL_IDENTITIES = {
+ROUTE_STAGE_ECL_IDENTITIES = {
     "1": StageEclIdentity(
         "1",
         0,
@@ -92,13 +95,80 @@ PRACTICE_STAGE_ECL_IDENTITIES = {
     ),
 }
 
+PRACTICE_STAGE_ECL_IDENTITIES = {
+    "1": StageEclIdentity(
+        "1",
+        0,
+        "Stage 1",
+        "ecldata1sp.ecl",
+        "aac506b4eaf8fdfaa90e876f74db711d3c0724f63798e7d62801b02bbb29e00e",
+        SCALE_MODEL_NO_WRITER,
+    ),
+    "2": StageEclIdentity(
+        "2",
+        1,
+        "Stage 2",
+        "ecldata2sp.ecl",
+        "2f83c57da937f35288f6f0e1b6ef3aecddd25b4e80fbc3ed5ef7289bef2229f1",
+        SCALE_MODEL_NO_WRITER,
+    ),
+    "3": StageEclIdentity(
+        "3",
+        2,
+        "Stage 3",
+        "ecldata3sp.ecl",
+        "3d458ec6549f1d7fb6c694388adb55c010ac4cb405457ab9af6df2e13928ca5f",
+        SCALE_MODEL_NO_WRITER,
+    ),
+    "4a": StageEclIdentity(
+        "4a",
+        3,
+        "Stage 4A / Reimu",
+        "ecldata4asp.ecl",
+        "9ac983ec5a34fd607b73891d5ba95a19caadb493565b8986320c04d0de8a8df3",
+        SCALE_MODEL_NO_WRITER,
+    ),
+    "4b": StageEclIdentity(
+        "4b",
+        4,
+        "Stage 4B / Marisa",
+        "ecldata4bsp.ecl",
+        "007da9d02374f01292eada9a065c21b54cebbb81a5bff7a1660753498df65b51",
+        SCALE_MODEL_NO_WRITER,
+    ),
+    "5": StageEclIdentity(
+        "5",
+        5,
+        "Stage 5",
+        "ecldata5sp.ecl",
+        "d9140821aae21c9426f7ebb0a4e8334718265bdd011f20b7c026eda901639d4b",
+        SCALE_MODEL_NO_WRITER,
+    ),
+    "6a": StageEclIdentity(
+        "6a",
+        6,
+        "Final A / Eirin",
+        "ecldata6sp.ecl",
+        "c1cd463702f1e621b67d1e2f4915fd3e3a27ac61687ef477f4ff1bde554a44d7",
+        SCALE_MODEL_DYNAMIC,
+    ),
+    "6b": StageEclIdentity(
+        "6b",
+        7,
+        "Final B / Kaguya",
+        "ecldata7sp.ecl",
+        "7f1a847fdd7ceb5e35dfd3529a54961ab4d1c9e7607fbcfb577936465326ab0e",
+        SCALE_MODEL_FINAL_B,
+    ),
+}
+
 PRACTICE_STAGE_KEYS = tuple(PRACTICE_STAGE_ECL_IDENTITIES)
 NO_SCALE_WRITER_STAGE_ROUTE_INDICES = frozenset(
     identity.route_index
     for identity in PRACTICE_STAGE_ECL_IDENTITIES.values()
     if identity.scale_model == SCALE_MODEL_NO_WRITER
 )
-FINAL_B_ECL_SHA256 = PRACTICE_STAGE_ECL_IDENTITIES["6b"].sha256
+FINAL_B_ECL_SHA256 = ROUTE_STAGE_ECL_IDENTITIES["6b"].sha256
 
 
 __all__ = [
@@ -106,6 +176,7 @@ __all__ = [
     "NO_SCALE_WRITER_STAGE_ROUTE_INDICES",
     "PRACTICE_STAGE_ECL_IDENTITIES",
     "PRACTICE_STAGE_KEYS",
+    "ROUTE_STAGE_ECL_IDENTITIES",
     "SCALE_MODEL_DYNAMIC",
     "SCALE_MODEL_FINAL_B",
     "SCALE_MODEL_NO_WRITER",

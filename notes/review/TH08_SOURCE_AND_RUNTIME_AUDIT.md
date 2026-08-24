@@ -1176,6 +1176,39 @@ This closes publication correctness, not future-birth coverage or hit
 reduction; Stage-5 retained-root producer differentials are next and Wine
 remains deferred.
 
+### AUD-048 — Practice runtime identity was pinned to the route ECL image
+
+Status: **CONFIRMED INFRA BUG; OFFLINE FIX VALIDATED; PHYSICAL IDENTITY CHECK
+DEFERRED**
+
+The stage catalog called its entries Practice identities but named the route
+images (`ecldata5.ecl`, etc.). The native loader does not use those images in
+Practice Start. `EnemyManager.cpp` selects the ordinary stage table only when
+game-manager flag bit 14 is clear; with that practice flag set and a spell ID
+below 205 it selects the stage-specific `*sp.ecl` table. Thus the next Stage-5
+Practice command would have compared the relocated `ecldata5sp.ecl` runtime
+against `ecldata5.ecl`. Exact runtime identity would correctly reject it, so
+the scale and future-source lanes would remain unavailable regardless of VPS
+compute.
+
+Route and Practice catalogs are now separate. Practice Stage 5 is pinned to
+`ecldata5sp.ecl` SHA-256 `d9140821...`; route Stage 5 remains pinned to
+`ecldata5.ecl` SHA-256 `3148f45f...`. Final-B route launch retains its route
+digest instead of accidentally inheriting the Practice digest. Offline tests
+hash and parse every image in both catalogs, repeat the complete no-scale-
+writer audit, prove the two Stage-5 identities differ, and exercise the exact
+Stage-5 pre-plan identity/scale transaction with the Practice image.
+
+The retained 28-hit Practice trace also narrows the next producer work. Its
+existing callback-12 lookahead was complete for every recorded decision in
+spells 103 (647/647), 107 (623/623), and 111 (716/716). Spell 115 was complete
+for only 11/732 decisions; 721 stopped fail-closed at unsupported control flow,
+consistent with its callback-14 program. Therefore callback-12 sensing is not
+the main missing global input for the first three cards. Their remaining
+structural omission is future births/child producers; spell 115 additionally
+requires callback-14 lowering. These are retained-trace diagnostics, not a
+survival or runtime-image-identity acceptance claim.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository

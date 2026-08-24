@@ -26,6 +26,7 @@ from th08_runtime.game_state import EXPECTED_EXE_SHA256
 from th08_stage_ecl_catalog import (
     NO_SCALE_WRITER_STAGE_ROUTE_INDICES,
     PRACTICE_STAGE_ECL_IDENTITIES,
+    ROUTE_STAGE_ECL_IDENTITIES,
     SCALE_MODEL_NO_WRITER,
 )
 from th08_time_scale import TH08_UNIT_TIME_SCALE_BITS
@@ -79,16 +80,33 @@ class _Stage5SourceCapture:
 
 class Stage5OfflineAuthorityPipelineTests(unittest.TestCase):
     def test_catalog_hashes_and_no_writer_claims_match_decoded_images(self) -> None:
-        for identity in PRACTICE_STAGE_ECL_IDENTITIES.values():
-            image = DECODED / identity.filename
-            self.assertEqual(
-                hashlib.sha256(image.read_bytes()).hexdigest(),
-                identity.sha256,
-            )
-            self.assertEqual(
-                audit_no_scale_writer_ecl(parse_ecl(image)).eligible,
-                identity.scale_model == SCALE_MODEL_NO_WRITER,
-            )
+        for catalog in (
+            ROUTE_STAGE_ECL_IDENTITIES,
+            PRACTICE_STAGE_ECL_IDENTITIES,
+        ):
+            for identity in catalog.values():
+                image = DECODED / identity.filename
+                self.assertEqual(
+                    hashlib.sha256(image.read_bytes()).hexdigest(),
+                    identity.sha256,
+                )
+                self.assertEqual(
+                    audit_no_scale_writer_ecl(parse_ecl(image)).eligible,
+                    identity.scale_model == SCALE_MODEL_NO_WRITER,
+                )
+
+        self.assertEqual(
+            ROUTE_STAGE_ECL_IDENTITIES["5"].filename,
+            "ecldata5.ecl",
+        )
+        self.assertEqual(
+            PRACTICE_STAGE_ECL_IDENTITIES["5"].filename,
+            "ecldata5sp.ecl",
+        )
+        self.assertNotEqual(
+            ROUTE_STAGE_ECL_IDENTITIES["5"].sha256,
+            PRACTICE_STAGE_ECL_IDENTITIES["5"].sha256,
+        )
 
         self.assertEqual(
             NO_SCALE_WRITER_STAGE_ROUTE_INDICES,

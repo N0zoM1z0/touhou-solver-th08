@@ -533,6 +533,28 @@ claim. GLOBAL-001C now measures reached Stage-5 producer coverage and shadow
 delivery on retained roots; physical Practice remains withheld until those
 metrics are nonzero and the candidate changes a same-root viability outcome.
 
+## GLOBAL-001C — Mode-Correct Practice Image And Producer Census
+
+Status: **PRACTICE IDENTITY CLOSED OFFLINE; FUTURE-BIRTH COVERAGE IN
+PROGRESS**
+
+The first retained-trace census exposed an infrastructure blocker before any
+producer extension: Practice Start loads the source-authoritative
+`ecldata*sp.ecl` family, while the new catalog and Wine command pinned route
+`ecldata*.ecl`. The catalogs are now mode-specific and the Stage-5 offline
+identity/scale transaction uses `ecldata5sp.ecl`. This prevents an exact
+identity service from correctly rejecting every Practice root before the VPS
+workers receive useful work.
+
+Across the retained 28-hit Stage-5 trace, callback-12 lookahead already covers
+all 1,986 decisions in spells 103/107/111. Spell 115 has 721/732 incomplete
+rows at its unsupported callback-14 path. The next generic checkpoint is
+therefore not a wider callback-12 horizon: compile and test route/Practice
+spell producer topology, admit active-spell direct-fire prefixes into the
+existing fail-closed future-source kernel, and then lower child sources and
+callback 14. Wine remains a final acceptance gate after offline projection
+coverage and same-root global viability changes are nonzero.
+
 ## Boundary And Focus Contract
 
 Boundary/focus work begins with shadow attribution, not a new score.  It must

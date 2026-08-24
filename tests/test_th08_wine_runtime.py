@@ -271,7 +271,10 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertEqual(
             command[command.index("--runtime-ecl-static-image") + 1],
             runner.windows_path(
-                runner.ROOT / "artifacts" / "decoded" / "ecldata4b.ecl"
+                runner.ROOT
+                / "artifacts"
+                / "decoded"
+                / "ecldata4bsp.ecl"
             ),
         )
         self.assertEqual(
@@ -300,7 +303,7 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertIn("--enable-finalb-scale-source-authority", command)
         self.assertEqual(
             command[command.index("--runtime-ecl-static-sha256") + 1],
-            runner.FINAL_B_ECL_SHA256,
+            runner.PRACTICE_STAGE_ECL_IDENTITIES["6b"].sha256,
         )
 
     def test_pe_machine_reads_i386_coff_header(self) -> None:
