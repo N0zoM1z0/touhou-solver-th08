@@ -77,7 +77,7 @@ change when its semantic and timing gate passes.
 | OPT-002A | control-delay correctness | Close the post-reset deadline-miss feedback self-lock without weakening issue freshness | medium | VALIDATED-PHYSICAL | 60 hits; ten misses recovered, no causal-hit miss or self-lock; keep |
 | GEO-001 | source-exact geometry shadow | Retain runtime player half-extents and bullet lifecycle fields; compare legacy/exact hazards and action sets without changing input | low, shadow | COMPLETE | 57-hit route; 21.39M lifecycle observations retained |
 | GEO-002A | conservative source geometry promotion | Exact bullet/body player AABB plus irreversible state-5 removal; retain activatable states and approximate laser | medium | VALIDATED-SEMANTICS; REJECTED-AS-STANDALONE-POLICY | 93 hits; Stage 5 31; keep physical truth, repair exposed timing |
-| TIME-001 | capture/control timing | Separate bulk-pool epoch and realized issue-delay uncertainty from physical hitboxes; bound repeated certificates | medium | IN-PROGRESS | capture span secondary; Stage-5 hit lag 7/10 versus 2/4 baseline |
+| TIME-001 | capture/control timing | Exact lazy fresh-enemy recertification; then separate bulk-pool epoch and realized issue-delay uncertainty from physical hitboxes | medium | OFFLINE-VALIDATED; PHYSICAL PENDING | 95.66% retained changed guards can terminate after the selected-action proof; dense-safe median 30.34→2.31ms |
 | MOT-001 | exact current entities | Replace heuristic transformed-bullet projection with the matching native update/transform semantics | medium-high | QUEUED | pending |
 | GD-001 | global delivery shadow | Establish per-stage hard scale roots, submit jobs in shadow, and add complete future-coverage plus solution-version authority gates | medium, shadow | ROOT CAUSE CONFIRMED | one Final-B/Stage-1 mismatch; 50,669/50,669 due jobs blocked |
 | FB-001 | future births | Capture a coherent VM/emitter/RNG root and implement one generic exact ECL/timeline/emitter kernel, starting with reached direct-fire producers | high | QUEUED | pending |
@@ -410,6 +410,34 @@ differential.  Its physical route nevertheless regressed from 57 to 93 hits,
 with Stage-5 hit-row lag outside the model.  The source predicate is retained,
 but the next live change is TIME-001 rather than a wider lifecycle/laser
 promotion.  AUD-036 through AUD-040 contain the disposition.
+
+## TIME-001A — Exact Lazy Fresh-Enemy Recertification
+
+Status: **OFFLINE-VALIDATED; PHYSICAL PENDING**
+
+Mechanism: a changed issue-time enemy prefix previously forced a complete
+17-action robust certificate even when the already selected action remained
+fresh-safe.  The retained 93-hit route contains 12,499 changed-prefix
+transactions; 11,957 (95.66%) preserve a freshly safe planned action, while
+all changed transactions consume 166.499 seconds of controller-thread
+recertification.
+
+Change: certify the planned action first and include the optional preference
+in the same bounded probe.  Terminate only when the historical selection order
+is already decided by a freshly safe eligible action.  Otherwise certify all
+actions again in the historical batch context and run the complete selection.
+Partial certificates are
+versioned as `lazy_safe_selection`, expose only proven-safe actions, and carry
+an explicit incomplete-action-set bit.  No hitbox, horizon, delay support,
+ranking key, Bomb rule, stage condition, or global-authority rule changes.
+
+Offline gate: the deterministic dense-safe 1,200-bullet differential produces
+an identical selected certificate while reducing the median from 30.339ms to
+2.306ms over 30 repeats.  Focused transaction, fresh-issue, trace, and audit
+tests pass.  Falsifiers are any selected-certificate mismatch, incomplete-set
+telemetry presented as complete, full-fallback selection mismatch, Stage-5
+issue p95 not improving, or a full-route latency/hit regression without an
+independent root explanation.
 
 ## Future-Birth Simplification Contract
 

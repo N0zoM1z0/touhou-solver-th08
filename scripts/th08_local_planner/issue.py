@@ -36,6 +36,7 @@ class IssueRequest:
     viability_survival_actions: tuple[str, ...] = ()
     preferred_action: str | None = None
     preference_reason: str | None = None
+    lazy_safe_action_probe: bool = False
 
 
 @dataclass(frozen=True)
@@ -73,30 +74,6 @@ class IssueTransaction:
         certificate_horizon = (
             request.action_hold_frames + max(request.delay_frames)
         )
-        certificates = adapter.certificate_provider(
-            player_x=request.player_x,
-            player_y=request.player_y,
-            previous_mask=request.previous_mask,
-            actions=adapter.actions,
-            delay_frames=request.delay_frames,
-            action_hold_frames=request.action_hold_frames,
-            bullets=request.bullets,
-            lasers=request.lasers,
-            enemy_bodies=request.enemy_bodies,
-            snapshot_lag=request.snapshot_lag,
-            player_scale_bits=(
-                request.time_scale_schedule.require_player_horizon(
-                    certificate_horizon
-                )
-            ),
-            laser_scale_bits=(
-                request.time_scale_schedule.require_laser_horizon(
-                    certificate_horizon
-                )
-            ),
-            pipeline_root=request.pipeline_root,
-            timing_accumulator=timing,
-        )
         action_by_name = {
             action.name: action for action in adapter.actions
         }
@@ -133,21 +110,121 @@ class IssueTransaction:
                 "preference reason requires a preferred action"
             )
 
-        planned = certificates.get(decision.action)
-        fresh_safe_actions = tuple(
-            action.name
-            for action in adapter.actions
-            if (
-                certificates[action.name].worst_collisions == 0
-                and certificates[action.name].min_clearance >= 0.0
-            )
-        )
         nonfresh_relaxation = bool(
             decision.viability_constraint_relaxed
             and not decision.viability_fresh_prefix_relaxed
         )
         global_applicable = bool(
             allowed is not None and not nonfresh_relaxation
+        )
+
+        def certify(
+            actions: tuple[Any, ...],
+        ) -> dict[str, RobustActionCertificate]:
+            if not actions:
+                return {}
+            return adapter.certificate_provider(
+                player_x=request.player_x,
+                player_y=request.player_y,
+                previous_mask=request.previous_mask,
+                actions=actions,
+                delay_frames=request.delay_frames,
+                action_hold_frames=request.action_hold_frames,
+                bullets=request.bullets,
+                lasers=request.lasers,
+                enemy_bodies=request.enemy_bodies,
+                snapshot_lag=request.snapshot_lag,
+                player_scale_bits=(
+                    request.time_scale_schedule.require_player_horizon(
+                        certificate_horizon
+                    )
+                ),
+                laser_scale_bits=(
+                    request.time_scale_schedule.require_laser_horizon(
+                        certificate_horizon
+                    )
+                ),
+                pipeline_root=request.pipeline_root,
+                timing_accumulator=timing,
+            )
+
+        def certificate_is_safe(
+            certificate: RobustActionCertificate | None,
+        ) -> bool:
+            return bool(
+                certificate is not None
+                and certificate.worst_collisions == 0
+                and certificate.min_clearance >= 0.0
+            )
+
+        certificates: dict[str, RobustActionCertificate]
+        used_lazy_probe = bool(
+            request.lazy_safe_action_probe
+            and decision.action in action_by_name
+        )
+        if used_lazy_probe:
+            probe_names = {decision.action}
+            preferred_globally_eligible = bool(
+                request.preferred_action is not None
+                and (
+                    not global_applicable
+                    or request.preferred_action in (allowed or ())
+                )
+            )
+            if preferred_globally_eligible:
+                probe_names.add(request.preferred_action or "")
+            probe_actions = tuple(
+                action
+                for action in adapter.actions
+                if action.name in probe_names
+            )
+            certificates = certify(probe_actions)
+            planned_safe_and_eligible = bool(
+                certificate_is_safe(certificates.get(decision.action))
+                and (
+                    not global_applicable
+                    or decision.action in (allowed or ())
+                )
+            )
+            preferred_safe_and_eligible = bool(
+                preferred_globally_eligible
+                and certificate_is_safe(
+                    certificates.get(request.preferred_action or "")
+                )
+            )
+            if not (
+                planned_safe_and_eligible
+                or preferred_safe_and_eligible
+            ):
+                # Preserve the historical batch context for ranking.  The
+                # hazard kernel may widen its relevance window across action
+                # positions, so merging independently reduced subsets could
+                # perturb positive-clearance tie breakers even though hard
+                # collision truth is action-local.
+                certificates = certify(adapter.actions)
+        else:
+            certificates = certify(adapter.actions)
+
+        fresh_action_set_complete = (
+            len(certificates) == len(adapter.actions)
+        )
+        certificate_mode = (
+            "lazy_safe_selection"
+            if used_lazy_probe and not fresh_action_set_complete
+            else (
+                "lazy_fallback_full"
+                if used_lazy_probe
+                else "full"
+            )
+        )
+
+        planned = certificates.get(decision.action)
+        fresh_safe_actions = tuple(
+            action.name
+            for action in adapter.actions
+            if (
+                certificate_is_safe(certificates.get(action.name))
+            )
         )
         fresh_safe_set = set(fresh_safe_actions)
         intersection = tuple(
@@ -262,6 +339,8 @@ class IssueTransaction:
             preference_reason=request.preference_reason,
             preference_applied=preferred is not None,
             allowed_action_authority=request.allowed_action_authority,
+            fresh_action_set_complete=fresh_action_set_complete,
+            certificate_mode=certificate_mode,
         )
         issued_mask = (
             adapter.shot_mask
@@ -307,7 +386,8 @@ class IssueTransaction:
                 and selected.name in request.viability_safety_actions
             ),
             viability_fresh_prefix_filtered=bool(
-                global_applicable
+                fresh_action_set_complete
+                and global_applicable
                 and intersection
                 and len(intersection) != len(allowed or ())
             ),
@@ -319,7 +399,9 @@ class IssueTransaction:
                 and selected.name in request.viability_survival_actions
             ),
             issue_action_certificates=tuple(
-                certificates[action.name] for action in adapter.actions
+                certificates[action.name]
+                for action in adapter.actions
+                if action.name in certificates
             ),
             issue_certificate_timing=timing.snapshot(),
             issue_recertification=transaction,

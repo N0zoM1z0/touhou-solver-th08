@@ -254,6 +254,152 @@ class IssueTransactionTests(unittest.TestCase):
         self.assertIs(first, second)
         self.assertEqual(first.decision.mask & live.BOMB, 0)
 
+    def test_lazy_probe_commits_a_fresh_safe_planned_action_exactly(self) -> None:
+        arguments = self._arguments()
+        arguments["lazy_safe_action_probe"] = True
+        calls: list[tuple[str, ...]] = []
+        base_provider = _certificates({"up_fast": (0, 3.0, 2.0)})
+
+        def provider(**kwargs):
+            calls.append(tuple(action.name for action in kwargs["actions"]))
+            return base_provider(**kwargs)
+
+        transaction = IssueTransaction(
+            LocalProposal.from_decision(self._decision()),
+            IssueRequest(**arguments),
+            IssueAdapter(
+                actions=live._PLANNER_ACTIONS,
+                certificate_provider=provider,
+                timing_factory=live._LocalCertificateTimingAccumulator,
+                shot_mask=live.SHOT,
+                focus_mask=live.FOCUS,
+                bomb_mask=live.BOMB,
+            ),
+        )
+
+        issued = transaction.commit()
+
+        self.assertEqual(calls, [("up_fast",)])
+        self.assertEqual(issued.decision.action, "up_fast")
+        self.assertEqual(
+            tuple(
+                certificate.action
+                for certificate in issued.decision.issue_action_certificates
+            ),
+            ("up_fast",),
+        )
+        self.assertEqual(
+            issued.transaction.fresh_safe_actions,
+            ("up_fast",),
+        )
+        self.assertFalse(
+            issued.transaction.fresh_action_set_complete
+        )
+        self.assertEqual(
+            issued.transaction.certificate_mode,
+            "lazy_safe_selection",
+        )
+        self.assertEqual(issued.decision.mask & live.BOMB, 0)
+
+    def test_lazy_probe_falls_back_to_the_complete_action_batch(self) -> None:
+        arguments = self._arguments()
+        arguments["lazy_safe_action_probe"] = True
+        calls: list[tuple[str, ...]] = []
+        base_provider = _certificates(
+            {
+                "up_fast": (1, -2.0, 100.0),
+                "left": (0, 5.0, 0.0),
+            }
+        )
+
+        def provider(**kwargs):
+            calls.append(tuple(action.name for action in kwargs["actions"]))
+            return base_provider(**kwargs)
+
+        transaction = IssueTransaction(
+            LocalProposal.from_decision(self._decision()),
+            IssueRequest(**arguments),
+            IssueAdapter(
+                actions=live._PLANNER_ACTIONS,
+                certificate_provider=provider,
+                timing_factory=live._LocalCertificateTimingAccumulator,
+                shot_mask=live.SHOT,
+                focus_mask=live.FOCUS,
+                bomb_mask=live.BOMB,
+            ),
+        )
+
+        issued = transaction.commit()
+
+        self.assertEqual(calls[0], ("up_fast",))
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(
+            calls[1],
+            tuple(action.name for action in live._PLANNER_ACTIONS),
+        )
+        self.assertEqual(issued.decision.action, "left")
+        self.assertEqual(
+            len(issued.decision.issue_action_certificates),
+            len(live._PLANNER_ACTIONS),
+        )
+        self.assertTrue(
+            issued.transaction.fresh_action_set_complete
+        )
+        self.assertEqual(
+            issued.transaction.certificate_mode,
+            "lazy_fallback_full",
+        )
+        self.assertEqual(issued.decision.mask & live.BOMB, 0)
+
+    def test_lazy_probe_cannot_preserve_outside_hard_global_authority(
+        self,
+    ) -> None:
+        arguments = self._arguments()
+        arguments["lazy_safe_action_probe"] = True
+        arguments["allowed_first_actions"] = ("left", "right")
+        arguments["allowed_action_authority"] = "exact_global_test"
+        calls: list[tuple[str, ...]] = []
+        base_provider = _certificates(
+            {
+                "up_fast": (0, 9.0, 0.0),
+                "left": (0, 5.0, 0.0),
+                "right": (1, -1.0, 1.0),
+            }
+        )
+
+        def provider(**kwargs):
+            calls.append(tuple(action.name for action in kwargs["actions"]))
+            return base_provider(**kwargs)
+
+        transaction = IssueTransaction(
+            LocalProposal.from_decision(self._decision()),
+            IssueRequest(**arguments),
+            IssueAdapter(
+                actions=live._PLANNER_ACTIONS,
+                certificate_provider=provider,
+                timing_factory=live._LocalCertificateTimingAccumulator,
+                shot_mask=live.SHOT,
+                focus_mask=live.FOCUS,
+                bomb_mask=live.BOMB,
+            ),
+        )
+
+        issued = transaction.commit()
+
+        self.assertEqual(calls[0], ("up_fast",))
+        self.assertEqual(
+            calls[1],
+            tuple(action.name for action in live._PLANNER_ACTIONS),
+        )
+        self.assertEqual(issued.decision.action, "left")
+        self.assertEqual(
+            issued.transaction.allowed_action_authority,
+            "exact_global_test",
+        )
+        self.assertFalse(
+            issued.transaction.global_constraint_relaxed
+        )
+
     def test_allowed_action_authority_is_retained_at_fresh_issue(self) -> None:
         arguments = self._arguments()
         arguments["allowed_first_actions"] = ("left", "right")

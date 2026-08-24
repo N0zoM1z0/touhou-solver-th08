@@ -105,6 +105,8 @@ class IssueRecertification:
     preference_reason: str | None = None
     preference_applied: bool = False
     allowed_action_authority: str | None = None
+    fresh_action_set_complete: bool = True
+    certificate_mode: str = "full"
 
 
 @dataclass(frozen=True)

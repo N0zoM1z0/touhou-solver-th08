@@ -1113,6 +1113,10 @@ def _issue_recertification_record(
         "allowed_action_authority": (
             recertification.allowed_action_authority
         ),
+        "fresh_action_set_complete": (
+            recertification.fresh_action_set_complete
+        ),
+        "certificate_mode": recertification.certificate_mode,
         "selected_outside_global_without_relaxation": (
             selected_outside_global_without_relaxation
         ),
@@ -1151,6 +1155,7 @@ def commit_local_proposal_for_fresh_hazards(
     preferred_action: str | None = None,
     preference_reason: str | None = None,
     time_scale_schedule: Th08TimeScaleSchedule | None = None,
+    lazy_safe_action_probe: bool = False,
 ) -> IssuedDecision:
     """Commit a proposal against fresh hazards and retained global authority."""
 
@@ -1184,6 +1189,7 @@ def commit_local_proposal_for_fresh_hazards(
             viability_survival_actions=viability_survival_actions,
             preferred_action=preferred_action,
             preference_reason=preference_reason,
+            lazy_safe_action_probe=lazy_safe_action_probe,
         ),
         IssueAdapter(
             actions=_PLANNER_ACTIONS,
@@ -1218,6 +1224,7 @@ def issue_transaction_for_fresh_hazards(
     preferred_action: str | None = None,
     preference_reason: str | None = None,
     time_scale_schedule: Th08TimeScaleSchedule | None = None,
+    lazy_safe_action_probe: bool = False,
 ) -> IssuedDecision:
     """Compatibility adapter from a flat decision to a proposal."""
 
@@ -1242,6 +1249,7 @@ def issue_transaction_for_fresh_hazards(
         preferred_action=preferred_action,
         preference_reason=preference_reason,
         time_scale_schedule=time_scale_schedule,
+        lazy_safe_action_probe=lazy_safe_action_probe,
     )
 
 
@@ -2110,6 +2118,7 @@ def _direct_root_certificate_shadow(
     authoritative_certificates: tuple[
         RobustActionCertificate, ...
     ] = (),
+    authoritative_action_set_complete: bool = True,
 ) -> dict[str, object]:
     """Late, counterfactual explicit-root certificate with no action authority."""
 
@@ -2155,7 +2164,11 @@ def _direct_root_certificate_shadow(
     )
     return {
         "role": "post_issue_shadow_no_action_authority",
-        "status": "complete",
+        "status": (
+            "complete"
+            if authoritative_action_set_complete
+            else "partial_authoritative_action_set"
+        ),
         "computed_after_input": True,
         "wall_ms": wall_ms,
         "timing": _local_certificate_timing_record(
@@ -2163,8 +2176,16 @@ def _direct_root_certificate_shadow(
         ),
         "direct_safe_actions": direct_safe_actions,
         "authoritative_safe_actions": authoritative_safe_actions,
+        "authoritative_action_set_complete": (
+            authoritative_action_set_complete
+        ),
+        "authoritative_certified_actions": tuple(
+            certificate.action
+            for certificate in authoritative_certificates
+        ),
         "safe_action_set_changed": (
-            bool(authoritative_by_action)
+            authoritative_action_set_complete
+            and bool(authoritative_by_action)
             and direct_safe_actions != authoritative_safe_actions
         ),
         "certificates": tuple(
@@ -6492,6 +6513,7 @@ def _run_live_session(
                         time_scale_schedule=(
                             captured_iteration.time_scale_schedule
                         ),
+                        lazy_safe_action_probe=True,
                     )
                 ),
                 read_started=issue_path_started,
@@ -7425,6 +7447,17 @@ def _run_live_session(
                             ),
                             authoritative_certificates=(
                                 decision.issue_action_certificates
+                            ),
+                            authoritative_action_set_complete=(
+                                (
+                                    decision.issue_recertification
+                                    .fresh_action_set_complete
+                                )
+                                if decision.issue_recertification is not None
+                                else (
+                                    len(decision.issue_action_certificates)
+                                    == len(_PLANNER_ACTIONS)
+                                )
                             ),
                         )
                     )

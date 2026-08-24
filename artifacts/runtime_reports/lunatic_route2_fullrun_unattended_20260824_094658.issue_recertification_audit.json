@@ -1,0 +1,51 @@
+{
+  "authority": {
+    "changes_input": false,
+    "claim": "A terminal lazy probe recomputes the selected/preferred certificate exactly; it does not infer unprobed safe actions.",
+    "role": "retained-route counterfactual work audit"
+  },
+  "change_kind_occurrence_counts": {
+    "added": 3749,
+    "contact_mode": 14384,
+    "removed": 5800,
+    "size": 11,
+    "trajectory": 1567,
+    "velocity": 58174
+  },
+  "changed_decision_counts_by_stage": {
+    "0": 1076,
+    "1": 1299,
+    "2": 1301,
+    "3": 4619,
+    "5": 2911,
+    "7": 1293
+  },
+  "schema": "th08-issue-recertification-audit-v1",
+  "selection_reason_counts": {
+    "preserve_fresh_safe_planned": 11957,
+    "replace_unsafe_with_fresh_safe": 10,
+    "replace_unsafe_with_least_bad": 532
+  },
+  "summary": {
+    "decision_count": 50669,
+    "exact_lazy_fallback_count": 542,
+    "exact_lazy_terminal_count": 11957,
+    "exact_lazy_terminal_fraction": 0.9566365309224738,
+    "fresh_enemy_changed_count": 12499,
+    "fresh_enemy_changed_fraction": 0.24667942923681146,
+    "planned_fresh_safe_count": 11957,
+    "planned_fresh_safe_fraction": 0.9566365309224738,
+    "preferred_terminal_count": 0,
+    "recertification_ms": {
+      "count": 12499,
+      "median": 10.777399991638958,
+      "p95": 31.022700015455484,
+      "total": 166499.32779418305
+    }
+  },
+  "trace": {
+    "path": "/home/yann/yann/touhou/th08-research/touhou-solver-th08/artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_094658.jsonl",
+    "sha256": "8c17c304dd4f3d154f98ba22969c53e8719204a7368fab8eec1e2b0e64b5538f",
+    "size_bytes": 1902012413
+  }
+}

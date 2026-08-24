@@ -180,6 +180,19 @@ zero in effect despite four configured workers.  The next experiment first
 repairs route-wide identity and shadow delivery, then adds complete producer
 coverage before granting control.
 
+A route-work audit also exposed avoidable serial work inside the fresh issue
+layer.  Almost all changed-prefix transactions ultimately preserved the
+already selected, freshly safe action, yet the implementation recomputed all
+17 independent action branches before publishing input.  We replaced this
+with an exact lazy transaction: certify the selected and optional preferred
+actions first, and compute the remaining branches only when those proofs do
+not determine the historical selection; fallback recomputes the complete
+historical batch.  Uncomputed actions are explicitly
+absent rather than presumed safe.  A dense synthetic differential preserves
+the selected certificate bit-for-bit while reducing median recertification by
+more than an order of magnitude; focused and complete-route physical gates are
+still required to establish survival benefit.
+
 \section{Conclusion}
 
 The path to fewer hits is not a larger monolithic search.  It is a smaller set

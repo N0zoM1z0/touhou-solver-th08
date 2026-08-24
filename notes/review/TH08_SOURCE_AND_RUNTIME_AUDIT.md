@@ -976,6 +976,39 @@ and policy versions; incomplete future coverage may submit and solve in
 shadow, but may not constrain action.  Background workers must also run below
 the latency-sensitive Wine sensing/issue path.
 
+### AUD-041 — Fresh-enemy recertification recomputed 17 independent actions unnecessarily
+
+Status: **CONFIRMED-ROUTE-WORK ROOT; EXACT LAZY FIX VALIDATED OFFLINE; PHYSICAL PENDING**
+
+The streamed audit
+`lunatic_route2_fullrun_unattended_20260824_094658.issue_recertification_audit.json`
+reprocessed the complete 1.902GB retained trace.  Fresh enemy geometry changed
+on 12,499 of 50,669 decisions.  On 11,957 of those transactions (95.6637%),
+the planned action's fresh certificate was still collision-free and the full
+transaction preserved it.  Nevertheless, the old issue path always projected
+and certified all 17 actions.  Those changed transactions alone accumulated
+166.499 seconds of recertification work; this work ran on the latency-sensitive
+controller thread before input publication.
+
+The exact optimization is action-lazy, not geometry-lazy.  It first computes
+the same robust certificate for the planned action and, when applicable, the
+preferred action.  If the existing selection order can terminate on one of
+those freshly safe actions, it commits immediately.  If neither is safe and
+eligible, it recomputes the complete historical 17-action batch and executes
+the historical full selection unchanged.  Action branches in the certificate kernel are
+independent; no uncomputed action is inferred safe, and partial safe/intersection
+sets are explicitly marked `fresh_action_set_complete=false`.  The post-issue
+shadow also refuses a complete set comparison for such a subset.
+
+The deterministic 1,200-bullet dense-safe differential retained in
+`artifacts/benchmarks/th08_lazy_issue_recertification_dense1200_20260824.json`
+requires the full and lazy selected certificates to compare equal.  Across 30
+repeats, median issue certification fell from 30.339ms for 17 actions to
+2.306ms for one action (13.16x), with an identical selected certificate on
+that workload.  This is performance/mechanism
+evidence, not a hit claim.  A Stage-5 practice diagnostic and then the complete
+isolated route remain the physical gate.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository

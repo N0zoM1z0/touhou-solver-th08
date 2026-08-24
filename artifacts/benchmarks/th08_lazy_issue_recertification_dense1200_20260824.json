@@ -1,0 +1,42 @@
+{
+  "authority": {
+    "exact_selected_certificate_match": true,
+    "physical_hit_claim": false,
+    "role": "deterministic synthetic performance differential"
+  },
+  "median_speedup": 13.155514279996732,
+  "results": {
+    "full": {
+      "certificate_count": 17,
+      "certificate_mode": "full",
+      "maximum_ms": 31.286999,
+      "median_ms": 30.3389905,
+      "minimum_ms": 29.628164,
+      "p95_ms": 31.192517
+    },
+    "lazy": {
+      "certificate_count": 1,
+      "certificate_mode": "lazy_safe_selection",
+      "maximum_ms": 2.608423,
+      "median_ms": 2.3061805,
+      "minimum_ms": 2.183884,
+      "p95_ms": 2.586918
+    }
+  },
+  "schema": "th08-lazy-issue-recertification-benchmark-v1",
+  "workload": {
+    "action_hold_frames": 4,
+    "bullet_count": 1200,
+    "delay_frames": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "planner_action_count": 17,
+    "repeats": 30,
+    "selected_action": "stay",
+    "selected_path_is_fresh_safe": true
+  }
+}
