@@ -1,0 +1,106 @@
+{
+  "decision_count": 57553,
+  "first_frame": 1,
+  "last_frame": 230561,
+  "termination_reason": "route_complete",
+  "counter_gaps": 784,
+  "hit_count": 60,
+  "hit_frames": [
+    4750,
+    23996,
+    24687,
+    26124,
+    38598,
+    45945,
+    46910,
+    51473,
+    52304,
+    53155,
+    60338,
+    68555,
+    71601,
+    74779,
+    75367,
+    76543,
+    76859,
+    83110,
+    84222,
+    85151,
+    93798,
+    95104,
+    95788,
+    103597,
+    104085,
+    104548,
+    112404,
+    116019,
+    120246,
+    121895,
+    122823,
+    130723,
+    131389,
+    150018,
+    152244,
+    155561,
+    158940,
+    159527,
+    161174,
+    162189,
+    162839,
+    163728,
+    172379,
+    173728,
+    177084,
+    177904,
+    184695,
+    187241,
+    197070,
+    198322,
+    213662,
+    216488,
+    221052,
+    221546,
+    222071,
+    222599,
+    223202,
+    223694,
+    224286,
+    227802
+  ],
+  "stage_progress": {
+    "transitions": [
+      {
+        "frame": 1,
+        "stage_route_index": 0,
+        "stage_label": "Stage 1"
+      },
+      {
+        "frame": 20979,
+        "stage_route_index": 1,
+        "stage_label": "Stage 2"
+      },
+      {
+        "frame": 44709,
+        "stage_route_index": 2,
+        "stage_label": "Stage 3"
+      },
+      {
+        "frame": 72633,
+        "stage_route_index": 3,
+        "stage_label": "Stage 4A / Reimu"
+      },
+      {
+        "frame": 118404,
+        "stage_route_index": 5,
+        "stage_label": "Stage 5"
+      },
+      {
+        "frame": 164796,
+        "stage_route_index": 7,
+        "stage_label": "Final B / Kaguya"
+      }
+    ],
+    "last_stage_route_index": 7,
+    "last_stage_label": "Final B / Kaguya"
+  }
+}
