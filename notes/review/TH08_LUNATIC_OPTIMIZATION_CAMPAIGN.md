@@ -57,7 +57,7 @@ change when its semantic and timing gate passes.
 | ID | Track | Change | Risk | Status | Physical result |
 | --- | --- | --- | --- | --- | --- |
 | OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | VALIDATED-PHYSICAL | 61 hits; both prefix medians down about 1.2 ms; keep |
-| OPT-002 | sensing latency | Replace repeated scalar player/control reads with one explicitly bracketed compact root capture, preserving duplicate before/after observations | medium | QUEUED | pending |
+| OPT-002 | sensing latency | Coalesce input and position fields inside the existing bracketed player-control root, preserving duplicate before/after observations | low-medium | FIXED-OFFLINE | pending |
 | OPT-003 | local/issue latency | Share immutable action-conditioned hazard projection work between planning and issue recertification where versions are exact-equal | medium | QUEUED | pending |
 | FB-001 | future births | Build a source-guided, executable-validated producer inventory for the pre-spell-190 route and rank reached `UNKNOWN` causes by hit-window impact | low, shadow | QUEUED | pending |
 | FB-002 | future births | Replace reached monolithic ECL special cases with smaller typed transition/emission primitives derived from source control flow and differential fixtures | medium-high | QUEUED | pending |
@@ -155,6 +155,62 @@ OPT-001 removes avoidable host-copy latency but does not solve the dominant
 future-guidance, viable-set, boundary, or focus failures. OPT-002 is therefore
 the next live change; FB-001 and BF-001 remain the first source/strategy shadow
 audits.
+
+## OPT-002 — Coalesced Bracketed Player-Control Root
+
+Status: **FIXED-OFFLINE**
+
+Global failure addressed: every decision ends its hazard capture with a fresh
+player/control root, and every `ReadProcessMemory` round trip contributes to
+Wine sensing latency before input.
+
+Source and executable layout evidence:
+
+- The authoritative global map places `g_CurFrameInput` at `0x164D528`,
+  `g_GuiMessageInputCurrent` at `0x164D52C`, and
+  `g_GuiMessageInputPrevious` at `0x164D534`. They are three `u16` fields in
+  one exact 14-byte readable slab; unrelated globals in the gaps are ignored.
+- `Player.hpp` asserts `offsetof(Player, position) == 0x2B4`, and `position`
+  is a `Float3`. The live controller consumes only its contiguous x/y prefix,
+  exactly eight bytes.
+- The existing root deliberately duplicates input and position around the
+  scale read because player motion/input can advance while the enemy-manager
+  clock is frozen. That duplicate observation is an authority boundary, not
+  redundant work, and must remain.
+
+Change boundary:
+
+- Replace each group of three scalar input RPM calls with one exact 14-byte
+  read and each x/y pair with one exact eight-byte read.
+- Keep the exact order `frame / input-before / position-before / scale /
+  position-after / input-after / frame`, the two-attempt limit, equality
+  checks, scale bits, public capture fields, and fail-closed unstable-root
+  behavior.
+- Do not coalesce the distant manager frame, time scale, player object, or
+  general `observe_state` spans. Do not change issue-time recertification or
+  any planner/action ranking in this item.
+
+One stable attempt therefore falls from 13 RPM calls to seven. At the 55,915
+decisions in the OPT-001 route, that removes at least 335,490 scalar RPM calls
+without removing a freshness observation.
+
+Expected metric: exact decoded parity and read order in focused tests; lower
+player-control-root/hazard-bookkeeping and pool-read latency in Wine, with no
+change to identical-byte decisions.
+
+Falsifier: any address/width mismatch, loss of a before/after observation,
+changed retry/stability behavior, short-read acceptance, changed captured
+values for the same bytes, test failure, or no physical latency evidence.
+
+Offline result: the capture now performs the exact seven-call sequence and
+publishes a dedicated `read_player_control_root` timing counter. Controller
+config records the coalesced read path, byte widths, call count, and retained
+before/after observations. Tests cover the authoritative offsets, exact call
+order, stable decoding, frozen-clock position and input changes, coherent
+retry, short input/position failures, and dossier metric retention. Focused
+trace/dossier tests pass 17/17, Win32-compatible import smoke passes, and
+complete Linux discovery passes 1,358 tests with five skips. Physical timing
+and route evidence remain pending.
 
 ## Future-Birth Simplification Contract
 

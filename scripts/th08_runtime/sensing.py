@@ -61,6 +61,34 @@ class StateReader(Protocol):
     def f32(self, address: int) -> float: ...
 
 
+_PLAYER_CONTROL_INPUT_CAPTURE_SIZE = (
+    ADDR_PREVIOUS_INPUT + 2 - ADDR_RAW_INPUT
+)
+_PLAYER_CONTROL_POSITION_CAPTURE_SIZE = 8
+
+
+def _decode_player_control_inputs(blob: bytes) -> tuple[int, int, int]:
+    if len(blob) != _PLAYER_CONTROL_INPUT_CAPTURE_SIZE:
+        raise ValueError(
+            "player control input capture requires exactly "
+            f"{_PLAYER_CONTROL_INPUT_CAPTURE_SIZE} bytes"
+        )
+    return (
+        struct.unpack_from("<H", blob, 0)[0],
+        struct.unpack_from("<H", blob, ADDR_CURRENT_INPUT - ADDR_RAW_INPUT)[0],
+        struct.unpack_from("<H", blob, ADDR_PREVIOUS_INPUT - ADDR_RAW_INPUT)[0],
+    )
+
+
+def _decode_player_control_position(blob: bytes) -> tuple[float, float]:
+    if len(blob) != _PLAYER_CONTROL_POSITION_CAPTURE_SIZE:
+        raise ValueError(
+            "player control position capture requires exactly "
+            f"{_PLAYER_CONTROL_POSITION_CAPTURE_SIZE} bytes"
+        )
+    return struct.unpack("<ff", blob)
+
+
 @dataclass(frozen=True)
 class TimeScaleRootCapture:
     """One scale dword bracketed by the native enemy-manager frame."""
@@ -151,17 +179,33 @@ def capture_player_control_root(
     capture = None
     for attempt in range(1, maximum_attempts + 1):
         frame_before = reader.u32(ADDR_ENEMY_MANAGER_FRAME)
-        input_raw_before = reader.u16(ADDR_RAW_INPUT)
-        input_current_before = reader.u16(ADDR_CURRENT_INPUT)
-        input_previous_before = reader.u16(ADDR_PREVIOUS_INPUT)
-        x_before = reader.f32(ADDR_PLAYER + PLAYER_POSITION_OFFSET)
-        y_before = reader.f32(ADDR_PLAYER + PLAYER_POSITION_OFFSET + 4)
+        (
+            input_raw_before,
+            input_current_before,
+            input_previous_before,
+        ) = _decode_player_control_inputs(
+            reader.read(ADDR_RAW_INPUT, _PLAYER_CONTROL_INPUT_CAPTURE_SIZE)
+        )
+        x_before, y_before = _decode_player_control_position(
+            reader.read(
+                ADDR_PLAYER + PLAYER_POSITION_OFFSET,
+                _PLAYER_CONTROL_POSITION_CAPTURE_SIZE,
+            )
+        )
         scale_bits = reader.u32(ADDR_GAMEPLAY_TIME_SCALE)
-        x_after = reader.f32(ADDR_PLAYER + PLAYER_POSITION_OFFSET)
-        y_after = reader.f32(ADDR_PLAYER + PLAYER_POSITION_OFFSET + 4)
-        input_raw_after = reader.u16(ADDR_RAW_INPUT)
-        input_current_after = reader.u16(ADDR_CURRENT_INPUT)
-        input_previous_after = reader.u16(ADDR_PREVIOUS_INPUT)
+        x_after, y_after = _decode_player_control_position(
+            reader.read(
+                ADDR_PLAYER + PLAYER_POSITION_OFFSET,
+                _PLAYER_CONTROL_POSITION_CAPTURE_SIZE,
+            )
+        )
+        (
+            input_raw_after,
+            input_current_after,
+            input_previous_after,
+        ) = _decode_player_control_inputs(
+            reader.read(ADDR_RAW_INPUT, _PLAYER_CONTROL_INPUT_CAPTURE_SIZE)
+        )
         frame_after = reader.u32(ADDR_ENEMY_MANAGER_FRAME)
         capture = PlayerControlRootCapture(
             frame_before=frame_before,

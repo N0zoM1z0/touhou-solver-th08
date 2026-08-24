@@ -70,6 +70,22 @@ class Th08DossierSummaryOwnershipTests(unittest.TestCase):
             practice_timing.ENEMY_STRIDE,
         )
 
+    def test_runtime_timing_retains_player_control_root_metric(self) -> None:
+        summary = practice_timing._runtime_timing(
+            [
+                {
+                    "timing_ms": {
+                        "read_player_control_root": 1.25,
+                    }
+                }
+            ]
+        )
+
+        self.assertEqual(
+            summary["read_player_control_root"]["median"],
+            1.25,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

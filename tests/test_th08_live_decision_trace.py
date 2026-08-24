@@ -42,6 +42,7 @@ class DecisionTraceTests(unittest.TestCase):
                     "spell_enemy_guard_read_ms",
                     "ecl_lookahead_read_ms",
                     "hazard_read_bookkeeping_ms",
+                    "player_control_root_ms",
                     "enemy_pool_read_ms",
                     "enemy_prefix_read_ms",
                     "issue_enemy_read_ms",
@@ -82,6 +83,10 @@ class DecisionTraceTests(unittest.TestCase):
         self.assertEqual(
             fields["timing_ms"]["before_trace"],
             values["before_trace_ms"],
+        )
+        self.assertEqual(
+            fields["timing_ms"]["read_player_control_root"],
+            values["player_control_root_ms"],
         )
 
     def test_optional_hazards_respect_radius_and_transform_flags(self) -> None:

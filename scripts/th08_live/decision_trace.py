@@ -22,6 +22,7 @@ class DecisionTimingTraceInput:
     spell_enemy_guard_read_ms: float
     ecl_lookahead_read_ms: float
     hazard_read_bookkeeping_ms: float
+    player_control_root_ms: float
     enemy_pool_read_ms: float
     enemy_prefix_read_ms: float
     issue_enemy_read_ms: float
@@ -70,6 +71,7 @@ def build_decision_timing_trace_fields(
             "read_hazard_bookkeeping": (
                 trace_input.hazard_read_bookkeeping_ms
             ),
+            "read_player_control_root": trace_input.player_control_root_ms,
             "read_enemy_pool": trace_input.enemy_pool_read_ms,
             "read_enemy_prefix": trace_input.enemy_prefix_read_ms,
             "read_enemy_issue_prefix": trace_input.issue_enemy_read_ms,

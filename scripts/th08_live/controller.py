@@ -3124,6 +3124,13 @@ def _run_live_session(
                         "read_path": "persistent_read_into",
                         "shared_sequential_planning_and_issue_buffer": True,
                     },
+                    "player_control_root_sensor": {
+                        "read_path": "coalesced_exact_read",
+                        "rpm_calls_per_stable_attempt": 7,
+                        "input_capture_bytes": 14,
+                        "position_capture_bytes": 8,
+                        "duplicate_before_after_observations": True,
+                    },
                     "damage_objective": (
                         "shadow_lexicographic_inside_fresh_safe_set"
                     ),
@@ -4194,7 +4201,11 @@ def _run_live_session(
                 for body in enemy_bodies
                 if enemy_body_contact_enabled(body)
             )
+            player_control_root_started = time.perf_counter()
             player_control_root = capture_player_control_root(reader)
+            player_control_root_ms = (
+                time.perf_counter() - player_control_root_started
+            ) * 1000.0
             counter_after_read = player_control_root.frame_after
             hazard_read_bookkeeping_ms = (
                 time.perf_counter() - hazard_read_bookkeeping_started
@@ -7997,6 +8008,7 @@ def _run_live_session(
                         hazard_read_bookkeeping_ms=(
                             hazard_read_bookkeeping_ms
                         ),
+                        player_control_root_ms=player_control_root_ms,
                         enemy_pool_read_ms=enemy_pool_read_ms,
                         enemy_prefix_read_ms=(
                             enemy_prefix_snapshot.read_ms

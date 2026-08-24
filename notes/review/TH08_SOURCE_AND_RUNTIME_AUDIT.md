@@ -399,6 +399,38 @@ remaining dominant failures lie after this narrow sensing fix. Compact CSV,
 dossier, regression, summary, and rendered-note hit identities were also
 cross-checked: all 61 native hit frames are unique and consistent.
 
+### AUD-021 — Player-control root uses thirteen scalar RPM calls per attempt
+
+Status: **FIXED-OFFLINE**
+
+**Observed:** the fresh player/control root issued separate RPM calls for
+three input fields and x/y position both before and after the scale read, plus
+two manager-frame reads and one scale read: thirteen calls for every stable
+attempt. This root runs once per decision and can retry once. The duplication
+is required because input and player motion may advance while the manager
+clock is frozen; only the scalar call granularity is redundant.
+
+**Source evidence:** the authoritative global map places the consumed `u16`
+inputs at `0x164D528`, `0x164D52C`, and `0x164D534`, inside one exact 14-byte
+span. `Player.hpp` asserts the `Float3 position` member at `Player + 0x2B4`, so
+its consumed x/y prefix is one exact eight-byte span. The distant manager
+frame, time scale, and player spans are not merged.
+
+**Fixed offline:** each input triplet is decoded from one 14-byte read and
+each x/y pair from one eight-byte read. The exact order remains `frame /
+input-before / position-before / scale / position-after / input-after /
+frame`; all duplicate comparisons, scale bits, two-attempt behavior, and
+unstable-root rejection are unchanged. A stable attempt now uses seven RPM
+calls instead of thirteen. At 55,915 decisions this removes at least 335,490
+RPM calls per full route.
+
+**Verification:** exact offsets and order, stable values, frozen-clock input
+and position changes, later coherent retry, and 14/8-byte short-read rejection
+are covered. The trace exposes `read_player_control_root`, and controller
+config records physical activation. Focused trace/dossier tests pass 17/17,
+import smoke passes, and complete Linux discovery passes 1,358 tests with five
+skips. Physical timing and route evidence remain pending under OPT-002.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the complete repository suite

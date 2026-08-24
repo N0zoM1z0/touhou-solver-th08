@@ -81,6 +81,7 @@ def _runtime_timing(
         "read_pools",
         "read_enemy_prefix",
         "read_enemy_issue_prefix",
+        "read_player_control_root",
         "decode_pools",
         "corridor_bookkeeping",
         "local_plan",
