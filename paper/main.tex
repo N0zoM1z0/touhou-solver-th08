@@ -193,6 +193,23 @@ the selected certificate bit-for-bit while reducing median recertification by
 more than an order of magnitude; focused and complete-route physical gates are
 still required to establish survival benefit.
 
+The first focused physical gate refines that result.  In a complete Stage~5
+Practice attempt, 88.28\% of changed hostile-prefix transactions terminated on
+the exact lazy proof; that mode took 3.97/6.99 ms median/p95.  The remaining
+351 transactions required the unchanged exact full fallback and took
+62.45/76.42 ms.  Spell~107 produced 300 of those fallbacks, 12 of the 28
+observed hits, and a 13-frame p95 decision cadence.  Thus laziness improves the
+common path but cannot bound worst-case control delay when the selected action
+is genuinely unsafe.  The next generic problem is to share or native-batch the
+complete action/delay computation, not to presume an untested action safe.
+
+This gate also exposes an infrastructure mismatch with the intended VPS
+architecture.  Corridor, audit, enemy-sensing, and future-source services are
+currently thread executors in the same Win32 Python process.  A controlled
+foreground-versus-thread/process benchmark is needed before assigning causal
+latency, but the implementation does not yet provide the process and affinity
+isolation assumed by our parallel-search design.
+
 \section{Conclusion}
 
 The path to fewer hits is not a larger monolithic search.  It is a smaller set

@@ -77,7 +77,8 @@ change when its semantic and timing gate passes.
 | OPT-002A | control-delay correctness | Close the post-reset deadline-miss feedback self-lock without weakening issue freshness | medium | VALIDATED-PHYSICAL | 60 hits; ten misses recovered, no causal-hit miss or self-lock; keep |
 | GEO-001 | source-exact geometry shadow | Retain runtime player half-extents and bullet lifecycle fields; compare legacy/exact hazards and action sets without changing input | low, shadow | COMPLETE | 57-hit route; 21.39M lifecycle observations retained |
 | GEO-002A | conservative source geometry promotion | Exact bullet/body player AABB plus irreversible state-5 removal; retain activatable states and approximate laser | medium | VALIDATED-SEMANTICS; REJECTED-AS-STANDALONE-POLICY | 93 hits; Stage 5 31; keep physical truth, repair exposed timing |
-| TIME-001 | capture/control timing | Exact lazy fresh-enemy recertification; then separate bulk-pool epoch and realized issue-delay uncertainty from physical hitboxes | medium | OFFLINE-VALIDATED; PHYSICAL PENDING | 95.66% retained changed guards can terminate after the selected-action proof; dense-safe median 30.34→2.31ms |
+| TIME-001 | capture/control timing | Exact lazy fresh-enemy recertification; then separate bulk-pool epoch and realized issue-delay uncertainty from physical hitboxes | medium | MECHANISM VALIDATED PHYSICALLY; ROUTE PENDING | Stage-5: 88.28% lazy; lazy `3.97/6.99ms`, fallback `62.45/76.42ms`; 28 observational hits |
+| TIME-001B | local/control timing | Bound exact full-fallback and initial-beam work; benchmark process-isolated background services before changing ownership | medium | ROOT LOCATED | Spell 107 owns 300/351 fallbacks and cadence p95 13; background services are threads |
 | MOT-001 | exact current entities | Replace heuristic transformed-bullet projection with the matching native update/transform semantics | medium-high | QUEUED | pending |
 | GD-001 | global delivery shadow | Establish per-stage hard scale roots, submit jobs in shadow, and add complete future-coverage plus solution-version authority gates | medium, shadow | ROOT CAUSE CONFIRMED | one Final-B/Stage-1 mismatch; 50,669/50,669 due jobs blocked |
 | FB-001 | future births | Capture a coherent VM/emitter/RNG root and implement one generic exact ECL/timeline/emitter kernel, starting with reached direct-fire producers | high | QUEUED | pending |
@@ -413,7 +414,7 @@ promotion.  AUD-036 through AUD-040 contain the disposition.
 
 ## TIME-001A — Exact Lazy Fresh-Enemy Recertification
 
-Status: **OFFLINE-VALIDATED; PHYSICAL PENDING**
+Status: **MECHANISM VALIDATED PHYSICALLY; COMPLETE ROUTE PENDING**
 
 Mechanism: a changed issue-time enemy prefix previously forced a complete
 17-action robust certificate even when the already selected action remained
@@ -438,6 +439,15 @@ tests pass.  Falsifiers are any selected-certificate mismatch, incomplete-set
 telemetry presented as complete, full-fallback selection mismatch, Stage-5
 issue p95 not improving, or a full-route latency/hit regression without an
 independent root explanation.
+
+Physical gate: Stage-5 diagnostic `20260824_115819` completed with hard
+no-Bomb. The exact lazy mode handled 2,644/2,995 changed transactions at
+`3.970/6.992ms` median/p95. Exact fallback handled 351 at
+`62.454/76.416ms`; 300 of them occurred in spell 107. Consequently the
+mechanism passes while the aggregate p95 and 28-hit observational outcome do
+not establish a survival win. Initial local planning is now the larger
+generic cost (`39.657/103.971ms` overall, `94.653/122.495ms` in spell 107),
+and the complete-route gate remains mandatory.
 
 ## Future-Birth Simplification Contract
 

@@ -1,0 +1,230 @@
+{
+  "authority": {
+    "changes_input": false,
+    "claim": "A terminal lazy probe recomputes the selected/preferred certificate exactly; it does not infer unprobed safe actions.",
+    "role": "retained-route counterfactual work audit"
+  },
+  "certificate_modes": {
+    "lazy_fallback_full": {
+      "count": 351,
+      "maximum_branch_count": {
+        "count": 351,
+        "median": 81.0,
+        "p95": 81.0,
+        "total": 27584.0
+      },
+      "recertification_ms": {
+        "count": 351,
+        "median": 62.45420000050217,
+        "p95": 76.41630002763122,
+        "total": 20418.413399835117
+      }
+    },
+    "lazy_safe_selection": {
+      "count": 2644,
+      "maximum_branch_count": {
+        "count": 2644,
+        "median": 3.0,
+        "p95": 5.0,
+        "total": 7390.0
+      },
+      "recertification_ms": {
+        "count": 2644,
+        "median": 3.9702500798739493,
+        "p95": 6.991600035689771,
+        "total": 11470.52620141767
+      }
+    }
+  },
+  "change_kind_occurrence_counts": {
+    "added": 1438,
+    "contact_mode": 1819,
+    "removed": 2599,
+    "trajectory": 343,
+    "unstable_capture": 1,
+    "velocity": 16046
+  },
+  "changed_decision_counts_by_stage": {
+    "5": 2995
+  },
+  "phase_breakdown": {
+    "nonspell": {
+      "certificate_mode_counts": {
+        "lazy_fallback_full": 20,
+        "lazy_safe_selection": 1482
+      },
+      "exact_lazy_fallback_count": 20,
+      "exact_lazy_terminal_count": 1482,
+      "fresh_enemy_changed_count": 1502,
+      "planned_fresh_safe_count": 1482,
+      "recertification_ms": {
+        "count": 1502,
+        "median": 3.6852500052191317,
+        "p95": 5.54399995598942,
+        "total": 6314.254902070388
+      },
+      "recertification_ms_by_mode": {
+        "lazy_fallback_full": {
+          "count": 20,
+          "median": 22.38089992897585,
+          "p95": 48.262299969792366,
+          "total": 554.830799694173
+        },
+        "lazy_safe_selection": {
+          "count": 1482,
+          "median": 3.6773000028915703,
+          "p95": 5.358699942007661,
+          "total": 5759.424102376215
+        }
+      }
+    },
+    "spell-103": {
+      "certificate_mode_counts": {
+        "lazy_fallback_full": 6,
+        "lazy_safe_selection": 384
+      },
+      "exact_lazy_fallback_count": 6,
+      "exact_lazy_terminal_count": 384,
+      "fresh_enemy_changed_count": 390,
+      "planned_fresh_safe_count": 384,
+      "recertification_ms": {
+        "count": 390,
+        "median": 5.516949982848018,
+        "p95": 7.8705999767407775,
+        "total": 2174.3065998889506
+      },
+      "recertification_ms_by_mode": {
+        "lazy_fallback_full": {
+          "count": 6,
+          "median": 27.00885001104325,
+          "p95": 34.52019998803735,
+          "total": 162.72090014535934
+        },
+        "lazy_safe_selection": {
+          "count": 384,
+          "median": 5.46130002476275,
+          "p95": 7.772500044666231,
+          "total": 2011.5856997435912
+        }
+      }
+    },
+    "spell-107": {
+      "certificate_mode_counts": {
+        "lazy_fallback_full": 300,
+        "lazy_safe_selection": 130
+      },
+      "exact_lazy_fallback_count": 300,
+      "exact_lazy_terminal_count": 130,
+      "fresh_enemy_changed_count": 430,
+      "planned_fresh_safe_count": 130,
+      "recertification_ms": {
+        "count": 430,
+        "median": 57.94645001878962,
+        "p95": 75.19059989135712,
+        "total": 19707.283600000665
+      },
+      "recertification_ms_by_mode": {
+        "lazy_fallback_full": {
+          "count": 300,
+          "median": 64.23565006116405,
+          "p95": 76.88639999832958,
+          "total": 18872.841600095853
+        },
+        "lazy_safe_selection": {
+          "count": 130,
+          "median": 6.059250037651509,
+          "p95": 9.255400043912232,
+          "total": 834.4419999048114
+        }
+      }
+    },
+    "spell-111": {
+      "certificate_mode_counts": {
+        "lazy_fallback_full": 13,
+        "lazy_safe_selection": 214
+      },
+      "exact_lazy_fallback_count": 13,
+      "exact_lazy_terminal_count": 214,
+      "fresh_enemy_changed_count": 227,
+      "planned_fresh_safe_count": 214,
+      "recertification_ms": {
+        "count": 227,
+        "median": 4.703500075265765,
+        "p95": 25.59630002360791,
+        "total": 1514.9950999766588
+      },
+      "recertification_ms_by_mode": {
+        "lazy_fallback_full": {
+          "count": 13,
+          "median": 37.07319998648018,
+          "p95": 52.35130002256483,
+          "total": 492.91479983367026
+        },
+        "lazy_safe_selection": {
+          "count": 214,
+          "median": 4.628749971743673,
+          "p95": 6.826300057582557,
+          "total": 1022.0803001429886
+        }
+      }
+    },
+    "spell-115": {
+      "certificate_mode_counts": {
+        "lazy_fallback_full": 12,
+        "lazy_safe_selection": 434
+      },
+      "exact_lazy_fallback_count": 12,
+      "exact_lazy_terminal_count": 434,
+      "fresh_enemy_changed_count": 446,
+      "planned_fresh_safe_count": 434,
+      "recertification_ms": {
+        "count": 446,
+        "median": 4.090300062671304,
+        "p95": 6.254300009459257,
+        "total": 2178.0993993161246
+      },
+      "recertification_ms_by_mode": {
+        "lazy_fallback_full": {
+          "count": 12,
+          "median": 26.52100002160296,
+          "p95": 38.407100015319884,
+          "total": 335.1053000660613
+        },
+        "lazy_safe_selection": {
+          "count": 434,
+          "median": 4.07654995797202,
+          "p95": 5.7564000599086285,
+          "total": 1842.9940992500633
+        }
+      }
+    }
+  },
+  "schema": "th08-issue-recertification-audit-v2",
+  "selection_reason_counts": {
+    "preserve_fresh_safe_planned": 2644,
+    "replace_unsafe_with_fresh_safe": 1,
+    "replace_unsafe_with_least_bad": 350
+  },
+  "summary": {
+    "decision_count": 7792,
+    "exact_lazy_fallback_count": 351,
+    "exact_lazy_terminal_count": 2644,
+    "exact_lazy_terminal_fraction": 0.882804674457429,
+    "fresh_enemy_changed_count": 2995,
+    "fresh_enemy_changed_fraction": 0.38436858316221767,
+    "planned_fresh_safe_count": 2644,
+    "planned_fresh_safe_fraction": 0.882804674457429,
+    "preferred_terminal_count": 0,
+    "recertification_ms": {
+      "count": 2995,
+      "median": 4.1316000279039145,
+      "p95": 64.24870004411787,
+      "total": 31888.939601252787
+    }
+  },
+  "trace": {
+    "path": "/home/yann/yann/touhou/th08-research/touhou-solver-th08/artifacts/runtime_reports/lunatic_route2_stage5_unattended_20260824_115819.jsonl",
+    "sha256": "e5a7eecb11a25b53ae8415087a84d0f044a4b37d15e0978800915a829199a348",
+    "size_bytes": 426371177
+  }
+}

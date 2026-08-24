@@ -978,7 +978,8 @@ the latency-sensitive Wine sensing/issue path.
 
 ### AUD-041 — Fresh-enemy recertification recomputed 17 independent actions unnecessarily
 
-Status: **CONFIRMED-ROUTE-WORK ROOT; EXACT LAZY FIX VALIDATED OFFLINE; PHYSICAL PENDING**
+Status: **CONFIRMED-ROUTE-WORK ROOT; EXACT LAZY MECHANISM VALIDATED PHYSICALLY;
+COMPLETE ROUTE PENDING**
 
 The streamed audit
 `lunatic_route2_fullrun_unattended_20260824_094658.issue_recertification_audit.json`
@@ -1005,9 +1006,19 @@ The deterministic 1,200-bullet dense-safe differential retained in
 requires the full and lazy selected certificates to compare equal.  Across 30
 repeats, median issue certification fell from 30.339ms for 17 actions to
 2.306ms for one action (13.16x), with an identical selected certificate on
-that workload.  This is performance/mechanism
-evidence, not a hit claim.  A Stage-5 practice diagnostic and then the complete
-isolated route remain the physical gate.
+that workload.  This is performance/mechanism evidence, not a hit claim.
+
+The accepted isolated Stage-5 Practice gate
+`lunatic_route2_stage5_unattended_20260824_115819` then completed all 45,254
+frames with 7,792 decisions, 28 hit edges, and zero Bomb input. Of 2,995
+changed-prefix transactions, 2,644 (88.28%) terminated on the exact lazy
+proof. Their median/p95 recertification was `3.970/6.992ms` with median three
+native pipeline branches. The 351 exact full fallbacks instead took
+`62.454/76.416ms` with median 81 branches. Thus the physical mechanism is
+real, but the aggregate p95 remains outside the desired issue budget. The
+28-hit total is observational because Practice uses full Power, a diagnostic
+root-only scale proxy, and a different RNG root. A complete isolated route is
+still required for the survival disposition.
 
 ### AUD-042 — The prepared Wine score does not unlock arbitrary Practice stages
 
@@ -1047,6 +1058,45 @@ PENDING**
   local-planner and issue-time latency only. The raw five-record trace is kept
   ignored with SHA-256
   `c5faf0f1fba9d79e205d5012735f1189a463bcd122cc5b4a2900cd2ec963f50e`.
+
+### AUD-044 — Spell 107 concentrates the remaining exact fallback latency
+
+Status: **CONFIRMED PHYSICAL WORK CONCENTRATION; GENERIC LATENCY ROOT**
+
+The v2 issue audit groups the accepted Stage-5 trace by native spell state and
+recorded certificate mode. Spell 107 accounts for 300 of all 351 full
+fallbacks (85.47%). Within that spell, only 130/430 changed-prefix
+transactions preserve the planned action; the other 300 must execute the
+historical complete selection. Those fallbacks consume 18.873 of the run's
+20.418 seconds of full-fallback work, at `64.236/76.886ms` median/p95. The
+spell also records 12/28 hits, decision-cadence p95 13 frames, and initial-plan
+p95 122.495ms. This is not evidence for a hand-authored spell policy: it is a
+generic failure mode in which a genuinely unsafe selected action expands one
+fresh transaction from a few pipeline branches to 81 and delays the next
+observation. The next correction must bound or share the complete exact
+fallback and initial beam work without inferring uncomputed actions safe.
+
+The canonical first hit at frame 4,163 is a separate policy counterexample.
+It is a source-AABB bullet overlap at the bottom boundary after the robust set
+became empty ten frames earlier; global viability was already empty 237 frames
+earlier. Its issue lag was four, within configured support, so that first
+failure is not a deadline miss. Later spell-107 hits demonstrate the latency
+feedback after Power loss, not 27 independent fresh-stock trials.
+
+### AUD-045 — Live background search is thread-parallel, not process-parallel
+
+Status: **CONFIRMED IMPLEMENTATION GAP; PHYSICAL CONTENTION MAGNITUDE PENDING**
+
+`LiveServiceResources` creates the corridor, viability-audit, enemy-sensor,
+and future-source services as `ThreadPoolExecutor` workers in the controller's
+Win32 Python process; there is no process executor. The VPS therefore cannot
+automatically isolate Python portions of global work from the latency-sensitive
+local controller, although native/NumPy calls may release the GIL. In the
+focused trace the shadow rolling corridor produced 1,787 policies while local
+beam time was already 41.901ms on an early row with zero active bullets; this
+co-occurrence is a benchmark target, not yet causal proof of GIL contention.
+A controlled foreground-only versus thread/process-background latency gate is
+required before changing ownership or affinity.
 
 ## Offline Verification Record
 

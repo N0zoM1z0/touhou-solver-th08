@@ -15,6 +15,8 @@ def _decision(
     planned_safe: bool = True,
     selected_action: str = "stay",
     preferred: bool = False,
+    certificate_mode: str | None = None,
+    spell_id: int | None = None,
 ) -> dict[str, object]:
     guard = None
     if changes:
@@ -34,6 +36,7 @@ def _decision(
                     else "preserve_fresh_safe_planned"
                 ),
                 "preference_applied": preferred,
+                "certificate_mode": certificate_mode,
                 "planned_certificate": planned,
                 "selected_certificate": {
                     "worst_collisions": 0,
@@ -44,6 +47,10 @@ def _decision(
     return {
         "kind": "decision",
         "stage_route_index": stage,
+        "spell": {
+            "active": spell_id is not None,
+            "spell_id": spell_id or 0,
+        },
         "issue_time_enemy_guard": guard,
     }
 
@@ -52,12 +59,18 @@ class IssueRecertificationAuditTests(unittest.TestCase):
     def test_counts_exact_terminal_probes_and_fallbacks(self) -> None:
         records = (
             _decision(stage=0),
-            _decision(stage=3, changes=["velocity:0x1"]),
+            _decision(
+                stage=3,
+                changes=["velocity:0x1"],
+                certificate_mode="lazy_safe_selection",
+            ),
             _decision(
                 stage=3,
                 changes=["trajectory:0x2", "contact_mode:0x2"],
                 planned_safe=False,
                 selected_action="left",
+                certificate_mode="lazy_fallback_full",
+                spell_id=107,
             ),
             _decision(
                 stage=5,
@@ -86,4 +99,36 @@ class IssueRecertificationAuditTests(unittest.TestCase):
         self.assertEqual(
             report["changed_decision_counts_by_stage"],
             {"3": 2, "5": 1},
+        )
+        self.assertEqual(
+            report["certificate_modes"]["lazy_safe_selection"]["count"],
+            1,
+        )
+        self.assertEqual(
+            report["certificate_modes"]["lazy_fallback_full"]["count"],
+            1,
+        )
+        self.assertEqual(
+            report["phase_breakdown"]["spell-107"],
+            {
+                "fresh_enemy_changed_count": 1,
+                "planned_fresh_safe_count": 0,
+                "exact_lazy_terminal_count": 0,
+                "exact_lazy_fallback_count": 1,
+                "certificate_mode_counts": {"lazy_fallback_full": 1},
+                "recertification_ms": {
+                    "count": 1,
+                    "median": 4.0,
+                    "p95": 4.0,
+                    "total": 4.0,
+                },
+                "recertification_ms_by_mode": {
+                    "lazy_fallback_full": {
+                        "count": 1,
+                        "median": 4.0,
+                        "p95": 4.0,
+                        "total": 4.0,
+                    }
+                },
+            },
         )
