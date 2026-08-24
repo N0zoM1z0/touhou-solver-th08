@@ -155,6 +155,7 @@ class Th08WineRunnerTests(unittest.TestCase):
         args = runner.build_parser().parse_args(["--mode", "practice"])
         self.assertEqual(args.practice_stage, "5")
         self.assertEqual(args.trial_timeout, 86_700.0)
+        self.assertFalse(args.diagnostic_continue_root_only_scale)
 
     def test_pty_bridge_provides_console_handles_and_propagates_status(
         self,
@@ -250,6 +251,7 @@ class Th08WineRunnerTests(unittest.TestCase):
                 authority_only_corridor=True,
                 trace_items=False,
                 practice_stage="4b",
+                diagnostic_continue_root_only_scale=True,
             )
         self.assertIn("th08_practice_supervisor.py", command[1])
         self.assertIn("--armed", command)
@@ -257,6 +259,7 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertEqual(command[command.index("--stage") + 1], "4b")
         self.assertEqual(command[command.index("--difficulty") + 1], "lunatic")
         self.assertIn("--unlock-requested-stage", command)
+        self.assertIn("--diagnostic-continue-root-only-scale", command)
         self.assertEqual(
             command[command.index("--agent-duration") + 1],
             "86400.0",

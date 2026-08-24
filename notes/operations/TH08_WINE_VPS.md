@@ -59,7 +59,8 @@ private display, dedicated prefix, CPU affinity, and exact-prefix cleanup:
 
 ```bash
 .venv/bin/python scripts/tools/run_th08_wine.py \
-  --mode practice --practice-stage 5
+  --mode practice --practice-stage 5 \
+  --diagnostic-continue-root-only-scale
 ```
 
 The stage selector accepts `1/2/3/4a/4b/5/6a/6b`; difficulty and team remain
@@ -75,6 +76,12 @@ change gameplay resources. The runner explicitly raises both the
 inner live-agent budget to 86,400 seconds and the outer trial timeout to
 86,700 seconds, so neither is a practical route-length stop; the independent
 120-second trace-stall gate still detects a frozen run.
+
+Without an exact per-stage ECL scale schedule, the live agent correctly stops
+before its first decision. The shown flag is therefore explicit and remains a
+diagnostic unknown-direction constant-current-root proxy. Results from this
+mode can gate local/issue latency and process health, but cannot promote
+source-global action authority or establish exact scaled hazard semantics.
 
 The complete route command is:
 

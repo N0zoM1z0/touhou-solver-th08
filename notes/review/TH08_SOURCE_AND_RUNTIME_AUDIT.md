@@ -1030,6 +1030,24 @@ PHYSICAL RETRY PENDING**
   Bomb stock, and action authority are unchanged. Focused tests pass 47/47;
   physical retry is the falsifier.
 
+### AUD-043 — A local-only Practice gate still needs an explicit scale contract
+
+Status: **STRICT FAIL-CLOSED CONFIRMED; DIAGNOSTIC FLAG WIRED; PHYSICAL RETRY
+PENDING**
+
+- **Observed:** `lunatic_route2_stage5_unattended_20260824_115523` proved the
+  requested-stage unlock and native menu selection, then ended at frame 1 with
+  `time_scale_authority_unknown`, zero decisions, and exact cleanup.
+- **Root cause:** the new Wine Practice command supplied neither exact
+  per-stage ECL schedule authority nor the existing diagnostic root-only
+  continuation. The agent's refusal was correct, not a planner crash.
+- **Correction boundary:** the runner now accepts the explicit Practice-only
+  `--diagnostic-continue-root-only-scale` flag. Default remains fail-closed;
+  the proxy is never represented as exact/global authority. It may gate
+  local-planner and issue-time latency only. The raw five-record trace is kept
+  ignored with SHA-256
+  `c5faf0f1fba9d79e205d5012735f1189a463bcd122cc5b4a2900cd2ec963f50e`.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository

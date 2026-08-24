@@ -205,6 +205,7 @@ def build_windows_controller_command(
     authority_only_corridor: bool,
     trace_items: bool,
     practice_stage: str = "5",
+    diagnostic_continue_root_only_scale: bool = False,
 ) -> list[str]:
     launcher = ROOT / "scripts" / "tools" / "run_th08_wine_launch.bat"
     if mode == "smoke":
@@ -219,7 +220,7 @@ def build_windows_controller_command(
             windows_path(artifact_dir / "windows-smoke.json"),
         ]
     if mode == "practice":
-        return [
+        command = [
             windows_path(python),
             windows_path(ROOT / "scripts" / "th08_practice_supervisor.py"),
             "--armed",
@@ -238,6 +239,9 @@ def build_windows_controller_command(
             "--trial-timeout",
             str(trial_timeout),
         ]
+        if diagnostic_continue_root_only_scale:
+            command.append("--diagnostic-continue-root-only-scale")
+        return command
     command = [
         windows_path(python),
         windows_path(ROOT / "scripts" / "th08_full_route_supervisor.py"),
@@ -338,6 +342,14 @@ def build_parser() -> argparse.ArgumentParser:
         default=True,
     )
     parser.add_argument("--trace-items", action="store_true")
+    parser.add_argument(
+        "--diagnostic-continue-root-only-scale",
+        action="store_true",
+        help=(
+            "Practice-only unknown-direction constant-current-root scale "
+            "proxy; diagnostic, never exact source authority"
+        ),
+    )
     return parser
 
 
@@ -362,6 +374,9 @@ def run(args: argparse.Namespace) -> int:
         "trial_timeout_seconds": args.trial_timeout,
         "authority_only_corridor": args.authority_only_corridor,
         "trace_items": args.trace_items,
+        "diagnostic_continue_root_only_scale": (
+            args.diagnostic_continue_root_only_scale
+        ),
         "wine_prefix": str(args.wine_prefix.resolve()),
         "status": "failed",
         "controller_returncode": None,
@@ -391,6 +406,13 @@ def run(args: argparse.Namespace) -> int:
             raise ValueError("agent duration must be positive")
         if args.mode != "smoke" and args.trial_timeout <= args.agent_duration:
             raise ValueError("trial timeout must exceed agent duration")
+        if (
+            args.diagnostic_continue_root_only_scale
+            and args.mode != "practice"
+        ):
+            raise ValueError(
+                "root-only scale continuation is a Practice-only diagnostic"
+            )
         if not repository_clean():
             raise RuntimeError("Wine evidence run requires a clean worktree")
         required = (
@@ -583,6 +605,9 @@ def run(args: argparse.Namespace) -> int:
             authority_only_corridor=args.authority_only_corridor,
             trace_items=args.trace_items,
             practice_stage=args.practice_stage,
+            diagnostic_continue_root_only_scale=(
+                args.diagnostic_continue_root_only_scale
+            ),
         )
         wine_command = [
             str(wine),
