@@ -10,7 +10,9 @@ from historical run dossiers: entries remain open until the responsible solver
 path is fixed and validated.
 
 The ordered one-change-at-a-time implementation and physical experiment
-sequence is tracked in `TH08_LUNATIC_OPTIMIZATION_CAMPAIGN.md`.
+sequence is tracked in `TH08_LUNATIC_OPTIMIZATION_CAMPAIGN.md`. The integrated
+root-cause analysis and replacement architecture are tracked in
+`TH08_SOURCE_AUTHORITATIVE_SOLVER_AUDIT.md`.
 
 Evidence labels follow the repository contract:
 
@@ -20,11 +22,16 @@ Evidence labels follow the repository contract:
   physical falsifier.
 - **Hypothesized:** a candidate explanation or improvement awaiting evidence.
 
-Statuses are `OPEN`, `FIXED-OFFLINE`, `VALIDATED-PHYSICAL`, or `REJECTED`.
+Statuses include `OPEN`, `CONFIRMED-*`, `FIXED-OFFLINE`,
+`VALIDATED-PHYSICAL`, `REJECTED`, and `RETRACTED`.
 
 ## Target And Scope
 
 - Active target: Sakuya/Remilia, Lunatic, Route 2, Final-B, hard no-Bomb.
+- Current integrated checkpoint:
+  `lunatic_route2_fullrun_unattended_20260824_051944`, 60 native hit edges,
+  stage counts `1/4/8/15/14/18`, zero Bomb input, route complete. It validates
+  OPT-002A's deadline feedback mechanism but is not a same-root hit-rate win.
 - Current VPS baseline: full route
   `lunatic_route2_fullrun_unattended_20260823_170206`, 85 native hit edges,
   stage counts `1/8/14/14/18/30`, zero Bomb input. Historical comparator
@@ -296,18 +303,18 @@ to widen this serial beam in the post-fix run.
 
 ### AUD-017 — Player and laser lethal geometry matches authoritative source
 
-Status: **REJECTED**
+Status: **RETRACTED; SUPERSEDED BY AUD-025 AND AUD-027**
 
-**Observed source cross-check:** Sakuya and Remilia SHT headers both specify a
-2-unit player hitbox width, hence one-unit lethal half-extents already used by
-the solver. `BulletManager::OnUpdate` constructs active laser size as visible
-length (or the source's 0.7 tail reduction) by half the raw laser width;
-`Player::CalcLaserHitbox` then halves those full dimensions and performs the
-same inclusive, origin-rotated AABB test implemented in
-`th08_laser_model.py`. Warmup/fade fallthrough, collision thresholds, and the
-source's unusual longitudinal ramp also match. The four observed laser hits
-remain real policy failures; no geometry correction is justified by current
-evidence.
+The source facts in the original cross-check were incomplete rather than
+false: Sakuya/Remilia use one-unit lethal half-extents, and
+`th08_laser_model.py` reproduces the native laser lifecycle and local-space
+rectangle helper. The audit failed to follow those values through the live
+consumer. `scripts/th08_live/movement.py` and
+`scripts/th08_laser_runtime.py` both hardcode `PLAYER_RADIUS=2.0`; the live
+laser packer then converts the native finite rotated rectangle to a
+closest-point capsule. The complete live collision path therefore does not
+match the source. The old conclusion that no correction was justified has no
+authority.
 
 ### AUD-018 — Authority-only/item-skip full route records 58 hits
 
@@ -555,6 +562,88 @@ did not hit until much later. The traces retain Power but not `rank` or
 `subRank`, so the exact native rank trajectory is unrecoverable after process
 exit. Add source-checked, trace-only rank/subrank telemetry before making
 rank-conditioned causal claims or changing action policy from it.
+
+### AUD-025 — Live player lethal half-extents are inflated from 1px to 2px
+
+Status: **CONFIRMED-SOURCE-AND-PHYSICAL; SHADOW IMPACT PENDING**
+
+**Source evidence:** `Player.cpp` initializes the lethal vector at `+0x3D4`
+from the SHT width divided by two, updates its cached AABB after movement, and
+uses that AABB in `Player::FUN_0044a230`. The matching ledger marks the latter
+function 100% exact.
+
+**Physical evidence:** all 60 stable OPT-002A hit-contact captures reconstruct
+half-extents `(1,1)`; 58 are exact and two differ only by float subtraction
+roundoff. The live solver instead imports `PLAYER_RADIUS=2.0` into local,
+native-packed, semantic generation/shrink, controller safety, laser, and
+enemy-body checks. This is duplicated conservatism because delay uncertainty
+is modeled separately. Add a versioned runtime half-extent and shadow action-
+set differential before promoting the correction.
+
+### AUD-026 — Nonlethal bullet lifecycle states are included as lethal hazards
+
+Status: **CONFIRMED-SOURCE; SHADOW IMPACT PENDING**
+
+**Source evidence:** `BulletManager::OnUpdate` reaches
+`Player::FUN_0044a230` only in native state 1, and skips that collision block
+when callback aux byte `+0x10B4` is nonzero. States 2/3/4 perform spawn
+animation/motion without a lethal player call; state 5 cancels/despawns.
+
+**Solver divergence:** `planning_bullet_active_slots()` selects every nonzero
+state. The decoder already retains native state, state timer, and callback aux
+state, but the local hazard builder only special-cases state 2 motion and does
+not filter collision eligibility. Compact nearby-bullet records omitted these
+fields, so the current 60-hit trace cannot quantify the error. Retain them and
+shadow-classify false hazards before changing authority.
+
+### AUD-027 — Live laser collision is a capsule, not the native rotated rectangle
+
+Status: **CONFIRMED-SOURCE; SHADOW IMPACT PENDING**
+
+**Source evidence:** `Player::CalcLaserHitbox` rotates the player center into
+laser-local coordinates and performs inclusive AABB overlap against the
+finite laser rectangle. **Solver divergence:** `pack_laser_frame()` lowers the
+same lifecycle geometry to a centerline segment with
+`half_width + PLAYER_RADIUS`; local/native consumers use Euclidean
+closest-point capsule distance. End caps/corners differ and the player
+half-size is inflated. Only two OPT-002A hits have a primary laser-contact
+label, so this is confirmed geometry debt but not the dominant recorded hit
+class.
+
+### AUD-028 — All OPT-002A global corridor submissions were authority-blocked
+
+Status: **VALIDATED-PHYSICAL**
+
+**Observed physical:** all 57,553 decisions had a numerically sufficient
+time-scale horizon and a due corridor submission, but provenance remained
+`experimental_pretarget_unit_transport_unknown_direction`, hard scale
+authority was false, `authority_blocked_submission=true`, and
+`submitted_this_decision=false`. The compact dossier records zero submitted
+solutions, queries, available queries, viable queries, policy decisions, and
+constrained decisions. Counts by stage are exactly
+`5389/7217/7621/11487/10046/15793`.
+
+**Consequence:** the VPS's four native corridor workers did no strategic work.
+More CPU affected sensing/local cadence only. This is stricter than saying the
+global planner was slow: it was never invoked.
+
+### AUD-029 — Future-birth prototypes are unintegrated and spell authority lacks a coverage gate
+
+Status: **CONFIRMED-ARCHITECTURE; FIX REQUIRED BEFORE GLOBAL PROMOTION**
+
+`analyze_ecl_birth_intents()` explicitly classifies one literal main-VM path
+without geometry, is referenced only by its tests, and stops at common timer,
+control-flow, topology, emission-state, and callback behavior.
+`ECL_BIRTH_LOOKAHEAD_FRAMES=80` has no consumer. The large ordinary-source
+closure is disabled and rejects active spells.
+
+More seriously, if hard scale authority were supplied, normal active-spell
+corridor submission can proceed with `future_hazard_projection=None`; the
+hard action gate checks scale authority but not complete future hostile-birth
+coverage. Do not fix AUD-028 by flipping a provenance/config flag. Add a
+source-complete producer projection and make its exact version/coverage part
+of the hard action certificate. The complete architecture and staged plan are
+tracked in `TH08_SOURCE_AUTHORITATIVE_SOLVER_AUDIT.md`.
 
 ## Offline Verification Record
 

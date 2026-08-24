@@ -12,13 +12,15 @@ continue to live in `TH08_SOURCE_AND_RUNTIME_AUDIT.md`.
 
 - Physical target: Sakuya/Remilia, Lunatic, Route 2, Final-B, hard no-Bomb.
 - Current integrated checkpoint:
-  `lunatic_route2_fullrun_unattended_20260824_034510`, 67 native hit edges,
-  stage counts `0/4/5/21/10/27`, zero Bomb input, route complete. It ran the
-  OPT-002 implementation at commit `f126fb2003f3142cb2b4fcbc003eba667967e270`.
+  `lunatic_route2_fullrun_unattended_20260824_051944`, 60 native hit edges,
+  stage counts `1/4/8/15/14/18`, zero Bomb input, route complete. It ran the
+  OPT-002A implementation at commit
+  `6b5d2d9bc26cfe0cbdea6dff4fd2566be6967c6e`.
 - Immediate comparison reference:
-  `lunatic_route2_fullrun_unattended_20260824_022909`, 61 native hit edges,
-  stage counts `5/2/5/15/15/19`, zero Bomb input, route complete. It ran
-  OPT-001 before the coalesced player-control-root change.
+  `lunatic_route2_fullrun_unattended_20260824_034510`, 67 native hit edges,
+  stage counts `0/4/5/21/10/27`, zero Bomb input, route complete. It ran
+  OPT-002 before deadline feedback. OPT-001 run `...022909` remains the
+  61-hit latency reference.
 - Historical Windows reference:
   `lunatic_route2_fullrun_unattended_20260730_222529`, 68 hit edges, stage
   counts `2/3/5/20/15/23`.  It used pretarget guidance that is not accepted as
@@ -59,13 +61,16 @@ change when its semantic and timing gate passes.
 | --- | --- | --- | --- | --- | --- |
 | OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | VALIDATED-PHYSICAL | 61 hits; both prefix medians down about 1.2 ms; keep |
 | OPT-002 | sensing latency | Coalesce input and position fields inside the existing bracketed player-control root, preserving duplicate before/after observations | low-medium | VALIDATED-MECHANISM | 67 hits; read latency down, semantic sensor evidence clean; keep, but route exposed OPT-002A |
-| OPT-002A | control-delay correctness | Close the post-reset deadline-miss feedback self-lock without weakening issue freshness | medium | FIXED-OFFLINE | pending |
-| OPT-003 | local/issue latency | Share immutable action-conditioned hazard projection work between planning and issue recertification where versions are exact-equal | medium | QUEUED | pending |
-| FB-001 | future births | Build a source-guided, executable-validated producer inventory for the pre-spell-190 route and rank reached `UNKNOWN` causes by hit-window impact | low, shadow | QUEUED | pending |
-| FB-002 | future births | Replace reached monolithic ECL special cases with smaller typed transition/emission primitives derived from source control flow and differential fixtures | medium-high | QUEUED | pending |
-| FB-003 | future births | Publish complete future-birth geometry in shadow, then promote only exact versioned coverage through the existing global/issue authority gates | high | QUEUED | pending |
-| BF-001 | boundary/focus | Add shadow attribution for boundary reserve, clamping, fast/focus choice, and committed-prefix collisions without changing input | low, shadow | QUEUED | pending |
-| BF-002 | boundary/focus | Test a general viable-set ranking/refinement change on retained roots before any live promotion | medium | QUEUED | pending |
+| OPT-002A | control-delay correctness | Close the post-reset deadline-miss feedback self-lock without weakening issue freshness | medium | VALIDATED-PHYSICAL | 60 hits; ten misses recovered, no causal-hit miss or self-lock; keep |
+| GEO-001 | source-exact geometry shadow | Retain runtime player half-extents and bullet lifecycle fields; compare legacy/exact hazards and action sets without changing input | low, shadow | NEXT | pending |
+| GEO-002 | source-exact geometry promotion | Use runtime player AABB, lethal bullet state/callback gate, finite rotated laser rectangle, and corrected body expansion | medium | BLOCKED ON GEO-001 | pending |
+| MOT-001 | exact current entities | Replace heuristic transformed-bullet projection with the matching native update/transform semantics | medium-high | QUEUED | pending |
+| GD-001 | global delivery shadow | Establish per-stage hard scale roots, submit jobs in shadow, and add a complete spell-future-coverage authority gate | medium, shadow | QUEUED | pending |
+| FB-001 | future births | Capture a coherent VM/emitter/RNG root and implement one generic exact ECL/timeline/emitter kernel, starting with reached direct-fire producers | high | QUEUED | pending |
+| FB-002 | future births | Extend the same kernel through periodic/deferred fire, aim/RNG, transforms, lasers, child VMs, callbacks, and timeline births | high | QUEUED | pending |
+| FB-003 | global authority | Publish exact versioned hazard futures, promote adaptive viability only with complete coverage, then use VPS parallelism | high | QUEUED | pending |
+| BF-001 | boundary/focus | Rank focus/fast and boundary escape only inside the same exact viable set | medium | BLOCKED ON GEO/FB | pending |
+| OPT-003 | local/issue latency | Share immutable action-conditioned hazard projection work where versions are exact-equal | medium | DEFERRED | global queries and false hazards dominate first |
 
 Only one row may be live-changing at a time.  Shadow-only instrumentation may
 be prepared alongside analysis, but it must not silently influence action
@@ -247,9 +252,9 @@ Disposition: **keep the coalesced read mechanism, do not promote the hit
 outcome, and fix the exposed delay feedback loop next.** The faster low-load
 capture legitimately exposed the estimator's unsupported assumption; it did
 not falsify the source layout or read coalescing. The complete Stage 4A causal
-record is in `TH08_OPT002_STAGE4_ROOT_CAUSE.md`. OPT-002A is the next live
-change; no future-birth, planner-ranking, or boundary/focus behavior change
-will be mixed into it.
+record is in `TH08_OPT002_STAGE4_ROOT_CAUSE.md`. OPT-002A was subsequently
+validated by the 60-hit route below. No future-birth, planner-ranking, or
+boundary/focus behavior was mixed into it.
 
 Diagnostic follow-up AUD-023 was replayed without changing gameplay. Frame
 104767's last-alive selected-action certificate already predicted a collision,
@@ -259,7 +264,7 @@ sensor gaps; all 67 hit identities and stage counts are unchanged.
 
 ## OPT-002A — Deadline-Miss Estimator Feedback
 
-Status: **FIXED-OFFLINE; PHYSICAL GATE PENDING**
+Status: **VALIDATED-PHYSICAL**
 
 Global failure addressed: a proposal can arrive after the high end of its
 modeled delay support. Holding the old input is required for safety, but the
@@ -299,8 +304,18 @@ before applying the unchanged hold. A regression recreates twelve one-frame
 samples, support `[1]`, a two-frame no-write deadline, and verifies that the
 next estimate becomes `[1,2,3]` without a hit; expiry and reset return to the
 normal estimate. Focused control/trace/issue tests pass 18/18. Complete-suite
-discovery passes 1,361 tests with five skips, and import smoke passes. Wine
-smoke and the full-route gate remain pending.
+discovery passes 1,361 tests with five skips, and import smoke passes. The
+subsequent Wine/full-route result is recorded below.
+
+Physical result: run
+`lunatic_route2_fullrun_unattended_20260824_051944` completed the full route at
+frame 230561 with 60 hits, zero Bomb input, and exact isolated-prefix cleanup.
+Ten issue-deadline misses were recorded and recovered; none occurred on a
+hit's causal row, and the former 32-decision post-reset self-lock did not
+recur. The intended mechanism is therefore validated. The stage counts
+`1/4/8/15/14/18` and near-equality to OPT-001's 61-hit route do not establish
+a hit-rate gain. They instead leave source-exact hazard geometry, future
+births, and global viability as the dominant work.
 
 ## Future-Birth Simplification Contract
 
@@ -326,6 +341,16 @@ route-wide future births remain research-hard because action-conditioned aim,
 RNG, callbacks, child VMs, phase changes, and unsupported opcodes must still
 fail closed.
 
+The post-route source audit sharpens this contract. The current generic birth
+analyzer has no controller caller, the ordinary-source closure is disabled and
+rejects spells, and every one of 57,553 global submissions was blocked before
+worker execution. A configuration-only unblock is forbidden: active-spell
+submission can currently omit future hazards while checking only hard
+time-scale authority. Future work must converge on one generic source-exact
+ECL/timeline/emitter kernel and require complete reached-producer coverage in
+the same hard action certificate as geometry, scale, delay, and issue version.
+See `TH08_SOURCE_AUTHORITATIVE_SOLVER_AUDIT.md`.
+
 ## Boundary And Focus Contract
 
 Boundary/focus work begins with shadow attribution, not a new score.  It must
@@ -334,3 +359,11 @@ record whether clamping destroyed lateral options, and compare focused and
 fast alternatives only inside the same independently certified viable set.
 No boundary reserve, focus heuristic, or recovery distance may widen hard
 action authority.
+
+The OPT-002A route reinforces that ordering: 48/60 hits were boundary-labeled
+and 43/60 fast-labeled, but source audit found correct native center bounds,
+an inflated player lethal box, nonlethal bullet states admitted as hazards,
+and zero global queries. Boundary/fast labels are therefore correlates of
+local trap entry, not sufficient evidence for a new scalar penalty. Compare
+focus and fast only after the exact hazard kernel defines the same viable set,
+then rank by future viable volume/escape width.

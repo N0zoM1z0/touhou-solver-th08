@@ -21,23 +21,25 @@ evidence leads iteration.
 The 2026-08-01 Hard/pause state is historical. Preserve its useful physical
 and authority evidence, but do not let its stale scope override the current
 user request. New source/runtime discrepancies are tracked in
-`notes/review/TH08_SOURCE_AND_RUNTIME_AUDIT.md`.
+`notes/review/TH08_SOURCE_AND_RUNTIME_AUDIT.md`; the current architecture and
+ordered implementation plan are in
+`notes/review/TH08_SOURCE_AUTHORITATIVE_SOLVER_AUDIT.md`.
 
 ## Checkpoint
 
 - Branch: `codex/th08-lunatic-source-audit`.
 - **Current Lunatic physical checkpoint:**
-  `lunatic_route2_fullrun_unattended_20260824_034510` completed Sakuya/Remilia
-  Route 2 through Final-B at frame 229967 with 67 native hit edges, stage
-  counts `0/4/5/21/10/27`, zero Bomb input, and exact Wine-prefix cleanup. It
-  physically validates OPT-002's coalesced seven-call player-control root and
-  lower sensing latency, but it does not validate a hit improvement. The
-  Stage 4A trace exposes a causal post-reset delay-support self-lock: 32
-  consecutive deadline holds retained `stay` until the first hit. Read
-  `notes/review/TH08_OPT002_STAGE4_ROOT_CAUSE.md` and AUD-022 before changing
-  policy. The next isolated live change is OPT-002A, which closes that
-  estimator feedback loop; do not mix it with future-birth or boundary/focus
-  ranking.
+  `lunatic_route2_fullrun_unattended_20260824_051944` completed Sakuya/Remilia
+  Route 2 through Final-B at frame 230561 with 60 native hit edges, stage
+  counts `1/4/8/15/14/18`, zero Bomb input, and exact Wine-prefix cleanup. It
+  physically validates OPT-002A: ten issue-deadline misses all recovered, none
+  is on a hit's causal row, and the former 32-decision Stage-4A self-lock did
+  not recur. It does **not** validate a hit-rate improvement: OPT-001 had 61
+  hits on a different RNG root. Fifty-seven of 60 residual hits follow robust
+  action-set exhaustion, and the global corridor recorded zero submissions or
+  queries across all 57,553 decisions. Do not run another route or change
+  focus/boundary scoring before reading
+  `notes/review/TH08_SOURCE_AUTHORITATIVE_SOLVER_AUDIT.md`.
 - Historical Hard checkpoint:
   `hard_route2_stage4a_unattended_20260801_191508`. It completed Hard Stage
   4A with 18 hits, first hit 1975, zero Bombs, accepted replay, and complete
@@ -543,16 +545,24 @@ forecaster is now disabled rather than used as an eligibility source.
 
 Latest full game-start Lunatic Route-2 run:
 
-- `lunatic_route2_fullrun_unattended_20260824_022909`
-- 61 hits, zero Bomb inputs
-- stage counts `5/2/5/15/15/19`
+- `lunatic_route2_fullrun_unattended_20260824_051944`
+- 60 hits, zero Bomb inputs
+- stage counts `1/4/8/15/14/18`
 - reached `route_complete`
-- physically validates OPT-001: planning and issue enemy-prefix medians fell
-  by 1.221 and 1.236 ms, and observe-to-input median fell by 2.505 ms versus
-  the immediate 58-hit reference;
-- the hit delta is different-RNG and observational. The 48 committed-prefix,
-  53 boundary, and 43 fast-mode attributions keep future guidance and
-  boundary/focus work open.
+- physically validates OPT-002A deadline feedback and preserves OPT-001/002
+  sensing improvements;
+- 57/60 hits follow robust action-set exhaustion; causes are 41 modeled
+  committed-prefix collisions, 16 observed bullets, two observed lasers, and
+  one enemy body;
+- 48 boundary and 43 fast-mode labels are correlational. Source audit found a
+  2px planner radius versus the physical 1px half-extents, nonlethal bullet
+  states admitted as hazards, and capsule-versus-rectangle laser mismatch;
+- all 57,553 corridor submissions were hard-authority blocked, so worker and
+  global query counts remained zero. The VPS did no strategic search.
+
+The preceding OPT-001 and OPT-002 routes remain useful mechanism references:
+`...022909` had 61 hits and `...034510` had 67. Their different native RNG and
+post-hit cascades make all hit deltas observational.
 
 The historical Windows run
 `lunatic_route2_fullrun_unattended_20260730_222529` had 68 hits with stage
@@ -649,8 +659,12 @@ The physical policy is hard no-Bomb:
 5. fresh issue-time collision certificate;
 6. exact-version action transaction and fail-safe fallback.
 
-Final-B uses the exact pinned global-time-scale schedule. The root-only
-constant-scale continuation is diagnostic and unknown-direction, never a
+The latest full route loads the pinned Final-B ECL image, but its transported
+unit schedule remains
+`experimental_pretarget_unit_transport_unknown_direction`. Under
+authority-only corridor policy this is not a hard schedule: every due
+submission was blocked and no global policy constrained input. The root-only
+constant-scale continuation remains diagnostic and unknown-direction, never a
 general hard-safety authority.
 
 The rejected scalar pre-exhaustion experiment is no longer connected to live
@@ -663,26 +677,27 @@ predecessor still fails closed.
 Removed lanes must not be re-enabled from archive without a new causal need
 and explicit `STRATEGY.md` decision.
 
-## Paused Resume Gate
+## Next Implementation Gate
 
-The Stage 1–5 no-scale-writer schedule certificate passed its named physical
-mechanism gate. The remaining blocker is not scale provenance: it is a
-continuous-position global solver that is both hard-authoritative and
-nonempty under physical density.
+TH08 work is active. The next promotion is deliberately simpler than global
+future births:
 
-If TH08 work resumes:
+1. add shadow telemetry for runtime player half-extents, bullet native
+   state/timer/callback aux, and exact laser-local rectangles;
+2. differential the legacy hazard/action sets against a source-exact lethal
+   geometry and lifecycle kernel;
+3. promote only after exact fixtures and retained-root replay agree, commit,
+   then run one complete isolated Lunatic Route-2 gate;
+4. build source-authoritative time-scale and future-producer coverage in
+   shadow before allowing any active-spell global action authority;
+5. converge on one generic ECL/timeline/emitter simulator and adaptive global
+   viability planner. Per-spell compiled metadata/caches are encouraged;
+   handwritten waypoints are not authority.
 
-1. keep exact-authority actions non-relaxable and retain the no-scale-writer
-   identity/inventory gate;
-2. replace the uniform 16px cell-radius lower kernel with adaptive/local
-   refinement or an equivalent exact continuous-position predecessor;
-3. require nonempty authority in retained pressure windows without reviving
-   center-only occupancy, scalar reserve, or local fallback widening;
-4. rotate Hard Stage 3/4A/5 only after the responsible representation has a
-   deterministic semantic falsifier and a bounded publication deadline.
-
-Do not compensate with a stage-specific waypoint. Active work now belongs in
-the TH06 repository.
+Never unblock corridor action authority by provenance alone. The current
+active-spell request can omit future births, so scale, complete reached-source
+coverage, exact geometry, robust delay, and issue version must become one
+certificate.
 
 ## Research Loop
 

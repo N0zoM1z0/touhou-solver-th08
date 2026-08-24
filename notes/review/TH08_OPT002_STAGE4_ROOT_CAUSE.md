@@ -218,6 +218,36 @@ for Stage 4A's reached spell inventory (spell 65 has 27 transforms and spell
 a nonzero global policy, more CPU only makes the same short-horizon policy run
 faster.  It does not create the information needed to avoid a future trap.
 
+## OPT-002A Physical Closure And Stage-4 Correction
+
+The required follow-up route
+`lunatic_route2_fullrun_unattended_20260824_051944`, exact commit
+`6b5d2d9bc26cfe0cbdea6dff4fd2566be6967c6e`, completed Final-B naturally at
+frame 230561 with 60 hits and stage counts `1/4/8/15/14/18`. It recorded ten
+deadline misses over 57,553 decisions, recovered from all of them, and placed
+none on a hit's causal row. The 32-decision Stage-4A self-lock did not recur.
+
+Stage 4A fell from 21 to 15 hits, but this does **not** prove that deadline
+feedback saved six hits. No deadline-feedback activation occurred in Stage 4A
+in the new route, the RNG and incoming route state differ, and downstream
+stages moved in opposite directions: Stage 5 worsened by four while Final B
+improved by nine. The valid causal conclusion is narrower: the old feedback
+bug was fixed and its exact recurrence was absent.
+
+Fourteen of the 15 new Stage-4A hits still have
+`robust_action_set_exhausted_before_hit`; the remaining hit is a late collision
+after a positive causal margin. The new route therefore returns Stage 4A to
+its historical 13–15 range while preserving the same structural failure. It
+does not validate a better Stage-4A policy.
+
+The source-authoritative audit also found that global corridor work was not
+merely unavailable at hit windows: all 11,487 Stage-4A decisions had a due,
+numerically supported submission blocked by non-authoritative time-scale
+provenance, so zero worker queries existed. In addition, live geometry
+inflates the player lethal box and admits nonlethal bullet states. These are
+now higher-priority explanations for action-set starvation than a Stage-4A-
+specific scoring change. See `TH08_SOURCE_AUTHORITATIVE_SOLVER_AUDIT.md`.
+
 ## Disposition And Ordered Follow-Up
 
 1. Retain OPT-002's coalesced read implementation and physical latency
@@ -228,12 +258,15 @@ faster.  It does not create the information needed to avoid a future trap.
    immediately widen/guard the next estimate even when the write is held, and
    scene reset must not allow low-load samples to erase plausible computation
    tail support.  Add a regression reproducing the 32-hold self-lock.
-   **Implemented offline as OPT-002A; physical route gate pending.**
+   **Validated physically as OPT-002A; no causal-hit deadline miss and no
+   self-lock recurrence.**
 4. Run the complete route again under the same isolated Wine and nonbinding
    duration contract before beginning another behavior optimization.
+   **Completed by run `...051944`: 60 hits, route complete, zero Bomb.**
 5. Add exact `rank`, `subRank`, min/max rank, and preferably graze/damage
    telemetry as shadow state so future cross-route analysis can condition on
    native difficulty feedback.
-6. Then resume source-authoritative future-birth/global guidance.  Boundary
-   and focus remain important overall, but this Stage 4A delta is not evidence
-   for changing their scoring first.
+6. First shadow and correct the source-proven lethal geometry/lifecycle
+   divergences; then resume source-authoritative future-birth/global guidance.
+   Boundary and focus remain important overall, but neither Stage 4A delta is
+   evidence for changing their scoring first.
