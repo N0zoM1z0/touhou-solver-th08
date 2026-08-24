@@ -251,6 +251,12 @@ record is in `TH08_OPT002_STAGE4_ROOT_CAUSE.md`. OPT-002A is the next live
 change; no future-birth, planner-ranking, or boundary/focus behavior change
 will be mixed into it.
 
+Diagnostic follow-up AUD-023 was replayed without changing gameplay. Frame
+104767's last-alive selected-action certificate already predicted a collision,
+so the former sensor-gap label was a hit-row timing error. Regenerated compact
+evidence contains 43 modeled collisions, 24 exact bullet overlaps, and zero
+sensor gaps; all 67 hit identities and stage counts are unchanged.
+
 ## Future-Birth Simplification Contract
 
 The reference source should reduce complexity by exposing native control-flow

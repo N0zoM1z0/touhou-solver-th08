@@ -22,7 +22,7 @@
   },
   "provenance": [
     {
-      "path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "sha256": "e5611a960d3b847787fd198c4949b5878e182a396096754ae3b7289fe9038dfc",
       "size_bytes": 2046365993,
       "parse_errors": 0,
@@ -618,8 +618,7 @@
     "post_hit_bomb_stock_decrease": 18.0,
     "primary_cause_counts": {
       "observed_bullet_overlap": 24,
-      "modeled_committed_prefix_collision": 42,
-      "sensor_gap_or_unmodeled_hazard": 1
+      "modeled_committed_prefix_collision": 43
     },
     "contributing_factor_counts": {
       "playfield_boundary": 58,
@@ -1061,9 +1060,8 @@
         117658
       ],
       "death_cause_counts": {
-        "modeled_committed_prefix_collision": 15,
-        "observed_bullet_overlap": 5,
-        "sensor_gap_or_unmodeled_hazard": 1
+        "modeled_committed_prefix_collision": 16,
+        "observed_bullet_overlap": 5
       },
       "deathbomb_count": 0,
       "post_hit_bomb_stock_decrease": 8.0,
@@ -1717,7 +1715,7 @@
       "minimum_power": 8.0,
       "maximum_active_bullets_at_hit": 1329,
       "cause_counts": {
-        "sensor_gap_or_unmodeled_hazard": 1
+        "modeled_committed_prefix_collision": 1
       }
     },
     {
@@ -2282,7 +2280,7 @@
       "case_id": "LUN-S1-F23778-T1",
       "frame": 23778,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 1,
       "stage_label": "Stage 2",
       "player": {
@@ -2453,6 +2451,7 @@
       "read_ms": 7.860500016249716,
       "plan_ms": 38.620600127615035,
       "pipeline_clearance_at_hit": -0.47078247368335724,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -0.47078247368335724,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -2517,7 +2516,7 @@
       "case_id": "LUN-S1-F24510-T1",
       "frame": 24510,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 1,
       "stage_label": "Stage 2",
       "player": {
@@ -2702,6 +2701,11 @@
       "read_ms": 8.086399990133941,
       "plan_ms": 39.35880004428327,
       "pipeline_clearance_at_hit": -2.5957737863063812,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 24507
+      },
       "minimum_pipeline_clearance_240f": -2.5957737863063812,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -2754,7 +2758,7 @@
       "case_id": "LUN-S1-F26001-T1",
       "frame": 26001,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 1,
       "stage_label": "Stage 2",
       "player": {
@@ -2925,6 +2929,11 @@
       "read_ms": 8.636899990960956,
       "plan_ms": 35.10420001111925,
       "pipeline_clearance_at_hit": -2.2180539071559906,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 25998
+      },
       "minimum_pipeline_clearance_240f": -2.2180539071559906,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -2978,7 +2987,7 @@
       "case_id": "LUN-S1-F42243-T1",
       "frame": 42243,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 1,
       "stage_label": "Stage 2",
       "player": {
@@ -3165,6 +3174,11 @@
       "read_ms": 8.80820001475513,
       "plan_ms": 37.27689990773797,
       "pipeline_clearance_at_hit": -3.2306282073259354,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 42239
+      },
       "minimum_pipeline_clearance_240f": -3.2306282073259354,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -3219,7 +3233,7 @@
       "case_id": "LUN-S2-F46433-T1",
       "frame": 46433,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 2,
       "stage_label": "Stage 3",
       "player": {
@@ -3398,6 +3412,11 @@
       "read_ms": 7.9193999990820885,
       "plan_ms": 40.15849996358156,
       "pipeline_clearance_at_hit": -3.1850949227809906,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 46430
+      },
       "minimum_pipeline_clearance_240f": -3.1850949227809906,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -3451,7 +3470,7 @@
       "case_id": "LUN-S2-F53712-T1",
       "frame": 53712,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 2,
       "stage_label": "Stage 3",
       "player": {
@@ -3622,6 +3641,11 @@
       "read_ms": 8.024800103157759,
       "plan_ms": 29.662000015378,
       "pipeline_clearance_at_hit": -2.3243896514177322,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 53709
+      },
       "minimum_pipeline_clearance_240f": -2.3243896514177322,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -3675,7 +3699,7 @@
       "case_id": "LUN-S2-F60310-T1",
       "frame": 60310,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 2,
       "stage_label": "Stage 3",
       "player": {
@@ -3864,6 +3888,7 @@
       "read_ms": 10.020099929533899,
       "plan_ms": 35.889699938707054,
       "pipeline_clearance_at_hit": -1.1252270638942719,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -1.1252270638942719,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -3929,7 +3954,7 @@
       "case_id": "LUN-S2-F61104-T1",
       "frame": 61104,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 2,
       "stage_label": "Stage 3",
       "player": {
@@ -4114,6 +4139,7 @@
       "read_ms": 8.295099949464202,
       "plan_ms": 48.03349997382611,
       "pipeline_clearance_at_hit": -1.1578857451677322,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -2.5973256826400757,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -4182,7 +4208,7 @@
       "case_id": "LUN-S2-F67048-T1",
       "frame": 67048,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 2,
       "stage_label": "Stage 3",
       "player": {
@@ -4367,6 +4393,11 @@
       "read_ms": 8.789799991063774,
       "plan_ms": 31.56989999115467,
       "pipeline_clearance_at_hit": -2.8893490731716156,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 67045
+      },
       "minimum_pipeline_clearance_240f": -2.8893490731716156,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -4423,7 +4454,7 @@
       "case_id": "LUN-S3-F73042-T1",
       "frame": 73042,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -4586,6 +4617,11 @@
       "read_ms": 8.173600072041154,
       "plan_ms": 26.675799977965653,
       "pipeline_clearance_at_hit": -3.2982666045427322,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": false,
+        "last_alive_frame": 73039
+      },
       "minimum_pipeline_clearance_240f": -3.2982666045427322,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -4638,7 +4674,7 @@
       "case_id": "LUN-S3-F74360-T1",
       "frame": 74360,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -4813,6 +4849,11 @@
       "read_ms": 8.193599991500378,
       "plan_ms": 57.16699990443885,
       "pipeline_clearance_at_hit": -1.4806722402572632,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 74356
+      },
       "minimum_pipeline_clearance_240f": -1.4806722402572632,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -4865,7 +4906,7 @@
       "case_id": "LUN-S3-F76575-T1",
       "frame": 76575,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -5040,6 +5081,7 @@
       "read_ms": 8.138300036080182,
       "plan_ms": 43.87569997925311,
       "pipeline_clearance_at_hit": -1.1487304717302322,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -3.7839406728744507,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -5101,7 +5143,7 @@
       "case_id": "LUN-S3-F76886-T1",
       "frame": 76886,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -5276,6 +5318,11 @@
       "read_ms": 7.984399911947548,
       "plan_ms": 57.88169999141246,
       "pipeline_clearance_at_hit": -1.6778136193752289,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 76883
+      },
       "minimum_pipeline_clearance_240f": -1.6778136193752289,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -5328,7 +5375,7 @@
       "case_id": "LUN-S3-F84555-T1",
       "frame": 84555,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -5513,6 +5560,7 @@
       "read_ms": 9.070800035260618,
       "plan_ms": 37.17630007304251,
       "pipeline_clearance_at_hit": -3.3403198271989822,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -3.3403198271989822,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -5578,7 +5626,7 @@
       "case_id": "LUN-S3-F84943-T1",
       "frame": 84943,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -5763,6 +5811,11 @@
       "read_ms": 8.652299991808832,
       "plan_ms": 36.82399995159358,
       "pipeline_clearance_at_hit": -1.7872144728899002,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 84940
+      },
       "minimum_pipeline_clearance_240f": -1.7872144728899002,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -5817,7 +5870,7 @@
       "case_id": "LUN-S3-F85543-T1",
       "frame": 85543,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -6002,6 +6055,11 @@
       "read_ms": 7.912100059911609,
       "plan_ms": 35.75959999579936,
       "pipeline_clearance_at_hit": -1.4513732939958572,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 85540
+      },
       "minimum_pipeline_clearance_240f": -1.4513732939958572,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -6059,7 +6117,7 @@
       "case_id": "LUN-S3-F92487-T1",
       "frame": 92487,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -6248,6 +6306,11 @@
       "read_ms": 8.207299979403615,
       "plan_ms": 30.113999964669347,
       "pipeline_clearance_at_hit": -4.755462646484375,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 92484
+      },
       "minimum_pipeline_clearance_240f": -4.755462646484375,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -6302,7 +6365,7 @@
       "case_id": "LUN-S3-F95085-T1",
       "frame": 95085,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -6481,6 +6544,11 @@
       "read_ms": 8.551100036129355,
       "plan_ms": 45.10480002500117,
       "pipeline_clearance_at_hit": -2.9194394052028656,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 95082
+      },
       "minimum_pipeline_clearance_240f": -2.9194394052028656,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -6534,7 +6602,7 @@
       "case_id": "LUN-S3-F95578-T1",
       "frame": 95578,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -6713,6 +6781,11 @@
       "read_ms": 7.575399940833449,
       "plan_ms": 39.00480002630502,
       "pipeline_clearance_at_hit": -1.9408142119646072,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 95575
+      },
       "minimum_pipeline_clearance_240f": -1.9408142119646072,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -6765,7 +6838,7 @@
       "case_id": "LUN-S3-F100961-T1",
       "frame": 100961,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -6950,6 +7023,11 @@
       "read_ms": 8.68530001025647,
       "plan_ms": 33.42820005491376,
       "pipeline_clearance_at_hit": -4.195287793874741,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 100958
+      },
       "minimum_pipeline_clearance_240f": -4.195287793874741,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -7005,7 +7083,7 @@
       "case_id": "LUN-S3-F101789-T1",
       "frame": 101789,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -7190,6 +7268,11 @@
       "read_ms": 9.011899936012924,
       "plan_ms": 29.945500078611076,
       "pipeline_clearance_at_hit": -2.0743161141872406,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 101786
+      },
       "minimum_pipeline_clearance_240f": -2.0743161141872406,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -7246,7 +7329,7 @@
       "case_id": "LUN-S3-F104767-T1",
       "frame": 104767,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -7431,6 +7514,11 @@
       "read_ms": 10.646400041878223,
       "plan_ms": 34.22629996202886,
       "pipeline_clearance_at_hit": 1.3554324209690094,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": false,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 104764
+      },
       "minimum_pipeline_clearance_240f": -2.1415456533432007,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -7471,7 +7559,7 @@
         "aabb_clearance": 283.7261330950563
       },
       "observed_enemy_body_contact_candidate": null,
-      "primary_cause_class": "sensor_gap_or_unmodeled_hazard",
+      "primary_cause_class": "modeled_committed_prefix_collision",
       "contributing_factors": [
         "pool_density_over_1000"
       ],
@@ -7487,7 +7575,7 @@
       "case_id": "LUN-S3-F108194-T1",
       "frame": 108194,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -7841,6 +7929,7 @@
       "read_ms": 10.340700042434037,
       "plan_ms": 39.50859990436584,
       "pipeline_clearance_at_hit": 0.06602172553539276,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -3.732574462890625,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -7907,7 +7996,7 @@
       "case_id": "LUN-S3-F109173-T1",
       "frame": 109173,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -8282,6 +8371,7 @@
       "read_ms": 10.37140004336834,
       "plan_ms": 41.37210000772029,
       "pipeline_clearance_at_hit": 2.6974304169416428,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -3.3158191442489624,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -8349,7 +8439,7 @@
       "case_id": "LUN-S3-F110940-T1",
       "frame": 110940,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -8542,6 +8632,11 @@
       "read_ms": 9.596499963663518,
       "plan_ms": 34.7886000527069,
       "pipeline_clearance_at_hit": -3.2313900887966156,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 110937
+      },
       "minimum_pipeline_clearance_240f": -3.2313900887966156,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -8599,7 +8694,7 @@
       "case_id": "LUN-S3-F111424-T1",
       "frame": 111424,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -8896,6 +8991,11 @@
       "read_ms": 10.293700033798814,
       "plan_ms": 43.74470002949238,
       "pipeline_clearance_at_hit": -2.2603505849838257,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 111420
+      },
       "minimum_pipeline_clearance_240f": -2.2603505849838257,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -8953,7 +9053,7 @@
       "case_id": "LUN-S3-F112751-T1",
       "frame": 112751,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -9146,6 +9246,7 @@
       "read_ms": 9.989400045014918,
       "plan_ms": 51.71290005091578,
       "pipeline_clearance_at_hit": -2.3001551628112793,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -2.3001551628112793,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -9210,7 +9311,7 @@
       "case_id": "LUN-S3-F115968-T1",
       "frame": 115968,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -9399,6 +9500,11 @@
       "read_ms": 8.87169991619885,
       "plan_ms": 36.25969996210188,
       "pipeline_clearance_at_hit": -1.4350158721208572,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 115965
+      },
       "minimum_pipeline_clearance_240f": -1.4350158721208572,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -9456,7 +9562,7 @@
       "case_id": "LUN-S3-F117193-T1",
       "frame": 117193,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -9641,6 +9747,11 @@
       "read_ms": 9.898999938741326,
       "plan_ms": 37.18069999013096,
       "pipeline_clearance_at_hit": -3.2731811553239822,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 117189
+      },
       "minimum_pipeline_clearance_240f": -3.2731811553239822,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -9698,7 +9809,7 @@
       "case_id": "LUN-S3-F117658-T1",
       "frame": 117658,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 3,
       "stage_label": "Stage 4A / Reimu",
       "player": {
@@ -9887,6 +9998,11 @@
       "read_ms": 9.185099974274635,
       "plan_ms": 35.425499896518886,
       "pipeline_clearance_at_hit": -3.0440121591091156,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 117654
+      },
       "minimum_pipeline_clearance_240f": -3.0440121591091156,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -9944,7 +10060,7 @@
       "case_id": "LUN-S5-F122195-T1",
       "frame": 122195,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 5,
       "stage_label": "Stage 5",
       "player": {
@@ -10123,6 +10239,7 @@
       "read_ms": 8.320100023411214,
       "plan_ms": 51.57320003490895,
       "pipeline_clearance_at_hit": -1.3056088387966156,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -1.3056088387966156,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -10187,7 +10304,7 @@
       "case_id": "LUN-S5-F130808-T1",
       "frame": 130808,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 5,
       "stage_label": "Stage 5",
       "player": {
@@ -10358,6 +10475,7 @@
       "read_ms": 9.330800035968423,
       "plan_ms": 42.29410004336387,
       "pipeline_clearance_at_hit": 1.4979675263166428,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -1.2269033193588257,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -10421,7 +10539,7 @@
       "case_id": "LUN-S5-F131415-T1",
       "frame": 131415,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 5,
       "stage_label": "Stage 5",
       "player": {
@@ -10596,6 +10714,11 @@
       "read_ms": 8.259800029918551,
       "plan_ms": 42.42539987899363,
       "pipeline_clearance_at_hit": -10.824005126953125,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 131411
+      },
       "minimum_pipeline_clearance_240f": -22.562469482421875,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -10649,7 +10772,7 @@
       "case_id": "LUN-S5-F143020-T1",
       "frame": 143020,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 5,
       "stage_label": "Stage 5",
       "player": {
@@ -10820,6 +10943,11 @@
       "read_ms": 10.57419995777309,
       "plan_ms": 48.87100006453693,
       "pipeline_clearance_at_hit": -1.8810913115739822,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 143016
+      },
       "minimum_pipeline_clearance_240f": -1.8810913115739822,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -10875,7 +11003,7 @@
       "case_id": "LUN-S5-F150032-T1",
       "frame": 150032,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 5,
       "stage_label": "Stage 5",
       "player": {
@@ -11050,6 +11178,11 @@
       "read_ms": 10.760399978607893,
       "plan_ms": 54.46210002992302,
       "pipeline_clearance_at_hit": -5.6449761390686035,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 150027
+      },
       "minimum_pipeline_clearance_240f": -5.6449761390686035,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -11105,7 +11238,7 @@
       "case_id": "LUN-S5-F158572-T1",
       "frame": 158572,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 5,
       "stage_label": "Stage 5",
       "player": {
@@ -11280,6 +11413,11 @@
       "read_ms": 14.249800005927682,
       "plan_ms": 52.87709995172918,
       "pipeline_clearance_at_hit": -2.261007398366928,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 158568
+      },
       "minimum_pipeline_clearance_240f": -2.261007398366928,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -11331,7 +11469,7 @@
       "case_id": "LUN-S5-F160649-T1",
       "frame": 160649,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 5,
       "stage_label": "Stage 5",
       "player": {
@@ -11506,6 +11644,11 @@
       "read_ms": 11.664399993605912,
       "plan_ms": 41.0480999853462,
       "pipeline_clearance_at_hit": -2.0329467803239822,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 160645
+      },
       "minimum_pipeline_clearance_240f": -2.0329467803239822,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -11561,7 +11704,7 @@
       "case_id": "LUN-S5-F161524-T1",
       "frame": 161524,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 5,
       "stage_label": "Stage 5",
       "player": {
@@ -11732,6 +11875,7 @@
       "read_ms": 13.899900019168854,
       "plan_ms": 35.14040005393326,
       "pipeline_clearance_at_hit": -2.3558074980974197,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -2.3558074980974197,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -11797,7 +11941,7 @@
       "case_id": "LUN-S5-F162153-T1",
       "frame": 162153,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 5,
       "stage_label": "Stage 5",
       "player": {
@@ -11968,6 +12112,11 @@
       "read_ms": 12.23489991389215,
       "plan_ms": 25.272400001995265,
       "pipeline_clearance_at_hit": -1.1093627959489822,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 162150
+      },
       "minimum_pipeline_clearance_240f": -1.1093627959489822,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -12023,7 +12172,7 @@
       "case_id": "LUN-S5-F162984-T1",
       "frame": 162984,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 5,
       "stage_label": "Stage 5",
       "player": {
@@ -12198,6 +12347,7 @@
       "read_ms": 10.08850010111928,
       "plan_ms": 30.12539993505925,
       "pipeline_clearance_at_hit": -1.2135678231716156,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -1.2135678231716156,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -12263,7 +12413,7 @@
       "case_id": "LUN-S7-F166078-T1",
       "frame": 166078,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -12442,6 +12592,11 @@
       "read_ms": 9.244599961675704,
       "plan_ms": 52.513299975544214,
       "pipeline_clearance_at_hit": -1.9444027841091156,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 166075
+      },
       "minimum_pipeline_clearance_240f": -1.9444027841091156,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -12495,7 +12650,7 @@
       "case_id": "LUN-S7-F171155-T1",
       "frame": 171155,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -12935,6 +13090,7 @@
       "read_ms": 8.904000045731664,
       "plan_ms": 51.62359995301813,
       "pipeline_clearance_at_hit": -2.6426269561052322,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -2.6426269561052322,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -13002,7 +13158,7 @@
       "case_id": "LUN-S7-F175271-T1",
       "frame": 175271,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -13177,6 +13333,7 @@
       "read_ms": 9.571499889716506,
       "plan_ms": 45.73449993040413,
       "pipeline_clearance_at_hit": -0.3291982412338257,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -0.5389150381088257,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -13241,7 +13398,7 @@
       "case_id": "LUN-S7-F175944-T1",
       "frame": 175944,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -13416,6 +13573,11 @@
       "read_ms": 8.8363999966532,
       "plan_ms": 45.15519994311035,
       "pipeline_clearance_at_hit": -6.707916259765625,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 175940
+      },
       "minimum_pipeline_clearance_240f": -6.707916259765625,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -13470,7 +13632,7 @@
       "case_id": "LUN-S7-F176825-T1",
       "frame": 176825,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -13637,6 +13799,11 @@
       "read_ms": 9.05389990657568,
       "plan_ms": 39.679900044575334,
       "pipeline_clearance_at_hit": -1.356224149465561,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 176821
+      },
       "minimum_pipeline_clearance_240f": -8.49673843383789,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -13690,7 +13857,7 @@
       "case_id": "LUN-S7-F182355-T1",
       "frame": 182355,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -13873,6 +14040,11 @@
       "read_ms": 8.863999973982573,
       "plan_ms": 40.355199947953224,
       "pipeline_clearance_at_hit": -2.4226562529802322,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 182352
+      },
       "minimum_pipeline_clearance_240f": -2.4226562529802322,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -13927,7 +14099,7 @@
       "case_id": "LUN-S7-F182787-T1",
       "frame": 182787,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -14106,6 +14278,11 @@
       "read_ms": 9.128000005148351,
       "plan_ms": 32.800299930386245,
       "pipeline_clearance_at_hit": -2.1732360869646072,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 182784
+      },
       "minimum_pipeline_clearance_240f": -2.1732360869646072,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -14159,7 +14336,7 @@
       "case_id": "LUN-S7-F183520-T1",
       "frame": 183520,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -14338,6 +14515,7 @@
       "read_ms": 9.185299975797534,
       "plan_ms": 43.87629998382181,
       "pipeline_clearance_at_hit": -0.22633667290210724,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -1.0445150136947632,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -14402,7 +14580,7 @@
       "case_id": "LUN-S7-F184787-T1",
       "frame": 184787,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -14581,6 +14759,7 @@
       "read_ms": 8.535400032997131,
       "plan_ms": 40.344699984416366,
       "pipeline_clearance_at_hit": 0.6463020294904709,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -0.9010976552963257,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -14646,7 +14825,7 @@
       "case_id": "LUN-S7-F185605-T1",
       "frame": 185605,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -14825,6 +15004,11 @@
       "read_ms": 10.933400015346706,
       "plan_ms": 41.0243000369519,
       "pipeline_clearance_at_hit": -4.60385437309742,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 185601
+      },
       "minimum_pipeline_clearance_240f": -4.60385437309742,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -14891,7 +15075,7 @@
       "case_id": "LUN-S7-F194392-T1",
       "frame": 194392,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -15062,6 +15246,7 @@
       "read_ms": 10.387500049546361,
       "plan_ms": 32.053599948994815,
       "pipeline_clearance_at_hit": -2.3808651864528656,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -2.3808651864528656,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -15138,7 +15323,7 @@
       "case_id": "LUN-S7-F197323-T1",
       "frame": 197323,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -15313,6 +15498,7 @@
       "read_ms": 11.203599977307022,
       "plan_ms": 28.66449998691678,
       "pipeline_clearance_at_hit": 0.7855651825666428,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -1.460142970085144,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -15389,7 +15575,7 @@
       "case_id": "LUN-S7-F204565-T1",
       "frame": 204565,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -15564,6 +15750,11 @@
       "read_ms": 9.62620007339865,
       "plan_ms": 39.578899974003434,
       "pipeline_clearance_at_hit": -3.1121699810028076,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 204562
+      },
       "minimum_pipeline_clearance_240f": -3.1121699810028076,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -15629,7 +15820,7 @@
       "case_id": "LUN-S7-F213921-T1",
       "frame": 213921,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -15800,6 +15991,7 @@
       "read_ms": 10.763700003735721,
       "plan_ms": 25.43329994659871,
       "pipeline_clearance_at_hit": -0.26597900688648224,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -0.26597900688648224,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -15877,7 +16069,7 @@
       "case_id": "LUN-S7-F214610-T1",
       "frame": 214610,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -16052,6 +16244,7 @@
       "read_ms": 8.462100056931376,
       "plan_ms": 38.86880003847182,
       "pipeline_clearance_at_hit": -1.4342404305934906,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -1.8486379384994507,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -16128,7 +16321,7 @@
       "case_id": "LUN-S7-F216036-T1",
       "frame": 216036,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -16301,6 +16494,11 @@
       "read_ms": 8.876300067640841,
       "plan_ms": 33.10020000208169,
       "pipeline_clearance_at_hit": -2.6496459990739822,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 216033
+      },
       "minimum_pipeline_clearance_240f": -2.6496459990739822,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -16367,7 +16565,7 @@
       "case_id": "LUN-S7-F219801-T1",
       "frame": 219801,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -16542,6 +16740,7 @@
       "read_ms": 16.724899993278086,
       "plan_ms": 27.823599986732006,
       "pipeline_clearance_at_hit": -1.7856628447771072,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -1.7856628447771072,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -16607,7 +16806,7 @@
       "case_id": "LUN-S7-F220307-T1",
       "frame": 220307,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -16874,6 +17073,11 @@
       "read_ms": 11.182800051756203,
       "plan_ms": 41.77130002062768,
       "pipeline_clearance_at_hit": -1.1780141592025757,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 220303
+      },
       "minimum_pipeline_clearance_240f": -1.233267217874527,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -16928,7 +17132,7 @@
       "case_id": "LUN-S7-F220824-T1",
       "frame": 220824,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -17195,6 +17399,11 @@
       "read_ms": 9.46610001847148,
       "plan_ms": 29.440199956297874,
       "pipeline_clearance_at_hit": -2.2462219297885895,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 220821
+      },
       "minimum_pipeline_clearance_240f": -2.2462219297885895,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -17249,7 +17458,7 @@
       "case_id": "LUN-S7-F221289-T1",
       "frame": 221289,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -17424,6 +17633,11 @@
       "read_ms": 10.261300019919872,
       "plan_ms": 38.18869998212904,
       "pipeline_clearance_at_hit": -2.4348202645778656,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 221285
+      },
       "minimum_pipeline_clearance_240f": -2.4348202645778656,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -17477,7 +17691,7 @@
       "case_id": "LUN-S7-F221801-T1",
       "frame": 221801,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -17652,6 +17866,11 @@
       "read_ms": 10.013699997216463,
       "plan_ms": 40.495899971574545,
       "pipeline_clearance_at_hit": -2.3096943795681,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 221797
+      },
       "minimum_pipeline_clearance_240f": -2.3096943795681,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -17706,7 +17925,7 @@
       "case_id": "LUN-S7-F222305-T1",
       "frame": 222305,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -17881,6 +18100,11 @@
       "read_ms": 9.61590011138469,
       "plan_ms": 37.58740006014705,
       "pipeline_clearance_at_hit": -2.9197667837142944,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 222302
+      },
       "minimum_pipeline_clearance_240f": -2.9197667837142944,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -17935,7 +18159,7 @@
       "case_id": "LUN-S7-F222825-T1",
       "frame": 222825,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -18202,6 +18426,7 @@
       "read_ms": 9.548199945129454,
       "plan_ms": 26.085700024850667,
       "pipeline_clearance_at_hit": -2.0455983877182007,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -3.0327514708042145,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -18269,7 +18494,7 @@
       "case_id": "LUN-S7-F223348-T1",
       "frame": 223348,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -18444,6 +18669,7 @@
       "read_ms": 12.181300087831914,
       "plan_ms": 46.48689995519817,
       "pipeline_clearance_at_hit": 0.7296874970197678,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -0.4595998525619507,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -18509,7 +18735,7 @@
       "case_id": "LUN-S7-F223857-T1",
       "frame": 223857,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -18776,6 +19002,7 @@
       "read_ms": 9.684500051662326,
       "plan_ms": 43.12819999177009,
       "pipeline_clearance_at_hit": -1.0729428231716156,
+      "modeled_collision_evidence": null,
       "minimum_pipeline_clearance_240f": -1.0729428231716156,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -18841,7 +19068,7 @@
       "case_id": "LUN-S7-F227026-T1",
       "frame": 227026,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -19012,6 +19239,11 @@
       "read_ms": 11.042599915526807,
       "plan_ms": 33.30429992638528,
       "pipeline_clearance_at_hit": -0.7843991219997406,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": false,
+        "last_alive_frame": 227022
+      },
       "minimum_pipeline_clearance_240f": -0.7843991219997406,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,
@@ -19066,7 +19298,7 @@
       "case_id": "LUN-S7-F229794-T1",
       "frame": 229794,
       "trace_index": 0,
-      "trace_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\runtime_reports\\lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
+      "trace_path": "artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_034510.jsonl",
       "stage_route_index": 7,
       "stage_label": "Final B / Kaguya",
       "player": {
@@ -19241,6 +19473,11 @@
       "read_ms": 14.420899911783636,
       "plan_ms": 35.42349999770522,
       "pipeline_clearance_at_hit": -4.537408113479614,
+      "modeled_collision_evidence": {
+        "hit_pipeline_unsafe": true,
+        "last_alive_selected_action_unsafe": true,
+        "last_alive_frame": 229790
+      },
       "minimum_pipeline_clearance_240f": -4.537408113479614,
       "minimum_corridor_slack_240f": null,
       "corridor_lane": null,

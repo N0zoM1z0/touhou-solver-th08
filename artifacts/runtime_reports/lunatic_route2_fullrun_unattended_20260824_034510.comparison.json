@@ -28,8 +28,8 @@
   "primary_cause_counts": {
     "modeled_committed_prefix_collision": {
       "baseline": 48,
-      "candidate": 42,
-      "delta": -6
+      "candidate": 43,
+      "delta": -5
     },
     "observed_bullet_overlap": {
       "baseline": 12,
@@ -40,11 +40,6 @@
       "baseline": 1,
       "candidate": 0,
       "delta": -1
-    },
-    "sensor_gap_or_unmodeled_hazard": {
-      "baseline": 0,
-      "candidate": 1,
-      "delta": 1
     }
   },
   "solver_delivery": {

@@ -143,10 +143,28 @@ def validate_case(case: dict[str, object]) -> None:
             ),
         )
     elif cause == "modeled_committed_prefix_collision":
+        last_alive = case.get("last_alive_decision")
+        last_alive_robust = (
+            last_alive.get("robust_control")
+            if isinstance(last_alive, dict)
+            else None
+        )
+        last_alive_selected_action_unsafe = bool(
+            isinstance(last_alive_robust, dict)
+            and (
+                int(last_alive_robust.get("worst_collisions", 0)) > 0
+                or float(last_alive_robust.get("min_clearance", 9999.0))
+                < 0.0
+            )
+        )
         _require(
-            float(case["pipeline_clearance_at_hit"]) <= 0.0,
+            float(case["pipeline_clearance_at_hit"]) <= 0.0
+            or last_alive_selected_action_unsafe,
             case_id=case_id,
-            message="committed-prefix cause has positive pipeline clearance",
+            message=(
+                "modeled collision has neither an unsafe hit pipeline nor "
+                "an unsafe causal selected-action certificate"
+            ),
         )
         _require(
             bullet is None and laser is None and enemy is None,

@@ -159,7 +159,8 @@ def render_markdown(dossier: dict[str, object]) -> str:
             "segments overlaps the player in the hit observation."
         ),
         "modeled_committed_prefix_collision": (
-            "The measured three-frame input pipeline was already unsafe."
+            "The hit-row committed pipeline or the causal last-alive "
+            "selected-action certificate was already unsafe."
         ),
         "sensor_gap_or_unmodeled_hazard": (
             "No observed overlap and positive pipeline clearance; same-frame "

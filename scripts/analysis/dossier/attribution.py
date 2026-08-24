@@ -334,6 +334,9 @@ def _classify_death(
         ),
         None,
     )
+    last_alive_selected_action_unsafe = (
+        last_alive is not None and _robust_control_unsafe(last_alive)
+    )
     pipeline = float(row["pipeline_clearance"])
     lasers = int(row["active_lasers"])
     exact_enemy_overlap = (
@@ -387,7 +390,7 @@ def _classify_death(
         and float(nearest_bullet["aabb_clearance"]) <= 0.0
     ):
         primary = "observed_bullet_overlap"
-    elif pipeline <= 0.0:
+    elif pipeline <= 0.0 or last_alive_selected_action_unsafe:
         primary = "modeled_committed_prefix_collision"
     elif lasers:
         primary = "active_laser_without_observed_overlap"
@@ -768,6 +771,24 @@ def _death_ledger(
             "read_ms": row["read_ms"],
             "plan_ms": row["plan_ms"],
             "pipeline_clearance_at_hit": row["pipeline_clearance"],
+            "modeled_collision_evidence": (
+                {
+                    "hit_pipeline_unsafe": (
+                        float(row["pipeline_clearance"]) <= 0.0
+                    ),
+                    "last_alive_selected_action_unsafe": (
+                        last_alive is not None
+                        and _robust_control_unsafe(last_alive)
+                    ),
+                    "last_alive_frame": (
+                        int(last_alive["frame"])
+                        if last_alive is not None
+                        else None
+                    ),
+                }
+                if primary == "modeled_committed_prefix_collision"
+                else None
+            ),
             "minimum_pipeline_clearance_240f": min(pipeline_samples),
             "minimum_corridor_slack_240f": (
                 min(slack_samples) if slack_samples else None

@@ -38,9 +38,8 @@ The route is one continuous agent-controlled trace with no foreground interrupti
 
 | Primary class | Deaths | Interpretation |
 | --- | ---: | --- |
-| `modeled_committed_prefix_collision` | 42 | The measured three-frame input pipeline was already unsafe. |
+| `modeled_committed_prefix_collision` | 43 | The hit-row committed pipeline or the causal last-alive selected-action certificate was already unsafe. |
 | `observed_bullet_overlap` | 24 | A bullet overlaps the native player AABB in the hit observation. |
-| `sensor_gap_or_unmodeled_hazard` | 1 | No observed overlap and positive pipeline clearance; same-frame ECL emission, transform error, or another unmodeled hazard is the leading explanation. |
 
 Contributing factors:
 
@@ -105,7 +104,7 @@ Contributing factors:
 ### Stage 4A / Reimu
 
 - Death frames: 73042, 74360, 76575, 76886, 84555, 84943, 85543, 92487, 95085, 95578, 100961, 101789, 104767, 108194, 109173, 110940, 111424, 112751, 115968, 117193, 117658
-- Cause counts: `{"modeled_committed_prefix_collision": 15, "observed_bullet_overlap": 5, "sensor_gap_or_unmodeled_hazard": 1}`
+- Cause counts: `{"modeled_committed_prefix_collision": 16, "observed_bullet_overlap": 5}`
 - Phase markers: observed 7, reachable static opcode `0x94` 8.
 - Bottom/side occupancy decisions: 1458/1068.
 
@@ -123,7 +122,7 @@ Contributing factors:
 | 95578 | 4.00 | 0.00 | 1.00 | 599 | -1.94 | - | `modeled_committed_prefix_collision` | fast_mode |
 | 100961 | 4.00 | 4.00 | 1.00 | 116 | -4.20 | - | `modeled_committed_prefix_collision` | playfield_boundary |
 | 101789 | 4.00 | 1.00 | 1.00 | 80 | -2.07 | - | `modeled_committed_prefix_collision` | playfield_boundary,fast_mode |
-| 104767 | 3.00 | 8.00 | 0.00 | 1329 | 1.36 | - | `sensor_gap_or_unmodeled_hazard` | pool_density_over_1000 |
+| 104767 | 3.00 | 8.00 | 0.00 | 1329 | 1.36 | - | `modeled_committed_prefix_collision` | pool_density_over_1000 |
 | 108194 | 3.00 | 1.00 | 0.00 | 101 | 0.07 | - | `observed_bullet_overlap` | playfield_boundary |
 | 109173 | 3.00 | 2.00 | 0.00 | 87 | 2.70 | - | `observed_bullet_overlap` | playfield_boundary,fast_mode |
 | 110940 | 4.00 | 2.00 | 1.00 | 458 | -3.23 | - | `modeled_committed_prefix_collision` | playfield_boundary,fast_mode |
@@ -289,7 +288,7 @@ Every spell below is statically reachable for route 2 Lunatic Final B. Observed 
 - Robust-policy decisions without any usable query: 0/0.
 - Global-horizon/local-prefix cross-tab: 0 decisions; winning global state with unsafe selected prefix: 0; losing global state with safe short prefix: 0; selected globally certified action contradicted by the fresh local prefix checker: 0; selected action outside the reported winning set: 0.
 - Live spell attribution was recorded at every hit edge; exact per-spell counts are preserved below.
-- `1` hit edges remain in the `sensor_gap_or_unmodeled_hazard` class and require executor-level same-frame emission/transform evidence.
+- `0` hit edges remain in the `sensor_gap_or_unmodeled_hazard` class and require executor-level same-frame emission/transform evidence.
 
 ## Next Regression Work
 

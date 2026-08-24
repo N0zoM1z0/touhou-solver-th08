@@ -24,7 +24,7 @@ findings:
    deadline guard held the old `stay` command for 32 consecutive decisions,
    but the rejected writes could not update the estimator or activate its
    guard.  The player remained at `(192, 384)` until the hit at frame 73042.
-2. **The reported Stage 4A `sensor_gap_or_unmodeled_hazard` is a diagnostic
+2. **The originally reported Stage 4A `sensor_gap_or_unmodeled_hazard` is a diagnostic
    time-alignment error.**  At frame 104764 the selected action already had
    `worst_collisions=1` and robust minimum clearance `-1.662`; the hit was
    detected at 104767 only after that collision interval, when the current
@@ -167,7 +167,7 @@ underdetermined.
 
 ## Root Cause 2: Hit-Row Attribution Is One Epoch Too Late
 
-The run dossier labels frame 104767 as
+The original run dossier labeled frame 104767 as
 `sensor_gap_or_unmodeled_hazard` because the hit-detection row has positive
 pipeline clearance and no same-row bullet overlap.  The causal window says
 otherwise:
@@ -187,11 +187,14 @@ hit-row clearance precedence over the last alive decision's explicit selected
 action collision.  That makes a known local collision look like a future-
 birth/sensor gap.
 
-The fix is diagnostic-only: preserve exact same-epoch observed overlaps as
+The diagnostic-only fix preserves exact same-epoch observed overlaps as
 the strongest witness, but classify a no-overlap hit as a modeled selected-
 action collision when the last alive robust certificate already reports a
 collision.  A genuinely positive last-alive certificate with no exact contact
-witness must remain explicitly unresolved.
+witness remains explicitly unresolved. Replaying the untouched raw trace
+reclassified this one hit and no others: the final route taxonomy is 43
+modeled committed/selected-prefix collisions, 24 exact bullet overlaps, and
+zero sensor gaps.
 
 ## Structural Cause: Local Traps Without Global Guidance
 
@@ -220,7 +223,7 @@ faster.  It does not create the information needed to avoid a future trap.
 1. Retain OPT-002's coalesced read implementation and physical latency
    evidence; do not claim a hit-rate improvement from the 67-hit route.
 2. Correct the causal hit attribution and regenerate this run's compact
-   dossier from the same raw trace.
+   dossier from the same raw trace. **Completed under AUD-023.**
 3. Close the deadline feedback loop: a current issue deadline miss must
    immediately widen/guard the next estimate even when the write is held, and
    scene reset must not allow low-load samples to erase plausible computation

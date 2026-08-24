@@ -483,7 +483,7 @@ and eventual recovery without requiring a hit.
 
 ### AUD-023 — Hit-row hazard attribution can be later than the lethal collision
 
-Status: **CONFIRMED-PHYSICAL; FIX QUEUED**
+Status: **FIXED-OFFLINE**
 
 **Observed physical:** Stage 4A frame 104767 in run `...034510` is reported as
 `sensor_gap_or_unmodeled_hazard` because the phase-2 detection row has positive
@@ -503,9 +503,21 @@ cause internally inconsistent.
 
 **Required fix boundary:** exact same-epoch observed overlaps remain strongest.
 When they are absent but the last alive selected-action robust certificate is
-already unsafe, use an explicit modeled selected-action collision class rather
-than an unknown-sensor class. Preserve `sensor_gap_or_unmodeled_hazard` when
+already unsafe, retain explicit evidence under the modeled committed/selected-
+prefix collision class rather than an unknown-sensor class. Preserve
+`sensor_gap_or_unmodeled_hazard` when
 both the exact contact evidence and the causal model remain positive.
+
+**Fixed and replayed:** the classifier now checks the causal last-alive
+selected-action certificate after all exact same-epoch overlap classes but
+before declaring an unknown hazard. The regression corpus retains whether the
+unsafe evidence came from the hit-row pipeline, the last-alive certificate,
+or both. Focused dossier tests pass 22/22. Replaying the untouched 2.046 GB
+raw trace reclassified only frame 104767, changing the route taxonomy from
+42 modeled / 24 bullet / one sensor gap to 43 modeled / 24 bullet / zero
+sensor gaps. All 67 native hit frames, stage counts, spell attribution, and
+no-Bomb evidence remain unchanged, and the regenerated regression corpus
+passes its validator.
 
 ### AUD-024 — Native rank feedback is action-relevant but absent from retained traces
 

@@ -450,6 +450,33 @@ class Th08RunDossierTests(unittest.TestCase):
         self.assertIsNone(enemy)
         self.assertIn("corridor_deadline_miss", contributing)
 
+    def test_causal_selected_collision_outranks_late_positive_hit_row(
+        self,
+    ) -> None:
+        alive = _row(97, bullets=0, pipeline=3.0)
+        alive["player"] = {
+            "x": 192.0,
+            "y": 400.0,
+            "phase": 0,
+            "phase_at_action": 0,
+        }
+        alive["robust_control"] = {
+            "worst_collisions": 1,
+            "min_clearance": -1.5,
+        }
+        hit = _row(100, bullets=0, pipeline=2.0)
+
+        primary, contributing, nearest, laser, enemy = _classify_death(
+            hit,
+            window=[alive, hit],
+        )
+
+        self.assertEqual(primary, "modeled_committed_prefix_collision")
+        self.assertEqual(contributing, [])
+        self.assertIsNone(nearest)
+        self.assertIsNone(laser)
+        self.assertIsNone(enemy)
+
     def test_ce_0087_last_alive_deadline_miss_is_attributed(self) -> None:
         alive = _row(26753, bullets=0)
         alive["action_lag"] = 10
