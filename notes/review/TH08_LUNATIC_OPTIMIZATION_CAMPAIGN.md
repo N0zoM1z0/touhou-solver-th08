@@ -52,7 +52,7 @@ change when its semantic and timing gate passes.
 
 | ID | Track | Change | Risk | Status | Physical result |
 | --- | --- | --- | --- | --- | --- |
-| OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | IN PROGRESS | pending |
+| OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | FIXED-OFFLINE | pending |
 | OPT-002 | sensing latency | Replace repeated scalar player/control reads with one explicitly bracketed compact root capture, preserving duplicate before/after observations | medium | QUEUED | pending |
 | OPT-003 | local/issue latency | Share immutable action-conditioned hazard projection work between planning and issue recertification where versions are exact-equal | medium | QUEUED | pending |
 | FB-001 | future births | Build a source-guided, executable-validated producer inventory for the pre-spell-190 route and rank reached `UNKNOWN` causes by hit-window impact | low, shadow | QUEUED | pending |
@@ -67,7 +67,7 @@ selection.
 
 ## OPT-001 — Persistent Local Enemy-Prefix Destination
 
-Status: **IN PROGRESS**
+Status: **FIXED-OFFLINE**
 
 Global failure addressed: Wine sensing and fresh issue recertification consume
 several physical frames before input, reducing useful reaction horizon.
@@ -107,6 +107,15 @@ changing decoded snapshots or decisions for identical bytes.
 Falsifier: any snapshot/body/inventory difference, changed read ordering or
 clock bracket, mutable-buffer alias after return, test failure, new sensor
 discontinuity, or no physical evidence that the persistent path was active.
+
+Offline result: the controller owns one exact-size destination and both
+planning and issue captures use it sequentially through `read_into`. The
+legacy allocating path remains available to other callers. Tests cover byte
+parity through decoded bodies, immutable snapshot lifetime after reuse,
+destination identity, frame/read ordering, enemy-mode forwarding, and
+fail-closed size/read-only validation. Affected tests pass 110/110, import
+smoke passes, and complete Linux discovery passes 1,353 tests with five skips.
+The implementation awaits its full-route physical timing gate.
 
 ## Future-Birth Simplification Contract
 

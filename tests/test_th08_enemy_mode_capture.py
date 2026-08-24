@@ -87,6 +87,7 @@ class _Reader:
         self.inputs = inputs or [0] * len(player_prefixes)
         self.bomb_active = bomb_active
         self.bomb_index = bomb_index
+        self.read_into_destinations: list[int] = []
 
     def read(self, address: int, _size: int) -> bytes:
         if address == ADDR_PLAYER:
@@ -94,6 +95,11 @@ class _Reader:
         if address == ENEMY_POOL_BASE:
             return self.enemy_blobs.pop(0)
         raise AssertionError(f"unexpected read at {address:#x}")
+
+    def read_into(self, address: int, destination: bytearray) -> bytearray:
+        self.read_into_destinations.append(id(destination))
+        destination[:] = self.read(address, len(destination))
+        return destination
 
     def u16(self, address: int) -> int:
         if address != ADDR_CURRENT_INPUT:
@@ -114,6 +120,29 @@ class _Reader:
 
 
 class EnemyModeCaptureTests(unittest.TestCase):
+    def test_coherent_capture_forwards_persistent_pool_destination(self) -> None:
+        prefix = _player_prefix(
+            focus_logic=0,
+            secondary_active=False,
+            counter=7,
+        )
+        reader = _Reader(
+            player_prefixes=[prefix, prefix],
+            enemy_blobs=[_enemy_blob(0x0100114D)],
+            frames=[10075, 10075],
+        )
+        destination = bytearray(ENEMY_STRIDE)
+
+        capture = capture_player_enemy_mode_prefix(
+            reader,
+            pool_size=1,
+            pool_buffer=destination,
+        )
+
+        self.assertTrue(capture.coherent)
+        self.assertEqual(reader.read_into_destinations, [id(destination)])
+        self.assertEqual(capture.enemy_snapshot.bodies[0].flags, 0x0100114D)
+
     def test_coherent_capture_retains_mode_root_and_raw_body(self) -> None:
         prefix = _player_prefix(
             focus_logic=0,

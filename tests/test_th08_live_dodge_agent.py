@@ -1083,6 +1083,100 @@ class LiveDodgeAgentTests(unittest.TestCase):
             ],
         )
 
+    def test_local_enemy_prefix_reuses_destination_without_snapshot_alias(
+        self,
+    ) -> None:
+        read_size = ENEMY_LOCAL_PREFIX_SIZE * ENEMY_STRIDE
+
+        def body_blob(x: float) -> bytes:
+            blob = bytearray(read_size)
+            struct.pack_into(
+                "<ff",
+                blob,
+                ENEMY_CONTACT_SIZE_OFFSET,
+                24.0,
+                24.0,
+            )
+            struct.pack_into(
+                "<ff",
+                blob,
+                ENEMY_POSITION_OFFSET,
+                x,
+                300.0,
+            )
+            struct.pack_into("<I", blob, ENEMY_FLAGS_OFFSET, 0x05)
+            return bytes(blob)
+
+        class Reader:
+            def __init__(self) -> None:
+                self.frames = iter((100, 100, 101, 101))
+                self.blobs = iter((body_blob(120.0), body_blob(240.0)))
+                self.events = []
+
+            def u32(self, _address: int) -> int:
+                frame = next(self.frames)
+                self.events.append(("frame", frame))
+                return frame
+
+            def read(self, _address: int, _size: int) -> bytes:
+                raise AssertionError("persistent capture must not allocate")
+
+            def read_into(self, address: int, destination: bytearray):
+                self.events.append(
+                    ("read_into", address, id(destination), len(destination))
+                )
+                destination[:] = next(self.blobs)
+                return destination
+
+        reader = Reader()
+        destination = bytearray(read_size)
+        first = capture_enemy_pool_prefix_contiguous(
+            reader,
+            pool_buffer=destination,
+        )
+        second = capture_enemy_pool_prefix_contiguous(
+            reader,
+            pool_buffer=destination,
+        )
+
+        self.assertEqual(first.bodies[0].x, 120.0)
+        self.assertEqual(second.bodies[0].x, 240.0)
+        self.assertEqual(first.bodies[0].x, 120.0)
+        read_events = [event for event in reader.events if event[0] == "read_into"]
+        self.assertEqual(
+            read_events,
+            [
+                ("read_into", ENEMY_POOL_BASE, id(destination), read_size),
+                ("read_into", ENEMY_POOL_BASE, id(destination), read_size),
+            ],
+        )
+        self.assertEqual(
+            [event[0] for event in reader.events],
+            ["frame", "read_into", "frame"] * 2,
+        )
+
+    def test_local_enemy_prefix_rejects_wrong_destination_size(self) -> None:
+        class Reader:
+            pass
+
+        with self.assertRaisesRegex(ValueError, "exactly match"):
+            capture_enemy_pool_prefix_contiguous(
+                Reader(),
+                pool_buffer=bytearray(1),
+            )
+
+    def test_local_enemy_prefix_rejects_read_only_destination(self) -> None:
+        class Reader:
+            pass
+
+        with self.assertRaisesRegex(ValueError, "writable"):
+            capture_enemy_pool_prefix_contiguous(
+                Reader(),
+                pool_buffer=bytes(
+                    ENEMY_LOCAL_PREFIX_SIZE * ENEMY_STRIDE
+                ),
+            )
+
     def test_local_enemy_prefix_retries_one_crossed_frame_snapshot(
         self,
     ) -> None:

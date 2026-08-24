@@ -276,18 +276,41 @@ def capture_enemy_pool_prefix_contiguous(
     maximum_attempts: int = 2,
     include_main_ecl_vms: bool = False,
     include_combat_progress: bool = False,
+    pool_buffer: object | None = None,
 ) -> EnemyPoolSnapshot:
-    """Capture the allocation head once per local decision."""
+    """Capture the allocation head once per local decision.
+
+    A caller-owned ``pool_buffer`` removes the ctypes allocation, zero fill,
+    and ``buffer.raw`` copy from each large Wine process read.  The blob is
+    decoded completely before this function returns; mutable storage is not
+    retained by ``EnemyPoolSnapshot``.
+    """
 
     if not 0 < pool_size <= ENEMY_POOL_SIZE:
         raise ValueError("enemy prefix size must belong to the native pool")
     if maximum_attempts <= 0:
         raise ValueError("enemy prefix attempts must be positive")
+    read_size = pool_size * ENEMY_STRIDE
+    pool_blob: memoryview | None = None
+    if pool_buffer is not None:
+        pool_blob = memoryview(pool_buffer)
+        if pool_blob.readonly:
+            raise ValueError("enemy prefix buffer must be writable")
+        if pool_blob.ndim != 1 or pool_blob.format != "B":
+            pool_blob = pool_blob.cast("B")
+        if len(pool_blob) != read_size:
+            raise ValueError(
+                "enemy prefix buffer must exactly match the requested pool"
+            )
     started = time.perf_counter()
     snapshot = None
     for attempt in range(1, maximum_attempts + 1):
         frame_before = reader.u32(ADDR_ENEMY_MANAGER_FRAME)
-        blob = reader.read(ENEMY_POOL_BASE, pool_size * ENEMY_STRIDE)
+        if pool_blob is None:
+            blob = reader.read(ENEMY_POOL_BASE, read_size)
+        else:
+            reader.read_into(ENEMY_POOL_BASE, pool_buffer)
+            blob = pool_blob
         frame_after = reader.u32(ADDR_ENEMY_MANAGER_FRAME)
         main_ecl_vm_inventory = (
             decode_enemy_main_ecl_vm_inventory(

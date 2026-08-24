@@ -355,6 +355,33 @@ comparison successfully, and the pending session was recovered to
 `status=completed` while retaining the original exception in an explicit
 `artifact_recovery` record.
 
+### AUD-020 — Local enemy-prefix reads allocate and copy twice per decision
+
+Status: **FIXED-OFFLINE**
+
+**Observed:** local planning and fresh issue recertification each read the
+64-slot enemy prefix through `ProcessReader.read()`. At stride `0x53D0`, each
+read is 1,373,184 bytes. That API creates and zeroes a new ctypes destination,
+performs `ReadProcessMemory`, and copies the full destination through
+`buffer.raw`. The 58-hit reference made 55,024 decisions, so these two call
+sites account for about 151 GB of repeatedly allocated destination bytes plus
+about 151 GB of redundant Python byte copies. Retained decisions commonly
+record each prefix capture near 3 ms.
+
+**Fixed offline:** the controller now allocates one exact-size destination and
+uses `read_into` for both sequential main-thread captures. Enemy bodies and
+optional ECL/combat inventories are decoded before the destination can be
+overwritten; no mutable view escapes in `EnemyPoolSnapshot`. Buffer size and
+writability fail closed, the manager-frame brackets and retry order are
+unchanged, and callers without a destination retain the old compatibility
+path. `controller_config.enemy_prefix_sensor` records physical activation.
+
+**Verification:** immutable-snapshot parity, two-read destination identity,
+frame/read ordering, mode-capture forwarding, and invalid-buffer tests pass.
+Affected tests pass 110/110, import smoke passes, and complete Linux discovery
+passes 1,353 tests with five skips. Physical timing and route evidence remain
+pending under OPT-001.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the complete repository suite

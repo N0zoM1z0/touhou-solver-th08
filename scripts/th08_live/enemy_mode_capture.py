@@ -34,6 +34,8 @@ _INPUT_FOCUS = 0x04
 class EnemyModeCaptureReader(Protocol):
     def read(self, address: int, size: int) -> bytes: ...
 
+    def read_into(self, address: int, destination: object) -> object: ...
+
     def u16(self, address: int) -> int: ...
 
     def u32(self, address: int) -> int: ...
@@ -199,6 +201,7 @@ def capture_player_enemy_mode_prefix(
     maximum_attempts: int = 2,
     include_main_ecl_vms: bool = False,
     include_combat_progress: bool = False,
+    pool_buffer: object | None = None,
 ) -> PlayerEnemyModePrefixCapture:
     """Capture a stable player/input root around the existing enemy prefix.
 
@@ -223,6 +226,7 @@ def capture_player_enemy_mode_prefix(
             maximum_attempts=1,
             include_main_ecl_vms=include_main_ecl_vms,
             include_combat_progress=include_combat_progress,
+            pool_buffer=pool_buffer,
         )
         player_after = _read_player_mode(reader)
         mismatches = _mode_sync_mismatches(

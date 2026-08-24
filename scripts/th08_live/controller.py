@@ -3116,6 +3116,14 @@ def _run_live_session(
                     "boss_phase_sensor": (
                         "native_registry_health_timer_and_damage_gate"
                     ),
+                    "enemy_prefix_sensor": {
+                        "pool_slots": ENEMY_LOCAL_PREFIX_SIZE,
+                        "bytes": (
+                            ENEMY_LOCAL_PREFIX_SIZE * ENEMY_STRIDE
+                        ),
+                        "read_path": "persistent_read_into",
+                        "shared_sequential_planning_and_issue_buffer": True,
+                    },
                     "damage_objective": (
                         "shadow_lexicographic_inside_fresh_safe_set"
                     ),
@@ -3514,6 +3522,20 @@ def _run_live_session(
             args.trace_items
         )
         sensor = Sensor(reader, capture_items=item_sensor_enabled)
+        enemy_prefix_buffer = reader.allocate_buffer(
+            ENEMY_LOCAL_PREFIX_SIZE * ENEMY_STRIDE
+        )
+        fresh_enemy_issue_dependencies = FreshEnemyIssueDependencies(
+            capture_prefix=lambda active_reader: (
+                capture_enemy_pool_prefix_contiguous(
+                    active_reader,
+                    pool_buffer=enemy_prefix_buffer,
+                )
+            ),
+            detect_changes=issue_enemy_snapshot_changes,
+            merge_prefix=merge_enemy_pool_prefix,
+            monotonic=time.perf_counter,
+        )
         deadline = time.perf_counter() + args.duration
         while time.perf_counter() < deadline:
             if args.stop_file is not None and args.stop_file.exists():
@@ -3984,6 +4006,7 @@ def _run_live_session(
                         reader,
                         include_main_ecl_vms=False,
                         include_combat_progress=kill_before_saturation,
+                        pool_buffer=enemy_prefix_buffer,
                     )
                 )
                 enemy_prefix_snapshot = (
@@ -3995,6 +4018,7 @@ def _run_live_session(
                         reader,
                         include_main_ecl_vms=False,
                         include_combat_progress=kill_before_saturation,
+                        pool_buffer=enemy_prefix_buffer,
                     )
                 )
             enemy_prefix_capture_ms = (
@@ -6443,12 +6467,7 @@ def _run_live_session(
                     )
                 ),
                 read_started=issue_path_started,
-                dependencies=FreshEnemyIssueDependencies(
-                    capture_prefix=capture_enemy_pool_prefix_contiguous,
-                    detect_changes=issue_enemy_snapshot_changes,
-                    merge_prefix=merge_enemy_pool_prefix,
-                    monotonic=time.perf_counter,
-                ),
+                dependencies=fresh_enemy_issue_dependencies,
             )
             issue_enemy_prefix_snapshot = fresh_enemy_issue.prefix_snapshot
             issue_enemy_prefix_bodies = fresh_enemy_issue.prefix_bodies
