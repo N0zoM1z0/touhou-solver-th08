@@ -134,6 +134,7 @@ def _build_bullet_frames(
         transformed = np.not_equal(bullets.transform_flags, 0)
         native_state = bullets.native_state
         native_state_timer_elapsed = bullets.native_state_timer_elapsed
+        callback_aux = bullets.callback_aux
     else:
         base_x = np.fromiter(
             (bullet.x for bullet in bullets),
@@ -186,6 +187,10 @@ def _build_bullet_frames(
         native_state_timer_elapsed = np.fromiter(
             (bullet.native_state_timer_elapsed for bullet in bullets),
             dtype=np.int32,
+        )
+        callback_aux = np.fromiter(
+            (bullet.callback_aux_state for bullet in bullets),
+            dtype=np.uint8,
         )
     event_indices: list[int] = []
     event_frames: list[int] = []
@@ -284,6 +289,8 @@ def _build_bullet_frames(
                 half_width,
                 half_height,
                 transformed,
+                projected_native_state.copy(),
+                callback_aux,
             )
         )
     return tuple(frames)
@@ -303,7 +310,7 @@ def _numpy_hazards_for_positions(
     collisions = np.zeros(count, dtype=np.int32)
     minimum = np.full(count, np.inf, dtype=np.float64)
     time_weight = 1.0 / (1.0 + 0.08 * (step - 1))
-    bullet_x, bullet_y, half_width, half_height, transformed = bullet_frame
+    bullet_x, bullet_y, half_width, half_height, transformed = bullet_frame[:5]
     if bullet_x.size:
         margin = 84.0
         relevant = (
@@ -513,7 +520,7 @@ def _native_hazards_for_positions(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Parity-gated native implementation of `_hazards_for_positions`."""
 
-    bullet_x, bullet_y, half_width, half_height, transformed = bullet_frame
+    bullet_x, bullet_y, half_width, half_height, transformed = bullet_frame[:5]
     packed_lasers = (
         lasers
         if isinstance(lasers, _PackedLaserFrame)

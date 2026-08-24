@@ -359,6 +359,15 @@ legacy-versus-exact membership/action-set differential, exact laser-local
 classifier, rank/RNG/producer roots, and global submission-gate expansion are
 still open; observability phase A is therefore not yet complete.
 
+GEO-001B adds the shadow-only `th08-source-collision-v1` kernel and a tracked
+same-root differential. On retained root 2129, exact player geometry removes
+13,040 of 32,893 legacy collision-grid positions; known state-2 lifecycle
+removes another 351, with zero source-only points. All 18 one-step root-cohort
+actions remain safe while minimum clearance increases by roughly 1.0–1.414px.
+That action comparison is deliberately non-authoritative because the old root
+lacks callback aux, omits seven H=1 births, retains four removals, and has no
+lasers/bodies. A new complete-schema route corpus remains phase A's next gate.
+
 1. Retain player lethal half-extents, bullet native state/timer/callback aux,
    exact laser-local rectangle, rank/subrank, RNG state, and the full reached
    VM/emitter root needed by the forward model.

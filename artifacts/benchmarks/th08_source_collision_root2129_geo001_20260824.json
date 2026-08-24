@@ -1,0 +1,303 @@
+{
+  "authority": {
+    "accepted_for": "shadow lower bound on legacy false positives from player extent and known nonlethal bullet states",
+    "bullet_callback_aux": "unavailable_in_legacy_root; state1 conservatively_kept_lethal",
+    "bullet_state": "retained_native_state",
+    "enemy_bodies": "not_retained_in_compact_root",
+    "lasers": "root_contains_none",
+    "not_accepted_for": "live action authority, callback-suppressed classification, multi-frame lifecycle, laser/body promotion, or hit-count claim",
+    "one_step_inventory": "incomplete_root_cohort_only; native births excluded and native removals retained",
+    "one_step_motion": {
+      "exact_common_slots": 692,
+      "manager_frame": 2130,
+      "status": "no_mismatch_through_declared_horizon"
+    },
+    "player_geometry": "exact_cached_native_aabb"
+  },
+  "one_step_action_set": {
+    "coverage": {
+      "common_slots_with_exact_h1_motion": 692,
+      "complete_hazard_inventory": false,
+      "excluded_native_births": 7,
+      "unapplied_native_removals": 4
+    },
+    "delay_frames": [
+      0
+    ],
+    "horizon_frames": 1,
+    "legacy_safe_actions": [
+      "stay",
+      "left",
+      "right",
+      "up",
+      "down",
+      "up_left",
+      "up_right",
+      "down_left",
+      "down_right",
+      "left_fast",
+      "right_fast",
+      "up_fast",
+      "down_fast",
+      "up_left_fast",
+      "up_right_fast",
+      "down_left_fast",
+      "down_right_fast",
+      "stay_unfocused"
+    ],
+    "role": "shadow_root_active_bullet_cohort_only",
+    "rows": [
+      {
+        "action": "stay",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 4.213849067687988,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.213849067687988,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.213849067687988
+      },
+      {
+        "action": "left",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 1.9138610363006592,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 2.913861036300659,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 2.913861036300659
+      },
+      {
+        "action": "right",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 4.213849067687988,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.213849067687988,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.213849067687988
+      },
+      {
+        "action": "up",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 4.213849067687988,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.256561279296875,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.256561279296875
+      },
+      {
+        "action": "down",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 4.213849067687988,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.213849067687988,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.213849067687988
+      },
+      {
+        "action": "up_left",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 2.587506055831909,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 3.5875139236450195,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 3.5875139236450195
+      },
+      {
+        "action": "up_right",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 4.213849067687988,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.213854789733887,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.213854789733887
+      },
+      {
+        "action": "down_left",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 2.587506055831909,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 3.587506055831909,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 3.587506055831909
+      },
+      {
+        "action": "down_right",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 4.213849067687988,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.213849067687988,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.213849067687988
+      },
+      {
+        "action": "left_fast",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 0.21384887397289276,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 1.2138488292694092,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 1.2138488292694092
+      },
+      {
+        "action": "right_fast",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 4.213849067687988,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.213849067687988,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.213849067687988
+      },
+      {
+        "action": "up_fast",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 2.826103925704956,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 4.239874362945557,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 4.239874362945557
+      },
+      {
+        "action": "down_fast",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 4.213849067687988,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.213849067687988,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.213849067687988
+      },
+      {
+        "action": "up_left_fast",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 1.399245023727417,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 2.6544876098632812,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 2.6544876098632812
+      },
+      {
+        "action": "up_right_fast",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 3.76149845123291,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.147129058837891,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.147129058837891
+      },
+      {
+        "action": "down_left_fast",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 1.3854186534881592,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 2.385418653488159,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 2.385418653488159
+      },
+      {
+        "action": "down_right_fast",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 4.213849067687988,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.213849067687988,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.213849067687988
+      },
+      {
+        "action": "stay_unfocused",
+        "legacy_collisions": 0,
+        "legacy_min_clearance": 4.213849067687988,
+        "source_geometry_collisions": 0,
+        "source_geometry_min_clearance": 5.213849067687988,
+        "source_lifecycle_collisions": 0,
+        "source_lifecycle_min_clearance": 5.213849067687988
+      }
+    ],
+    "source_added_safe_actions": [],
+    "source_geometry_lifecycle_safe_actions": [
+      "stay",
+      "left",
+      "right",
+      "up",
+      "down",
+      "up_left",
+      "up_right",
+      "down_left",
+      "down_right",
+      "left_fast",
+      "right_fast",
+      "up_fast",
+      "down_fast",
+      "up_left_fast",
+      "up_right_fast",
+      "down_left_fast",
+      "down_right_fast",
+      "stay_unfocused"
+    ],
+    "source_geometry_safe_actions": [
+      "stay",
+      "left",
+      "right",
+      "up",
+      "down",
+      "up_left",
+      "up_right",
+      "down_left",
+      "down_right",
+      "left_fast",
+      "right_fast",
+      "up_fast",
+      "down_fast",
+      "up_left_fast",
+      "up_right_fast",
+      "down_left_fast",
+      "down_right_fast",
+      "stay_unfocused"
+    ],
+    "source_removed_safe_actions": []
+  },
+  "root": {
+    "bullet_count": 696,
+    "known_nonlethal_state_count": 28,
+    "laser_count": 0,
+    "manager_frame": 2129,
+    "native_state_counts": {
+      "1": 668,
+      "2": 28
+    },
+    "player": {
+      "lethal_aabb": [
+        375.0,
+        431.0,
+        377.0,
+        433.0
+      ],
+      "lethal_half_extents": [
+        1.0,
+        1.0
+      ],
+      "x": 376.0,
+      "y": 432.0
+    }
+  },
+  "root_membership_grid": {
+    "geometry_only_legacy_positions": 0,
+    "grid_step": 1.0,
+    "known_lifecycle_removed_positions": 351,
+    "legacy_collision_instances": 40114,
+    "legacy_collision_positions": 32893,
+    "legacy_only_geometry_positions": 13040,
+    "sampled_positions": 153873,
+    "source_geometry_collision_instances": 22554,
+    "source_geometry_collision_positions": 19853,
+    "source_geometry_lifecycle_collision_instances": 21648,
+    "source_geometry_lifecycle_collision_positions": 19502,
+    "source_only_legacy_positions": 0,
+    "x_count": 369,
+    "y_count": 417
+  },
+  "schema": "th08-source-collision-root-differential-v1",
+  "source": {
+    "embedded_collision_projection_schema": "th08-native-snapshot-collision-control-projection-v2",
+    "path": "/home/yann/yann/touhou/th08-research/touhou-solver-th08/artifacts/runtime_reports/th08_native_model_consumable_h1_root2129_20260730.json",
+    "sha256": "2a03160d88792004140d6d7dede2c36a33c3208bae0c371c6ae47890634545aa"
+  },
+  "source_collision_semantics": "th08-source-collision-v1"
+}

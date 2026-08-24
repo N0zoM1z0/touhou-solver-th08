@@ -689,7 +689,13 @@ class NativeSnapshotProjectionTests(unittest.TestCase):
 
         records = _bullet_lifecycle_records(
             blob,
-            [SimpleNamespace(slot=slot)],
+            [
+                SimpleNamespace(
+                    slot=slot,
+                    callback_phase_state=3,
+                    callback_aux_state=4,
+                )
+            ],
         )
 
         self.assertEqual(
@@ -702,6 +708,8 @@ class NativeSnapshotProjectionTests(unittest.TestCase):
                     "timer_d80_elapsed": 7,
                     "timer_d8c_fraction_bits": 0x3E800000,
                     "timer_d8c_elapsed": 11,
+                    "callback_phase_state": 3,
+                    "callback_aux_state": 4,
                 }
             ],
         )

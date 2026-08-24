@@ -435,6 +435,12 @@ def _bullet_lifecycle_records(
                     + BULLET_TIMER_D8C_OFFSET
                     + TH08_TIMER_ELAPSED_OFFSET,
                 )[0],
+                "callback_phase_state": int(
+                    getattr(bullet, "callback_phase_state", 0)
+                ),
+                "callback_aux_state": int(
+                    getattr(bullet, "callback_aux_state", 0)
+                ),
             }
         )
     return records

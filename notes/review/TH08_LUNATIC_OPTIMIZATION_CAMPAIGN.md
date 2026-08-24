@@ -62,7 +62,7 @@ change when its semantic and timing gate passes.
 | OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | VALIDATED-PHYSICAL | 61 hits; both prefix medians down about 1.2 ms; keep |
 | OPT-002 | sensing latency | Coalesce input and position fields inside the existing bracketed player-control root, preserving duplicate before/after observations | low-medium | VALIDATED-MECHANISM | 67 hits; read latency down, semantic sensor evidence clean; keep, but route exposed OPT-002A |
 | OPT-002A | control-delay correctness | Close the post-reset deadline-miss feedback self-lock without weakening issue freshness | medium | VALIDATED-PHYSICAL | 60 hits; ten misses recovered, no causal-hit miss or self-lock; keep |
-| GEO-001 | source-exact geometry shadow | Retain runtime player half-extents and bullet lifecycle fields; compare legacy/exact hazards and action sets without changing input | low, shadow | IN-PROGRESS-SHADOW | retention/tests complete; exact differential pending |
+| GEO-001 | source-exact geometry shadow | Retain runtime player half-extents and bullet lifecycle fields; compare legacy/exact hazards and action sets without changing input | low, shadow | IN-PROGRESS-SHADOW | root differential complete; route-wide complete-schema corpus pending |
 | GEO-002 | source-exact geometry promotion | Use runtime player AABB, lethal bullet state/callback gate, finite rotated laser rectangle, and corrected body expansion | medium | BLOCKED ON GEO-001 | pending |
 | MOT-001 | exact current entities | Replace heuristic transformed-bullet projection with the matching native update/transform semantics | medium-high | QUEUED | pending |
 | GD-001 | global delivery shadow | Establish per-stage hard scale roots, submit jobs in shadow, and add a complete spell-future-coverage authority gate | medium, shadow | QUEUED | pending |
@@ -355,11 +355,46 @@ The concurrently running TH105 Wine tree on `:121` and its separate prefix was
 untouched. This is an import/launch gate; it does not claim that title-screen
 state exercised gameplay collision telemetry.
 
-Next gate: build a pure source-exact current-collision kernel and replay
-identical retained native roots through both legacy and exact
-membership/action-set classifiers. GEO-002 remains blocked until fixtures and
-retained-root differentials make false-positive and false-negative counts
-explicit.
+A pure `th08-source-collision-v1` shadow kernel now implements separate player
+half-extents, the state-1/aux-0 bullet lethal gate, inclusive bullet/body
+AABBs, and the finite rotated laser rectangle. It preserves the existing
+robust-uncertainty/risk weights so the differential isolates collision
+semantics. The packed laser timeline now retains the already-modeled exact
+rectangle width/orientation while its seven-field legacy/native capsule ABI
+is unchanged. Current bullet frames retain projected native state and
+callback aux for the shadow callback; live action still consumes the first
+five legacy arrays only. Future native snapshot ledgers now retain callback
+phase/aux as well as both timers.
+
+The tracked root-2129 report
+`artifacts/benchmarks/th08_source_collision_root2129_geo001_20260824.json`
+compares all 153,873 integer-pixel playfield positions on the same retained
+696-bullet root:
+
+- legacy 2px geometry marks 32,893 positions colliding;
+- exact 1px player geometry marks 19,853, removing 13,040 legacy-only points
+  (39.6% of the legacy collision field) with zero geometry-only-legacy
+  reversals;
+- filtering the 28 known state-2 bullets removes another 351 positions,
+  leaving 19,502; source-only-legacy remains zero;
+- collision instances fall from 40,114 to 21,648, although overlapping boxes
+  mean instance counts are not independent spatial cells.
+
+On the H=1 root-active cohort, all 18 actions are safe under both models, but
+source minimum clearance improves by about 1.0 to 1.414 pixels. This is useful
+mechanism evidence and also explains why a geometry correction need not
+immediately change every Boolean action set. It is not a complete action
+certificate: native H=1 contains seven births and four removals, only 692
+common slots have the retained exact-motion comparison, the old v2 root lacks
+callback aux, and it contains no lasers or enemy bodies. State-1 bullets are
+therefore conservatively kept lethal and the report explicitly refuses live
+authority or hit-count claims.
+
+Next gate: capture a complete-schema route corpus with player geometry,
+per-bullet callback aux/lifecycle, lasers, and bodies, then run the same-root
+legacy/source action differential on actual pre-hit windows. GEO-002 remains
+blocked until that coverage is complete and source fixtures plus replay show
+no exact-kernel disagreement.
 
 ## Future-Birth Simplification Contract
 

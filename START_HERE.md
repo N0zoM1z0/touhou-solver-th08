@@ -682,10 +682,10 @@ and explicit `STRATEGY.md` decision.
 TH08 work is active. The next promotion is deliberately simpler than global
 future births:
 
-1. differential retained native roots against the newly retained player
-   AABB/half-extents and bullet state/timer/callback-aux schema;
-2. compare the legacy hazard/action sets against a source-exact lethal
-   geometry and lifecycle kernel;
+1. capture a complete-schema route corpus with the newly retained player
+   geometry, bullet lifecycle/callback aux, lasers, and bodies;
+2. run the legacy/source hazard and action-set differential on actual pre-hit
+   windows rather than only the root-2129 lower bound;
 3. promote only after exact fixtures and retained-root replay agree, commit,
    then run one complete isolated Lunatic Route-2 gate;
 4. build source-authoritative time-scale and future-producer coverage in

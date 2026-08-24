@@ -81,6 +81,23 @@ class PackedLaserFrame:
     collision_radius: np.ndarray
     base_uncertainty: np.ndarray
     uncertainty_per_frame: np.ndarray
+    # Shadow-only source-rectangle fields.  Legacy/native capsule consumers
+    # continue to read only the seven arrays returned by fields_for_native().
+    rectangle_half_width: np.ndarray | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    rectangle_cosine: np.ndarray | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
+    rectangle_sine: np.ndarray | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
     native_float32_fields: tuple[np.ndarray, ...] | None = field(
         default=None,
         repr=False,
@@ -216,6 +233,13 @@ def pack_laser_frame(
         collision_radius=fields[4],
         base_uncertainty=fields[5],
         uncertainty_per_frame=fields[6],
+        rectangle_half_width=np.fromiter(
+            (laser.half_width for laser in lasers),
+            dtype=np.float64,
+            count=len(lasers),
+        ),
+        rectangle_cosine=cosine,
+        rectangle_sine=sine,
         native_float32_fields=tuple(
             np.ascontiguousarray(values, dtype=np.float32)
             for values in fields
@@ -259,6 +283,9 @@ def build_packed_laser_collision_frames(
                 laser.half_width + PLAYER_RADIUS,
                 laser.uncertainty,
                 laser.uncertainty_per_frame,
+                laser.half_width,
+                cosine,
+                sine,
             )
             for frame_values in packed_values:
                 frame_values.extend(values)
@@ -284,6 +311,9 @@ def build_packed_laser_collision_frames(
                         half_width + PLAYER_RADIUS,
                         laser.uncertainty,
                         laser.uncertainty_per_frame,
+                        half_width,
+                        cosine,
+                        sine,
                     )
                 )
     frames: list[PackedLaserFrame] = []
@@ -293,7 +323,7 @@ def build_packed_laser_collision_frames(
         # an interleaved matrix would merely defer the same copies.
         fields = (
             np.asarray(values, dtype=np.float64)
-            .reshape((-1, 7))
+            .reshape((-1, 10))
             .transpose()
             .copy()
         )
@@ -306,12 +336,15 @@ def build_packed_laser_collision_frames(
                 collision_radius=fields[4],
                 base_uncertainty=fields[5],
                 uncertainty_per_frame=fields[6],
+                rectangle_half_width=fields[7],
+                rectangle_cosine=fields[8],
+                rectangle_sine=fields[9],
                 native_float32_fields=tuple(
                     np.ascontiguousarray(
                         values,
                         dtype=np.float32,
                     )
-                    for values in fields
+                    for values in fields[:7]
                 ),
             )
         )

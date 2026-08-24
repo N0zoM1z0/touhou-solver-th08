@@ -565,7 +565,7 @@ rank-conditioned causal claims or changing action policy from it.
 
 ### AUD-025 — Live player lethal half-extents are inflated from 1px to 2px
 
-Status: **CONFIRMED-SOURCE-AND-PHYSICAL; SHADOW RETAINED, IMPACT PENDING**
+Status: **CONFIRMED-SOURCE-AND-PHYSICAL; SHADOW LOWER BOUND QUANTIFIED**
 
 **Source evidence:** `Player.cpp` initializes the lethal vector at `+0x3D4`
 from the SHT width divided by two, updates its cached AABB after movement, and
@@ -585,9 +585,16 @@ bracketed control-root reads and emits their validity/cache coherence as
 shadow-only trace data. It deliberately does not replace `PLAYER_RADIUS=2.0`;
 the identical-root action-set differential remains the promotion gate.
 
+GEO-001B's integer-pixel root-2129 differential removes 13,040 of the 32,893
+legacy collision positions by correcting player extent alone, with zero
+reverse additions on that bullet-only root. All 18 H=1 root-cohort actions
+remain safe, while their minimum clearance increases by 1.0–1.414px. This is
+a large geometry/risk-field error but not evidence of a safe-set or hit-count
+change on every root.
+
 ### AUD-026 — Nonlethal bullet lifecycle states are included as lethal hazards
 
-Status: **CONFIRMED-SOURCE; SHADOW RETAINED, IMPACT PENDING**
+Status: **CONFIRMED-SOURCE; KNOWN-STATE SHADOW LOWER BOUND QUANTIFIED**
 
 **Source evidence:** `BulletManager::OnUpdate` reaches
 `Player::FUN_0044a230` only in native state 1, and skips that collision block
@@ -606,6 +613,12 @@ retains exceptional state/timer/callback-aux records in nearby-bullet traces.
 The old 60-hit trace remains lifecycle-incomplete; a new Wine capture and the
 same-root exact classifier are still required.
 
+The old root retains 28 state-2 bullets; excluding only those source-proven
+nonlethal states removes 351 additional collision-grid positions. Because the
+v2 root omitted callback aux, state-1 records are conservatively kept lethal;
+the result is a lower bound, not complete lifecycle impact. Future native
+snapshot ledgers and live nearby-bullet traces now retain callback aux.
+
 ### AUD-027 — Live laser collision is a capsule, not the native rotated rectangle
 
 Status: **CONFIRMED-SOURCE; SHADOW IMPACT PENDING**
@@ -619,6 +632,13 @@ closest-point capsule distance. End caps/corners differ and the player
 half-size is inflated. Only two OPT-002A hits have a primary laser-contact
 label, so this is confirmed geometry debt but not the dominant recorded hit
 class.
+
+The repository already contained a source-shaped `LaserCollisionBox` and
+`laser_overlaps_player()` lifecycle model; the divergence occurs when live
+packing lowers its effective rectangle to a capsule. GEO-001B retains exact
+rectangle width/orientation alongside the unchanged seven-field capsule ABI
+and tests a vectorized shadow predicate against the scalar source predicate.
+Root 2129 has no lasers, so physical impact remains unquantified.
 
 ### AUD-028 — All OPT-002A global corridor submissions were authority-blocked
 
