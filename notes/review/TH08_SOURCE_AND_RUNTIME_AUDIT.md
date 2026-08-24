@@ -401,7 +401,7 @@ cross-checked: all 61 native hit frames are unique and consistent.
 
 ### AUD-021 — Player-control root uses thirteen scalar RPM calls per attempt
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-MECHANISM**
 
 **Observed:** the fresh player/control root issued separate RPM calls for
 three input fields and x/y position both before and after the scale read, plus
@@ -429,7 +429,103 @@ and position changes, later coherent retry, and 14/8-byte short-read rejection
 are covered. The trace exposes `read_player_control_root`, and controller
 config records physical activation. Focused trace/dossier tests pass 17/17,
 import smoke passes, and complete Linux discovery passes 1,358 tests with five
-skips. Physical timing and route evidence remain pending under OPT-002.
+skips.
+
+**Physical validation:** full Route-2 run
+`lunatic_route2_fullrun_unattended_20260824_034510` recorded the exact
+seven-call activation marker, completed naturally at frame 229967, issued
+zero Bomb inputs, and left no process in the dedicated prefix. Stage read
+medians improved by 0.720--1.204 ms in all six stages versus OPT-001; Stage 4A
+fell from 9.840 to 8.676 ms and its player-root median/p95 was 0.275/0.368 ms.
+Action-lag median/p95/max remained 2/3/5. Complete-route unstable-root events
+fell from 15 to two, with no retry in a causal pre-hit window.
+
+The route recorded 67 hits and stage counts `0/4/5/21/10/27`. This does not
+establish a hit improvement over the different-RNG 61-hit reference. The
+Stage 4A increase exposed the separate AUD-022 delay feedback defect, but no
+evidence falsifies the coalesced source layout or capture semantics. The
+mechanism is retained and its hit outcome is not promoted.
+
+### AUD-022 — A deadline hold cannot teach the delay estimator that its support expired
+
+Status: **CONFIRMED-PHYSICAL; FIX QUEUED**
+
+**Observed physical:** after the Stage 4A scene reset in run `...034510`,
+empty-scene samples narrowed `AdaptiveControlDelay` from its default `[2,3]`
+support to `[1,2]` at frame 72547 and `[1]` at frame 72648. When the local
+planner became expensive, frame 72949 reached action lag two outside `[1]`.
+The deadline guard correctly retained the old action, but frames 72949--73042
+then repeated that hold for 32 consecutive decisions. The player remained at
+`(192,384)`, the estimator stayed at 49 end-to-end samples with zero overruns
+and zero censored samples, and its guard remained false until the native hit
+at 73042. Only `register_hit()` widened support at frame 73047.
+
+**Root cause:** once any end-to-end samples exist, `estimate()` ignores the
+newer computation-lag tail. A missed issue deadline does not register an
+overrun or activate the estimator guard. The held old mask normally requires
+no write, so it cannot create a later visible-input observation. This is a
+closed feedback loop: underestimated support causes a no-write hold, and the
+no-write hold prevents the evidence needed to correct underestimated support.
+
+OPT-001 had no exact-`[1]` support decisions in any stage. OPT-002 produced
+361 in Stage 2, 80 in Stage 3, and 331 in Stage 4A. The faster coalesced read
+made legitimate one-frame low-load samples possible; it did not corrupt the
+captured fields. Stage 4A alone combined the narrowed estimate, sustained
+two-frame planning, and a lethal wave, making the defect directly causal for
+the first hit.
+
+**Required fix boundary:** a currently observed deadline miss must widen or
+guard the *next* delay estimate even when no input is issued. The expired
+proposal must remain held; the fix may not retroactively issue an action that
+was planned for the wrong epoch. A regression must reproduce low-load `[1]`,
+a later two-frame deadline, a no-write hold, immediate next-estimate widening,
+and eventual recovery without requiring a hit.
+
+### AUD-023 — Hit-row hazard attribution can be later than the lethal collision
+
+Status: **CONFIRMED-PHYSICAL; FIX QUEUED**
+
+**Observed physical:** Stage 4A frame 104767 in run `...034510` is reported as
+`sensor_gap_or_unmodeled_hazard` because the phase-2 detection row has positive
+pipeline clearance and no same-row bullet overlap. The last alive decision at
+104764 already reports robust minimum clearance `-1.662` and
+`worst_collisions=1` for the selected `right` action. The hit row's bullet
+pool was captured at frames 104765--104766, player phase was observed at issue
+frame 104767, and the stable post-detection contact capture occurred at 104768.
+The collision can therefore precede the row used for primary attribution and
+move clear before detection.
+
+**Root cause:** `_classify_death` gives a positive hit-row pipeline clearance
+precedence over the causal last-alive robust certificate. The ledger separately
+and correctly classifies the planner failure as
+`robust_action_set_exhausted_before_hit`, leaving its primary cause and planner
+cause internally inconsistent.
+
+**Required fix boundary:** exact same-epoch observed overlaps remain strongest.
+When they are absent but the last alive selected-action robust certificate is
+already unsafe, use an explicit modeled selected-action collision class rather
+than an unknown-sensor class. Preserve `sensor_gap_or_unmodeled_hazard` when
+both the exact contact evidence and the causal model remain positive.
+
+### AUD-024 — Native rank feedback is action-relevant but absent from retained traces
+
+Status: **OPEN**
+
+**Source evidence:** `GameManager.cpp` gives Lunatic difficulty index 3 rank
+parameters `8/8/12` for initial/min/max rank. `Player.cpp` calls
+`DecreaseSubrank(1600)` on death and either clears Power at 16 or below or
+subtracts 16. `Player::FUN_00450f60` selects shot tables by current Power.
+`EclDependencies.cpp` rank-scales bullet count and speed when no spell card is
+active; spell-card emissions skip this rank scaling.
+
+**Analysis consequence:** a hit changes later player damage and nonspell
+patterns, so per-stage hit counts after the first divergent death are not
+independent samples. Run `...034510` entered Stage 4A at Power 11 and its
+AUD-022 hit immediately reset Power to zero; OPT-001 entered at Power 31 and
+did not hit until much later. The traces retain Power but not `rank` or
+`subRank`, so the exact native rank trajectory is unrecoverable after process
+exit. Add source-checked, trace-only rank/subrank telemetry before making
+rank-conditioned causal claims or changing action policy from it.
 
 ## Offline Verification Record
 

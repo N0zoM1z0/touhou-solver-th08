@@ -1,6 +1,6 @@
 # Touhou Solver Current Handoff
 
-Last updated: 2026-08-23.
+Last updated: 2026-08-24.
 
 This is the only volatile entrypoint. Read `AGENTS.md`, `GOAL.MD`, then this
 file, `STRATEGY.md`, and the focused task card in
@@ -26,7 +26,19 @@ user request. New source/runtime discrepancies are tracked in
 ## Checkpoint
 
 - Branch: `codex/th08-lunatic-source-audit`.
-- Last retained physical checkpoint:
+- **Current Lunatic physical checkpoint:**
+  `lunatic_route2_fullrun_unattended_20260824_034510` completed Sakuya/Remilia
+  Route 2 through Final-B at frame 229967 with 67 native hit edges, stage
+  counts `0/4/5/21/10/27`, zero Bomb input, and exact Wine-prefix cleanup. It
+  physically validates OPT-002's coalesced seven-call player-control root and
+  lower sensing latency, but it does not validate a hit improvement. The
+  Stage 4A trace exposes a causal post-reset delay-support self-lock: 32
+  consecutive deadline holds retained `stay` until the first hit. Read
+  `notes/review/TH08_OPT002_STAGE4_ROOT_CAUSE.md` and AUD-022 before changing
+  policy. The next isolated live change is OPT-002A, which closes that
+  estimator feedback loop; do not mix it with future-birth or boundary/focus
+  ranking.
+- Historical Hard checkpoint:
   `hard_route2_stage4a_unattended_20260801_191508`. It completed Hard Stage
   4A with 18 hits, first hit 1975, zero Bombs, accepted replay, and complete
   cleanup. Twelve hits were boundary-associated and eleven used fast

@@ -1,0 +1,584 @@
+{
+  "schema": "th08-full-route-comparison-v1",
+  "baseline_run_id": "lunatic_route2_fullrun_unattended_20260824_022909",
+  "candidate_run_id": "lunatic_route2_fullrun_unattended_20260824_034510",
+  "route_complete": {
+    "baseline": true,
+    "candidate": true
+  },
+  "hard_no_bomb_passed": {
+    "baseline": true,
+    "candidate": true
+  },
+  "death_count": {
+    "baseline": 61,
+    "candidate": 67,
+    "delta": 6
+  },
+  "decision_count": {
+    "baseline": 55915,
+    "candidate": 58020,
+    "delta": 2105
+  },
+  "post_hit_bomb_stock_decrease": {
+    "baseline": 17.0,
+    "candidate": 18.0,
+    "delta": 1.0
+  },
+  "primary_cause_counts": {
+    "modeled_committed_prefix_collision": {
+      "baseline": 48,
+      "candidate": 42,
+      "delta": -6
+    },
+    "observed_bullet_overlap": {
+      "baseline": 12,
+      "candidate": 24,
+      "delta": 12
+    },
+    "observed_laser_overlap": {
+      "baseline": 1,
+      "candidate": 0,
+      "delta": -1
+    },
+    "sensor_gap_or_unmodeled_hazard": {
+      "baseline": 0,
+      "candidate": 1,
+      "delta": 1
+    }
+  },
+  "solver_delivery": {
+    "solve_ms": {
+      "median": {
+        "baseline": null,
+        "candidate": null,
+        "delta": null
+      },
+      "p95": {
+        "baseline": null,
+        "candidate": null,
+        "delta": null
+      },
+      "max": {
+        "baseline": null,
+        "candidate": null,
+        "delta": null
+      }
+    },
+    "first_observed_age_frames": {
+      "median": {
+        "baseline": null,
+        "candidate": null,
+        "delta": null
+      },
+      "p95": {
+        "baseline": null,
+        "candidate": null,
+        "delta": null
+      },
+      "max": {
+        "baseline": null,
+        "candidate": null,
+        "delta": null
+      }
+    },
+    "unique_solution_count": {
+      "baseline": 0,
+      "candidate": 0,
+      "delta": 0
+    },
+    "query_count": {
+      "baseline": 0,
+      "candidate": 0,
+      "delta": 0
+    },
+    "reported_stale_solution_count": {
+      "baseline": 0,
+      "candidate": 0,
+      "delta": 0
+    },
+    "serial_worker_serviceable_count": {
+      "baseline": 0.0,
+      "candidate": 0.0,
+      "delta": 0.0
+    },
+    "candidate_backend_counts": {},
+    "candidate_solver_phase_ms": {}
+  },
+  "per_stage": {
+    "0": {
+      "stage_label": "Stage 1",
+      "death_count": {
+        "baseline": 5,
+        "candidate": 0,
+        "delta": -5
+      },
+      "decision_count": {
+        "baseline": 5157,
+        "candidate": 5308,
+        "delta": 151
+      },
+      "max_active_bullets": {
+        "baseline": 1179,
+        "candidate": 1171,
+        "delta": -8
+      },
+      "max_active_lasers": {
+        "baseline": 0,
+        "candidate": 0,
+        "delta": 0
+      },
+      "power_end": {
+        "baseline": 2.0,
+        "candidate": 24.0,
+        "delta": 22.0
+      },
+      "read_ms": {
+        "median": {
+          "baseline": 9.223999921232462,
+          "candidate": 8.503699966240674,
+          "delta": -0.7202999549917877
+        },
+        "p95": {
+          "baseline": 11.099900002591312,
+          "candidate": 9.52680001500994,
+          "delta": -1.5730999875813723
+        },
+        "max": {
+          "baseline": 15.611000009812415,
+          "candidate": 11.669600033201277,
+          "delta": -3.9413999766111374
+        }
+      },
+      "plan_ms": {
+        "median": {
+          "baseline": 27.992699993774295,
+          "candidate": 27.16689999215305,
+          "delta": -0.8258000016212463
+        },
+        "p95": {
+          "baseline": 36.89019999001175,
+          "candidate": 34.37799995299429,
+          "delta": -2.5122000370174646
+        },
+        "max": {
+          "baseline": 70.99979999475181,
+          "candidate": 58.97989997174591,
+          "delta": -12.019900023005903
+        }
+      },
+      "action_lag_frames": {
+        "median": {
+          "baseline": 2.0,
+          "candidate": 2.0,
+          "delta": 0.0
+        },
+        "p95": {
+          "baseline": 3.0,
+          "candidate": 3.0,
+          "delta": 0.0
+        },
+        "max": {
+          "baseline": 5.0,
+          "candidate": 4.0,
+          "delta": -1.0
+        }
+      }
+    },
+    "1": {
+      "stage_label": "Stage 2",
+      "death_count": {
+        "baseline": 2,
+        "candidate": 4,
+        "delta": 2
+      },
+      "decision_count": {
+        "baseline": 7011,
+        "candidate": 7353,
+        "delta": 342
+      },
+      "max_active_bullets": {
+        "baseline": 1208,
+        "candidate": 1214,
+        "delta": 6
+      },
+      "max_active_lasers": {
+        "baseline": 0,
+        "candidate": 0,
+        "delta": 0
+      },
+      "power_end": {
+        "baseline": 12.0,
+        "candidate": 13.0,
+        "delta": 1.0
+      },
+      "read_ms": {
+        "median": {
+          "baseline": 9.247499983757734,
+          "candidate": 8.381300023756921,
+          "delta": -0.866199960000813
+        },
+        "p95": {
+          "baseline": 11.306799948215485,
+          "candidate": 9.452200029045343,
+          "delta": -1.8545999191701412
+        },
+        "max": {
+          "baseline": 27.976599987596273,
+          "candidate": 11.394600034691393,
+          "delta": -16.58199995290488
+        }
+      },
+      "plan_ms": {
+        "median": {
+          "baseline": 30.130899976938963,
+          "candidate": 28.582400176674128,
+          "delta": -1.5484998002648354
+        },
+        "p95": {
+          "baseline": 42.128599947318435,
+          "candidate": 38.153299945406616,
+          "delta": -3.975300001911819
+        },
+        "max": {
+          "baseline": 72.62639992404729,
+          "candidate": 54.8781999386847,
+          "delta": -17.74819998536259
+        }
+      },
+      "action_lag_frames": {
+        "median": {
+          "baseline": 2.0,
+          "candidate": 2.0,
+          "delta": 0.0
+        },
+        "p95": {
+          "baseline": 3.0,
+          "candidate": 3.0,
+          "delta": 0.0
+        },
+        "max": {
+          "baseline": 5.0,
+          "candidate": 3.0,
+          "delta": -2.0
+        }
+      }
+    },
+    "2": {
+      "stage_label": "Stage 3",
+      "death_count": {
+        "baseline": 5,
+        "candidate": 5,
+        "delta": 0
+      },
+      "decision_count": {
+        "baseline": 7406,
+        "candidate": 7733,
+        "delta": 327
+      },
+      "max_active_bullets": {
+        "baseline": 1214,
+        "candidate": 921,
+        "delta": -293
+      },
+      "max_active_lasers": {
+        "baseline": 200,
+        "candidate": 200,
+        "delta": 0
+      },
+      "power_end": {
+        "baseline": 26.0,
+        "candidate": 6.0,
+        "delta": -20.0
+      },
+      "read_ms": {
+        "median": {
+          "baseline": 9.306450025178492,
+          "candidate": 8.537900052033365,
+          "delta": -0.7685499731451273
+        },
+        "p95": {
+          "baseline": 10.624799993820488,
+          "candidate": 9.675799985416234,
+          "delta": -0.9490000084042549
+        },
+        "max": {
+          "baseline": 17.982000019401312,
+          "candidate": 12.035800027661026,
+          "delta": -5.946199991740286
+        }
+      },
+      "plan_ms": {
+        "median": {
+          "baseline": 29.051750025246292,
+          "candidate": 28.243199922144413,
+          "delta": -0.8085501031018794
+        },
+        "p95": {
+          "baseline": 41.00990004371852,
+          "candidate": 37.085700081661344,
+          "delta": -3.9241999620571733
+        },
+        "max": {
+          "baseline": 77.5090999668464,
+          "candidate": 68.21150006726384,
+          "delta": -9.297599899582565
+        }
+      },
+      "action_lag_frames": {
+        "median": {
+          "baseline": 2.0,
+          "candidate": 2.0,
+          "delta": 0.0
+        },
+        "p95": {
+          "baseline": 3.0,
+          "candidate": 3.0,
+          "delta": 0.0
+        },
+        "max": {
+          "baseline": 4.0,
+          "candidate": 4.0,
+          "delta": 0.0
+        }
+      }
+    },
+    "3": {
+      "stage_label": "Stage 4A / Reimu",
+      "death_count": {
+        "baseline": 15,
+        "candidate": 21,
+        "delta": 6
+      },
+      "decision_count": {
+        "baseline": 11370,
+        "candidate": 11796,
+        "delta": 426
+      },
+      "max_active_bullets": {
+        "baseline": 1530,
+        "candidate": 1368,
+        "delta": -162
+      },
+      "max_active_lasers": {
+        "baseline": 0,
+        "candidate": 0,
+        "delta": 0
+      },
+      "power_end": {
+        "baseline": 2.0,
+        "candidate": 0.0,
+        "delta": -2.0
+      },
+      "read_ms": {
+        "median": {
+          "baseline": 9.839900070801377,
+          "candidate": 8.676250057760626,
+          "delta": -1.1636500130407512
+        },
+        "p95": {
+          "baseline": 11.913000023923814,
+          "candidate": 11.153300059959292,
+          "delta": -0.7596999639645219
+        },
+        "max": {
+          "baseline": 31.950399978086352,
+          "candidate": 37.99280000384897,
+          "delta": 6.042400025762618
+        }
+      },
+      "plan_ms": {
+        "median": {
+          "baseline": 33.36840000702068,
+          "candidate": 31.23199992114678,
+          "delta": -2.136400085873902
+        },
+        "p95": {
+          "baseline": 51.95269989781082,
+          "candidate": 47.15560004115105,
+          "delta": -4.79709985665977
+        },
+        "max": {
+          "baseline": 86.7316999938339,
+          "candidate": 99.49609998147935,
+          "delta": 12.764399987645447
+        }
+      },
+      "action_lag_frames": {
+        "median": {
+          "baseline": 2.0,
+          "candidate": 2.0,
+          "delta": 0.0
+        },
+        "p95": {
+          "baseline": 3.0,
+          "candidate": 3.0,
+          "delta": 0.0
+        },
+        "max": {
+          "baseline": 5.0,
+          "candidate": 5.0,
+          "delta": 0.0
+        }
+      }
+    },
+    "5": {
+      "stage_label": "Stage 5",
+      "death_count": {
+        "baseline": 15,
+        "candidate": 10,
+        "delta": -5
+      },
+      "decision_count": {
+        "baseline": 9156,
+        "candidate": 9691,
+        "delta": 535
+      },
+      "max_active_bullets": {
+        "baseline": 1530,
+        "candidate": 1531,
+        "delta": 1
+      },
+      "max_active_lasers": {
+        "baseline": 0,
+        "candidate": 0,
+        "delta": 0
+      },
+      "power_end": {
+        "baseline": 0.0,
+        "candidate": 8.0,
+        "delta": 8.0
+      },
+      "read_ms": {
+        "median": {
+          "baseline": 9.642249962780625,
+          "candidate": 9.276900091208518,
+          "delta": -0.3653498715721071
+        },
+        "p95": {
+          "baseline": 12.05429993569851,
+          "candidate": 11.311599984765053,
+          "delta": -0.7426999509334564
+        },
+        "max": {
+          "baseline": 32.933900016359985,
+          "candidate": 24.09280010033399,
+          "delta": -8.841099916025996
+        }
+      },
+      "plan_ms": {
+        "median": {
+          "baseline": 32.24485000828281,
+          "candidate": 32.0403000805527,
+          "delta": -0.20454992773011327
+        },
+        "p95": {
+          "baseline": 54.682500078342855,
+          "candidate": 54.105999995954335,
+          "delta": -0.5765000823885202
+        },
+        "max": {
+          "baseline": 102.49950003344566,
+          "candidate": 95.10320005938411,
+          "delta": -7.396299974061549
+        }
+      },
+      "action_lag_frames": {
+        "median": {
+          "baseline": 2.0,
+          "candidate": 2.0,
+          "delta": 0.0
+        },
+        "p95": {
+          "baseline": 4.0,
+          "candidate": 4.0,
+          "delta": 0.0
+        },
+        "max": {
+          "baseline": 6.0,
+          "candidate": 7.0,
+          "delta": 1.0
+        }
+      }
+    },
+    "7": {
+      "stage_label": "Final B / Kaguya",
+      "death_count": {
+        "baseline": 19,
+        "candidate": 27,
+        "delta": 8
+      },
+      "decision_count": {
+        "baseline": 15815,
+        "candidate": 16139,
+        "delta": 324
+      },
+      "max_active_bullets": {
+        "baseline": 1262,
+        "candidate": 1228,
+        "delta": -34
+      },
+      "max_active_lasers": {
+        "baseline": 240,
+        "candidate": 245,
+        "delta": 5
+      },
+      "power_end": {
+        "baseline": 6.0,
+        "candidate": 7.0,
+        "delta": 1.0
+      },
+      "read_ms": {
+        "median": {
+          "baseline": 9.160100016742945,
+          "candidate": 9.116100030951202,
+          "delta": -0.0439999857917428
+        },
+        "p95": {
+          "baseline": 10.359900072216988,
+          "candidate": 11.249199975281954,
+          "delta": 0.8892999030649662
+        },
+        "max": {
+          "baseline": 23.131499998271465,
+          "candidate": 31.345400027930737,
+          "delta": 8.213900029659271
+        }
+      },
+      "plan_ms": {
+        "median": {
+          "baseline": 30.05719999782741,
+          "candidate": 30.97020008135587,
+          "delta": 0.9130000835284591
+        },
+        "p95": {
+          "baseline": 42.19039995223284,
+          "candidate": 44.0834000473842,
+          "delta": 1.8930000951513648
+        },
+        "max": {
+          "baseline": 78.29029997810721,
+          "candidate": 80.72179998271167,
+          "delta": 2.431500004604459
+        }
+      },
+      "action_lag_frames": {
+        "median": {
+          "baseline": 2.0,
+          "candidate": 2.0,
+          "delta": 0.0
+        },
+        "p95": {
+          "baseline": 3.0,
+          "candidate": 3.0,
+          "delta": 0.0
+        },
+        "max": {
+          "baseline": 5.0,
+          "candidate": 6.0,
+          "delta": 1.0
+        }
+      }
+    }
+  }
+}

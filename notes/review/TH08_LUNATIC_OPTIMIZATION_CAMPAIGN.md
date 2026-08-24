@@ -12,12 +12,13 @@ continue to live in `TH08_SOURCE_AND_RUNTIME_AUDIT.md`.
 
 - Physical target: Sakuya/Remilia, Lunatic, Route 2, Final-B, hard no-Bomb.
 - Current integrated checkpoint:
-  `lunatic_route2_fullrun_unattended_20260824_022909`, 61 native hit edges,
-  stage counts `5/2/5/15/15/19`, zero Bomb input, route complete. It ran the
-  OPT-001 implementation at commit `6305dabae9ee6f6b29f5ad1588e2dfab8a079bae`.
+  `lunatic_route2_fullrun_unattended_20260824_034510`, 67 native hit edges,
+  stage counts `0/4/5/21/10/27`, zero Bomb input, route complete. It ran the
+  OPT-002 implementation at commit `f126fb2003f3142cb2b4fcbc003eba667967e270`.
 - Immediate comparison reference:
-  `lunatic_route2_fullrun_unattended_20260823_183138`, 58 native hit edges,
-  stage counts `4/6/5/13/9/21`, zero Bomb input, route complete.
+  `lunatic_route2_fullrun_unattended_20260824_022909`, 61 native hit edges,
+  stage counts `5/2/5/15/15/19`, zero Bomb input, route complete. It ran
+  OPT-001 before the coalesced player-control-root change.
 - Historical Windows reference:
   `lunatic_route2_fullrun_unattended_20260730_222529`, 68 hit edges, stage
   counts `2/3/5/20/15/23`.  It used pretarget guidance that is not accepted as
@@ -57,7 +58,8 @@ change when its semantic and timing gate passes.
 | ID | Track | Change | Risk | Status | Physical result |
 | --- | --- | --- | --- | --- | --- |
 | OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | VALIDATED-PHYSICAL | 61 hits; both prefix medians down about 1.2 ms; keep |
-| OPT-002 | sensing latency | Coalesce input and position fields inside the existing bracketed player-control root, preserving duplicate before/after observations | low-medium | FIXED-OFFLINE | pending |
+| OPT-002 | sensing latency | Coalesce input and position fields inside the existing bracketed player-control root, preserving duplicate before/after observations | low-medium | VALIDATED-MECHANISM | 67 hits; read latency down, semantic sensor evidence clean; keep, but route exposed OPT-002A |
+| OPT-002A | control-delay correctness | Close the post-reset deadline-miss feedback self-lock without weakening issue freshness | medium | QUEUED-NEXT | pending |
 | OPT-003 | local/issue latency | Share immutable action-conditioned hazard projection work between planning and issue recertification where versions are exact-equal | medium | QUEUED | pending |
 | FB-001 | future births | Build a source-guided, executable-validated producer inventory for the pre-spell-190 route and rank reached `UNKNOWN` causes by hit-window impact | low, shadow | QUEUED | pending |
 | FB-002 | future births | Replace reached monolithic ECL special cases with smaller typed transition/emission primitives derived from source control flow and differential fixtures | medium-high | QUEUED | pending |
@@ -158,7 +160,7 @@ audits.
 
 ## OPT-002 — Coalesced Bracketed Player-Control Root
 
-Status: **FIXED-OFFLINE**
+Status: **VALIDATED-MECHANISM; FOLLOW-UP REQUIRED**
 
 Global failure addressed: every decision ends its hazard capture with a fresh
 player/control root, and every `ReadProcessMemory` round trip contributes to
@@ -209,8 +211,45 @@ before/after observations. Tests cover the authoritative offsets, exact call
 order, stable decoding, frozen-clock position and input changes, coherent
 retry, short input/position failures, and dossier metric retention. Focused
 trace/dossier tests pass 17/17, Win32-compatible import smoke passes, and
-complete Linux discovery passes 1,358 tests with five skips. Physical timing
-and route evidence remain pending.
+complete Linux discovery passes 1,358 tests with five skips.
+
+Physical gate: `lunatic_route2_fullrun_unattended_20260824_034510` completed
+the route naturally at frame 229967 with 67 native hit edges, stage counts
+`0/4/5/21/10/27`, 58,020 decisions, zero Bomb input, no foreground
+interruption, and exact-prefix cleanup leftovers `[]`. The controller config
+records the exact seven-call coalesced root. The host ran commit
+`f126fb2003f3142cb2b4fcbc003eba667967e270` on the dedicated prefix/display
+`:98`; its 86,400-second controller duration, 86,700-second trial timeout, and
+86,880-second host timeout were nonbinding.
+
+The direct physical mechanism passed:
+
+- Stage read medians improved in all six stages, by 0.720--1.204 ms versus
+  OPT-001; Stage 4A fell from 9.840 to 8.676 ms.
+- Stage 4A plan median/p95 also fell from 33.368/51.953 to
+  31.232/47.156 ms, while action-lag median/p95/max remained 2/3/5.
+- The new Stage 4A root read itself measured 0.275/0.368 ms median/p95.
+- Complete-route `player_control_root_unstable` events fell from 15 to two;
+  the only Stage 4A retry was not in a pre-hit window. There is no physical
+  evidence of coalesced-field corruption.
+
+The 67 versus 61 total is observational, not a strategy win. Stage 4A rose
+from 15 to 21 hits even though its focus, fast-mode, bottom, side, and corner
+occupancy rates all moved in the safer direction. A frame-level audit found a
+separate controller feedback defect: after the Stage 4A scene reset, low-load
+samples collapsed delay support to `[1]`; frames 72949--73042 then produced
+32 consecutive two-frame deadline holds without feeding the miss back into
+the estimator. The player remained at `(192,384)` until the hit at 73042, and
+only `register_hit()` widened support. OPT-001 had zero exact-`[1]` Stage 4A
+decisions and zero Stage 4A deadline holds; OPT-002 had 331 and 32.
+
+Disposition: **keep the coalesced read mechanism, do not promote the hit
+outcome, and fix the exposed delay feedback loop next.** The faster low-load
+capture legitimately exposed the estimator's unsupported assumption; it did
+not falsify the source layout or read coalescing. The complete Stage 4A causal
+record is in `TH08_OPT002_STAGE4_ROOT_CAUSE.md`. OPT-002A is the next live
+change; no future-birth, planner-ranking, or boundary/focus behavior change
+will be mixed into it.
 
 ## Future-Birth Simplification Contract
 
