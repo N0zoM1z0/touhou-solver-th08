@@ -18,6 +18,48 @@
 
 using touhou_native::local_hazard_stop_status;
 
+namespace {
+
+bool source_aabb_overlap(
+    float player_x,
+    float player_y,
+    float player_half_extent,
+    float hazard_x,
+    float hazard_y,
+    float hazard_half_width,
+    float hazard_half_height
+) {
+    // Player::FUN_0044a230 compares inclusive bounds after each Float3
+    // component has been stored as binary32.  The center-distance shortcut
+    // is not equivalent at touching edges.
+    const float player_left = player_x - player_half_extent;
+    const float player_top = player_y - player_half_extent;
+    const float player_right = player_x + player_half_extent;
+    const float player_bottom = player_y + player_half_extent;
+    const float hazard_left = hazard_x - hazard_half_width;
+    const float hazard_top = hazard_y - hazard_half_height;
+    const float hazard_right = hazard_x + hazard_half_width;
+    const float hazard_bottom = hazard_y + hazard_half_height;
+    return !(
+        player_left > hazard_right
+        || player_top > hazard_bottom
+        || player_right < hazard_left
+        || player_bottom < hazard_top
+    );
+}
+
+float align_clearance_sign(float clearance, bool overlap) {
+    if (overlap) {
+        return std::min(clearance, 0.0F);
+    }
+    return std::max(
+        clearance,
+        std::nextafter(0.0F, std::numeric_limits<float>::infinity())
+    );
+}
+
+}  // namespace
+
 int touhou_native_impl_local_hazards_v1(
     const float* positions_x,
     const float* positions_y,
@@ -196,14 +238,27 @@ int touhou_native_impl_local_hazards_v1(
                 std::fabs(positions_y[position] - bullet_y[bullet])
                 - (player_radius + bullet_half_height[bullet])
             );
-            const bool overlap = dx <= 0.0F && dy <= 0.0F;
-            const float clearance = overlap
+            const bool overlap = source_aabb_overlap(
+                positions_x[position],
+                positions_y[position],
+                player_radius,
+                bullet_x[bullet],
+                bullet_y[bullet],
+                bullet_half_width[bullet],
+                bullet_half_height[bullet]
+            );
+            const bool center_overlap = dx <= 0.0F && dy <= 0.0F;
+            const float metric_clearance = center_overlap
                 ? std::max(dx, dy)
                 : std::hypot(
                     std::max(dx, 0.0F),
                     std::max(dy, 0.0F)
                 );
-            if (clearance <= 0.0F) {
+            const float clearance = align_clearance_sign(
+                metric_clearance,
+                overlap
+            );
+            if (overlap) {
                 ++output_collisions[position];
             }
             const float robust_clearance = clearance - uncertainty;
@@ -364,14 +419,27 @@ int touhou_native_impl_local_hazards_v1(
                 std::fabs(positions_y[position] - body_y[body])
                 - (player_radius + body_half_height[body])
             );
-            const bool overlap = dx <= 0.0F && dy <= 0.0F;
-            const float clearance = overlap
+            const bool overlap = source_aabb_overlap(
+                positions_x[position],
+                positions_y[position],
+                player_radius,
+                body_x[body],
+                body_y[body],
+                body_half_width[body],
+                body_half_height[body]
+            );
+            const bool center_overlap = dx <= 0.0F && dy <= 0.0F;
+            const float metric_clearance = center_overlap
                 ? std::max(dx, dy)
                 : std::hypot(
                     std::max(dx, 0.0F),
                     std::max(dy, 0.0F)
                 );
-            if (clearance <= 0.0F) {
+            const float clearance = align_clearance_sign(
+                metric_clearance,
+                overlap
+            );
+            if (overlap) {
                 ++output_collisions[position];
             }
             const float robust_clearance = (

@@ -565,7 +565,7 @@ rank-conditioned causal claims or changing action policy from it.
 
 ### AUD-025 — Live player lethal half-extents are inflated from 1px to 2px
 
-Status: **CONFIRMED-SOURCE-AND-PHYSICAL; SHADOW LOWER BOUND QUANTIFIED**
+Status: **PARTIALLY FIXED LIVE — LOCAL BULLET/BODY; LASER/GLOBAL PENDING**
 
 **Source evidence:** `Player.cpp` initializes the lethal vector at `+0x3D4`
 from the SHT width divided by two, updates its cached AABB after movement, and
@@ -592,9 +592,18 @@ remain safe, while their minimum clearance increases by 1.0–1.414px. This is
 a large geometry/risk-field error but not evidence of a safe-set or hit-count
 change on every root.
 
+The first authority promotion now gives the NumPy and native local
+bullet/enemy-body kernels explicit Route-2 lethal half-extents `(1,1)` while
+leaving the independent laser capsule and global corridor `PLAYER_RADIUS=2.0`
+paths unchanged.  This split is intentional: replacing the laser capsule with
+radius 1 would under-approximate a rotated 1x1 player AABB at diagonal angles.
+The route dossier records semantics
+`th08-live-local-v2-source-binary32-aabb-player1-state5-only`; a complete
+isolated route is the next behavior gate.
+
 ### AUD-026 — Nonlethal bullet lifecycle states are included as lethal hazards
 
-Status: **CONFIRMED-SOURCE; KNOWN-STATE SHADOW LOWER BOUND QUANTIFIED**
+Status: **PARTIALLY FIXED LIVE — STATE 5 ONLY; FUTURE ANM/CALLBACK OPEN**
 
 **Source evidence:** `BulletManager::OnUpdate` reaches
 `Player::FUN_0044a230` only in native state 1, and skips that collision block
@@ -618,6 +627,17 @@ nonlethal states removes 351 additional collision-grid positions. Because the
 v2 root omitted callback aux, state-1 records are conservatively kept lethal;
 the result is a lower bound, not complete lifecycle impact. Future native
 snapshot ledgers and live nearby-bullet traces now retain callback aux.
+
+Re-reading the authoritative `BulletManager::OnUpdate` control flow closes an
+important promotion trap: states 2, 3, and 4 all jump through
+`activateBullet` to state 1 when their respective ANM VM completes.  State 1
+with nonzero callback aux can likewise become lethal after callback state
+changes.  Filtering those values over a 10–32-frame planner horizon without
+executing the ANM/callback roots would be an unsafe false negative.  State 5,
+by contrast, only advances its removal animation and deallocates; it cannot
+reactivate.  Live local planning therefore filters only state 5 and retains
+states 2/3/4 plus callback-suppressed state 1 conservatively until their future
+steppers exist.
 
 ### AUD-027 — Live laser collision is a capsule, not the native rotated rectangle
 
@@ -744,7 +764,7 @@ and stepping those additional roots.
 
 ### AUD-032 — Collision booleans require binary32 storage and inclusive bounds
 
-Status: **FIXED-OFFLINE FOR AXIS-ALIGNED AABB; LASER SEPARATE**
+Status: **FIXED LIVE FOR LOCAL BULLET/BODY AABB; LASER SEPARATE**
 
 The source player-bullet predicate compares inclusive Float3 AABB bounds.
 The pre-v2 shadow topology computes a symmetric double-precision clearance,
@@ -779,6 +799,18 @@ one-pixel grid counts and all 18 one-step safe actions unchanged.  Binary32
 correctness closes an authority defect at exact edges; it does not manufacture
 a route-level behavior effect where the retained root has no such edge case.
 
+The same stored-bound predicate and sign alignment are now present in both
+live NumPy and native C++ local kernels.  The promotion gate
+`th08_live_source_aabb_promotion_differential_20260824.json` evaluates the
+complete 1,536-slot bullet capacity against 4,096 adversarial candidate
+positions (6,291,456 pairs).  Native and NumPy each match the independently
+transcribed source collision counts at all positions.  The workload exercises
+2,232 positions changed by the former radius-2 geometry, 1,401 positions
+changed by state-5 removal, and 3,149 positions changed by their combination.
+Native evaluation takes 60.51ms versus 155.44ms for NumPy on this deliberately
+oversized one-call stress; these are a parity/throughput gate, not route-frame
+latency estimates.
+
 ### AUD-033 — Player cancel regions precede the lethal AABB call
 
 Status: **CONFIRMED-SOURCE; FUTURE ROOT/STEPPER MISSING**
@@ -798,10 +830,55 @@ would remove, especially after damage-dependent enemy deaths or a modeled
 hit branch.  Retain the region pool and reached creation sources before
 granting multi-frame current-entity or future-birth action authority.
 
+### AUD-034 — The first live source promotion must remain a conservative subset
+
+Status: **IMPLEMENTED-AND-DIFFERENTIAL-GATED; ROUTE RESULT PENDING**
+
+The smallest source-backed behavior change is not the full shadow predicate.
+The live local kernel now combines exact `(1,1)` player bullet/body AABBs,
+binary32 stored bounds, inclusive comparisons, and irreversible state-5
+removal.  It deliberately retains future-activating states 2/3/4, unknown
+callback-aux transitions, the radius-2 laser capsule, and all global corridor
+geometry.  Thus every removed local bullet hazard is backed either by the
+Route-2 SHT/native root or by a lifecycle state that cannot return to lethal
+state 1; no removal assumes an unimplemented future ANM/callback transition.
+
+The tracked high-density gate has zero native/source, NumPy/source, and
+native/NumPy collision-count mismatches across 6.29 million pairs.  It reports
+7,797 promoted collision pairs versus 13,221 under the combined historical
+radius-2/all-state predicate.  That difference is intentionally adversarial,
+not a hit prediction.  Its canonical JSON SHA-256 is
+`e6423338e7cee9feb426ac83e77ef98d1fd42c9afa16a34c02077a3f393b7c6a`.
+A complete isolated Lunatic Route-2 run is required to
+measure the actual stage/contact effect and to reject any latency or policy
+regression.
+
+### AUD-035 — Radius-2 geometry was hiding a retained hit-timing false negative
+
+Status: **CONFIRMED-REGRESSION-FIXTURE; TIMING ROOT CAUSE OPEN**
+
+The retained CE frame-3254 fixture was captured before a physical contact with
+bullet slot 1136.  Under the historical radius-2 player geometry, its
+three-frame control-delay projection was negative and requested a Bomb.  The
+source-correct `(1,1)` player AABB instead selects `up_fast` with zero modeled
+collisions and only `+0.2908877px` pipeline clearance.  Source inspection
+confirms that `Player::FUN_0044a230` halves the bullet's full size and compares
+it with the cached player AABB, so restoring radius 2 would reintroduce a known
+geometry error rather than fix the physical discrepancy.
+
+This fixture therefore isolates a second defect that the old inflated box was
+masking: capture-epoch alignment, future bullet/player update order, or input
+issue latency can still place the physical player inside a bullet that the
+linear prefix leaves barely positive.  The regression test now preserves this
+positive sub-pixel discrepancy explicitly.  Do not interpret the geometry
+promotion as a complete safety proof; compare sub-pixel-positive hit precursors
+and timing windows in the next route, then repair the timing/root projection
+rather than padding all bullets by one pixel.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,386 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,389 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

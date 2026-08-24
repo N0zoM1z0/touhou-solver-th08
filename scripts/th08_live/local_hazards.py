@@ -12,8 +12,16 @@ from th08_laser_runtime import (
     pack_laser_frame as _pack_laser_frame,
 )
 from th08_live.models import Bullet, EnemyBody, Item, PackedBulletSnapshot
-from th08_live.movement import PLAYER_RADIUS
+from th08_live.movement import (
+    PLAYER_LETHAL_HALF_HEIGHT,
+    PLAYER_LETHAL_HALF_WIDTH,
+)
 from touhou_control import native_backend
+
+
+LIVE_LOCAL_COLLISION_SEMANTICS_VERSION = (
+    "th08-live-local-v2-source-binary32-aabb-player1-state5-only"
+)
 
 
 # Observed in the retained native root2129 H=8 lifecycle differential:
@@ -22,13 +30,109 @@ from touhou_control import native_backend
 # half-step, transitions to state 1, then stores the ordinary full step in the
 # same bullet-manager call.
 _STATE2_COMPLETION_TIMER = 9
+_RETIRED_BULLET_STATE = 5
+
+
+def _source_aabb_overlap_mask(
+    positions_x: np.ndarray,
+    positions_y: np.ndarray,
+    hazard_x: np.ndarray,
+    hazard_y: np.ndarray,
+    hazard_half_width: np.ndarray,
+    hazard_half_height: np.ndarray,
+) -> np.ndarray:
+    """Fast local transcription of TH08's stored Float3 AABB predicate."""
+
+    player_x = np.asarray(positions_x, dtype=np.float32)[:, None]
+    player_y = np.asarray(positions_y, dtype=np.float32)[:, None]
+    hazard_x = np.asarray(hazard_x, dtype=np.float32)[None, :]
+    hazard_y = np.asarray(hazard_y, dtype=np.float32)[None, :]
+    hazard_half_width = np.asarray(
+        hazard_half_width,
+        dtype=np.float32,
+    )[None, :]
+    hazard_half_height = np.asarray(
+        hazard_half_height,
+        dtype=np.float32,
+    )[None, :]
+    player_left = np.asarray(
+        player_x - np.float32(PLAYER_LETHAL_HALF_WIDTH),
+        dtype=np.float32,
+    )
+    player_right = np.asarray(
+        player_x + np.float32(PLAYER_LETHAL_HALF_WIDTH),
+        dtype=np.float32,
+    )
+    player_top = np.asarray(
+        player_y - np.float32(PLAYER_LETHAL_HALF_HEIGHT),
+        dtype=np.float32,
+    )
+    player_bottom = np.asarray(
+        player_y + np.float32(PLAYER_LETHAL_HALF_HEIGHT),
+        dtype=np.float32,
+    )
+    hazard_left = np.asarray(
+        hazard_x - hazard_half_width,
+        dtype=np.float32,
+    )
+    hazard_right = np.asarray(
+        hazard_x + hazard_half_width,
+        dtype=np.float32,
+    )
+    hazard_top = np.asarray(
+        hazard_y - hazard_half_height,
+        dtype=np.float32,
+    )
+    hazard_bottom = np.asarray(
+        hazard_y + hazard_half_height,
+        dtype=np.float32,
+    )
+    return ~(
+        (player_left > hazard_right)
+        | (player_top > hazard_bottom)
+        | (player_right < hazard_left)
+        | (player_bottom < hazard_top)
+    )
+
+
+def _align_clearance_sign(
+    clearance: np.ndarray,
+    overlap: np.ndarray,
+) -> np.ndarray:
+    """Retain the risk metric while making its sign match source booleans."""
+
+    zero = np.asarray(0.0, dtype=clearance.dtype)
+    positive = np.nextafter(zero, np.asarray(np.inf, dtype=clearance.dtype))
+    return np.where(
+        overlap,
+        np.minimum(clearance, zero),
+        np.maximum(clearance, positive),
+    )
+
+
+def _bullet_frame_without_retired_state(
+    bullet_frame: tuple[np.ndarray, ...],
+) -> tuple[np.ndarray, ...]:
+    """Remove only native state 5, which cannot reactivate in OnUpdate."""
+
+    if len(bullet_frame) < 6:
+        return bullet_frame
+    native_state = np.asarray(bullet_frame[5])
+    retained = native_state != _RETIRED_BULLET_STATE
+    if np.all(retained):
+        return bullet_frame
+    return tuple(np.asarray(field)[retained] for field in bullet_frame)
 
 
 def _aabb_clearance(
     px: float, py: float, bullet_x: float, bullet_y: float, bullet: Bullet
 ) -> float:
-    dx = abs(px - bullet_x) - (PLAYER_RADIUS + bullet.half_width)
-    dy = abs(py - bullet_y) - (PLAYER_RADIUS + bullet.half_height)
+    dx = abs(px - bullet_x) - (
+        PLAYER_LETHAL_HALF_WIDTH + bullet.half_width
+    )
+    dy = abs(py - bullet_y) - (
+        PLAYER_LETHAL_HALF_HEIGHT + bullet.half_height
+    )
     if dx <= 0.0 and dy <= 0.0:
         return max(dx, dy)
     return math.hypot(max(dx, 0.0), max(dy, 0.0))
@@ -310,6 +414,7 @@ def _numpy_hazards_for_positions(
     collisions = np.zeros(count, dtype=np.int32)
     minimum = np.full(count, np.inf, dtype=np.float64)
     time_weight = 1.0 / (1.0 + 0.08 * (step - 1))
+    bullet_frame = _bullet_frame_without_retired_state(bullet_frame)
     bullet_x, bullet_y, half_width, half_height, transformed = bullet_frame[:5]
     if bullet_x.size:
         margin = 84.0
@@ -332,19 +437,27 @@ def _numpy_hazards_for_positions(
                 & (bullet_y[None, :] <= positions_y[:, None] + margin)
             )
             dx = np.abs(positions_x[:, None] - bullet_x[None, :]) - (
-                PLAYER_RADIUS + half_width[None, :]
+                PLAYER_LETHAL_HALF_WIDTH + half_width[None, :]
             )
             dy = np.abs(positions_y[:, None] - bullet_y[None, :]) - (
-                PLAYER_RADIUS + half_height[None, :]
+                PLAYER_LETHAL_HALF_HEIGHT + half_height[None, :]
             )
-            overlap = (dx <= 0.0) & (dy <= 0.0)
+            overlap = _source_aabb_overlap_mask(
+                positions_x,
+                positions_y,
+                bullet_x,
+                bullet_y,
+                half_width,
+                half_height,
+            )
             clearance = np.where(
-                overlap,
+                (dx <= 0.0) & (dy <= 0.0),
                 np.maximum(dx, dy),
                 np.hypot(np.maximum(dx, 0.0), np.maximum(dy, 0.0)),
             )
+            clearance = _align_clearance_sign(clearance, overlap)
             collisions += (
-                (clearance <= 0.0) & position_relevant
+                overlap & position_relevant
             ).sum(axis=1, dtype=np.int32)
             uncertainty = 0.2 * math.sqrt(step) + transformed.astype(np.float32) * min(
                 10.0, 3.0 + 0.35 * step
@@ -490,18 +603,26 @@ def _numpy_hazards_for_positions(
             dtype=np.float32,
         )
         dx = np.abs(positions_x[:, None] - body_x[None, :]) - (
-            PLAYER_RADIUS + half_width[None, :]
+            PLAYER_LETHAL_HALF_WIDTH + half_width[None, :]
         )
         dy = np.abs(positions_y[:, None] - body_y[None, :]) - (
-            PLAYER_RADIUS + half_height[None, :]
+            PLAYER_LETHAL_HALF_HEIGHT + half_height[None, :]
         )
-        overlap = (dx <= 0.0) & (dy <= 0.0)
+        overlap = _source_aabb_overlap_mask(
+            positions_x,
+            positions_y,
+            body_x,
+            body_y,
+            half_width,
+            half_height,
+        )
         clearance = np.where(
-            overlap,
+            (dx <= 0.0) & (dy <= 0.0),
             np.maximum(dx, dy),
             np.hypot(np.maximum(dx, 0.0), np.maximum(dy, 0.0)),
         )
-        collisions += (clearance <= 0.0).sum(axis=1, dtype=np.int32)
+        clearance = _align_clearance_sign(clearance, overlap)
+        collisions += overlap.sum(axis=1, dtype=np.int32)
         robust_clearance = clearance - min(12.0, 0.5 * step)
         minimum = np.minimum(minimum, robust_clearance.min(axis=1))
         danger = np.maximum(64.0 - robust_clearance, 0.0)
@@ -520,6 +641,7 @@ def _native_hazards_for_positions(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Parity-gated native implementation of `_hazards_for_positions`."""
 
+    bullet_frame = _bullet_frame_without_retired_state(bullet_frame)
     bullet_x, bullet_y, half_width, half_height, transformed = bullet_frame[:5]
     packed_lasers = (
         lasers
@@ -565,7 +687,7 @@ def _native_hazards_for_positions(
         positions_x=positions_x,
         positions_y=positions_y,
         step=step,
-        player_radius=PLAYER_RADIUS,
+        player_radius=PLAYER_LETHAL_HALF_WIDTH,
         bullet_x=bullet_x,
         bullet_y=bullet_y,
         bullet_half_width=half_width,

@@ -20,6 +20,13 @@ PLAYFIELD_LEFT = 8.0
 PLAYFIELD_RIGHT = 376.0
 PLAYFIELD_TOP = 16.0
 PLAYFIELD_BOTTOM = 432.0
+# The live route is locked to Sakuya/Remilia.  Its native SHT lethal box and
+# every stable GEO-001A root capture use a 2x2 box centered on the player.
+# Keep PLAYER_RADIUS as the legacy conservative radius used by the still-
+# approximate laser/corridor paths; bullet and enemy-body AABBs use the
+# source-authoritative axis extents below.
+PLAYER_LETHAL_HALF_WIDTH = 1.0
+PLAYER_LETHAL_HALF_HEIGHT = 1.0
 PLAYER_RADIUS = 2.0
 FOCUSED_CARDINAL_SPEED = 2.299999952316284
 FOCUSED_DIAGONAL_SPEED = 1.6263456344604492

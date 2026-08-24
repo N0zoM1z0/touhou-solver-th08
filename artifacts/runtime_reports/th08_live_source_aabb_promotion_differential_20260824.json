@@ -1,0 +1,50 @@
+{
+  "schema": "th08-live-source-aabb-promotion-differential-v1",
+  "role": "offline_promotion_gate_no_action_authority",
+  "source_collision_semantics": "th08-source-collision-v2-binary32-inclusive-aabb",
+  "live_player_lethal_half_extents": [
+    1.0,
+    1.0
+  ],
+  "lifecycle_policy": "filter_state5_only_retain_states2_3_4_and_callback_aux_conservatively_without_future_anm_callback_authority",
+  "native_available": true,
+  "stress": {
+    "seed": 1151479813,
+    "position_count": 4096,
+    "bullet_count": 1536,
+    "retained_bullet_count": 1229,
+    "retired_state5_count": 307,
+    "pair_count": 6291456,
+    "retained_pair_count": 5033984,
+    "oracle_collision_total": 7797,
+    "numpy_collision_total": 7797,
+    "native_collision_total": 7797,
+    "numpy_oracle_collision_mismatch_positions": 0,
+    "native_oracle_collision_mismatch_positions": 0,
+    "numpy_native_collision_mismatch_positions": 0,
+    "numpy_native_minimum_max_abs_error": 2.384185791015625e-07,
+    "numpy_native_risk_max_abs_error": 0.01909722222626442,
+    "legacy_radius2_retained_collision_total": 10762,
+    "legacy_radius2_all_state_collision_total": 13221,
+    "source_radius1_all_state_collision_total": 9483,
+    "geometry_only_changed_positions": 2232,
+    "retired_state5_changed_positions": 1401,
+    "combined_historical_changed_positions": 3149,
+    "timing_ms": {
+      "oracle": 13.089230051264167,
+      "numpy_live": 155.44377209153026,
+      "native_live": 60.51215506158769,
+      "effect_decomposition": 87.06225699279457
+    },
+    "finite_outputs": true
+  },
+  "checks": {
+    "numpy_matches_independent_source_oracle": true,
+    "native_matches_independent_source_oracle": true,
+    "native_matches_numpy_collision_counts": true,
+    "historical_geometry_difference_exercised": true,
+    "retired_state5_difference_exercised": true,
+    "all_outputs_valid": true
+  },
+  "passed": true
+}

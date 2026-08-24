@@ -132,6 +132,15 @@ prefixes all collide. Stage-5 spell 107, for example, has exhaustion warnings
 early. The local layer can report loss well before impact but has no long
 horizon policy with which to recover.
 
+The source-geometry promotion also exposes a narrower residual class that the
+old radius-2 box concealed.  A retained frame-3254 physical-hit precursor now
+has `+0.2908877px` modeled pipeline clearance with the exact `(1,1)` player
+box, even though contact follows.  The source predicate confirms the smaller
+box, so this is evidence for capture/update/issue-timing error, not a reason to
+restore geometric inflation.  The next full route must separately count
+sub-pixel-positive contact precursors while the global planner problem below
+addresses the much larger early-exhaustion class.
+
 ### Boundary and fast-mode labels are correlates
 
 Forty-eight hits carry the boundary factor and 43 carry the fast-mode factor.
@@ -471,6 +480,8 @@ live action authority.
 
 ### B. Exact lethal geometry and lifecycle — simplest promotion
 
+Status: **PARTIAL LIVE PROMOTION GATED; COMPLETE ROUTE PENDING**
+
 1. Implement runtime `(half_width, half_height)` player geometry throughout
    local/native/global paths.
 2. Gate bullets by native lethal state and callback aux state.
@@ -481,6 +492,16 @@ live action authority.
 5. Commit, then run one complete isolated Lunatic Route-2 gate. Compare not
    only hit count, but action-set exhaustion lead, false-hazard removals,
    boundary occupancy, focus/fast choices, and per-stage contacts.
+
+The first safe subset is implemented.  Local NumPy/native bullet and
+enemy-body checks use the Route-2 `(1,1)` lethal box and binary32 inclusive
+bounds, and remove only state 5.  The 1,536-bullet × 4,096-position promotion
+gate has zero disagreement against an independent source oracle.  The broader
+steps above remain intentionally open: states 2/3/4 can activate after ANM
+completion, callback aux can change, the laser is still a radius-2 capsule,
+and the global corridor still uses its legacy scalar radius.  Those paths
+cannot inherit the local filter until their future state/shape authority is
+implemented.
 
 ### C. Exact current-entity forward update
 

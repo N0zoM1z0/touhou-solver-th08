@@ -223,6 +223,7 @@ from th08_live.local_certificates import (
     robust_action_certificates as _robust_action_certificates_impl,
 )
 from th08_live.local_hazards import (  # noqa: F401
+    LIVE_LOCAL_COLLISION_SEMANTICS_VERSION,
     _aabb_clearance,
     _build_bullet_frames,
     _item_value,
@@ -3298,6 +3299,9 @@ def _run_live_session(
                         None,
                     ),
                     "local_hazard_backend": args.local_hazard_backend,
+                    "local_collision_semantics": (
+                        LIVE_LOCAL_COLLISION_SEMANTICS_VERSION
+                    ),
                     "local_hazard_backend_authority": (
                         "parity_gated_native_default_exact_implementation"
                         if args.local_hazard_backend == "native"

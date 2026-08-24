@@ -14,7 +14,6 @@ from typing import Any
 import numpy as np
 
 from th08_live.local_certificates import legacy_robust_action_certificates
-from th08_live.local_hazards import _numpy_hazards_for_positions
 from th08_live.models import Bullet
 from th08_live.movement import (
     LOCAL_PIPELINE_STATE_ACTIONS,
@@ -38,6 +37,36 @@ DEFAULT_ROOT_REPORT = (
     / "th08_native_model_consumable_h1_root2129_20260730.json"
 )
 REPORT_SCHEMA = "th08-source-collision-root-differential-v1"
+
+
+def _historical_radius2_hazards_for_positions(
+    positions_x: np.ndarray,
+    positions_y: np.ndarray,
+    *,
+    step: int,
+    bullet_frame: tuple[np.ndarray, ...],
+    lasers: tuple[object, ...],
+    enemy_bodies: tuple[object, ...],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Freeze the pre-promotion radius-2/all-state root comparison.
+
+    The root contains no lasers or enemy bodies, and the binary32-v2
+    regeneration already proved that exact-edge storage does not change this
+    root.  Keeping this oracle local prevents a later live-kernel promotion
+    from silently rewriting historical audit terminology.
+    """
+
+    return source_collision_hazards_for_positions(
+        positions_x,
+        positions_y,
+        step=step,
+        bullet_frame=bullet_frame,
+        lasers=lasers,
+        enemy_bodies=enemy_bodies,
+        player_half_width=2.0,
+        player_half_height=2.0,
+        filter_bullet_lifecycle=False,
+    )
 
 
 def _sha256(path: Path) -> str:
@@ -147,7 +176,7 @@ def _membership_grid(
         grid_x, grid_y = np.meshgrid(xs, chunk_y)
         positions_x = grid_x.ravel()
         positions_y = grid_y.ravel()
-        legacy_collisions = _numpy_hazards_for_positions(
+        legacy_collisions = _historical_radius2_hazards_for_positions(
             positions_x,
             positions_y,
             step=0,
@@ -254,7 +283,7 @@ def analyze_root_report(
         "laser_scale_bits": (int(state["time_scale_bits"]),),
     }
     legacy_certificates = legacy_robust_action_certificates(
-        hazards_for_positions=_numpy_hazards_for_positions,
+        hazards_for_positions=_historical_radius2_hazards_for_positions,
         **certificate_arguments,
     )
     geometry_certificates = legacy_robust_action_certificates(
@@ -351,6 +380,10 @@ def analyze_root_report(
             "rows": action_rows,
         },
         "authority": {
+            "historical_legacy_geometry": (
+                "frozen_radius2_all_state_aabb; root proven insensitive to "
+                "binary32-v2 edge correction"
+            ),
             "player_geometry": "exact_cached_native_aabb",
             "bullet_state": "retained_native_state",
             "bullet_callback_aux": (

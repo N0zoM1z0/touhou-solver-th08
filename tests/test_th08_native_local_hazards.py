@@ -193,6 +193,74 @@ class NativeLocalHazardParityTests(unittest.TestCase):
                     enemy_bodies=enemy_bodies,
                 )
 
+    def test_live_bullet_aabb_uses_source_binary32_touching_edge(self) -> None:
+        player_x = np.float32(129.168609619)
+        hazard_x = np.float32(121.566139221)
+        hazard_half_width = np.float32(np.float32(13.204931259) * 0.5)
+        self.assertGreater(
+            abs(float(player_x) - float(hazard_x))
+            - (1.0 + float(hazard_half_width)),
+            0.0,
+        )
+        frame = (
+            np.asarray([hazard_x], dtype=np.float32),
+            np.asarray([100.0], dtype=np.float32),
+            np.asarray([hazard_half_width], dtype=np.float32),
+            np.asarray([1.0], dtype=np.float32),
+            np.asarray([False], dtype=np.bool_),
+            np.asarray([1], dtype=np.uint16),
+            np.asarray([0], dtype=np.uint8),
+        )
+        for implementation in (
+            _numpy_hazards_for_positions,
+            _native_hazards_for_positions,
+        ):
+            with self.subTest(implementation=implementation.__name__):
+                _, collisions, minimum = implementation(
+                    np.asarray([player_x], dtype=np.float32),
+                    np.asarray([100.0], dtype=np.float32),
+                    step=1,
+                    bullet_frame=frame,
+                    lasers=_empty_lasers(),
+                    enemy_bodies=(),
+                )
+                np.testing.assert_array_equal(
+                    collisions,
+                    np.asarray([1], dtype=np.int32),
+                )
+                self.assertLessEqual(float(minimum[0]), 0.0)
+
+    def test_only_irreversibly_retired_state_five_is_filtered(self) -> None:
+        bullet_count = 5
+        frame = (
+            np.full(bullet_count, 100.0, dtype=np.float32),
+            np.full(bullet_count, 120.0, dtype=np.float32),
+            np.full(bullet_count, 2.0, dtype=np.float32),
+            np.full(bullet_count, 2.0, dtype=np.float32),
+            np.zeros(bullet_count, dtype=np.bool_),
+            np.asarray([1, 2, 3, 4, 5], dtype=np.uint16),
+            np.zeros(bullet_count, dtype=np.uint8),
+        )
+        for implementation in (
+            _numpy_hazards_for_positions,
+            _native_hazards_for_positions,
+        ):
+            with self.subTest(implementation=implementation.__name__):
+                _, collisions, _ = implementation(
+                    np.asarray([100.0], dtype=np.float32),
+                    np.asarray([120.0], dtype=np.float32),
+                    step=1,
+                    bullet_frame=frame,
+                    lasers=_empty_lasers(),
+                    enemy_bodies=(),
+                )
+                # States 2/3/4 can still activate after their ANM completes;
+                # only state 5 is guaranteed never to return to state 1.
+                np.testing.assert_array_equal(
+                    collisions,
+                    np.asarray([4], dtype=np.int32),
+                )
+
     def test_randomized_valid_frames_match_independent_numpy_oracle(
         self,
     ) -> None:

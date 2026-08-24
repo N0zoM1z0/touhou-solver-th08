@@ -183,7 +183,7 @@ class SourceCollisionTests(unittest.TestCase):
             0.0,
         )
 
-    def test_vectorized_bullet_geometry_matches_legacy_when_bound_equal(self) -> None:
+    def test_vectorized_bullet_geometry_matches_live_when_bound_equal(self) -> None:
         positions_x = np.asarray([0.0, 3.5, 10.0, 20.0], dtype=np.float32)
         positions_y = np.zeros(4, dtype=np.float32)
         frame = _bullet_frame()
@@ -203,8 +203,8 @@ class SourceCollisionTests(unittest.TestCase):
             bullet_frame=frame,
             lasers=(),
             enemy_bodies=(),
-            player_half_width=2.0,
-            player_half_height=2.0,
+            player_half_width=1.0,
+            player_half_height=1.0,
             filter_bullet_lifecycle=False,
         )
 
