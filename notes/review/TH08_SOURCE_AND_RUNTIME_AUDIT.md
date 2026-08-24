@@ -675,6 +675,71 @@ source-complete producer projection and make its exact version/coverage part
 of the hard action certificate. The complete architecture and staged plan are
 tracked in `TH08_SOURCE_AUTHORITATIVE_SOLVER_AUDIT.md`.
 
+### AUD-030 — Direct-fire fan parity and automatic player aim diverge from source
+
+Status: **CONFIRMED-SOURCE; OFFLINE FIX NEXT**
+
+`BulletManager::FUN_0042f5f0` uses `descriptor->count1 & 1` to center fan
+modes 0 and 1.  The future-birth envelope instead uses instruction flags.  A
+58,752-case deterministic sweep over modes, indices, counts, and flags found
+9,792 angle disagreements, confined to fan modes 0/1.  Of 83 statically
+decoded Route-2 fan sites with literal count1, 42 have count/flag parity
+disagreement; of the 45 fully literal sites, 22 are affected.
+
+The same source function automatically adds `angleToPlayer` in modes 0, 2,
+and 4.  The ordinary source builder currently sets `aim_angle=0.0` for every
+event, and causal future conditioning consequently preserves a false zero
+rather than recomputing aim from each candidate player path.  Fix both in one
+versioned spawn-semantics change and gate it with an independent source
+transcription, decoded-ECL atlas differential, and 1,536-bullet density stress.
+Do not alter the signed-low-word count decoder: `BulletSpawnDescriptor`
+stores count1/count2 as signed 16-bit fields, so that behavior is correct.
+
+### AUD-031 — GEO-001B complete route exposes material Stage-5 false hazards
+
+Status: **VALIDATED-PHYSICAL SHADOW; NO ACTION AUTHORITY**
+
+Run `lunatic_route2_fullrun_unattended_20260824_074407` at exact clean commit
+`8b1c3de4de4f5c776644aaebab68e18d649eba2b` naturally completed Sakuya/Remilia
+Lunatic Final B at frame 226632 with 57 hits and stage counts
+`3/7/4/15/10/18`.  It passed hard no-Bomb across 56,539 decisions and left no
+process in its isolated Wine prefix.  Stage 4A remained exactly 15 hits versus
+the 60-hit source-audit baseline, while its read/plan p95 improved from
+`11.543/50.844 ms` to `10.370/49.044 ms`; there is no Stage-4 regression to
+attribute to the shadow instrumentation.
+
+The streamed lifecycle ledger covers 21,394,298 bullet-by-decision
+observations.  The legacy selector included 2,689,327 source-nonlethal
+observations (12.5703%).  Stage 5 contributed 1,125,175 of 4,973,810
+(22.6220%), including 840,965 state-1 observations on 1,120 decision frames
+whose callback aux byte suppressed collision.  Stage 4A was 11.4902% and had
+no callback suppression.  These counts establish a large Stage-5 modeling
+error, but do not establish which actions or hits would change after
+promotion: the shadow never influenced input and route-wide geometry was not
+retained outside the 160-pixel trace radius.
+
+The same route recorded native state totals `1:19,545,936`, `2:1,345,200`,
+`3:25,034`, `4:93,130`, `5:384,998`, plus 393,216 laser observations.  Future
+activation of states 2/3/4 depends on ANM-script completion, and callback aux
+can be toggled by the exact `ReisenFreezeBullets`/`FUN_00424c40` ECL paths.
+Only current-frame eligibility is ready for exact promotion without retaining
+and stepping those additional roots.
+
+### AUD-032 — Collision booleans require binary32 storage and inclusive bounds
+
+Status: **CONFIRMED-SOURCE; REPRODUCIBLE ORACLE/FUZZ PENDING**
+
+The source player-bullet predicate compares inclusive Float3 AABB bounds.
+The current shadow topology computes a symmetric double-precision clearance,
+which is mathematically similar but not executable-bit-exact at touching
+edges.  An edge-focused two-million-case diagnostic found 135,386 boolean
+disagreements (134,938 current-false/source-true and 448 in the reverse
+direction).  This deliberately adversarial rate is not a live-route estimate;
+it proves the authority kernel needs explicit binary32 stores and inclusive
+comparisons.  Laser collision has the additional `sinf`/`cosf` and rotated-
+Float3 boundary, so it must receive a separate oracle rather than inherit the
+bullet result.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the complete repository suite

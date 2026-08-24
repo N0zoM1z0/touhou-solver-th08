@@ -1,0 +1,692 @@
+{
+  "authority": {
+    "accepted_for": "complete per-decision current-pool lifecycle counts, native player AABB stability, observed laser density, and latency",
+    "complete_geometric_inventory_retained": false,
+    "hit_spell_attribution": "decision_row_observation_only; use the causal run dossier for spell hit attribution",
+    "nearby_geometry_trace_radius": 160.0,
+    "not_accepted_for": "hit-count causality, complete route-wide geometric replay, multi-frame state2/3/4 activation without ANM VM state, callback-aux future transitions, executable-bit-exact laser trigonometry, or live action authority",
+    "shadow_changed_actions": false
+  },
+  "route": {
+    "bullets": {
+      "callback_suppressed_state1_observations": 840965,
+      "decoded_nonzero_state_observations": 21394298,
+      "frames_with_callback_suppression": 1120,
+      "frames_with_legacy_only_candidates": 35878,
+      "legacy_collision_candidate_observations": 21394298,
+      "legacy_only_candidate_fraction": 0.12570297936394081,
+      "legacy_only_candidate_observations": 2689327,
+      "max_decoded_nonzero_state_count": 1532,
+      "max_legacy_only_candidate_count": 1327,
+      "native_state_observations": {
+        "1": 19545936,
+        "2": 1345200,
+        "3": 25034,
+        "4": 93130,
+        "5": 384998
+      },
+      "source_lethal_eligible_observations": 18704971,
+      "source_nonlethal_lifecycle_observations": 2689327
+    },
+    "decision_count": 56539,
+    "decision_row_spell_hits": [
+      {
+        "hit_count": 14,
+        "name": "",
+        "spell_id": 0
+      },
+      {
+        "hit_count": 1,
+        "name": "\u706f\u7b26\u300c\u30d5\u30a1\u30a4\u30e4\u30d5\u30e9\u30a4\u30d5\u30a7\u30ce\u30e1\u30ce\u30f3\u300d",
+        "spell_id": 5
+      },
+      {
+        "hit_count": 2,
+        "name": "\u731b\u6bd2\u300c\u6bd2\u86fe\u306e\u6697\u95c7\u6f14\u821e\u300d",
+        "spell_id": 20
+      },
+      {
+        "hit_count": 3,
+        "name": "\u7523\u970a\u300c\u30d5\u30a1\u30fc\u30b9\u30c8\u30d4\u30e9\u30df\u30c3\u30c9\u300d",
+        "spell_id": 35
+      },
+      {
+        "hit_count": 3,
+        "name": "\u5922\u5883\u300c\u4e8c\u91cd\u5927\u7d50\u754c\u300d",
+        "spell_id": 57
+      },
+      {
+        "hit_count": 3,
+        "name": "\u6563\u970a\u300c\u5922\u60f3\u5c01\u5370\u3000\u5bc2\u300d",
+        "spell_id": 61
+      },
+      {
+        "hit_count": 2,
+        "name": "\u795e\u6280\u300c\u516b\u65b9\u9f8d\u6bba\u9663\u300d",
+        "spell_id": 65
+      },
+      {
+        "hit_count": 1,
+        "name": "\u56de\u970a\u300c\u5922\u60f3\u5c01\u5370\u3000\u4f98\u300d",
+        "spell_id": 69
+      },
+      {
+        "hit_count": 3,
+        "name": "\u5927\u7d50\u754c\u300c\u535a\u9e97\u5f3e\u5e55\u7d50\u754c\u300d",
+        "spell_id": 73
+      },
+      {
+        "hit_count": 2,
+        "name": "\u5e7b\u6ce2\u300c\u8d64\u773c\u50ac\u7720(\u30de\u30a4\u30f3\u30c9\u30d6\u30ed\u30fc\u30a4\u30f3\u30b0)\u300d",
+        "spell_id": 103
+      },
+      {
+        "hit_count": 3,
+        "name": "\u72c2\u8996\u300c\u72c2\u8996\u8abf\u5f8b(\u30a4\u30ea\u30e5\u30fc\u30b8\u30e7\u30f3\u30b7\u30fc\u30ab\u30fc)\u300d",
+        "spell_id": 107
+      },
+      {
+        "hit_count": 1,
+        "name": "\u61f6\u60f0\u300c\u751f\u795e\u505c\u6b62(\u30de\u30a4\u30f3\u30c9\u30b9\u30c8\u30c3\u30d1\u30fc)\u300d",
+        "spell_id": 111
+      },
+      {
+        "hit_count": 2,
+        "name": "\u6563\u7b26\u300c\u771f\u5b9f\u306e\u6708(\u30a4\u30f3\u30d3\u30b8\u30d6\u30eb\u30d5\u30eb\u30e0\u30fc\u30f3)\u300d",
+        "spell_id": 115
+      },
+      {
+        "hit_count": 5,
+        "name": "\u85ac\u7b26\u300c\u58fa\u4e2d\u306e\u5927\u9280\u6cb3\u300d",
+        "spell_id": 150
+      },
+      {
+        "hit_count": 1,
+        "name": "\u795e\u5b9d\u300c\u30d6\u30ea\u30ea\u30a2\u30f3\u30c8\u30c9\u30e9\u30b4\u30f3\u30d0\u30ec\u30c3\u30bf\u300d",
+        "spell_id": 154
+      },
+      {
+        "hit_count": 3,
+        "name": "\u795e\u5b9d\u300c\u30e9\u30a4\u30d5\u30b9\u30d7\u30ea\u30f3\u30b0\u30a4\u30f3\u30d5\u30a3\u30cb\u30c6\u30a3\u300d",
+        "spell_id": 166
+      },
+      {
+        "hit_count": 7,
+        "name": "\u795e\u5b9d\u300c\u84ec\u83b1\u306e\u7389\u306e\u679d  -\u5922\u8272\u306e\u90f7-\u300d",
+        "spell_id": 170
+      },
+      {
+        "hit_count": 1,
+        "name": "\u300c\u6c38\u591c\u8fd4\u3057  -\u5f85\u5bb5-\u300d",
+        "spell_id": 174
+      }
+    ],
+    "hit_count": 57,
+    "lasers": {
+      "frames_with_lasers": 5100,
+      "laser_observations": 393216,
+      "max_laser_count": 255
+    },
+    "player": {
+      "cached_aabb_coherent_count": 55890,
+      "geometry_stable_count": 56539,
+      "half_extent_counts": {
+        "1x1": 56539
+      },
+      "valid_count": 56539
+    },
+    "timing": {
+      "action_lag_frames": {
+        "count": 56539,
+        "max": 6.0,
+        "median": 2.0,
+        "p95": 3.0
+      },
+      "observe_to_input_ms": {
+        "count": 56539,
+        "max": 140.47570002730936,
+        "median": 44.61219999939203,
+        "p95": 64.66169992927462
+      },
+      "plan_ms": {
+        "count": 56539,
+        "max": 102.69580001477152,
+        "median": 30.758699984289706,
+        "p95": 47.11659997701645
+      },
+      "read_ms": {
+        "count": 56539,
+        "max": 35.95140005927533,
+        "median": 8.822800009511411,
+        "p95": 10.496599948965013
+      }
+    }
+  },
+  "schema": "th08-source-collision-route-audit-v1",
+  "shadow_schema": "th08-source-collision-shadow-v1",
+  "stages": [
+    {
+      "bullets": {
+        "callback_suppressed_state1_observations": 0,
+        "decoded_nonzero_state_observations": 1245040,
+        "frames_with_callback_suppression": 0,
+        "frames_with_legacy_only_candidates": 3206,
+        "legacy_collision_candidate_observations": 1245040,
+        "legacy_only_candidate_fraction": 0.09101314014007582,
+        "legacy_only_candidate_observations": 113315,
+        "max_decoded_nonzero_state_count": 1173,
+        "max_legacy_only_candidate_count": 1166,
+        "native_state_observations": {
+          "1": 1131725,
+          "2": 28529,
+          "3": 24287,
+          "4": 37688,
+          "5": 22811
+        },
+        "source_lethal_eligible_observations": 1131725,
+        "source_nonlethal_lifecycle_observations": 113315
+      },
+      "decision_count": 5160,
+      "decision_row_spell_hits": [
+        {
+          "hit_count": 2,
+          "name": "",
+          "spell_id": 0
+        },
+        {
+          "hit_count": 1,
+          "name": "\u706f\u7b26\u300c\u30d5\u30a1\u30a4\u30e4\u30d5\u30e9\u30a4\u30d5\u30a7\u30ce\u30e1\u30ce\u30f3\u300d",
+          "spell_id": 5
+        }
+      ],
+      "hit_count": 3,
+      "lasers": {
+        "frames_with_lasers": 0,
+        "laser_observations": 0,
+        "max_laser_count": 0
+      },
+      "player": {
+        "cached_aabb_coherent_count": 5125,
+        "geometry_stable_count": 5160,
+        "half_extent_counts": {
+          "1x1": 5160
+        },
+        "valid_count": 5160
+      },
+      "stage_label": "Stage 1",
+      "stage_route_index": 0,
+      "timing": {
+        "action_lag_frames": {
+          "count": 5160,
+          "max": 5.0,
+          "median": 2.0,
+          "p95": 3.0
+        },
+        "observe_to_input_ms": {
+          "count": 5160,
+          "max": 97.91250003036112,
+          "median": 42.22869989462197,
+          "p95": 54.07099996227771
+        },
+        "plan_ms": {
+          "count": 5160,
+          "max": 74.93819994851947,
+          "median": 28.391600004397333,
+          "p95": 38.46410010010004
+        },
+        "read_ms": {
+          "count": 5160,
+          "max": 27.954099932685494,
+          "median": 8.874700055457652,
+          "p95": 10.638899984769523
+        }
+      }
+    },
+    {
+      "bullets": {
+        "callback_suppressed_state1_observations": 0,
+        "decoded_nonzero_state_observations": 2451845,
+        "frames_with_callback_suppression": 0,
+        "frames_with_legacy_only_candidates": 4798,
+        "legacy_collision_candidate_observations": 2451845,
+        "legacy_only_candidate_fraction": 0.08801779884128075,
+        "legacy_only_candidate_observations": 215806,
+        "max_decoded_nonzero_state_count": 1197,
+        "max_legacy_only_candidate_count": 805,
+        "native_state_observations": {
+          "1": 2236039,
+          "2": 171956,
+          "4": 1062,
+          "5": 42788
+        },
+        "source_lethal_eligible_observations": 2236039,
+        "source_nonlethal_lifecycle_observations": 215806
+      },
+      "decision_count": 7117,
+      "decision_row_spell_hits": [
+        {
+          "hit_count": 5,
+          "name": "",
+          "spell_id": 0
+        },
+        {
+          "hit_count": 2,
+          "name": "\u731b\u6bd2\u300c\u6bd2\u86fe\u306e\u6697\u95c7\u6f14\u821e\u300d",
+          "spell_id": 20
+        }
+      ],
+      "hit_count": 7,
+      "lasers": {
+        "frames_with_lasers": 0,
+        "laser_observations": 0,
+        "max_laser_count": 0
+      },
+      "player": {
+        "cached_aabb_coherent_count": 7025,
+        "geometry_stable_count": 7117,
+        "half_extent_counts": {
+          "1x1": 7117
+        },
+        "valid_count": 7117
+      },
+      "stage_label": "Stage 2",
+      "stage_route_index": 1,
+      "timing": {
+        "action_lag_frames": {
+          "count": 7117,
+          "max": 4.0,
+          "median": 2.0,
+          "p95": 3.0
+        },
+        "observe_to_input_ms": {
+          "count": 7117,
+          "max": 103.30099996645004,
+          "median": 43.060600059106946,
+          "p95": 55.07390003185719
+        },
+        "plan_ms": {
+          "count": 7117,
+          "max": 76.0580999776721,
+          "median": 29.67799990437925,
+          "p95": 40.48490000423044
+        },
+        "read_ms": {
+          "count": 7117,
+          "max": 14.356599887833,
+          "median": 8.689199923537672,
+          "p95": 9.9222999997437
+        }
+      }
+    },
+    {
+      "bullets": {
+        "callback_suppressed_state1_observations": 0,
+        "decoded_nonzero_state_observations": 2215180,
+        "frames_with_callback_suppression": 0,
+        "frames_with_legacy_only_candidates": 4250,
+        "legacy_collision_candidate_observations": 2215180,
+        "legacy_only_candidate_fraction": 0.08711075397936059,
+        "legacy_only_candidate_observations": 192966,
+        "max_decoded_nonzero_state_count": 938,
+        "max_legacy_only_candidate_count": 730,
+        "native_state_observations": {
+          "1": 2022214,
+          "2": 158633,
+          "3": 747,
+          "5": 33586
+        },
+        "source_lethal_eligible_observations": 2022214,
+        "source_nonlethal_lifecycle_observations": 192966
+      },
+      "decision_count": 7545,
+      "decision_row_spell_hits": [
+        {
+          "hit_count": 1,
+          "name": "",
+          "spell_id": 0
+        },
+        {
+          "hit_count": 3,
+          "name": "\u7523\u970a\u300c\u30d5\u30a1\u30fc\u30b9\u30c8\u30d4\u30e9\u30df\u30c3\u30c9\u300d",
+          "spell_id": 35
+        }
+      ],
+      "hit_count": 4,
+      "lasers": {
+        "frames_with_lasers": 486,
+        "laser_observations": 87240,
+        "max_laser_count": 200
+      },
+      "player": {
+        "cached_aabb_coherent_count": 7496,
+        "geometry_stable_count": 7545,
+        "half_extent_counts": {
+          "1x1": 7545
+        },
+        "valid_count": 7545
+      },
+      "stage_label": "Stage 3",
+      "stage_route_index": 2,
+      "timing": {
+        "action_lag_frames": {
+          "count": 7545,
+          "max": 5.0,
+          "median": 2.0,
+          "p95": 3.0
+        },
+        "observe_to_input_ms": {
+          "count": 7545,
+          "max": 120.15380000229925,
+          "median": 43.02420001477003,
+          "p95": 56.97969999164343
+        },
+        "plan_ms": {
+          "count": 7545,
+          "max": 79.05249996110797,
+          "median": 29.30480008944869,
+          "p95": 41.564300074242055
+        },
+        "read_ms": {
+          "count": 7545,
+          "max": 35.95140005927533,
+          "median": 8.751299930736423,
+          "p95": 10.38910006172955
+        }
+      }
+    },
+    {
+      "bullets": {
+        "callback_suppressed_state1_observations": 0,
+        "decoded_nonzero_state_observations": 4214434,
+        "frames_with_callback_suppression": 0,
+        "frames_with_legacy_only_candidates": 6728,
+        "legacy_collision_candidate_observations": 4214434,
+        "legacy_only_candidate_fraction": 0.11490249936290377,
+        "legacy_only_candidate_observations": 484249,
+        "max_decoded_nonzero_state_count": 1361,
+        "max_legacy_only_candidate_count": 1327,
+        "native_state_observations": {
+          "1": 3730185,
+          "2": 361004,
+          "5": 123245
+        },
+        "source_lethal_eligible_observations": 3730185,
+        "source_nonlethal_lifecycle_observations": 484249
+      },
+      "decision_count": 11535,
+      "decision_row_spell_hits": [
+        {
+          "hit_count": 3,
+          "name": "",
+          "spell_id": 0
+        },
+        {
+          "hit_count": 3,
+          "name": "\u5922\u5883\u300c\u4e8c\u91cd\u5927\u7d50\u754c\u300d",
+          "spell_id": 57
+        },
+        {
+          "hit_count": 3,
+          "name": "\u6563\u970a\u300c\u5922\u60f3\u5c01\u5370\u3000\u5bc2\u300d",
+          "spell_id": 61
+        },
+        {
+          "hit_count": 2,
+          "name": "\u795e\u6280\u300c\u516b\u65b9\u9f8d\u6bba\u9663\u300d",
+          "spell_id": 65
+        },
+        {
+          "hit_count": 1,
+          "name": "\u56de\u970a\u300c\u5922\u60f3\u5c01\u5370\u3000\u4f98\u300d",
+          "spell_id": 69
+        },
+        {
+          "hit_count": 3,
+          "name": "\u5927\u7d50\u754c\u300c\u535a\u9e97\u5f3e\u5e55\u7d50\u754c\u300d",
+          "spell_id": 73
+        }
+      ],
+      "hit_count": 15,
+      "lasers": {
+        "frames_with_lasers": 0,
+        "laser_observations": 0,
+        "max_laser_count": 0
+      },
+      "player": {
+        "cached_aabb_coherent_count": 11360,
+        "geometry_stable_count": 11535,
+        "half_extent_counts": {
+          "1x1": 11535
+        },
+        "valid_count": 11535
+      },
+      "stage_label": "Stage 4A / Reimu",
+      "stage_route_index": 3,
+      "timing": {
+        "action_lag_frames": {
+          "count": 11535,
+          "max": 5.0,
+          "median": 2.0,
+          "p95": 3.0
+        },
+        "observe_to_input_ms": {
+          "count": 11535,
+          "max": 124.32440009433776,
+          "median": 45.012000016868114,
+          "p95": 64.29060001391917
+        },
+        "plan_ms": {
+          "count": 11535,
+          "max": 102.69580001477152,
+          "median": 31.41000005416572,
+          "p95": 49.052400048822165
+        },
+        "read_ms": {
+          "count": 11535,
+          "max": 33.410600037314,
+          "median": 8.619400090537965,
+          "p95": 10.371600044891238
+        }
+      }
+    },
+    {
+      "bullets": {
+        "callback_suppressed_state1_observations": 840965,
+        "decoded_nonzero_state_observations": 4973810,
+        "frames_with_callback_suppression": 1120,
+        "frames_with_legacy_only_candidates": 6053,
+        "legacy_collision_candidate_observations": 4973810,
+        "legacy_only_candidate_fraction": 0.22621994004596074,
+        "legacy_only_candidate_observations": 1125175,
+        "max_decoded_nonzero_state_count": 1532,
+        "max_legacy_only_candidate_count": 1313,
+        "native_state_observations": {
+          "1": 4689600,
+          "2": 205725,
+          "5": 78485
+        },
+        "source_lethal_eligible_observations": 3848635,
+        "source_nonlethal_lifecycle_observations": 1125175
+      },
+      "decision_count": 9533,
+      "decision_row_spell_hits": [
+        {
+          "hit_count": 2,
+          "name": "",
+          "spell_id": 0
+        },
+        {
+          "hit_count": 2,
+          "name": "\u5e7b\u6ce2\u300c\u8d64\u773c\u50ac\u7720(\u30de\u30a4\u30f3\u30c9\u30d6\u30ed\u30fc\u30a4\u30f3\u30b0)\u300d",
+          "spell_id": 103
+        },
+        {
+          "hit_count": 3,
+          "name": "\u72c2\u8996\u300c\u72c2\u8996\u8abf\u5f8b(\u30a4\u30ea\u30e5\u30fc\u30b8\u30e7\u30f3\u30b7\u30fc\u30ab\u30fc)\u300d",
+          "spell_id": 107
+        },
+        {
+          "hit_count": 1,
+          "name": "\u61f6\u60f0\u300c\u751f\u795e\u505c\u6b62(\u30de\u30a4\u30f3\u30c9\u30b9\u30c8\u30c3\u30d1\u30fc)\u300d",
+          "spell_id": 111
+        },
+        {
+          "hit_count": 2,
+          "name": "\u6563\u7b26\u300c\u771f\u5b9f\u306e\u6708(\u30a4\u30f3\u30d3\u30b8\u30d6\u30eb\u30d5\u30eb\u30e0\u30fc\u30f3)\u300d",
+          "spell_id": 115
+        }
+      ],
+      "hit_count": 10,
+      "lasers": {
+        "frames_with_lasers": 0,
+        "laser_observations": 0,
+        "max_laser_count": 0
+      },
+      "player": {
+        "cached_aabb_coherent_count": 9422,
+        "geometry_stable_count": 9533,
+        "half_extent_counts": {
+          "1x1": 9533
+        },
+        "valid_count": 9533
+      },
+      "stage_label": "Stage 5",
+      "stage_route_index": 5,
+      "timing": {
+        "action_lag_frames": {
+          "count": 9533,
+          "max": 6.0,
+          "median": 2.0,
+          "p95": 4.0
+        },
+        "observe_to_input_ms": {
+          "count": 9533,
+          "max": 140.47570002730936,
+          "median": 46.71919997781515,
+          "p95": 89.94249999523163
+        },
+        "plan_ms": {
+          "count": 9533,
+          "max": 81.92389993928373,
+          "median": 31.938300002366304,
+          "p95": 54.91609999444336
+        },
+        "read_ms": {
+          "count": 9533,
+          "max": 15.305900014936924,
+          "median": 9.042299934662879,
+          "p95": 10.760100092738867
+        }
+      }
+    },
+    {
+      "bullets": {
+        "callback_suppressed_state1_observations": 0,
+        "decoded_nonzero_state_observations": 6293989,
+        "frames_with_callback_suppression": 0,
+        "frames_with_legacy_only_candidates": 10843,
+        "legacy_collision_candidate_observations": 6293989,
+        "legacy_only_candidate_fraction": 0.08862678342780707,
+        "legacy_only_candidate_observations": 557816,
+        "max_decoded_nonzero_state_count": 1252,
+        "max_legacy_only_candidate_count": 1215,
+        "native_state_observations": {
+          "1": 5736173,
+          "2": 419353,
+          "4": 54380,
+          "5": 84083
+        },
+        "source_lethal_eligible_observations": 5736173,
+        "source_nonlethal_lifecycle_observations": 557816
+      },
+      "decision_count": 15649,
+      "decision_row_spell_hits": [
+        {
+          "hit_count": 1,
+          "name": "",
+          "spell_id": 0
+        },
+        {
+          "hit_count": 5,
+          "name": "\u85ac\u7b26\u300c\u58fa\u4e2d\u306e\u5927\u9280\u6cb3\u300d",
+          "spell_id": 150
+        },
+        {
+          "hit_count": 1,
+          "name": "\u795e\u5b9d\u300c\u30d6\u30ea\u30ea\u30a2\u30f3\u30c8\u30c9\u30e9\u30b4\u30f3\u30d0\u30ec\u30c3\u30bf\u300d",
+          "spell_id": 154
+        },
+        {
+          "hit_count": 3,
+          "name": "\u795e\u5b9d\u300c\u30e9\u30a4\u30d5\u30b9\u30d7\u30ea\u30f3\u30b0\u30a4\u30f3\u30d5\u30a3\u30cb\u30c6\u30a3\u300d",
+          "spell_id": 166
+        },
+        {
+          "hit_count": 7,
+          "name": "\u795e\u5b9d\u300c\u84ec\u83b1\u306e\u7389\u306e\u679d  -\u5922\u8272\u306e\u90f7-\u300d",
+          "spell_id": 170
+        },
+        {
+          "hit_count": 1,
+          "name": "\u300c\u6c38\u591c\u8fd4\u3057  -\u5f85\u5bb5-\u300d",
+          "spell_id": 174
+        }
+      ],
+      "hit_count": 18,
+      "lasers": {
+        "frames_with_lasers": 4614,
+        "laser_observations": 305976,
+        "max_laser_count": 255
+      },
+      "player": {
+        "cached_aabb_coherent_count": 15462,
+        "geometry_stable_count": 15649,
+        "half_extent_counts": {
+          "1x1": 15649
+        },
+        "valid_count": 15649
+      },
+      "stage_label": "Final B / Kaguya",
+      "stage_route_index": 7,
+      "timing": {
+        "action_lag_frames": {
+          "count": 15649,
+          "max": 5.0,
+          "median": 2.0,
+          "p95": 3.0
+        },
+        "observe_to_input_ms": {
+          "count": 15649,
+          "max": 116.48860003333539,
+          "median": 46.1240999866277,
+          "p95": 60.8920999802649
+        },
+        "plan_ms": {
+          "count": 15649,
+          "max": 89.25469999667257,
+          "median": 31.91969997715205,
+          "p95": 45.4852000111714
+        },
+        "read_ms": {
+          "count": 15649,
+          "max": 25.656200014054775,
+          "median": 8.963899919763207,
+          "p95": 10.536800022237003
+        }
+      }
+    }
+  ],
+  "summary": {
+    "decision_count": 56539,
+    "hit_count": 57,
+    "last_frame": 226632,
+    "path": "/home/yann/yann/touhou/th08-research/touhou-solver-th08/artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_074407.summary.json",
+    "sha256": "7fd695f708555ba94db4e66f106b97ed6496b4b5ed66fbae7181b562c7857c16",
+    "termination_reason": "route_complete"
+  },
+  "trace": {
+    "path": "/home/yann/yann/touhou/th08-research/touhou-solver-th08/artifacts/runtime_reports/lunatic_route2_fullrun_unattended_20260824_074407.jsonl",
+    "sha256": "5fbf9906e06ec66c7b6fef05b6e04ffe78b10fb500063e33cbb5f59db600f242",
+    "size_bytes": 2223813483
+  }
+}

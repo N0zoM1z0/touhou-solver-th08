@@ -69,6 +69,17 @@ The immediate OPT-002 route recorded 67 hits with stage counts
 roots, so neither the `67 -> 60` total nor any stage delta is a controlled
 policy effect.
 
+The subsequent clean GEO-001B shadow route
+`lunatic_route2_fullrun_unattended_20260824_074407`, exact commit
+`8b1c3de4de4f5c776644aaebab68e18d649eba2b`, naturally completed at frame
+226632 with 56,539 decisions and 57 hits.  Its stage counts were
+`3/7/4/15/10/18`.  Stage 4A therefore did not regress from the 60-hit route:
+it remained at 15, while Final B also remained at 18.  Because GEO-001B was
+shadow-only and changed no action, the total and stage redistribution are not
+a controlled geometry-policy effect.  Stage-4A read and plan median/p95
+improved from `9.450/11.543` and `32.465/50.844 ms` to `8.619/10.370` and
+`31.410/49.044 ms`; action-lag median/p95 stayed `2/3` frames.
+
 OPT-002A did close its intended mechanism. Only ten decisions missed the
 modeled issue deadline, all recovered, no miss is on a hit's causal row, and
 the former 32-decision Stage-4A self-lock did not recur. Action-lag median and
@@ -230,10 +241,24 @@ motion without killing the player; case 5 is cancellation/despawn. Treating
 those records as lethal can create dense false walls exactly where the local
 planner reports exhausted action sets.
 
-The compact hit dossier does not retain native state/callback fields for each
-nearby bullet, so this audit cannot honestly assign a number of the 60 hits to
-that error. The first implementation step must retain and shadow-classify
-those fields before promotion.
+The GEO-001B complete route now retains these fields.  Across 21,394,298
+bullet-by-decision observations, 2,689,327 legacy candidates (12.5703%) are
+not lethal under the source current-frame predicate.  Stage 5 is the clear
+outlier at 1,125,175 of 4,973,810 (22.6220%); 840,965 are state-1 observations
+on 1,120 decision frames where the Reisen callback auxiliary byte suppresses
+collision.  Stage 4A is 484,249 of 4,214,434 (11.4902%) with no callback
+suppression.  This establishes material Stage-5-specific false-hazard
+pressure, but nearby geometry is retained only within 160 pixels and the
+shadow had no action authority, so it cannot assign hit-count causality.
+
+Current-frame eligibility is exact, but future eligibility is not a uniform
+state timer.  States 2/3/4 leave their spawn animations when the associated
+ANM VM script completes.  In addition, the 100%-matching
+`ReisenFreezeBullets` and `FUN_00424c40` paths set and clear callback aux
+`+0x10B4` based on ECL special-instruction/filter state.  A multi-frame exact
+lifecycle projection must therefore retain and step the reached ANM VM and
+callback controller; holding current aux or assigning a guessed fixed delay
+would be false authority.
 
 ### Bullet motion and transforms
 
@@ -282,6 +307,32 @@ the wave that has not been emitted.
 The current complexity came from solving isolated pieces before there was a
 source-complete execution kernel. The authoritative source now lets us replace
 many overlapping special-case authorities with one common simulation path.
+
+### Confirmed direct-fire semantic defects
+
+The first source differential found two simpler defects before any new
+architecture is enabled:
+
+- `BulletManager::FUN_0042f5f0` centers fan modes 0/1 from
+  `descriptor->count1 & 1`; `th08_future_birth_envelope.py` incorrectly uses
+  instruction flags.  A deterministic 58,752-case mode/count/flag sweep found
+  9,792 angle disagreements, all in modes 0/1.  In the statically decoded
+  Route-2 inventory, 42 of 83 literal-count fan sites have differing count and
+  flag parity; 22 of 45 fully literal sites are affected, including all four
+  fully literal Final-B fan sites.
+- Modes 0/2/4 automatically add the angle from the emitter to the player.
+  `_pattern_speed_angle()` supports that input, but the ordinary direct-fire
+  builder always records zero and causal conditioning therefore cannot
+  recompute it for a candidate path.  The source atlas contains 128 such
+  player-aim sites across the route.
+
+The descriptor count fields are signed 16-bit fields even though ECL shot
+arguments begin as 32-bit integers; the existing signed-low-word decode is
+therefore correct and is not part of this fix.  Source `ZUN_PI`/`ZUN_2PI` are
+binary32 constants, so spawn angle arithmetic must use their stored values
+rather than Python's double-precision `math.pi`.  Rank adjustment is a
+separate pending correction: source adds the full adjustment to nonzero
+`speed1`, half to `speed2`, and clamps each adjusted speed to 0.3.
 
 ## Proposed Simpler Architecture
 
@@ -366,7 +417,16 @@ removes another 351, with zero source-only points. All 18 one-step root-cohort
 actions remain safe while minimum clearance increases by roughly 1.0–1.414px.
 That action comparison is deliberately non-authoritative because the old root
 lacks callback aux, omits seven H=1 births, retains four removals, and has no
-lasers/bodies. A new complete-schema route corpus remains phase A's next gate.
+lasers/bodies.
+
+The complete-schema GEO-001B route closes the lifecycle-observability gate:
+all 56,539 roots have stable `(1,1)` player half-extents and complete current-
+pool state/aux counts, and the tracked streaming audit quantifies the 12.5703%
+route-wide and 22.6220% Stage-5 legacy-only rates above.  It also records
+393,216 laser observations and end-to-end timing without loading the 2.22 GB
+trace into memory.  Exact route-wide geometry, future ANM/callback lifecycle,
+and binary32 collision predicates remain open; phase A is therefore narrowed,
+not complete.
 
 1. Retain player lethal half-extents, bullet native state/timer/callback aux,
    exact laser-local rectangle, rank/subrank, RNG state, and the full reached
