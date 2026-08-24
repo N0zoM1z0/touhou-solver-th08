@@ -62,7 +62,7 @@ change when its semantic and timing gate passes.
 | OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | VALIDATED-PHYSICAL | 61 hits; both prefix medians down about 1.2 ms; keep |
 | OPT-002 | sensing latency | Coalesce input and position fields inside the existing bracketed player-control root, preserving duplicate before/after observations | low-medium | VALIDATED-MECHANISM | 67 hits; read latency down, semantic sensor evidence clean; keep, but route exposed OPT-002A |
 | OPT-002A | control-delay correctness | Close the post-reset deadline-miss feedback self-lock without weakening issue freshness | medium | VALIDATED-PHYSICAL | 60 hits; ten misses recovered, no causal-hit miss or self-lock; keep |
-| GEO-001 | source-exact geometry shadow | Retain runtime player half-extents and bullet lifecycle fields; compare legacy/exact hazards and action sets without changing input | low, shadow | NEXT | pending |
+| GEO-001 | source-exact geometry shadow | Retain runtime player half-extents and bullet lifecycle fields; compare legacy/exact hazards and action sets without changing input | low, shadow | IN-PROGRESS-SHADOW | retention/tests complete; exact differential pending |
 | GEO-002 | source-exact geometry promotion | Use runtime player AABB, lethal bullet state/callback gate, finite rotated laser rectangle, and corrected body expansion | medium | BLOCKED ON GEO-001 | pending |
 | MOT-001 | exact current entities | Replace heuristic transformed-bullet projection with the matching native update/transform semantics | medium-high | QUEUED | pending |
 | GD-001 | global delivery shadow | Establish per-stage hard scale roots, submit jobs in shadow, and add a complete spell-future-coverage authority gate | medium, shadow | QUEUED | pending |
@@ -316,6 +316,43 @@ recur. The intended mechanism is therefore validated. The stage counts
 `1/4/8/15/14/18` and near-equality to OPT-001's 61-hit route do not establish
 a hit-rate gain. They instead leave source-exact hazard geometry, future
 births, and global viability as the dominant work.
+
+## GEO-001 — Source-Exact Collision Shadow
+
+Status: **IN-PROGRESS-SHADOW; RETENTION COMPLETE, DIFFERENTIAL PENDING**
+
+The first checkpoint, GEO-001A, changes observation and trace data only:
+
+- Each of the two existing player-position reads now retains the contiguous
+  `player+0x2B4..0x3DB` window. The 296-byte window includes position, the
+  cached lethal AABB at `+0x38C`, and the SHT-derived lethal half-extents at
+  `+0x3D4`. The transaction remains seven RPM calls.
+- The pre-existing action-facing `PlayerControlRootCapture.stable` predicate
+  is unchanged: it still compares frame, position, and input only. New AABB
+  and half-extent agreement is reported separately as
+  `collision_geometry_stable`, so telemetry cannot reject or admit an issue.
+- Decision rows now include `th08-source-collision-shadow-v1`: native player
+  geometry validity/cache coherence and vectorized bullet native-state,
+  callback-suppression, source-lethal, and legacy-only candidate counts. Its
+  declared role is `shadow_no_action_ranking_or_hard_authority`.
+- Nearby-bullet trace records preserve native state/timer/callback aux for
+  exceptional records through `th08-bullet-lifecycle-v1`. State-1/aux-0 is
+  the explicitly declared default and retains the old compact record shape;
+  old trace replay remains accepted.
+- Laser trace retention is marked, but no capsule-versus-native-rectangle
+  action differential or authority change is included in GEO-001A.
+
+Focused capture/trace/decoder/replay tests pass 28/28. Complete discovery
+passes 1,365 tests with five skips. Controller import smoke passes, and a
+10,000-iteration microbenchmark of the vectorized lifecycle summary at 2,000
+bullets measured about 0.022 ms per call on this VPS. This is a latency sanity
+check, not a gameplay-performance claim.
+
+Next gate: exercise the retained fields in isolated Wine, then build a pure
+source-exact current-collision kernel and replay identical roots through both
+legacy and exact membership/action-set classifiers. GEO-002 remains blocked
+until fixtures and retained-root differentials make false-positive and
+false-negative counts explicit.
 
 ## Future-Birth Simplification Contract
 

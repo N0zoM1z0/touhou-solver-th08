@@ -565,7 +565,7 @@ rank-conditioned causal claims or changing action policy from it.
 
 ### AUD-025 — Live player lethal half-extents are inflated from 1px to 2px
 
-Status: **CONFIRMED-SOURCE-AND-PHYSICAL; SHADOW IMPACT PENDING**
+Status: **CONFIRMED-SOURCE-AND-PHYSICAL; SHADOW RETAINED, IMPACT PENDING**
 
 **Source evidence:** `Player.cpp` initializes the lethal vector at `+0x3D4`
 from the SHT width divided by two, updates its cached AABB after movement, and
@@ -580,9 +580,14 @@ enemy-body checks. This is duplicated conservatism because delay uncertainty
 is modeled separately. Add a versioned runtime half-extent and shadow action-
 set differential before promoting the correction.
 
+GEO-001A now retains the cached AABB and `+0x3D4` half-extents in the same
+bracketed control-root reads and emits their validity/cache coherence as
+shadow-only trace data. It deliberately does not replace `PLAYER_RADIUS=2.0`;
+the identical-root action-set differential remains the promotion gate.
+
 ### AUD-026 — Nonlethal bullet lifecycle states are included as lethal hazards
 
-Status: **CONFIRMED-SOURCE; SHADOW IMPACT PENDING**
+Status: **CONFIRMED-SOURCE; SHADOW RETAINED, IMPACT PENDING**
 
 **Source evidence:** `BulletManager::OnUpdate` reaches
 `Player::FUN_0044a230` only in native state 1, and skips that collision block
@@ -595,6 +600,11 @@ state, but the local hazard builder only special-cases state 2 motion and does
 not filter collision eligibility. Compact nearby-bullet records omitted these
 fields, so the current 60-hit trace cannot quantify the error. Retain them and
 shadow-classify false hazards before changing authority.
+
+GEO-001A now emits vectorized source-lethal versus legacy-candidate counts and
+retains exceptional state/timer/callback-aux records in nearby-bullet traces.
+The old 60-hit trace remains lifecycle-incomplete; a new Wine capture and the
+same-root exact classifier are still required.
 
 ### AUD-027 — Live laser collision is a capsule, not the native rotated rectangle
 

@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 
 ENEMY_MAX_OBSERVED_WORLD_SPEED = 32.0
+BULLET_LIFECYCLE_TRACE_SCHEMA = "th08-bullet-lifecycle-v1"
 
 
 @dataclass(frozen=True)
@@ -130,6 +131,20 @@ def serialize_bullet_trace(bullet: Bullet) -> list[object]:
         bullet.transform_flags,
     ]
     runtime = bullet.transform_runtime
+    lifecycle = (
+        [
+            BULLET_LIFECYCLE_TRACE_SCHEMA,
+            bullet.native_state,
+            bullet.native_state_timer_elapsed,
+            bullet.callback_aux_state,
+        ]
+        if (
+            bullet.native_state != 1
+            or bullet.native_state_timer_elapsed != 0
+            or bullet.callback_aux_state != 0
+        )
+        else None
+    )
     if runtime is None:
         if (
             bullet.original_transform_flags
@@ -137,7 +152,7 @@ def serialize_bullet_trace(bullet: Bullet) -> list[object]:
             or bullet.trajectory_uncertainty_x
             or bullet.trajectory_uncertainty_y
         ):
-            return [
+            values = [
                 *legacy,
                 None,
                 [
@@ -158,8 +173,10 @@ def serialize_bullet_trace(bullet: Bullet) -> list[object]:
                     bullet.trajectory_uncertainty_y,
                 ],
             ]
-        return [*legacy, None]
-    return [
+            return [*values, lifecycle] if lifecycle is not None else values
+        values = [*legacy, None]
+        return [*values, lifecycle] if lifecycle is not None else values
+    values = [
         *legacy,
         [
             bullet.speed,
@@ -188,6 +205,7 @@ def serialize_bullet_trace(bullet: Bullet) -> list[object]:
             bullet.trajectory_uncertainty_y,
         ],
     ]
+    return [*values, lifecycle] if lifecycle is not None else values
 
 
 @dataclass(frozen=True)
@@ -369,6 +387,7 @@ class Item:
 
 
 __all__ = [
+    "BULLET_LIFECYCLE_TRACE_SCHEMA",
     "Bullet",
     "ENEMY_MAX_OBSERVED_WORLD_SPEED",
     "EnemyBody",

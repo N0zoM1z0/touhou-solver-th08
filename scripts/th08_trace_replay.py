@@ -10,6 +10,7 @@ from th08_live_dodge_agent import (
     Laser,
     _local_pipeline_action_from_mask,
 )
+from th08_live.models import BULLET_LIFECYCLE_TRACE_SCHEMA
 from touhou_control.local_pipeline_oracle import LocalPipelineRoot
 from th08_update_order import (
     TH08_INPUT_PUBLICATION_TO_MOTION_LAG_FRAMES,
@@ -71,7 +72,23 @@ def bullet_from_trace(values: list[object]) -> Bullet:
         and isinstance(projection, list)
         and len(projection) >= 8
     )
-    payload = runtime if diagnostic_runtime else projection
+    payload = (
+        runtime
+        if diagnostic_runtime
+        else (projection if planning_projection else None)
+    )
+    lifecycle = next(
+        (
+            candidate
+            for candidate in reversed(values[9:])
+            if (
+                isinstance(candidate, list)
+                and len(candidate) == 4
+                and candidate[0] == BULLET_LIFECYCLE_TRACE_SCHEMA
+            )
+        ),
+        None,
+    )
     if diagnostic_runtime:
         callback_phase = int(runtime[12]) if len(runtime) > 12 else 0
         callback_aux = int(runtime[13]) if len(runtime) > 13 else 0
@@ -91,6 +108,8 @@ def bullet_from_trace(values: list[object]) -> Bullet:
         raw_changes = ()
         uncertainty_x = 0.0
         uncertainty_y = 0.0
+    if lifecycle is not None:
+        callback_aux = int(lifecycle[3])
     changes = tuple(
         VelocityChange(
             int(change[0]),
@@ -125,6 +144,10 @@ def bullet_from_trace(values: list[object]) -> Bullet:
         trajectory_uncertainty_y=uncertainty_y,
         original_transform_flags=(
             int(payload[2]) if isinstance(payload, list) else 0
+        ),
+        native_state=(int(lifecycle[1]) if lifecycle is not None else 1),
+        native_state_timer_elapsed=(
+            int(lifecycle[2]) if lifecycle is not None else 0
         ),
     )
 

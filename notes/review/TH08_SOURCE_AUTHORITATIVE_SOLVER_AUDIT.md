@@ -351,6 +351,14 @@ not need to be rewritten into the simulator.
 
 ### A. Observability and shadow contract — no behavior change
 
+GEO-001A now retains the native player lethal AABB/half-extents in the same
+seven-call control-root transaction and preserves exceptional bullet
+lifecycle state in compact/replayable traces. Decision rows expose a
+source-collision shadow summary with an explicit no-authority role. The
+legacy-versus-exact membership/action-set differential, exact laser-local
+classifier, rank/RNG/producer roots, and global submission-gate expansion are
+still open; observability phase A is therefore not yet complete.
+
 1. Retain player lethal half-extents, bullet native state/timer/callback aux,
    exact laser-local rectangle, rank/subrank, RNG state, and the full reached
    VM/emitter root needed by the forward model.

@@ -52,6 +52,8 @@ from th08_live_dodge_agent import (
     decode_packed_bullets,
     serialize_bullet_trace,
 )
+from th08_live.models import BULLET_LIFECYCLE_TRACE_SCHEMA
+from th08_trace_replay import bullet_from_trace
 from touhou_control.trajectory import VelocityChange
 
 
@@ -663,6 +665,59 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
             serialize_bullet_trace(Bullet(1.0, 2.0, 0.0, 0.0, 2.0, 2.0))[8],
             None,
         )
+
+    def test_trace_retains_exceptional_native_lifecycle_for_replay(self) -> None:
+        bullet = Bullet(
+            10.0,
+            20.0,
+            1.0,
+            -1.0,
+            2.0,
+            3.0,
+            slot=7,
+            callback_aux_state=4,
+            native_state=2,
+            native_state_timer_elapsed=8,
+        )
+
+        values = serialize_bullet_trace(bullet)
+
+        self.assertEqual(
+            values[-1],
+            [BULLET_LIFECYCLE_TRACE_SCHEMA, 2, 8, 4],
+        )
+        replayed = bullet_from_trace(values)
+        self.assertEqual(replayed.native_state, 2)
+        self.assertEqual(replayed.native_state_timer_elapsed, 8)
+        self.assertEqual(replayed.callback_aux_state, 4)
+
+        timed_state1 = bullet_from_trace(
+            serialize_bullet_trace(
+                Bullet(
+                    1.0,
+                    2.0,
+                    0.0,
+                    0.0,
+                    2.0,
+                    2.0,
+                    native_state=1,
+                    native_state_timer_elapsed=9,
+                )
+            )
+        )
+        self.assertEqual(timed_state1.native_state, 1)
+        self.assertEqual(timed_state1.native_state_timer_elapsed, 9)
+
+    def test_default_lethal_lifecycle_keeps_legacy_trace_shape(self) -> None:
+        values = serialize_bullet_trace(
+            Bullet(1.0, 2.0, 0.0, 0.0, 2.0, 2.0)
+        )
+
+        self.assertEqual(len(values), 9)
+        replayed = bullet_from_trace(values)
+        self.assertEqual(replayed.native_state, 1)
+        self.assertEqual(replayed.native_state_timer_elapsed, 0)
+        self.assertEqual(replayed.callback_aux_state, 0)
 
     def test_runtime_observation_is_behavior_neutral_until_projection_gate(
         self,

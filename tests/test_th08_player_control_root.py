@@ -12,7 +12,12 @@ from th08_runtime.game_state import (
     ADDR_RAW_INPUT,
     PLAYER_POSITION_OFFSET,
 )
-from th08_runtime.sensing import capture_player_control_root
+from th08_runtime.sensing import (
+    PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE,
+    PLAYER_LETHAL_AABB_OFFSET,
+    PLAYER_LETHAL_HALF_EXTENTS_OFFSET,
+    capture_player_control_root,
+)
 
 
 class _Reader:
@@ -37,7 +42,41 @@ class _Reader:
 
 
 _INPUT_CAPTURE_SIZE = ADDR_PREVIOUS_INPUT + 2 - ADDR_RAW_INPUT
-_POSITION_CAPTURE_SIZE = 8
+_POSITION_CAPTURE_SIZE = PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE
+
+
+def _geometry_blob(
+    x: float,
+    y: float,
+    *,
+    half_width: float = 1.0,
+    half_height: float = 1.0,
+) -> bytes:
+    blob = bytearray(_POSITION_CAPTURE_SIZE)
+    struct.pack_into("<ff", blob, 0, x, y)
+    aabb_offset = PLAYER_LETHAL_AABB_OFFSET - PLAYER_POSITION_OFFSET
+    struct.pack_into(
+        "<ff",
+        blob,
+        aabb_offset,
+        x - half_width,
+        y - half_height,
+    )
+    struct.pack_into(
+        "<ff",
+        blob,
+        aabb_offset + 0x0C,
+        x + half_width,
+        y + half_height,
+    )
+    struct.pack_into(
+        "<ff",
+        blob,
+        PLAYER_LETHAL_HALF_EXTENTS_OFFSET - PLAYER_POSITION_OFFSET,
+        half_width,
+        half_height,
+    )
+    return bytes(blob)
 
 
 def _input_blob(
@@ -82,7 +121,7 @@ def _values(
             ADDR_PLAYER + PLAYER_POSITION_OFFSET,
             _POSITION_CAPTURE_SIZE,
         ): [
-            struct.pack("<ff", x, y) for x, y in zip(xs, ys, strict=True)
+            _geometry_blob(x, y) for x, y in zip(xs, ys, strict=True)
         ],
     }
 
@@ -104,6 +143,12 @@ class PlayerControlRootTests(unittest.TestCase):
         self.assertEqual(capture.frame_after, 100)
         self.assertEqual(capture.x, 192.0)
         self.assertEqual(capture.y, 400.0)
+        self.assertEqual(capture.lethal_half_extents, (1.0, 1.0))
+        self.assertEqual(
+            capture.lethal_aabb,
+            (191.0, 399.0, 193.0, 401.0),
+        )
+        self.assertTrue(capture.collision_geometry_stable)
         self.assertEqual(capture.input_current, 0x05)
         self.assertEqual(capture.scale_bits, 0x3F800000)
         self.assertEqual(
@@ -160,6 +205,32 @@ class PlayerControlRootTests(unittest.TestCase):
         )
 
         self.assertFalse(capture.stable)
+
+    def test_shadow_geometry_change_does_not_change_control_stability(self) -> None:
+        values = _values(
+            frames=[100, 100],
+            xs=[192.0, 192.0],
+            ys=[400.0, 400.0],
+            attempts=1,
+        )
+        geometry_key = (
+            "read",
+            ADDR_PLAYER + PLAYER_POSITION_OFFSET,
+            _POSITION_CAPTURE_SIZE,
+        )
+        values[geometry_key] = [
+            _geometry_blob(192.0, 400.0, half_width=1.0),
+            _geometry_blob(192.0, 400.0, half_width=1.5),
+        ]
+
+        capture = capture_player_control_root(
+            _Reader(values),
+            maximum_attempts=1,
+        )
+
+        self.assertTrue(capture.stable)
+        self.assertFalse(capture.collision_geometry_stable)
+        self.assertEqual(capture.lethal_half_extents, (1.5, 1.0))
 
     def test_retry_accepts_only_the_later_coherent_root(self) -> None:
         capture = capture_player_control_root(
@@ -232,7 +303,10 @@ class PlayerControlRootTests(unittest.TestCase):
         )
         values[position_key][0] = bytes(_POSITION_CAPTURE_SIZE - 1)
 
-        with self.assertRaisesRegex(ValueError, "exactly 8 bytes"):
+        with self.assertRaisesRegex(
+            ValueError,
+            f"exactly {PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE} bytes",
+        ):
             capture_player_control_root(_Reader(values))
 
 

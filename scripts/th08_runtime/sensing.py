@@ -64,7 +64,21 @@ class StateReader(Protocol):
 _PLAYER_CONTROL_INPUT_CAPTURE_SIZE = (
     ADDR_PREVIOUS_INPUT + 2 - ADDR_RAW_INPUT
 )
-_PLAYER_CONTROL_POSITION_CAPTURE_SIZE = 8
+# Source: Player::FUN_0044a230 / Player::CalcLaserHitbox and the cached AABB
+# update in Player.cpp.  One contiguous read now retains the already-read
+# position plus the native lethal AABB and half-extents without adding RPM
+# calls to the seven-call player-control-root transaction.
+PLAYER_LETHAL_AABB_OFFSET = 0x038C
+PLAYER_LETHAL_HALF_EXTENTS_OFFSET = 0x03D4
+PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE = (
+    PLAYER_LETHAL_HALF_EXTENTS_OFFSET + 8 - PLAYER_POSITION_OFFSET
+)
+_PLAYER_CONTROL_AABB_CAPTURE_OFFSET = (
+    PLAYER_LETHAL_AABB_OFFSET - PLAYER_POSITION_OFFSET
+)
+_PLAYER_CONTROL_HALF_EXTENTS_CAPTURE_OFFSET = (
+    PLAYER_LETHAL_HALF_EXTENTS_OFFSET - PLAYER_POSITION_OFFSET
+)
 
 
 def _decode_player_control_inputs(blob: bytes) -> tuple[int, int, int]:
@@ -80,13 +94,40 @@ def _decode_player_control_inputs(blob: bytes) -> tuple[int, int, int]:
     )
 
 
-def _decode_player_control_position(blob: bytes) -> tuple[float, float]:
-    if len(blob) != _PLAYER_CONTROL_POSITION_CAPTURE_SIZE:
+def _decode_player_control_geometry(
+    blob: bytes,
+) -> tuple[float, float, float, float, float, float, float, float]:
+    if len(blob) != PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE:
         raise ValueError(
-            "player control position capture requires exactly "
-            f"{_PLAYER_CONTROL_POSITION_CAPTURE_SIZE} bytes"
+            "player control geometry capture requires exactly "
+            f"{PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE} bytes"
         )
-    return struct.unpack("<ff", blob)
+    x, y = struct.unpack_from("<ff", blob, 0)
+    lethal_left, lethal_top = struct.unpack_from(
+        "<ff",
+        blob,
+        _PLAYER_CONTROL_AABB_CAPTURE_OFFSET,
+    )
+    lethal_right, lethal_bottom = struct.unpack_from(
+        "<ff",
+        blob,
+        _PLAYER_CONTROL_AABB_CAPTURE_OFFSET + 0x0C,
+    )
+    lethal_half_width, lethal_half_height = struct.unpack_from(
+        "<ff",
+        blob,
+        _PLAYER_CONTROL_HALF_EXTENTS_CAPTURE_OFFSET,
+    )
+    return (
+        x,
+        y,
+        lethal_left,
+        lethal_top,
+        lethal_right,
+        lethal_bottom,
+        lethal_half_width,
+        lethal_half_height,
+    )
 
 
 @dataclass(frozen=True)
@@ -122,6 +163,10 @@ class PlayerControlRootCapture:
     y_before: float
     x_after: float
     y_after: float
+    lethal_aabb_before: tuple[float, float, float, float]
+    lethal_aabb_after: tuple[float, float, float, float]
+    lethal_half_extents_before: tuple[float, float]
+    lethal_half_extents_after: tuple[float, float]
     input_raw_before: int
     input_current_before: int
     input_previous_before: int
@@ -162,6 +207,24 @@ class PlayerControlRootCapture:
     def input_previous(self) -> int:
         return self.input_previous_after
 
+    @property
+    def collision_geometry_stable(self) -> bool:
+        """Whether the new shadow-only collision fields agree across reads."""
+
+        return bool(
+            self.lethal_aabb_before == self.lethal_aabb_after
+            and self.lethal_half_extents_before
+            == self.lethal_half_extents_after
+        )
+
+    @property
+    def lethal_aabb(self) -> tuple[float, float, float, float]:
+        return self.lethal_aabb_after
+
+    @property
+    def lethal_half_extents(self) -> tuple[float, float]:
+        return self.lethal_half_extents_after
+
 
 def capture_player_control_root(
     reader: StateReader,
@@ -186,17 +249,35 @@ def capture_player_control_root(
         ) = _decode_player_control_inputs(
             reader.read(ADDR_RAW_INPUT, _PLAYER_CONTROL_INPUT_CAPTURE_SIZE)
         )
-        x_before, y_before = _decode_player_control_position(
+        (
+            x_before,
+            y_before,
+            lethal_left_before,
+            lethal_top_before,
+            lethal_right_before,
+            lethal_bottom_before,
+            lethal_half_width_before,
+            lethal_half_height_before,
+        ) = _decode_player_control_geometry(
             reader.read(
                 ADDR_PLAYER + PLAYER_POSITION_OFFSET,
-                _PLAYER_CONTROL_POSITION_CAPTURE_SIZE,
+                PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE,
             )
         )
         scale_bits = reader.u32(ADDR_GAMEPLAY_TIME_SCALE)
-        x_after, y_after = _decode_player_control_position(
+        (
+            x_after,
+            y_after,
+            lethal_left_after,
+            lethal_top_after,
+            lethal_right_after,
+            lethal_bottom_after,
+            lethal_half_width_after,
+            lethal_half_height_after,
+        ) = _decode_player_control_geometry(
             reader.read(
                 ADDR_PLAYER + PLAYER_POSITION_OFFSET,
-                _PLAYER_CONTROL_POSITION_CAPTURE_SIZE,
+                PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE,
             )
         )
         (
@@ -214,6 +295,26 @@ def capture_player_control_root(
             y_before=y_before,
             x_after=x_after,
             y_after=y_after,
+            lethal_aabb_before=(
+                lethal_left_before,
+                lethal_top_before,
+                lethal_right_before,
+                lethal_bottom_before,
+            ),
+            lethal_aabb_after=(
+                lethal_left_after,
+                lethal_top_after,
+                lethal_right_after,
+                lethal_bottom_after,
+            ),
+            lethal_half_extents_before=(
+                lethal_half_width_before,
+                lethal_half_height_before,
+            ),
+            lethal_half_extents_after=(
+                lethal_half_width_after,
+                lethal_half_height_after,
+            ),
             input_raw_before=input_raw_before,
             input_current_before=input_current_before,
             input_previous_before=input_previous_before,

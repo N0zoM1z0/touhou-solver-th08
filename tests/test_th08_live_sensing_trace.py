@@ -7,8 +7,12 @@ from dataclasses import replace
 import unittest
 from types import SimpleNamespace
 
+import numpy as np
+
 from th08_live.sensing_trace import (
+    SOURCE_COLLISION_SHADOW_SCHEMA,
     SensingTraceInput,
+    _bullet_lifecycle_record,
     build_sensing_trace_fields,
 )
 from th08_ecl_vm_state import EclVmLocalProjection
@@ -22,6 +26,31 @@ from th08_time_scale import (
 
 
 class SensingTraceTests(unittest.TestCase):
+    def test_packed_bullet_lifecycle_shadow_is_vectorized_and_complete(
+        self,
+    ) -> None:
+        class PackedLifecycle:
+            native_state = np.asarray([1, 1, 2, 5], dtype=np.uint16)
+            native_state_timer_elapsed = np.asarray(
+                [0, 7, 8, 2],
+                dtype=np.int32,
+            )
+            callback_aux = np.asarray([0, 3, 0, 0], dtype=np.uint8)
+
+            def __len__(self) -> int:
+                return len(self.native_state)
+
+        record = _bullet_lifecycle_record(PackedLifecycle())
+
+        self.assertEqual(record["coverage"], "complete")
+        self.assertEqual(
+            record["native_state_counts"],
+            {"1": 2, "2": 1, "5": 1},
+        )
+        self.assertEqual(record["source_lethal_eligible_count"], 1)
+        self.assertEqual(record["legacy_only_candidate_count"], 3)
+        self.assertEqual(record["callback_suppressed_state1_count"], 1)
+
     def test_fields_preserve_captured_and_issue_guard_state(self) -> None:
         active_body = SimpleNamespace(pointer=1, contact=True)
         dormant_body = SimpleNamespace(pointer=2, contact=False)
@@ -44,6 +73,8 @@ class SensingTraceTests(unittest.TestCase):
             velocity_changes=((2, 1.0, 0.0),),
             callback_phase_state=0,
             callback_aux_state=1,
+            native_state=1,
+            native_state_timer_elapsed=7,
         )
         issue = SimpleNamespace(
             capture=SimpleNamespace(
@@ -62,6 +93,15 @@ class SensingTraceTests(unittest.TestCase):
             post_guard_action="right",
             post_guard_mask=0x81,
             decision=SimpleNamespace(issue_recertification="transaction"),
+        )
+        player_control_root = SimpleNamespace(
+            x=192.0,
+            y=400.0,
+            lethal_aabb=(191.0, 399.0, 193.0, 401.0),
+            lethal_half_extents=(1.0, 1.0),
+            lethal_aabb_before=(191.0, 399.0, 193.0, 401.0),
+            lethal_half_extents_before=(1.0, 1.0),
+            collision_geometry_stable=True,
         )
         progress = SimpleNamespace(
             status="active",
@@ -157,6 +197,7 @@ class SensingTraceTests(unittest.TestCase):
             issue_enemy_read_ms=1.25,
             issue_enemy_recertificate_ms=2.5,
             issue=issue,
+            player_control_root=player_control_root,
             spell_enemy_body_guard=guard,
             spell_enemy_body_guard_error=None,
         )
@@ -173,6 +214,33 @@ class SensingTraceTests(unittest.TestCase):
         )
 
         self.assertEqual(fields["boss_phase"]["frame"], 10)
+        self.assertEqual(
+            fields["source_collision_shadow"]["schema"],
+            SOURCE_COLLISION_SHADOW_SCHEMA,
+        )
+        self.assertEqual(
+            fields["source_collision_shadow"]["player"][
+                "lethal_half_extents"
+            ],
+            [1.0, 1.0],
+        )
+        self.assertTrue(
+            fields["source_collision_shadow"]["player"][
+                "cached_aabb_coherent"
+            ]
+        )
+        self.assertEqual(
+            fields["source_collision_shadow"]["bullets"][
+                "source_lethal_eligible_count"
+            ],
+            0,
+        )
+        self.assertEqual(
+            fields["source_collision_shadow"]["bullets"][
+                "callback_suppressed_state1_count"
+            ],
+            1,
+        )
         self.assertEqual(
             fields["time_scale"]["semantics_version"],
             TH08_PLAYER_LASER_SCALE_SEMANTICS_VERSION,

@@ -682,8 +682,8 @@ and explicit `STRATEGY.md` decision.
 TH08 work is active. The next promotion is deliberately simpler than global
 future births:
 
-1. add shadow telemetry for runtime player half-extents, bullet native
-   state/timer/callback aux, and exact laser-local rectangles;
+1. exercise the newly retained runtime player AABB/half-extents and bullet
+   state/timer/callback-aux shadow fields in isolated Wine;
 2. differential the legacy hazard/action sets against a source-exact lethal
    geometry and lifecycle kernel;
 3. promote only after exact fixtures and retained-root replay agree, commit,

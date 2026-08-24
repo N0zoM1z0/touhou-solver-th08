@@ -395,6 +395,7 @@ from th08_runtime_agent import (
     ADDR_PLAYER,
     ADDR_STAGE_ROUTE_INDEX,
     PLAYER_BOMB_ACTIVE_OFFSET,
+    PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE,
     SUPPORTED_INPUT_MASK,
     TARGET_EXE,
     _require_foreground,
@@ -3128,7 +3129,11 @@ def _run_live_session(
                         "read_path": "coalesced_exact_read",
                         "rpm_calls_per_stable_attempt": 7,
                         "input_capture_bytes": 14,
+                        "geometry_capture_bytes": (
+                            PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE
+                        ),
                         "position_capture_bytes": 8,
+                        "lethal_aabb_and_half_extents_retained": True,
                         "duplicate_before_after_observations": True,
                     },
                     "damage_objective": (
@@ -7523,6 +7528,7 @@ def _run_live_session(
                             issue_enemy_recertificate_ms
                         ),
                         issue=fresh_issue_result,
+                        player_control_root=player_control_root,
                         spell_enemy_body_guard=spell_enemy_body_guard,
                         spell_enemy_body_guard_error=(
                             spell_enemy_body_guard_error

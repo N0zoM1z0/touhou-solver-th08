@@ -3,18 +3,130 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass
+import math
 from typing import Any
+
+import numpy as np
 
 from th08_ecl_runtime import ECL_LOOKAHEAD_SEMANTICS_VERSION
 from th08_live.iteration import FreshIssueResult
+from th08_live.models import BULLET_LIFECYCLE_TRACE_SCHEMA
 from th08_native_timer import TH08_NATIVE_TIMER_SEMANTICS_VERSION
 from th08_time_scale import (
     SCALE_COVERAGE_COMPLETE,
     TH08_PLAYER_LASER_SCALE_SEMANTICS_VERSION,
     Th08TimeScaleSchedule,
 )
+
+
+SOURCE_COLLISION_SHADOW_SCHEMA = "th08-source-collision-shadow-v1"
+
+
+def _player_geometry_record(root: Any) -> dict[str, object]:
+    x = float(root.x)
+    y = float(root.y)
+    half_width, half_height = map(float, root.lethal_half_extents)
+    left, top, right, bottom = map(float, root.lethal_aabb)
+    values = (x, y, half_width, half_height, left, top, right, bottom)
+    valid = bool(
+        all(math.isfinite(value) for value in values)
+        and half_width >= 0.0
+        and half_height >= 0.0
+        and left <= right
+        and top <= bottom
+    )
+    cache_coherent = bool(
+        valid
+        and math.isclose(left, x - half_width, rel_tol=0.0, abs_tol=1e-5)
+        and math.isclose(top, y - half_height, rel_tol=0.0, abs_tol=1e-5)
+        and math.isclose(right, x + half_width, rel_tol=0.0, abs_tol=1e-5)
+        and math.isclose(bottom, y + half_height, rel_tol=0.0, abs_tol=1e-5)
+    )
+    before_if_changed = None
+    if not root.collision_geometry_stable:
+        before_if_changed = {
+            "lethal_aabb": list(root.lethal_aabb_before),
+            "lethal_half_extents": list(root.lethal_half_extents_before),
+        }
+    return {
+        "position": [x, y],
+        "lethal_aabb": [left, top, right, bottom],
+        "lethal_half_extents": [half_width, half_height],
+        "valid": valid,
+        "cached_aabb_coherent": cache_coherent,
+        "geometry_stable_across_control_root": (
+            root.collision_geometry_stable
+        ),
+        "before_if_changed": before_if_changed,
+    }
+
+
+def _bullet_lifecycle_record(bullets: Sequence[Any]) -> dict[str, object]:
+    packed_states = getattr(bullets, "native_state", None)
+    packed_timers = getattr(bullets, "native_state_timer_elapsed", None)
+    packed_aux = getattr(bullets, "callback_aux", None)
+    if (
+        packed_states is not None
+        and packed_timers is not None
+        and packed_aux is not None
+    ):
+        states = np.asarray(packed_states)
+        timers = np.asarray(packed_timers)
+        auxiliary = np.asarray(packed_aux)
+        complete = bool(
+            states.size == timers.size == auxiliary.size == len(bullets)
+        )
+        state_values, state_counts = np.unique(states, return_counts=True)
+        counts = {
+            str(int(state)): int(count)
+            for state, count in zip(state_values, state_counts, strict=True)
+        }
+        lethal_eligible = int(
+            np.count_nonzero((states == 1) & (auxiliary == 0))
+        )
+        callback_suppressed = int(
+            np.count_nonzero((states == 1) & (auxiliary != 0))
+        )
+    else:
+        counts_counter: Counter[int] = Counter()
+        lethal_eligible = 0
+        callback_suppressed = 0
+        complete = True
+        for bullet in bullets:
+            if not all(
+                hasattr(bullet, field)
+                for field in (
+                    "native_state",
+                    "native_state_timer_elapsed",
+                    "callback_aux_state",
+                )
+            ):
+                complete = False
+            state = int(getattr(bullet, "native_state", 1))
+            auxiliary = int(getattr(bullet, "callback_aux_state", 0))
+            counts_counter[state] += 1
+            lethal_eligible += state == 1 and auxiliary == 0
+            callback_suppressed += state == 1 and auxiliary != 0
+        counts = {
+            str(state): count
+            for state, count in sorted(counts_counter.items())
+        }
+    total = len(bullets)
+    return {
+        "coverage": "complete" if complete else "incomplete_missing_fields",
+        "decoded_nonzero_state_count": total,
+        "native_state_counts": counts,
+        "source_lethal_eligible_count": lethal_eligible,
+        "source_nonlethal_lifecycle_count": total - lethal_eligible,
+        "callback_suppressed_state1_count": callback_suppressed,
+        "legacy_collision_candidate_count": total,
+        "legacy_only_candidate_count": total - lethal_eligible,
+        "exception_trace_schema": BULLET_LIFECYCLE_TRACE_SCHEMA,
+        "default_trace_state": [1, 0, 0],
+    }
 
 
 def _time_scale_schedule_hard_authority(
@@ -72,6 +184,7 @@ class SensingTraceInput:
     issue_enemy_read_ms: float
     issue_enemy_recertificate_ms: float
     issue: FreshIssueResult
+    player_control_root: Any
     spell_enemy_body_guard: Any
     spell_enemy_body_guard_error: str | None
 
@@ -124,6 +237,19 @@ def build_sensing_trace_fields(
     )
 
     return {
+        "source_collision_shadow": {
+            "schema": SOURCE_COLLISION_SHADOW_SCHEMA,
+            "role": "shadow_no_action_ranking_or_hard_authority",
+            "player": _player_geometry_record(
+                trace_input.player_control_root
+            ),
+            "bullets": _bullet_lifecycle_record(bullets),
+            "lasers": {
+                "observed_count": len(trace_input.lasers),
+                "native_finite_rectangle_fields_retained": True,
+                "collision_promotion": False,
+            },
+        },
         "time_scale": {
             "semantics_version": (
                 TH08_PLAYER_LASER_SCALE_SEMANTICS_VERSION
@@ -412,4 +538,8 @@ def build_sensing_trace_fields(
     }
 
 
-__all__ = ["SensingTraceInput", "build_sensing_trace_fields"]
+__all__ = [
+    "SOURCE_COLLISION_SHADOW_SCHEMA",
+    "SensingTraceInput",
+    "build_sensing_trace_fields",
+]

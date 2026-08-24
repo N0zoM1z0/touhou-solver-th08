@@ -59,6 +59,7 @@ from th08_runtime.game_state import (  # noqa: F401
     TARGET_EXE,
 )
 from th08_runtime.sensing import (  # noqa: F401
+    PLAYER_CONTROL_GEOMETRY_CAPTURE_SIZE,
     capture_input_clock_shadow,
     capture_player_control_root,
     capture_time_scale_root,
