@@ -228,6 +228,7 @@ faster.  It does not create the information needed to avoid a future trap.
    immediately widen/guard the next estimate even when the write is held, and
    scene reset must not allow low-load samples to erase plausible computation
    tail support.  Add a regression reproducing the 32-hold self-lock.
+   **Implemented offline as OPT-002A; physical route gate pending.**
 4. Run the complete route again under the same isolated Wine and nonbinding
    duration contract before beginning another behavior optimization.
 5. Add exact `rank`, `subRank`, min/max rank, and preferably graze/damage

@@ -109,6 +109,51 @@ class AdaptiveControlDelayTests(unittest.TestCase):
         self.assertTrue(guarded.guard_active)
         self.assertFalse(expired.guard_active)
 
+    def test_deadline_hold_widens_next_estimate_without_a_write(self) -> None:
+        for index in range(12):
+            frame = 10 + index * 3
+            expected = 0x41 if index % 2 == 0 else 0x81
+            self.estimator.issued(
+                snapshot_frame=frame,
+                issue_frame=frame,
+                expected_mask=expected,
+                support_high=3,
+            )
+            self.estimator.observe(
+                frame=frame + 1,
+                input_mask=expected,
+            )
+        narrowed = self.estimator.estimate(frame=45)
+        self.assertEqual(narrowed.support, (1,))
+
+        self.estimator.register_deadline_miss(
+            frame=50,
+            observed_lag=2,
+        )
+
+        recovered = self.estimator.estimate(frame=51)
+        self.assertEqual(recovered.support, (1, 2, 3))
+        self.assertTrue(recovered.guard_active)
+        self.assertEqual(recovered.deadline_misses, 1)
+        self.assertEqual(recovered.overruns, 0)
+        self.assertEqual(recovered.censored, 0)
+        self.assertEqual(
+            self.estimator.estimate(frame=71).support,
+            (1,),
+        )
+
+    def test_reset_clears_deadline_feedback(self) -> None:
+        self.estimator.register_deadline_miss(
+            frame=50,
+            observed_lag=3,
+        )
+        self.estimator.reset()
+
+        estimate = self.estimator.estimate(frame=51, default=2)
+        self.assertEqual(estimate.support, (2, 3))
+        self.assertEqual(estimate.deadline_misses, 0)
+        self.assertFalse(estimate.guard_active)
+
 
 if __name__ == "__main__":
     unittest.main()

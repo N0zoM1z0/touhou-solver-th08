@@ -92,6 +92,7 @@ class DecisionControlTraceTests(unittest.TestCase):
             guard_active=False,
             overruns=1,
             censored=2,
+            deadline_misses=3,
         )
         guidance = SimpleNamespace(
             support_covers_current=True,
@@ -154,6 +155,10 @@ class DecisionControlTraceTests(unittest.TestCase):
         )
 
         self.assertEqual(fields["deadline_guard"]["planned_mask"], 0x81)
+        self.assertEqual(
+            fields["control_delay_estimator"]["deadline_misses"],
+            3,
+        )
         self.assertEqual(
             fields["input_dispatch"]["transitions"],
             [[0x80, True]],

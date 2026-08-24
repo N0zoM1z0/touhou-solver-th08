@@ -81,6 +81,11 @@ def build_decision_control_trace_fields(
             "guard_active": delay_estimate.guard_active,
             "overruns": delay_estimate.overruns,
             "censored": delay_estimate.censored,
+            "deadline_misses": getattr(
+                delay_estimate,
+                "deadline_misses",
+                0,
+            ),
         },
         "action_hold_frames": trace_input.action_hold_frames,
         "input_snapshot": {

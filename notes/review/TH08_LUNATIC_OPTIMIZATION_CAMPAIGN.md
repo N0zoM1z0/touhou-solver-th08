@@ -59,7 +59,7 @@ change when its semantic and timing gate passes.
 | --- | --- | --- | --- | --- | --- |
 | OPT-001 | sensing latency | Reuse one fixed 64-slot enemy-prefix RPM destination for planning and fresh issue recertification | low | VALIDATED-PHYSICAL | 61 hits; both prefix medians down about 1.2 ms; keep |
 | OPT-002 | sensing latency | Coalesce input and position fields inside the existing bracketed player-control root, preserving duplicate before/after observations | low-medium | VALIDATED-MECHANISM | 67 hits; read latency down, semantic sensor evidence clean; keep, but route exposed OPT-002A |
-| OPT-002A | control-delay correctness | Close the post-reset deadline-miss feedback self-lock without weakening issue freshness | medium | QUEUED-NEXT | pending |
+| OPT-002A | control-delay correctness | Close the post-reset deadline-miss feedback self-lock without weakening issue freshness | medium | FIXED-OFFLINE | pending |
 | OPT-003 | local/issue latency | Share immutable action-conditioned hazard projection work between planning and issue recertification where versions are exact-equal | medium | QUEUED | pending |
 | FB-001 | future births | Build a source-guided, executable-validated producer inventory for the pre-spell-190 route and rank reached `UNKNOWN` causes by hit-window impact | low, shadow | QUEUED | pending |
 | FB-002 | future births | Replace reached monolithic ECL special cases with smaller typed transition/emission primitives derived from source control flow and differential fixtures | medium-high | QUEUED | pending |
@@ -256,6 +256,51 @@ Diagnostic follow-up AUD-023 was replayed without changing gameplay. Frame
 so the former sensor-gap label was a hit-row timing error. Regenerated compact
 evidence contains 43 modeled collisions, 24 exact bullet overlaps, and zero
 sensor gaps; all 67 hit identities and stage counts are unchanged.
+
+## OPT-002A — Deadline-Miss Estimator Feedback
+
+Status: **FIXED-OFFLINE; PHYSICAL GATE PENDING**
+
+Global failure addressed: a proposal can arrive after the high end of its
+modeled delay support. Holding the old input is required for safety, but the
+no-write transaction cannot produce a future actuation observation. Without
+direct feedback, a narrowed estimator can remain wrong indefinitely.
+
+Change boundary:
+
+- Preserve the current decision's fail-closed deadline hold exactly.
+- Register the observed snapshot-to-issue lag only after the deadline test has
+  proved it exceeds the support used for planning.
+- For the next estimates, retain a temporary high-support floor equal to that
+  observed lag plus the existing one-frame default pickup allowance, capped
+  by the configured live maximum. Activate the existing 600-frame guard.
+- Keep end-to-end samples, their quantiles, pending-command semantics,
+  minimum/maximum delay bounds, hit guard, actions, planner ranking, and scene
+  reset behavior otherwise unchanged.
+- Expire the deadline floor independently from later hit guards, and clear it
+  on a scene reset.
+
+Expected metric: the first late issue remains a deadline hold, but the next
+decision's support covers the observed issue lag and cannot repeat a no-write
+self-lock. The physical config must report deadline-feedback v1, and trace
+rows must expose a nonzero `deadline_misses` counter after activation.
+
+Falsifier: an expired action is issued; the next support still excludes the
+observed lag; the floor survives reset/expiry; support exceeds configured
+bounds; identical non-deadline estimator sequences change; or the physical
+route again contains a multi-decision deadline-hold streak at narrowed
+support.
+
+Offline result: `AdaptiveControlDelay.register_deadline_miss()` records a
+separate deadline count, temporary support floor, and guard window without
+fabricating a visible-input sample or incrementing actuation overruns. The
+controller calls it on the exact `ActionIssueAlignment.deadline_missed` edge
+before applying the unchanged hold. A regression recreates twelve one-frame
+samples, support `[1]`, a two-frame no-write deadline, and verifies that the
+next estimate becomes `[1,2,3]` without a hit; expiry and reset return to the
+normal estimate. Focused control/trace/issue tests pass 18/18. Complete-suite
+discovery passes 1,361 tests with five skips, and import smoke passes. Wine
+smoke and the full-route gate remain pending.
 
 ## Future-Birth Simplification Contract
 

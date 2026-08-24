@@ -448,7 +448,7 @@ mechanism is retained and its hit outcome is not promoted.
 
 ### AUD-022 — A deadline hold cannot teach the delay estimator that its support expired
 
-Status: **CONFIRMED-PHYSICAL; FIX QUEUED**
+Status: **FIXED-OFFLINE; PHYSICAL GATE PENDING**
 
 **Observed physical:** after the Stage 4A scene reset in run `...034510`,
 empty-scene samples narrowed `AdaptiveControlDelay` from its default `[2,3]`
@@ -480,6 +480,23 @@ proposal must remain held; the fix may not retroactively issue an action that
 was planned for the wrong epoch. A regression must reproduce low-load `[1]`,
 a later two-frame deadline, a no-write hold, immediate next-estimate widening,
 and eventual recovery without requiring a hit.
+
+**Fixed offline:** the current expired proposal is still held. Its proven
+snapshot-to-issue lag now establishes a temporary next-estimate support floor,
+plus the existing default pickup frame, under the existing 600-frame guard.
+This is stored separately from visible-input samples and actuation overruns,
+expires independently, respects the configured maximum, and clears on reset.
+The controller config identifies
+`th08-control-delay-deadline-feedback-v1`; decisions expose cumulative
+`deadline_misses` for physical verification.
+
+The retained failure is reproduced without Wine: twelve one-frame end-to-end
+samples narrow support to `[1]`; registering the observed two-frame late issue
+writes no input but makes the next support `[1,2,3]`. Expiry returns to `[1]`
+and reset returns to the default `[2,3]`. Focused estimator, trace, iteration,
+and issue-stage tests pass 18/18; complete Linux discovery passes 1,361 tests
+with five skips, and import smoke passes. A full route must now show that
+Stage 4A no longer repeats the frame-72949-style hold streak.
 
 ### AUD-023 — Hit-row hazard attribution can be later than the lethal collision
 

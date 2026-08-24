@@ -25,6 +25,7 @@ class DelayEstimate:
     guard_active: bool
     overruns: int
     censored: int
+    deadline_misses: int = 0
 
 
 @dataclass(frozen=True)
@@ -83,8 +84,11 @@ class AdaptiveControlDelay:
         self.end_to_end_lags: deque[int] = deque(maxlen=window)
         self.pending: _PendingActuation | None = None
         self.guard_until = -1
+        self.deadline_floor_until = -1
+        self.deadline_support_floor = self.minimum
         self.overruns = 0
         self.censored = 0
+        self.deadline_misses = 0
 
     def reset(self) -> None:
         self.computation_lags.clear()
@@ -92,8 +96,11 @@ class AdaptiveControlDelay:
         self.end_to_end_lags.clear()
         self.pending = None
         self.guard_until = -1
+        self.deadline_floor_until = -1
+        self.deadline_support_floor = self.minimum
         self.overruns = 0
         self.censored = 0
+        self.deadline_misses = 0
 
     def observe(self, *, frame: int, input_mask: int) -> None:
         pending = self.pending
@@ -187,6 +194,43 @@ class AdaptiveControlDelay:
             frame + self.guard_frames,
         )
 
+    def register_deadline_miss(
+        self,
+        *,
+        frame: int,
+        observed_lag: int,
+    ) -> None:
+        """Retain a proven delay lower bound even when no action is issued.
+
+        A proposal whose issue epoch exceeds its modeled support must remain
+        held. That no-write transaction cannot later produce a visible-input
+        sample, however, so the observed snapshot-to-issue lag has to widen
+        the next estimate directly or the controller can self-lock forever.
+        One default pickup frame is included because ``observed_lag`` ends at
+        issue, before a newly issued final mask can become observable.
+        """
+
+        if frame < 0 or observed_lag < 0:
+            raise ValueError("deadline evidence cannot be negative")
+        if frame > self.deadline_floor_until:
+            self.deadline_support_floor = self.minimum
+        self.deadline_support_floor = max(
+            self.deadline_support_floor,
+            min(
+                self.maximum,
+                observed_lag + self.default_pickup_frames,
+            ),
+        )
+        self.deadline_floor_until = max(
+            self.deadline_floor_until,
+            frame + self.guard_frames,
+        )
+        self.guard_until = max(
+            self.guard_until,
+            frame + self.guard_frames,
+        )
+        self.deadline_misses += 1
+
     def estimate(self, *, frame: int, default: int = 2) -> DelayEstimate:
         guard_active = frame <= self.guard_until
         if self.end_to_end_lags:
@@ -210,6 +254,8 @@ class AdaptiveControlDelay:
             high = default + 1
         if guard_active:
             high += 1
+        if frame <= self.deadline_floor_until:
+            high = max(high, self.deadline_support_floor)
         low = max(self.minimum, min(self.maximum, low))
         high = max(low, min(self.maximum, high))
         nominal = max(low, min(high, nominal))
@@ -222,4 +268,5 @@ class AdaptiveControlDelay:
             guard_active=guard_active,
             overruns=self.overruns,
             censored=self.censored,
+            deadline_misses=self.deadline_misses,
         )

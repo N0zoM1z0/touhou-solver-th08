@@ -3212,8 +3212,16 @@ def _run_live_session(
                         ENEMY_MAX_OBSERVED_WORLD_SPEED
                     ),
                     "control_delay_policy": (
-                        "adaptive_end_to_end_distribution_robust_mpc"
+                        "adaptive_end_to_end_distribution_robust_mpc_v2"
                     ),
+                    "control_delay_deadline_feedback": {
+                        "schema": "th08-control-delay-deadline-feedback-v1",
+                        "expired_action_policy": "hold_previous_mask",
+                        "next_estimate_floor": (
+                            "observed_snapshot_to_issue_plus_default_pickup"
+                        ),
+                        "guard_frames": LIVE_CONTROL_DELAY_GUARD_FRAMES,
+                    },
                     "control_delay_default": args.control_delay_frames,
                     "control_delay_min": LIVE_CONTROL_DELAY_MIN,
                     "control_delay_max": LIVE_CONTROL_DELAY_MAX,
@@ -6682,6 +6690,11 @@ def _run_live_session(
             planned_action = decision.action
             planned_mask = decision.mask
             action_deadline_missed = action_alignment.deadline_missed
+            if action_deadline_missed:
+                delay_estimator.register_deadline_miss(
+                    frame=counter_at_action,
+                    observed_lag=action_alignment.action_lag,
+                )
             ordinary_issue_age = (
                 counter_at_action - captured_iteration.snapshot_frame
             )
