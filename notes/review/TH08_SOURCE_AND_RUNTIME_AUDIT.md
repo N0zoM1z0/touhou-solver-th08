@@ -1209,6 +1209,26 @@ structural omission is future births/child producers; spell 115 additionally
 requires callback-14 lowering. These are retained-trace diagnostics, not a
 survival or runtime-image-identity acceptance claim.
 
+The follow-up static contract is retained as
+`th08_stage5_spell_producer_contract_20260824.json`. It decodes opcode `0x7A`
+with the native `enemyFace`/`spellCardNumber` half-word layout, closes literal
+call/interrupt/auxiliary/child edges, and normalizes subroutine numbers and
+phase-exit targets. All five route Stage-5 spell programs (103, 107, 111, 115,
+118) have bit-for-bit-equivalent normalized producer graphs in
+`ecldata5sp.ecl`; the different root and successor indices are packaging, not
+pattern differences. The observed four cards contain no dynamic subroutine
+target in that static closure.
+
+This proves topology, not reached futures. The exact census shows why a single
+direct-fire patch is insufficient: spell 103 has six direct-fire sites;
+spell 107 has three direct-fire, three transform, and three child-spawn sites;
+spell 111 has three direct-fire sites behind 13 child-spawn sites; and spell
+115 has six direct-fire, three transform, two child-spawn, and six immediate
+callback-14 sites. Every card also reaches the shared callback-13 visual
+auxiliary. Runtime VM locals/control/RNG still select the causal prefix, so the
+contract is an offline oracle and coverage denominator only, never action
+authority by itself.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository

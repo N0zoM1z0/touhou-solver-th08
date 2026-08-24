@@ -535,8 +535,8 @@ metrics are nonzero and the candidate changes a same-root viability outcome.
 
 ## GLOBAL-001C — Mode-Correct Practice Image And Producer Census
 
-Status: **PRACTICE IDENTITY CLOSED OFFLINE; FUTURE-BIRTH COVERAGE IN
-PROGRESS**
+Status: **MODE IDENTITY AND STATIC PRODUCER CONTRACT CLOSED OFFLINE; RUNTIME
+PREFIX COVERAGE IN PROGRESS**
 
 The first retained-trace census exposed an infrastructure blocker before any
 producer extension: Practice Start loads the source-authoritative
@@ -554,6 +554,15 @@ spell producer topology, admit active-spell direct-fire prefixes into the
 existing fail-closed future-source kernel, and then lower child sources and
 callback 14. Wine remains a final acceptance gate after offline projection
 coverage and same-root global viability changes are nonzero.
+
+The machine-readable producer contract now pins both Stage-5 images and proves
+normalized program equivalence for route spells 103/107/111/115/118. It also
+provides the exact direct-fire/transform/child/callback site denominator and
+fails if a literal target becomes dynamic. This closes the static census but
+does not promote a lexical branch to a reached future. The next implementation
+step reuses the captured VM-root executor to consume this topology, beginning
+with prefixes that stay within already-supported direct-fire semantics and
+truncating before every unlowered child or callback effect.
 
 ## Boundary And Focus Contract
 

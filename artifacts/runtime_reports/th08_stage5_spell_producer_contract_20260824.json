@@ -1,0 +1,3144 @@
+{
+  "limitations": [
+    "Static eligible lexical closure can include a branch not reached from a retained VM root.",
+    "RNG state, player-aim dependence, phase timing, and live locals require a runtime-root replay.",
+    "A matching semantic digest proves copied ECL program equivalence, not solver lowering completeness."
+  ],
+  "native_authority": {
+    "callback_dispatch": "th08/src/EclRunHigh.inl and th08/src/EclExIns.cpp",
+    "loader": "th08/src/EnemyManager.cpp: game-manager bit14 selects the stage *sp.ecl table for Practice spells below ID 205",
+    "spell_layout": "th08/src/EclDependencies.cpp: opcode 0x7A stores enemyFace u16 at +0x0C and spellCardNumber u16 at +0x0E"
+  },
+  "passed": true,
+  "practice": {
+    "filename": "ecldata5sp.ecl",
+    "programs": {
+      "103": {
+        "callback_sites": [
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 140,
+            "offset": 7124,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1580,
+            "subroutine": 15
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 140,
+            "offset": 7184,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1640,
+            "subroutine": 15
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 240,
+            "offset": 7244,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1700,
+            "subroutine": 15
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 240,
+            "offset": 7284,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1740,
+            "subroutine": 15
+          },
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 20204,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 38
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 20288,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 38
+          }
+        ],
+        "child_source_roots": [
+          39
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 20224,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 38
+          }
+        ],
+        "dependency_subroutines": [
+          15,
+          38,
+          39
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 90,
+            "offset": 6784,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 64,
+            "relative_offset": 1240,
+            "subroutine": 15
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 6848,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 64,
+            "relative_offset": 1304,
+            "subroutine": 15
+          },
+          {
+            "local_vm_time": 260,
+            "offset": 7404,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1860,
+            "subroutine": 15
+          },
+          {
+            "local_vm_time": 260,
+            "offset": 7468,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1924,
+            "subroutine": 15
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 7532,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1988,
+            "subroutine": 15
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 7596,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 2052,
+            "subroutine": 15
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 5576,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 32,
+            "subroutine": 15
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_12",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 15,
+        "same_source_subroutines": [
+          15,
+          38
+        ],
+        "semantic_program_sha256": "836e24feb58c004cbf5adf8520962dcf0cee15237d25b27667109309e69c22b7",
+        "site_counts": {
+          "callback": 6,
+          "child_spawn": 1,
+          "direct_fire": 6,
+          "periodic_control": 1,
+          "transform": 0
+        },
+        "spell_id": 103,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 6488,
+        "timeout_frames": 3000,
+        "timeout_successor_subroutine": 6,
+        "transform_sites": []
+      },
+      "107": {
+        "callback_sites": [
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 340,
+            "offset": 11760,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1432,
+            "subroutine": 19
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 340,
+            "offset": 11820,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1492,
+            "subroutine": 19
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 440,
+            "offset": 11900,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1572,
+            "subroutine": 19
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 440,
+            "offset": 11940,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1612,
+            "subroutine": 19
+          },
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 20204,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 38
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 20288,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 38
+          }
+        ],
+        "child_source_roots": [
+          21,
+          24,
+          39
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 12244,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 228,
+            "subroutine": 20
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 12444,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 428,
+            "subroutine": 20
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 20224,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 38
+          }
+        ],
+        "dependency_subroutines": [
+          19,
+          20,
+          21,
+          22,
+          24,
+          25,
+          26,
+          38,
+          39
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 12792,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 2,
+            "relative_offset": 40,
+            "subroutine": 22
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 13264,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 2,
+            "relative_offset": 40,
+            "subroutine": 25
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 13380,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 2,
+            "relative_offset": 40,
+            "subroutine": 26
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 10360,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 32,
+            "subroutine": 19
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "bullet_transform",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_12",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 19,
+        "same_source_subroutines": [
+          19,
+          20,
+          38
+        ],
+        "semantic_program_sha256": "2937c1b3647ae43b336ae76b4a6ecb2cbe9635410d772dcda9afabeecca41ba0",
+        "site_counts": {
+          "callback": 6,
+          "child_spawn": 3,
+          "direct_fire": 3,
+          "periodic_control": 1,
+          "transform": 3
+        },
+        "spell_id": 107,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 11272,
+        "timeout_frames": 4620,
+        "timeout_successor_subroutine": 9,
+        "transform_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 12752,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 22
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 13224,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 25
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 13340,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 26
+          }
+        ]
+      },
+      "111": {
+        "callback_sites": [
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 350,
+            "offset": 9660,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1988,
+            "subroutine": 16
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 450,
+            "offset": 9720,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 2048,
+            "subroutine": 16
+          },
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 20204,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 38
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 20288,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 38
+          }
+        ],
+        "child_source_roots": [
+          17,
+          39
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 90,
+            "offset": 8996,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1324,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9032,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1360,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9068,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1396,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9124,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1452,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9160,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1488,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9196,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1524,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9252,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1580,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9288,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1616,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9324,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1652,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9380,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1708,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9416,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1744,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 9452,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1780,
+            "subroutine": 16
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 20224,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 38
+          }
+        ],
+        "dependency_subroutines": [
+          16,
+          17,
+          18,
+          38,
+          39
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 10096,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 70,
+            "relative_offset": 100,
+            "subroutine": 18
+          },
+          {
+            "local_vm_time": 310,
+            "offset": 10164,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 70,
+            "relative_offset": 168,
+            "subroutine": 18
+          },
+          {
+            "local_vm_time": 370,
+            "offset": 10228,
+            "opcode": 96,
+            "opcode_hex": "0x60",
+            "opcode_name": "fire_pattern_mode_0",
+            "parameter_mask": 0,
+            "relative_offset": 232,
+            "subroutine": 18
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 7704,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 32,
+            "subroutine": 16
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_12",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 16,
+        "same_source_subroutines": [
+          16,
+          38
+        ],
+        "semantic_program_sha256": "240cbf4150b03eeb30e13adb8dbae855e23136ee621527efb9041d883875aa22",
+        "site_counts": {
+          "callback": 4,
+          "child_spawn": 13,
+          "direct_fire": 3,
+          "periodic_control": 1,
+          "transform": 0
+        },
+        "spell_id": 111,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 8616,
+        "timeout_frames": 3000,
+        "timeout_successor_subroutine": 49,
+        "transform_sites": []
+      },
+      "115": {
+        "callback_sites": [
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 140,
+            "offset": 15144,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1536,
+            "subroutine": 28
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 140,
+            "offset": 15204,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1596,
+            "subroutine": 28
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 220,
+            "offset": 15244,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1636,
+            "subroutine": 28
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 220,
+            "offset": 15284,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1676,
+            "subroutine": 28
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 240,
+            "offset": 15344,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1736,
+            "subroutine": 28
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 240,
+            "offset": 15384,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1776,
+            "subroutine": 28
+          },
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 20204,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 38
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 20288,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 38
+          }
+        ],
+        "child_source_roots": [
+          30,
+          39
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 280,
+            "offset": 15800,
+            "opcode": 91,
+            "opcode_hex": "0x5b",
+            "opcode_name": "spawn_child_enemy_variant",
+            "parameter_mask": 0,
+            "relative_offset": 2192,
+            "subroutine": 28
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 20224,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 38
+          }
+        ],
+        "dependency_subroutines": [
+          28,
+          29,
+          30,
+          38,
+          39
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 90,
+            "offset": 14928,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1320,
+            "subroutine": 28
+          },
+          {
+            "local_vm_time": 260,
+            "offset": 15504,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1896,
+            "subroutine": 28
+          },
+          {
+            "local_vm_time": 260,
+            "offset": 15568,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1960,
+            "subroutine": 28
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 15632,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 2024,
+            "subroutine": 28
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 15696,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 2088,
+            "subroutine": 28
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 16048,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 64,
+            "relative_offset": 120,
+            "subroutine": 29
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 13640,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 32,
+            "subroutine": 28
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "bullet_transform",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_14",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 28,
+        "same_source_subroutines": [
+          28,
+          38
+        ],
+        "semantic_program_sha256": "9c7c94d707a638ce1ce2a0cf11b3e94220c51577cb85c3fe8b03c8718f3dccfa",
+        "site_counts": {
+          "callback": 8,
+          "child_spawn": 2,
+          "direct_fire": 6,
+          "periodic_control": 1,
+          "transform": 3
+        },
+        "spell_id": 115,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 14552,
+        "timeout_frames": 3000,
+        "timeout_successor_subroutine": 6,
+        "transform_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 15928,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 29
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 15968,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 40,
+            "subroutine": 29
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 16008,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 80,
+            "subroutine": 29
+          }
+        ]
+      },
+      "118": {
+        "callback_sites": [
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 240,
+            "offset": 17428,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1156,
+            "subroutine": 31
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 240,
+            "offset": 17488,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1216,
+            "subroutine": 31
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 340,
+            "offset": 17568,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1296,
+            "subroutine": 31
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 340,
+            "offset": 17608,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1336,
+            "subroutine": 31
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 440,
+            "offset": 17832,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1560,
+            "subroutine": 31
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 440,
+            "offset": 17892,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1620,
+            "subroutine": 31
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 540,
+            "offset": 17972,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1700,
+            "subroutine": 31
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 540,
+            "offset": 18012,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1740,
+            "subroutine": 31
+          },
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 20204,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 38
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 20288,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 38
+          }
+        ],
+        "child_source_roots": [
+          34,
+          36,
+          39
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 18236,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 148,
+            "subroutine": 32
+          },
+          {
+            "local_vm_time": 10,
+            "offset": 18440,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 352,
+            "subroutine": 32
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 18676,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 168,
+            "subroutine": 33
+          },
+          {
+            "local_vm_time": 10,
+            "offset": 18860,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 352,
+            "subroutine": 33
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 20224,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 38
+          }
+        ],
+        "dependency_subroutines": [
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 19412,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 16,
+            "relative_offset": 280,
+            "subroutine": 35
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 19456,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 16,
+            "relative_offset": 324,
+            "subroutine": 35
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 20032,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 16,
+            "relative_offset": 280,
+            "subroutine": 37
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 20076,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 16,
+            "relative_offset": 324,
+            "subroutine": 37
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 16272,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 31
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "bullet_transform",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_12",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 31,
+        "same_source_subroutines": [
+          31,
+          32,
+          33,
+          38
+        ],
+        "semantic_program_sha256": "9c6500712700d00163adf1b7b66e39fffe3a736dbe92151956879655e2c43f8b",
+        "site_counts": {
+          "callback": 10,
+          "child_spawn": 5,
+          "direct_fire": 4,
+          "periodic_control": 1,
+          "transform": 2
+        },
+        "spell_id": 118,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 16940,
+        "timeout_frames": 2640,
+        "timeout_successor_subroutine": 50,
+        "transform_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 19132,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 35
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 19752,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 37
+          }
+        ]
+      },
+      "208": {
+        "callback_sites": [
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 20204,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 38
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 20288,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 38
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 140,
+            "offset": 21176,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 772,
+            "subroutine": 40
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 140,
+            "offset": 21236,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 832,
+            "subroutine": 40
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 230,
+            "offset": 21276,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 872,
+            "subroutine": 40
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 230,
+            "offset": 21316,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 912,
+            "subroutine": 40
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 260,
+            "offset": 21376,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 972,
+            "subroutine": 40
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 260,
+            "offset": 21416,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1012,
+            "subroutine": 40
+          }
+        ],
+        "child_source_roots": [
+          39,
+          42
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 20224,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 38
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 21796,
+            "opcode": 91,
+            "opcode_hex": "0x5b",
+            "opcode_name": "spawn_child_enemy_variant",
+            "parameter_mask": 0,
+            "relative_offset": 1392,
+            "subroutine": 40
+          }
+        ],
+        "dependency_subroutines": [
+          38,
+          39,
+          40,
+          41,
+          42
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 110,
+            "offset": 20960,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 556,
+            "subroutine": 40
+          },
+          {
+            "local_vm_time": 270,
+            "offset": 21476,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1072,
+            "subroutine": 40
+          },
+          {
+            "local_vm_time": 270,
+            "offset": 21540,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1136,
+            "subroutine": 40
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 21604,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1200,
+            "subroutine": 40
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 21668,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1264,
+            "subroutine": 40
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 22044,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 64,
+            "relative_offset": 120,
+            "subroutine": 41
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 20404,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 40
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "bullet_transform",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_14",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 40,
+        "same_source_subroutines": [
+          38,
+          40
+        ],
+        "semantic_program_sha256": "411dc565b96beb7e13bcca81bc0a9f39fd3bfbee228e02df5dca53bb02ff010d",
+        "site_counts": {
+          "callback": 8,
+          "child_spawn": 2,
+          "direct_fire": 6,
+          "periodic_control": 1,
+          "transform": 3
+        },
+        "spell_id": 208,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 20584,
+        "timeout_frames": 5940,
+        "timeout_successor_subroutine": 50,
+        "transform_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 21924,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 41
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 21964,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 40,
+            "subroutine": 41
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 22004,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 80,
+            "subroutine": 41
+          }
+        ]
+      },
+      "212": {
+        "callback_sites": [],
+        "child_source_roots": [
+          48
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 23684,
+            "opcode": 91,
+            "opcode_hex": "0x5b",
+            "opcode_name": "spawn_child_enemy_variant",
+            "parameter_mask": 6,
+            "relative_offset": 220,
+            "subroutine": 44
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 23828,
+            "opcode": 91,
+            "opcode_hex": "0x5b",
+            "opcode_name": "spawn_child_enemy_variant",
+            "parameter_mask": 6,
+            "relative_offset": 364,
+            "subroutine": 44
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 24084,
+            "opcode": 91,
+            "opcode_hex": "0x5b",
+            "opcode_name": "spawn_child_enemy_variant",
+            "parameter_mask": 6,
+            "relative_offset": 620,
+            "subroutine": 44
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 24228,
+            "opcode": 91,
+            "opcode_hex": "0x5b",
+            "opcode_name": "spawn_child_enemy_variant",
+            "parameter_mask": 6,
+            "relative_offset": 764,
+            "subroutine": 44
+          }
+        ],
+        "dependency_subroutines": [
+          43,
+          44,
+          45,
+          46,
+          47,
+          48
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 2,
+            "offset": 25228,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 64,
+            "relative_offset": 140,
+            "subroutine": 46
+          },
+          {
+            "local_vm_time": 60,
+            "offset": 25388,
+            "opcode": 98,
+            "opcode_hex": "0x62",
+            "opcode_name": "fire_pattern_mode_2",
+            "parameter_mask": 48,
+            "relative_offset": 36,
+            "subroutine": 47
+          },
+          {
+            "local_vm_time": 60,
+            "offset": 25448,
+            "opcode": 98,
+            "opcode_hex": "0x62",
+            "opcode_name": "fire_pattern_mode_2",
+            "parameter_mask": 48,
+            "relative_offset": 96,
+            "subroutine": 47
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 22268,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 43
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "bullet_transform",
+          "child_source",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 43,
+        "same_source_subroutines": [
+          43,
+          44,
+          45,
+          47
+        ],
+        "semantic_program_sha256": "402bbca455adfc923c53ebbca867d20e674b8b3692efa425e72736a9d4369e2f",
+        "site_counts": {
+          "callback": 0,
+          "child_spawn": 4,
+          "direct_fire": 3,
+          "periodic_control": 1,
+          "transform": 3
+        },
+        "spell_id": 212,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 22448,
+        "timeout_frames": 5940,
+        "timeout_successor_subroutine": 50,
+        "transform_sites": [
+          {
+            "local_vm_time": 2,
+            "offset": 25108,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 8,
+            "relative_offset": 20,
+            "subroutine": 46
+          },
+          {
+            "local_vm_time": 2,
+            "offset": 25148,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 60,
+            "subroutine": 46
+          },
+          {
+            "local_vm_time": 2,
+            "offset": 25188,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 100,
+            "subroutine": 46
+          }
+        ]
+      }
+    },
+    "sha256": "d9140821aae21c9426f7ebb0a4e8334718265bdd011f20b7c026eda901639d4b",
+    "spell_ids": [
+      103,
+      107,
+      111,
+      115,
+      118,
+      208,
+      212
+    ]
+  },
+  "route": {
+    "filename": "ecldata5.ecl",
+    "programs": {
+      "103": {
+        "callback_sites": [
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 140,
+            "offset": 25992,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1580,
+            "subroutine": 62
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 140,
+            "offset": 26052,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1640,
+            "subroutine": 62
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 240,
+            "offset": 26112,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1700,
+            "subroutine": 62
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 240,
+            "offset": 26152,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1740,
+            "subroutine": 62
+          },
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 39072,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 85
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 39156,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 85
+          }
+        ],
+        "child_source_roots": [
+          86
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 39092,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 85
+          }
+        ],
+        "dependency_subroutines": [
+          62,
+          85,
+          86
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 90,
+            "offset": 25652,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 64,
+            "relative_offset": 1240,
+            "subroutine": 62
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 25716,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 64,
+            "relative_offset": 1304,
+            "subroutine": 62
+          },
+          {
+            "local_vm_time": 260,
+            "offset": 26272,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1860,
+            "subroutine": 62
+          },
+          {
+            "local_vm_time": 260,
+            "offset": 26336,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1924,
+            "subroutine": 62
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 26400,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1988,
+            "subroutine": 62
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 26464,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 2052,
+            "subroutine": 62
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 24444,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 32,
+            "subroutine": 62
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_12",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 62,
+        "same_source_subroutines": [
+          62,
+          85
+        ],
+        "semantic_program_sha256": "836e24feb58c004cbf5adf8520962dcf0cee15237d25b27667109309e69c22b7",
+        "site_counts": {
+          "callback": 6,
+          "child_spawn": 1,
+          "direct_fire": 6,
+          "periodic_control": 1,
+          "transform": 0
+        },
+        "spell_id": 103,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 25356,
+        "timeout_frames": 3000,
+        "timeout_successor_subroutine": 53,
+        "transform_sites": []
+      },
+      "107": {
+        "callback_sites": [
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 340,
+            "offset": 30628,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1432,
+            "subroutine": 66
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 340,
+            "offset": 30688,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1492,
+            "subroutine": 66
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 440,
+            "offset": 30768,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1572,
+            "subroutine": 66
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 440,
+            "offset": 30808,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1612,
+            "subroutine": 66
+          },
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 39072,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 85
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 39156,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 85
+          }
+        ],
+        "child_source_roots": [
+          68,
+          71,
+          86
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 31112,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 228,
+            "subroutine": 67
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 31312,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 428,
+            "subroutine": 67
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 39092,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 85
+          }
+        ],
+        "dependency_subroutines": [
+          66,
+          67,
+          68,
+          69,
+          71,
+          72,
+          73,
+          85,
+          86
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 31660,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 2,
+            "relative_offset": 40,
+            "subroutine": 69
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 32132,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 2,
+            "relative_offset": 40,
+            "subroutine": 72
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 32248,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 2,
+            "relative_offset": 40,
+            "subroutine": 73
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 29228,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 32,
+            "subroutine": 66
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "bullet_transform",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_12",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 66,
+        "same_source_subroutines": [
+          66,
+          67,
+          85
+        ],
+        "semantic_program_sha256": "2937c1b3647ae43b336ae76b4a6ecb2cbe9635410d772dcda9afabeecca41ba0",
+        "site_counts": {
+          "callback": 6,
+          "child_spawn": 3,
+          "direct_fire": 3,
+          "periodic_control": 1,
+          "transform": 3
+        },
+        "spell_id": 107,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 30140,
+        "timeout_frames": 4620,
+        "timeout_successor_subroutine": 56,
+        "transform_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 31620,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 69
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 32092,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 72
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 32208,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 73
+          }
+        ]
+      },
+      "111": {
+        "callback_sites": [
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 350,
+            "offset": 28528,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1988,
+            "subroutine": 63
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 450,
+            "offset": 28588,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 2048,
+            "subroutine": 63
+          },
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 39072,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 85
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 39156,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 85
+          }
+        ],
+        "child_source_roots": [
+          64,
+          86
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 90,
+            "offset": 27864,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1324,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 27900,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1360,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 27936,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1396,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 27992,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1452,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 28028,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1488,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 28064,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1524,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 28120,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1580,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 28156,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1616,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 28192,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1652,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 28248,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1708,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 28284,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1744,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 90,
+            "offset": 28320,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 0,
+            "relative_offset": 1780,
+            "subroutine": 63
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 39092,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 85
+          }
+        ],
+        "dependency_subroutines": [
+          63,
+          64,
+          65,
+          85,
+          86
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 28964,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 70,
+            "relative_offset": 100,
+            "subroutine": 65
+          },
+          {
+            "local_vm_time": 310,
+            "offset": 29032,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 70,
+            "relative_offset": 168,
+            "subroutine": 65
+          },
+          {
+            "local_vm_time": 370,
+            "offset": 29096,
+            "opcode": 96,
+            "opcode_hex": "0x60",
+            "opcode_name": "fire_pattern_mode_0",
+            "parameter_mask": 0,
+            "relative_offset": 232,
+            "subroutine": 65
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 26572,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 32,
+            "subroutine": 63
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_12",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 63,
+        "same_source_subroutines": [
+          63,
+          85
+        ],
+        "semantic_program_sha256": "240cbf4150b03eeb30e13adb8dbae855e23136ee621527efb9041d883875aa22",
+        "site_counts": {
+          "callback": 4,
+          "child_spawn": 13,
+          "direct_fire": 3,
+          "periodic_control": 1,
+          "transform": 0
+        },
+        "spell_id": 111,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 27484,
+        "timeout_frames": 3000,
+        "timeout_successor_subroutine": 87,
+        "transform_sites": []
+      },
+      "115": {
+        "callback_sites": [
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 140,
+            "offset": 34012,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1536,
+            "subroutine": 75
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 140,
+            "offset": 34072,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1596,
+            "subroutine": 75
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 220,
+            "offset": 34112,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1636,
+            "subroutine": 75
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 220,
+            "offset": 34152,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1676,
+            "subroutine": 75
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 240,
+            "offset": 34212,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1736,
+            "subroutine": 75
+          },
+          {
+            "action": "invoke",
+            "callback_index": 14,
+            "callback_name": "toggle_tagged_bullet_phase_three_state",
+            "local_vm_time": 240,
+            "offset": 34252,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1776,
+            "subroutine": 75
+          },
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 39072,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 85
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 39156,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 85
+          }
+        ],
+        "child_source_roots": [
+          77,
+          86
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 280,
+            "offset": 34668,
+            "opcode": 91,
+            "opcode_hex": "0x5b",
+            "opcode_name": "spawn_child_enemy_variant",
+            "parameter_mask": 0,
+            "relative_offset": 2192,
+            "subroutine": 75
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 39092,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 85
+          }
+        ],
+        "dependency_subroutines": [
+          75,
+          76,
+          77,
+          85,
+          86
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 90,
+            "offset": 33796,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1320,
+            "subroutine": 75
+          },
+          {
+            "local_vm_time": 260,
+            "offset": 34372,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1896,
+            "subroutine": 75
+          },
+          {
+            "local_vm_time": 260,
+            "offset": 34436,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 1960,
+            "subroutine": 75
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 34500,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 2024,
+            "subroutine": 75
+          },
+          {
+            "local_vm_time": 280,
+            "offset": 34564,
+            "opcode": 99,
+            "opcode_hex": "0x63",
+            "opcode_name": "fire_pattern_mode_3",
+            "parameter_mask": 68,
+            "relative_offset": 2088,
+            "subroutine": 75
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 34916,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 64,
+            "relative_offset": 120,
+            "subroutine": 76
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 32508,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 32,
+            "subroutine": 75
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "bullet_transform",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_14",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 75,
+        "same_source_subroutines": [
+          75,
+          85
+        ],
+        "semantic_program_sha256": "9c7c94d707a638ce1ce2a0cf11b3e94220c51577cb85c3fe8b03c8718f3dccfa",
+        "site_counts": {
+          "callback": 8,
+          "child_spawn": 2,
+          "direct_fire": 6,
+          "periodic_control": 1,
+          "transform": 3
+        },
+        "spell_id": 115,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 33420,
+        "timeout_frames": 3000,
+        "timeout_successor_subroutine": 53,
+        "transform_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 34796,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 76
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 34836,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 40,
+            "subroutine": 76
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 34876,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 80,
+            "subroutine": 76
+          }
+        ]
+      },
+      "118": {
+        "callback_sites": [
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 240,
+            "offset": 36296,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1156,
+            "subroutine": 78
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 240,
+            "offset": 36356,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1216,
+            "subroutine": 78
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 340,
+            "offset": 36436,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1296,
+            "subroutine": 78
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 340,
+            "offset": 36476,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1336,
+            "subroutine": 78
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 440,
+            "offset": 36700,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1560,
+            "subroutine": 78
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 440,
+            "offset": 36760,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1620,
+            "subroutine": 78
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 540,
+            "offset": 36840,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1700,
+            "subroutine": 78
+          },
+          {
+            "action": "invoke",
+            "callback_index": 12,
+            "callback_name": "toggle_tagged_bullet_phase_two_state",
+            "local_vm_time": 540,
+            "offset": 36880,
+            "opcode": 136,
+            "opcode_hex": "0x88",
+            "opcode_name": "invoke_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 1740,
+            "subroutine": 78
+          },
+          {
+            "action": "install",
+            "callback_index": 13,
+            "callback_name": "tint_enemy_object_argb_ffc03030",
+            "local_vm_time": 0,
+            "offset": 39072,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 36,
+            "subroutine": 85
+          },
+          {
+            "action": "install",
+            "callback_index": -1,
+            "callback_name": null,
+            "local_vm_time": 52,
+            "offset": 39156,
+            "opcode": 137,
+            "opcode_hex": "0x89",
+            "opcode_name": "set_enemy_callback",
+            "parameter_mask": 0,
+            "relative_offset": 120,
+            "subroutine": 85
+          }
+        ],
+        "child_source_roots": [
+          81,
+          83,
+          86
+        ],
+        "child_spawn_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 37104,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 148,
+            "subroutine": 79
+          },
+          {
+            "local_vm_time": 10,
+            "offset": 37308,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 352,
+            "subroutine": 79
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 37544,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 168,
+            "subroutine": 80
+          },
+          {
+            "local_vm_time": 10,
+            "offset": 37728,
+            "opcode": 90,
+            "opcode_hex": "0x5a",
+            "opcode_name": "spawn_child_enemy",
+            "parameter_mask": 6,
+            "relative_offset": 352,
+            "subroutine": 80
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 39092,
+            "opcode": 93,
+            "opcode_hex": "0x5d",
+            "opcode_name": "spawn_enemy_from_vm_position",
+            "parameter_mask": 6,
+            "relative_offset": 56,
+            "subroutine": 85
+          }
+        ],
+        "dependency_subroutines": [
+          78,
+          79,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          86
+        ],
+        "direct_fire_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 38280,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 16,
+            "relative_offset": 280,
+            "subroutine": 82
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 38324,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 16,
+            "relative_offset": 324,
+            "subroutine": 82
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 38900,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 16,
+            "relative_offset": 280,
+            "subroutine": 84
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 38944,
+            "opcode": 97,
+            "opcode_hex": "0x61",
+            "opcode_name": "fire_pattern_mode_1",
+            "parameter_mask": 16,
+            "relative_offset": 324,
+            "subroutine": 84
+          }
+        ],
+        "dynamic_subroutine_edges": [],
+        "enemy_face": 0,
+        "lexical_scope_only": true,
+        "periodic_control_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 35140,
+            "opcode": 105,
+            "opcode_hex": "0x69",
+            "opcode_name": "set_fire_delay",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 78
+          }
+        ],
+        "required_lowering_families": [
+          "direct_fire",
+          "bullet_transform",
+          "child_source",
+          "callback_install_-1",
+          "callback_install_13",
+          "callback_invoke_12",
+          "periodic_emitter"
+        ],
+        "root_is_in_same_source_component": true,
+        "root_subroutine": 78,
+        "same_source_subroutines": [
+          78,
+          79,
+          80,
+          85
+        ],
+        "semantic_program_sha256": "9c6500712700d00163adf1b7b66e39fffe3a736dbe92151956879655e2c43f8b",
+        "site_counts": {
+          "callback": 10,
+          "child_spawn": 5,
+          "direct_fire": 4,
+          "periodic_control": 1,
+          "transform": 2
+        },
+        "spell_id": 118,
+        "spell_start_local_vm_time": 0,
+        "spell_start_offset": 35808,
+        "timeout_frames": 2640,
+        "timeout_successor_subroutine": 88,
+        "transform_sites": [
+          {
+            "local_vm_time": 0,
+            "offset": 38000,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 82
+          },
+          {
+            "local_vm_time": 0,
+            "offset": 38620,
+            "opcode": 111,
+            "opcode_hex": "0x6f",
+            "opcode_name": "define_bullet_transform",
+            "parameter_mask": 0,
+            "relative_offset": 0,
+            "subroutine": 84
+          }
+        ]
+      }
+    },
+    "sha256": "3148f45faf78bd8211a956edcdc353be73d2781995d3dadd36bdca8132f8fe19",
+    "spell_ids": [
+      103,
+      107,
+      111,
+      115,
+      118
+    ]
+  },
+  "route_practice_equivalence": {
+    "103": {
+      "equivalent": true,
+      "practice_semantic_program_sha256": "836e24feb58c004cbf5adf8520962dcf0cee15237d25b27667109309e69c22b7",
+      "route_semantic_program_sha256": "836e24feb58c004cbf5adf8520962dcf0cee15237d25b27667109309e69c22b7"
+    },
+    "107": {
+      "equivalent": true,
+      "practice_semantic_program_sha256": "2937c1b3647ae43b336ae76b4a6ecb2cbe9635410d772dcda9afabeecca41ba0",
+      "route_semantic_program_sha256": "2937c1b3647ae43b336ae76b4a6ecb2cbe9635410d772dcda9afabeecca41ba0"
+    },
+    "111": {
+      "equivalent": true,
+      "practice_semantic_program_sha256": "240cbf4150b03eeb30e13adb8dbae855e23136ee621527efb9041d883875aa22",
+      "route_semantic_program_sha256": "240cbf4150b03eeb30e13adb8dbae855e23136ee621527efb9041d883875aa22"
+    },
+    "115": {
+      "equivalent": true,
+      "practice_semantic_program_sha256": "9c7c94d707a638ce1ce2a0cf11b3e94220c51577cb85c3fe8b03c8718f3dccfa",
+      "route_semantic_program_sha256": "9c7c94d707a638ce1ce2a0cf11b3e94220c51577cb85c3fe8b03c8718f3dccfa"
+    },
+    "118": {
+      "equivalent": true,
+      "practice_semantic_program_sha256": "9c6500712700d00163adf1b7b66e39fffe3a736dbe92151956879655e2c43f8b",
+      "route_semantic_program_sha256": "9c6500712700d00163adf1b7b66e39fffe3a736dbe92151956879655e2c43f8b"
+    }
+  },
+  "schema": "th08-stage5-spell-producer-contract-v1",
+  "scope": {
+    "claim": "static literal producer topology and normalized route/Practice program equivalence; no reached-prefix or action authority",
+    "difficulty_index": 3,
+    "difficulty_mask": 8,
+    "observed_route2_sakuya_remilia_spell_ids": [
+      103,
+      107,
+      111,
+      115
+    ],
+    "route_id": 2
+  },
+  "shared_spell_ids": [
+    103,
+    107,
+    111,
+    115,
+    118
+  ]
+}
