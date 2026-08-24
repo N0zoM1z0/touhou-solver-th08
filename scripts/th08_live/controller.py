@@ -4523,6 +4523,22 @@ def _run_live_session(
                 and counter_after_read - last_bomb_counter > 30
             )
             source_time_scale_bits = int(state["time_scale_bits"])
+            if runtime_ecl_identity_service is not None:
+                runtime_ecl_identity_service.observe_if_due(
+                    reader,
+                    trace_sink,
+                    provenance=RuntimeEclPhysicalProvenance(
+                        pid=pid,
+                        executable_sha256=str(identity["sha256"]),
+                        route_id=int(state["route_id"]),
+                        difficulty_index=int(state["difficulty_index"]),
+                        stage_route_index=int(state["stage_route_index"]),
+                        gameplay_epoch=gameplay_epoch,
+                        decision_frame=counter_after_read,
+                        snapshot_frame=int(state["enemy_manager_frame"]),
+                        gameplay_active=bool(state["gameplay_active"]),
+                    ),
+                )
             scale_authority_resolution = None
             if finalb_scale_schedule_authority is not None:
                 scale_authority_resolution = (
@@ -4571,6 +4587,9 @@ def _run_live_session(
                             runtime_ecl_identity_service.accepted_version
                         ),
                         source_frame=counter_after_read,
+                        expected_manager_frame=int(
+                            state["enemy_manager_frame"]
+                        ),
                         gameplay_epoch=gameplay_epoch,
                         route_id=int(state["route_id"]),
                         difficulty_index=int(state["difficulty_index"]),
@@ -7380,30 +7399,6 @@ def _run_live_session(
                         ordinary_continuation_lease_revoked_reason
                     )
                     ordinary_causal_delayed_last_scan = None
-            if runtime_ecl_identity_service is not None:
-                runtime_ecl_identity_service.observe_if_due(
-                    reader,
-                    trace_sink,
-                    provenance=RuntimeEclPhysicalProvenance(
-                        pid=pid,
-                        executable_sha256=str(identity["sha256"]),
-                        route_id=int(state["route_id"]),
-                        difficulty_index=int(
-                            state["difficulty_index"]
-                        ),
-                        stage_route_index=int(
-                            state["stage_route_index"]
-                        ),
-                        gameplay_epoch=gameplay_epoch,
-                        decision_frame=counter_at_action,
-                        snapshot_frame=int(
-                            state["enemy_manager_frame"]
-                        ),
-                        gameplay_active=bool(
-                            state["gameplay_active"]
-                        ),
-                    ),
-                )
             local_pipeline_certificate_shadow: (
                 dict[str, object] | None
             ) = None

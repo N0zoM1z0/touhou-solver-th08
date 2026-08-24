@@ -73,6 +73,7 @@ from th08_automation.practice_windows import (  # noqa: F401
     wait_for_patched_target,
 )
 from th08_runtime_agent import TARGET_EXE, Win32, release_injected_keys
+from th08_live.scale_source_trace import FINAL_B_ECL_STATIC_SHA256
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -270,6 +271,9 @@ def run_trial(
         "runtime_ecl_static_sha256": (
             args.runtime_ecl_static_sha256
         ),
+        "enable_finalb_scale_source_authority": (
+            args.enable_finalb_scale_source_authority
+        ),
         "viability_audit": args.viability_audit,
         "input_clock_boundary_shadow": (
             args.input_clock_boundary_shadow
@@ -317,6 +321,9 @@ def run_trial(
             ),
             runtime_ecl_static_image=runtime_ecl_static_image,
             runtime_ecl_static_sha256=args.runtime_ecl_static_sha256,
+            enable_finalb_scale_source_authority=(
+                args.enable_finalb_scale_source_authority
+            ),
             safety_value_horizon=args.safety_value_horizon,
             viability_audit_dir=(
                 ROOT
@@ -708,13 +715,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--runtime-ecl-static-image",
         type=Path,
         help=(
-            "decoded static ECL image for one default-off post-issue "
+            "decoded static ECL image for one default-off pre-plan "
             "runtime byte-identity observation"
         ),
     )
     parser.add_argument(
         "--runtime-ecl-static-sha256",
         help="required immutable SHA-256 for --runtime-ecl-static-image",
+    )
+    parser.add_argument(
+        "--enable-finalb-scale-source-authority",
+        action="store_true",
+        help=(
+            "enable the exact complete-source scale schedule only for "
+            "Lunatic Final-B Practice"
+        ),
     )
     parser.add_argument(
         "--safety-value-horizon",
@@ -847,6 +862,15 @@ def main(argv: list[str] | None = None) -> int:
     ):
         raise ValueError(
             "runtime ECL identity requires both a static image and SHA-256"
+        )
+    if args.enable_finalb_scale_source_authority and (
+        args.stage.route_index != 7
+        or args.difficulty.menu_index != 3
+        or args.runtime_ecl_static_sha256 != FINAL_B_ECL_STATIC_SHA256
+    ):
+        raise ValueError(
+            "Final-B scale-source authority requires Lunatic Stage 6B "
+            "Practice and the exact ecldata7 identity"
         )
     if min(
         args.cooldown,

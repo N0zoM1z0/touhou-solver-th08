@@ -21,6 +21,7 @@ from th08_ecl_scale_schedule import (
 from th08_ecl_tool.core import EclFile
 from th08_live.runtime_ecl_identity import RuntimeEclAcceptedVersion
 from th08_live.runtime_ecl_image import ECL_SUBROUTINE_TABLE_OFFSET
+from th08_stage_ecl_catalog import NO_SCALE_WRITER_STAGE_ROUTE_INDICES
 
 from th08_live.scale_source_trace import (
     CompleteScaleSourceCapture,
@@ -45,7 +46,6 @@ PRETARGET_UNIT_TRANSPORT_HORIZON = 256
 NO_SCALE_WRITER_LIVE_AUTHORITY_SCHEMA = (
     "th08-no-scale-writer-live-schedule-authority-v1"
 )
-NO_SCALE_WRITER_STAGE_ROUTE_INDICES = frozenset(range(5))
 _SCALE_CALLBACK_INDICES = frozenset(
     {
         CALLBACK_SET_TIME_SCALE_RECIPROCAL,
@@ -189,7 +189,7 @@ class NoScaleWriterScheduleAuthority:
         if ecl.sha256 != expected_static_sha256.lower():
             raise ValueError("no-scale-writer ECL digest mismatch")
         if expected_stage_route_index not in NO_SCALE_WRITER_STAGE_ROUTE_INDICES:
-            raise ValueError("no-scale-writer authority is limited to Stages 1-5")
+            raise ValueError("stage is not in the pinned no-scale-writer catalog")
         if expected_route_id < 0 or expected_difficulty_index < 0:
             raise ValueError("no-scale-writer context cannot be negative")
         if horizon_frames <= 0:
@@ -267,6 +267,7 @@ class NoScaleWriterScheduleAuthority:
         *,
         runtime_version: RuntimeEclAcceptedVersion | None,
         source_frame: int,
+        expected_manager_frame: int,
         gameplay_epoch: int,
         route_id: int,
         difficulty_index: int,
@@ -306,7 +307,8 @@ class NoScaleWriterScheduleAuthority:
             == self._expected_stage_route_index
             and runtime_version.static_sha256
             == self._expected_static_sha256
-            and source_frame >= runtime_version.snapshot_frame
+            and source_frame >= runtime_version.decision_frame
+            and expected_manager_frame >= runtime_version.snapshot_frame
         )
         if not context_matches:
             return self._root_only(
@@ -346,7 +348,7 @@ class NoScaleWriterScheduleAuthority:
         try:
             capture = self._dependencies.capture_sources(
                 reader,
-                expected_manager_frame=source_frame,
+                expected_manager_frame=expected_manager_frame,
             )
         except (OSError, RuntimeError, TypeError, ValueError, struct.error) as error:
             return self._root_only(
@@ -398,6 +400,7 @@ class NoScaleWriterScheduleAuthority:
             "status": "accepted" if not reasons else "unknown",
             "gameplay_epoch": gameplay_epoch,
             "source_frame": source_frame,
+            "expected_manager_frame": expected_manager_frame,
             "static_audit": self.static_audit.compact_record(),
             "runtime_version": runtime_version.record(),
             "source_capture": capture.compact_record(),

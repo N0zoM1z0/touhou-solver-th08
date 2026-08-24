@@ -221,6 +221,7 @@ class PracticeSupervisorTests(unittest.TestCase):
         self.assertEqual(args.difficulty.key, "lunatic")
         self.assertIsNone(args.runtime_ecl_static_image)
         self.assertIsNone(args.runtime_ecl_static_sha256)
+        self.assertFalse(args.enable_finalb_scale_source_authority)
 
     def test_replay_save_slot_is_explicit_and_bounded(self) -> None:
         args = supervisor.build_parser().parse_args(
@@ -250,6 +251,21 @@ class PracticeSupervisorTests(unittest.TestCase):
             Path("artifacts/decoded/ecldata5.ecl"),
         )
         self.assertEqual(args.runtime_ecl_static_sha256, "1" * 64)
+
+    def test_parser_accepts_explicit_finalb_scale_authority(self) -> None:
+        args = build_parser().parse_args(
+            [
+                "--stage",
+                "6b",
+                "--runtime-ecl-static-image",
+                "artifacts/decoded/ecldata7.ecl",
+                "--runtime-ecl-static-sha256",
+                supervisor.FINAL_B_ECL_STATIC_SHA256,
+                "--enable-finalb-scale-source-authority",
+            ]
+        )
+
+        self.assertTrue(args.enable_finalb_scale_source_authority)
 
     def test_runtime_ecl_identity_is_validated_before_launch(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

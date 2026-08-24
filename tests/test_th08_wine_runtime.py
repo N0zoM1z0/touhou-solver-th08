@@ -236,7 +236,7 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertIn("--authority-only-corridor", command)
         self.assertNotIn("--trace-items", command)
 
-    def test_practice_command_is_lunatic_stage_selectable_and_local_only(self) -> None:
+    def test_practice_command_pins_selected_stage_ecl_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             command = runner.build_windows_controller_command(
@@ -268,8 +268,40 @@ class Th08WineRunnerTests(unittest.TestCase):
             command[command.index("--trial-timeout") + 1],
             "86700.0",
         )
-        self.assertNotIn("--runtime-ecl-static-image", command)
+        self.assertEqual(
+            command[command.index("--runtime-ecl-static-image") + 1],
+            runner.windows_path(
+                runner.ROOT / "artifacts" / "decoded" / "ecldata4b.ecl"
+            ),
+        )
+        self.assertEqual(
+            command[command.index("--runtime-ecl-static-sha256") + 1],
+            runner.PRACTICE_STAGE_ECL_IDENTITIES["4b"].sha256,
+        )
         self.assertNotIn("--enable-finalb-scale-source-authority", command)
+
+    def test_finalb_practice_enables_complete_scale_source_authority(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            command = runner.build_windows_controller_command(
+                mode="practice",
+                python=root / "python.exe",
+                game_dir=root / "game",
+                artifact_dir=root / "artifacts",
+                agent_duration=86_400.0,
+                trial_timeout=86_700.0,
+                kill_before_saturation=False,
+                ordinary_preexhaustion_authority=False,
+                authority_only_corridor=True,
+                trace_items=False,
+                practice_stage="6b",
+            )
+
+        self.assertIn("--enable-finalb-scale-source-authority", command)
+        self.assertEqual(
+            command[command.index("--runtime-ecl-static-sha256") + 1],
+            runner.FINAL_B_ECL_SHA256,
+        )
 
     def test_pe_machine_reads_i386_coff_header(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

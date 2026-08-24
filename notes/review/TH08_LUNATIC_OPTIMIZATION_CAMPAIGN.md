@@ -483,6 +483,32 @@ ECL/timeline/emitter kernel and require complete reached-producer coverage in
 the same hard action certificate as geometry, scale, delay, and issue version.
 See `TH08_SOURCE_AUTHORITATIVE_SOLVER_AUDIT.md`.
 
+## GLOBAL-001A — Offline Exact Stage Identity And Scale Root
+
+Status: **STAGE-5 PREREQUISITE CLOSED OFFLINE; GLOBAL ACTION AUTHORITY STILL
+WITHHELD**
+
+The first global-planner gate is now evaluated without Wine. A pinned catalog
+maps every original Practice stage to its decoded ECL filename, native route
+index, immutable SHA-256, and scale model. Source callback audits prove that
+Stages 1--5, including both Stage-4 branches, cannot select the shipped scale
+callbacks; Final A/B are explicitly dynamic. Stage 5 no longer inherits the
+old `range(5)` omission.
+
+The controller observes runtime ECL identity at the stable pre-plan root,
+before scale resolution. Decision-frame and enemy-manager-frame identities
+are carried separately through the no-writer inventory gate. The retained
+offline integration proves that exact Stage-5 identity plus a coherent
+complete active-VM inventory publishes the required 269-frame unit schedule
+on the first transaction. The next offline gate is not another scale test: it
+is a versioned global-job contract that keeps every current-entity-only or
+incomplete future-birth solution shadow-only.
+
+Intermediate changes in GLOBAL-001 use deterministic source/retained-root
+differentials. Wine is reserved for the final Stage-5 delivery/survival gate
+after shadow submissions, completions, freshness checks, and complete producer
+coverage are all nonzero offline.
+
 ## Boundary And Focus Contract
 
 Boundary/focus work begins with shadow attribution, not a new score.  It must

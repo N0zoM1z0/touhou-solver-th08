@@ -1,4 +1,4 @@
-"""One-shot, action-neutral shipped runtime-ECL identity observation."""
+"""One-shot, pre-plan action-neutral shipped runtime-ECL identity observation."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ _CAPTURE_ERRORS = (
 
 @dataclass(frozen=True, slots=True)
 class RuntimeEclPhysicalProvenance:
-    """Physical identity available at one post-issue decision."""
+    """Physical identity available at one stable pre-plan capture."""
 
     pid: int
     executable_sha256: str

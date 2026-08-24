@@ -947,10 +947,11 @@ The full-route host supplied only `ecldata7.ecl`.  At Stage-1 decision frame 1,
 the one-shot identity service compared its 67,324-byte Final-B image
 (`20b35d...`) with the 45,844-byte runtime Stage-1 image (`6b44a0...`) and
 reported `byte_mismatch`.  It never retried on stages `(1,2,3,5,7)`.  In
-addition, `NO_SCALE_WRITER_STAGE_ROUTE_INDICES = range(5)` incorrectly names
-runtime index 4 and excludes the real Stage-5 index 5.  Static no-writer audits
-are complete for `ecldata1/2/3/4a/5`; Final B remains dynamic because spell
-190 reaches scale writers.
+addition, `NO_SCALE_WRITER_STAGE_ROUTE_INDICES = range(5)` excluded the real
+Stage-5 index 5.  Runtime index 4 is a valid no-writer Stage-4B Practice image,
+but is not part of the Sakuya/Remilia Route-2 sequence.  Static no-writer
+audits are complete for `ecldata1/2/3/4a/4b/5`; Final A and Final B remain
+dynamic because their decoded programs reach callback 18.
 
 The fix is a route-wide stage dispatcher over runtime indices
 `(0,1,2,3,5,7)`, with a pinned static identity and independently versioned
@@ -1043,8 +1044,8 @@ PHYSICAL RETRY PENDING**
 
 ### AUD-043 — A local-only Practice gate still needs an explicit scale contract
 
-Status: **STRICT FAIL-CLOSED CONFIRMED; DIAGNOSTIC FLAG WIRED; PHYSICAL RETRY
-PENDING**
+Status: **STRICT FAIL-CLOSED CONFIRMED; EXACT STAGE-5 FIX OFFLINE-VALIDATED;
+FINAL PHYSICAL GATE PENDING**
 
 - **Observed:** `lunatic_route2_stage5_unattended_20260824_115523` proved the
   requested-stage unlock and native menu selection, then ended at frame 1 with
@@ -1058,6 +1059,12 @@ PENDING**
   local-planner and issue-time latency only. The raw five-record trace is kept
   ignored with SHA-256
   `c5faf0f1fba9d79e205d5012735f1189a463bcd122cc5b4a2900cd2ec963f50e`.
+- **Exact replacement:** Wine Practice now selects a pinned decoded ECL image
+  and SHA-256 from the requested native stage, rather than relying on the
+  diagnostic proxy. Stage 5 is bound to `ecldata5.ecl` digest `3148f45f...`;
+  its complete static callback audit and coherent active-VM inventory publish
+  a finite unit schedule. The diagnostic flag remains available only for
+  deliberate nonbinding observation.
 
 ### AUD-044 — Spell 107 concentrates the remaining exact fallback latency
 
@@ -1098,10 +1105,42 @@ co-occurrence is a benchmark target, not yet causal proof of GIL contention.
 A controlled foreground-only versus thread/process-background latency gate is
 required before changing ownership or affinity.
 
+### AUD-046 — Runtime identity and scale inventory were ordered after their own gate
+
+Status: **CONFIRMED CAUSAL IMPLEMENTATION BUG; OFFLINE FIX VALIDATED**
+
+The no-scale-writer authority required an accepted runtime ECL version before
+it could publish a complete schedule. The controller, however, performed its
+only runtime byte-identity observation after action issue. An exact Stage-5
+Practice transaction reached the scale check first, constructed only a
+root-observed schedule, and terminated on `time_scale_authority_unknown`; it
+could never reach the later identity observation that would unlock the next
+transaction. This makes the old order a causal cycle, not a transient Wine
+failure.
+
+The same path also passed the FRScreen decision frame as
+`expected_manager_frame` to the active-ECL-VM inventory capture. Those clocks
+are distinct: a time-scale schedule is rooted at the current player-control
+decision frame, while ECL source coherence is bracketed by the stage-local
+enemy-manager frame. Comparing either clock against the other's root could
+spuriously accept or reject a capture.
+
+The identity read is now action-neutral and occurs at the stable pre-plan root.
+The no-writer resolver separately receives and checks the decision frame and
+enemy-manager frame. A deterministic Stage-5 integration uses the real
+decoded image and pinned digest, injects an exact normalized runtime identity
+at decision/manager frames `120/75`, captures the complete VM inventory
+specifically at manager frame 75, and publishes a 269-frame complete unit
+schedule rooted at decision frame 120 on that same first transaction. All
+mismatched stage, digest, root-scale, callback, Bomb, epoch, or either-clock
+cases remain fail-closed. This establishes the scale prerequisite only; it
+does not grant global action authority without complete future-birth and
+solution-version coverage from AUD-040.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,389 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,403 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

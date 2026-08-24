@@ -140,9 +140,13 @@ class _NoWriterCaptureDependency:
     def __init__(self, *, installed_callback: int = 0) -> None:
         self.installed_callback = installed_callback
         self.calls = 0
+        self.expected_manager_frames: list[int] = []
 
-    def __call__(self, *_args: object, **_kwargs: object) -> _NoWriterCapture:
+    def __call__(self, *_args: object, **kwargs: object) -> _NoWriterCapture:
         self.calls += 1
+        self.expected_manager_frames.append(
+            int(kwargs["expected_manager_frame"])
+        )
         return _NoWriterCapture(
             installed_callback=self.installed_callback,
         )
@@ -160,7 +164,7 @@ def _runtime_ecl_version() -> RuntimeEclAcceptedVersion:
         stage_route_index=3,
         gameplay_epoch=0,
         decision_frame=99,
-        snapshot_frame=99,
+        snapshot_frame=49,
     )
 
 
@@ -240,6 +244,7 @@ class NoScaleWriterScheduleAuthorityTests(unittest.TestCase):
         keywords: dict[str, object] = {
             "runtime_version": _runtime_ecl_version(),
             "source_frame": 100,
+            "expected_manager_frame": 50,
             "gameplay_epoch": 4,
             "route_id": 2,
             "difficulty_index": 2,
@@ -282,6 +287,7 @@ class NoScaleWriterScheduleAuthorityTests(unittest.TestCase):
             )
         )
         self.assertEqual(dependency.calls, 1)
+        self.assertEqual(dependency.expected_manager_frames, [50])
         self.assertIsNotNone(accepted.trace_record)
         self.assertTrue(accepted.compact_record()["hard_action_authority"])
 
@@ -289,6 +295,15 @@ class NoScaleWriterScheduleAuthorityTests(unittest.TestCase):
         self.assertTrue(continued.planner_scale_authority)
         self.assertEqual(dependency.calls, 1)
         self.assertIsNone(continued.trace_record)
+
+    def test_decision_and_manager_clocks_are_checked_separately(self) -> None:
+        authority = self._authority(_NoWriterCaptureDependency())
+
+        stale_decision = self._resolve(authority, source_frame=98)
+        stale_manager = self._resolve(authority, expected_manager_frame=48)
+
+        self.assertEqual(stale_decision.reason, "immutable_context_mismatch")
+        self.assertEqual(stale_manager.reason, "immutable_context_mismatch")
 
     def test_scale_callback_root_and_context_mismatch_fail_closed(self) -> None:
         dependency = _NoWriterCaptureDependency(

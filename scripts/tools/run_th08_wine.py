@@ -16,8 +16,19 @@ import sys
 import time
 from typing import Any
 
+SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
+if str(SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_ROOT))
 
-ROOT = Path(__file__).resolve().parents[2]
+from th08_stage_ecl_catalog import (  # noqa: E402
+    FINAL_B_ECL_SHA256,
+    PRACTICE_STAGE_ECL_IDENTITIES,
+    PRACTICE_STAGE_KEYS,
+    SCALE_MODEL_FINAL_B,
+)
+
+
+ROOT = SCRIPTS_ROOT.parent
 REFERENCE = ROOT / "reference"
 GAME_FILE_SHA256 = {
     "th08.exe": "330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924",
@@ -33,9 +44,6 @@ EXPECTED_CONFIG_SHA256 = (
 PYTHON_EXE_SHA256 = (
     "e60592888c3128132df3489a2462716bb268063bfe3564bfe1f2f3dbe9ceafd1"
 )
-FINAL_B_ECL_SHA256 = (
-    "20b35dca3820438f0b90ae44e3362a7af27d2fc1ac7ae5888c477dc1c89a3734"
-)
 NATIVE_LIBRARY = (
     ROOT
     / "native"
@@ -49,7 +57,6 @@ NATIVE_LIBRARY_SHA256 = (
 PREFIX_MARKER = ".th08-wine-win32-ready-v1.json"
 WINE_FULL_ROUTE_AGENT_DURATION_SECONDS = 86_400.0
 WINE_FULL_ROUTE_TRIAL_TIMEOUT_SECONDS = 86_700.0
-PRACTICE_STAGE_KEYS = ("1", "2", "3", "4a", "4b", "5", "6a", "6b")
 
 
 def sha256(path: Path) -> str:
@@ -220,6 +227,7 @@ def build_windows_controller_command(
             windows_path(artifact_dir / "windows-smoke.json"),
         ]
     if mode == "practice":
+        stage_identity = PRACTICE_STAGE_ECL_IDENTITIES[practice_stage]
         command = [
             windows_path(python),
             windows_path(ROOT / "scripts" / "th08_practice_supervisor.py"),
@@ -238,7 +246,15 @@ def build_windows_controller_command(
             str(agent_duration),
             "--trial-timeout",
             str(trial_timeout),
+            "--runtime-ecl-static-image",
+            windows_path(
+                ROOT / "artifacts" / "decoded" / stage_identity.filename
+            ),
+            "--runtime-ecl-static-sha256",
+            stage_identity.sha256,
         ]
+        if stage_identity.scale_model == SCALE_MODEL_FINAL_B:
+            command.append("--enable-finalb-scale-source-authority")
         if diagnostic_continue_root_only_scale:
             command.append("--diagnostic-continue-root-only-scale")
         return command
@@ -427,6 +443,16 @@ def run(args: argparse.Namespace) -> int:
         )
         if args.mode == "full-route":
             required += (ROOT / "artifacts" / "decoded" / "ecldata7.ecl",)
+        elif args.mode == "practice":
+            practice_identity = PRACTICE_STAGE_ECL_IDENTITIES[
+                args.practice_stage
+            ]
+            required += (
+                ROOT
+                / "artifacts"
+                / "decoded"
+                / practice_identity.filename,
+            )
         for path in required:
             if not path.is_file():
                 raise FileNotFoundError(f"required TH08 Wine input is absent: {path}")
@@ -451,6 +477,18 @@ def run(args: argparse.Namespace) -> int:
             ROOT / "artifacts" / "decoded" / "ecldata7.ecl"
         ) != FINAL_B_ECL_SHA256:
             raise RuntimeError("Final-B ECL static image SHA-256 mismatch")
+        if args.mode == "practice":
+            practice_ecl = (
+                ROOT
+                / "artifacts"
+                / "decoded"
+                / practice_identity.filename
+            )
+            if sha256(practice_ecl) != practice_identity.sha256:
+                raise RuntimeError(
+                    "Practice ECL static image SHA-256 mismatch: "
+                    f"{practice_identity.filename}"
+                )
         report.update(
             {
                 "repository_commit": repository_commit(),
