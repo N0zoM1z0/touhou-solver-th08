@@ -168,21 +168,21 @@ class RetainedEventStreamTests(unittest.TestCase):
             callback_boundary.rejection_reason,
         )
 
-        geometry_boundary = import_retained_future_event_stream(
+        callback_tag_boundary = import_retained_future_event_stream(
             capsules[115], ECL
         )
-        self.assertTrue(geometry_boundary.accepted_prefix)
-        self.assertIsNone(geometry_boundary.rejection_reason)
-        self.assertFalse(geometry_boundary.full_horizon_complete)
-        self.assertEqual(geometry_boundary.proven_horizon_frames, 86)
-        self.assertEqual(geometry_boundary.producer_event_count, 0)
-        self.assertEqual(geometry_boundary.emitter_count, 0)
+        self.assertTrue(callback_tag_boundary.accepted_prefix)
+        self.assertIsNone(callback_tag_boundary.rejection_reason)
+        self.assertFalse(callback_tag_boundary.full_horizon_complete)
+        self.assertEqual(callback_tag_boundary.proven_horizon_frames, 86)
+        self.assertEqual(callback_tag_boundary.producer_event_count, 0)
+        self.assertEqual(callback_tag_boundary.emitter_count, 0)
         self.assertIn(
-            "bullet type 16 has no unique template geometry",
-            geometry_boundary.causal_prefix_reason,
+            "unsupported future bullet flags 0x100000",
+            callback_tag_boundary.causal_prefix_reason,
         )
-        assert geometry_boundary.program is not None
-        runtime = StageRuntime(geometry_boundary.program)
+        assert callback_tag_boundary.program is not None
+        runtime = StageRuntime(callback_tag_boundary.program)
         while not runtime.complete:
             runtime.step(player_x=192.0, player_y=400.0)
         self.assertEqual(runtime.metrics.births_allocated, 0)

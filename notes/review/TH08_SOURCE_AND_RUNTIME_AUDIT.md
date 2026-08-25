@@ -1571,10 +1571,63 @@ finite-pool execution, midpoint refusal, and lifecycle-flag rejection. The
 next general checkpoint is source-authoritative ANM/lifecycle and template
 geometry lowering, not a card-specific exception.
 
+### AUD-063 — Template capture truncated the source-initialized type table
+
+Status: **CONFIRMED SOURCE/ASSET BUG; FIXED OFFLINE; PHYSICAL ROOT REPLAYED**
+
+`BulletManager::AddedCallback` initializes 21 rows from the fixed
+`g_BulletSpriteScripts[21]` table. Direct fire selects those rows by its
+descriptor type, and `FUN_0042f5f0` copies the selected collision x/y without
+clamping. The snapshot projection nevertheless read only 16 rows. The first
+unsupported type in the retained phase-0 Stage-5 corpus was therefore an
+observer truncation, not an intrinsically unknown game mechanic.
+
+The new generic template contract combines source commit
+`57ee34f45eb36a0eb1ad47bea8165274da8ee34f` with decoded `etama.anm`
+SHA-256 `c3d19370...`, size 613,780. It parses the native ANM entry, sprite,
+script, and instruction layouts; applies the source initializer's generic
+sprite-size/script classes; and regenerates geometry plus lifecycle-script
+terminal ages for all 21 bullet types. Runtime capture now reads all 21
+initialized rows. Old immutable 16-row capsules may use the five absent static
+rows only after their schema, manager base, stride, uniqueness, and every
+observed type-0--15 value exactly match the source+asset contract. Sparse
+fixtures, duplicate rows, altered overlap, and types outside 0--20 still fail
+closed. This is type-indexed native mechanism data, not stage/spell policy.
+
+Replaying the same retained root that exposed type 16 removes the geometry
+error. Its first unsupported dependency remains at future frame 87, but is now
+the real callback-14-family tag `0x100000`. The proven prefix therefore remains
+86 frames and contains zero producer events; no global winning set, live
+action, or hit count changed. The correction is nevertheless decisive: it
+prevents a capture bug from being misdiagnosed as missing producer semantics
+and locates the next exact boundary without a physical rerun.
+
+### AUD-064 — Spawn lifecycle used one completion age for different ANM rows
+
+Status: **CONFIRMED SOURCE/ASSET MODEL BUG; CONTRACT RECOVERED; LOWERING OPEN**
+
+`th08_future_birth_envelope.py` currently uses one global state-2 completion
+age of 10 updates and rejects states 3/4. The source instead selects one of
+three spawn scripts from the descriptor's bullet type and prioritizes flags
+`0x02`, `0x04`, then `0x08`. The decoded asset proves that the state-2 terminal
+age is 10, 24, or 30 depending on that type; state 3 uses 15, 24, or 30, and
+state 4 uses 24 or 30. `BulletManager::OnUpdate` also moves the pre-activation
+state by velocity divided by 2, 2.5, or 3, then enters the full state-1 update
+in the same manager call when the ANM script completes. Thus the old global
+10-frame coefficient can place many generic future bullets incorrectly.
+
+The 21-row contract now retains the exact script IDs and terminal ages, but
+`FutureDirectFire` still omits `bullet_type`; using the recovered table without
+carrying that causal operand would merely replace one guess with another. The
+next checkpoint must add the type to the event IR, select lifecycle by
+type+flag priority, reproduce same-update activation, and differential every
+type/flag class. Callback tag `0x100000` remains UNKNOWN and must not be cleared
+or treated as a harmless flag. No lifecycle change has action authority yet.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,450 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,455 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

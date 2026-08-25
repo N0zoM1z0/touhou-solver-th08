@@ -34,6 +34,9 @@ from dataclasses import dataclass, field, replace
 from itertools import product
 from typing import Any
 
+from th08_bullet_template_contract import (
+    fallback_geometry_from_observed_prefix,
+)
 from th08_ecl_tool.core import EclFile, SubInstruction
 from th08_enemy_collision import enemy_contact_size_to_lethal_half_extent
 from th08_future_birth_envelope import (
@@ -59,7 +62,7 @@ from touhou_control.corridor import AabbHazard, AabbTrajectoryHazard
 
 
 ORDINARY_FUTURE_SOURCE_SEMANTICS_VERSION = (
-    "th08-ordinary-future-sources-v19-source-exact-spell-rank-gate"
+    "th08-ordinary-future-sources-v20-source-asset-template-contract"
 )
 _PROJECTION_SCHEMA = "th08-native-snapshot-collision-control-projection-v14"
 _DIRECT_FIRE_OPCODES = frozenset(range(0x60, 0x69))
@@ -1270,10 +1273,19 @@ def _template_geometry(
         for row in rows
         if isinstance(row, dict) and int(row.get("type", -1)) == bullet_type
     ]
-    if len(matches) != 1:
+    if len(matches) > 1:
         _fail(f"bullet type {bullet_type} has no unique template geometry")
-    half_width = float(matches[0]["half_width"])
-    half_height = float(matches[0]["half_height"])
+    if matches:
+        half_width = float(matches[0]["half_width"])
+        half_height = float(matches[0]["half_height"])
+    else:
+        fallback = fallback_geometry_from_observed_prefix(
+            geometry,
+            bullet_type,
+        )
+        if fallback is None:
+            _fail(f"bullet type {bullet_type} has no unique template geometry")
+        half_width, half_height = fallback
     _finite((half_width, half_height), label="bullet template geometry")
     if half_width < 0.0 or half_height < 0.0:
         _fail("bullet template half-extent is negative")

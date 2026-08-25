@@ -645,6 +645,7 @@ class NativeSnapshotProjectionTests(unittest.TestCase):
 
         record = _bullet_template_geometry_record(reader)
 
+        self.assertEqual(len(record["rows"]), 21)
         self.assertEqual(
             record["rows"][2],
             {

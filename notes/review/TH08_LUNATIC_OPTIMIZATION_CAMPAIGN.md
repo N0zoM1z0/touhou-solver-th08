@@ -507,6 +507,18 @@ route-wide future births remain research-hard because action-conditioned aim,
 RNG, callbacks, child VMs, phase changes, and unsupported opcodes must still
 fail closed.
 
+The first ANM checkpoint confirmed that this producer-first order finds hidden
+generic bugs. Capture stopped after 16 template rows even though the source
+initializer constructs 21. A compact type-indexed contract regenerated all 21
+collision extents and lifecycle script times from the pinned source plus exact
+shipped `etama.anm`; new capture now reads the full table, while old roots gain
+the missing suffix only after exact equality of their complete observed
+prefix. Same-root replay moved the first unknown from false type-16 geometry
+to the genuine callback-14 tag without changing its 86-frame empty prefix.
+The same audit disproved the envelope's single 10-frame state-2 age: the native
+scripts select 10, 24, or 30 by bullet type. That lifecycle correction is the
+next generic checkpoint and remains shadow-only.
+
 The post-route source audit sharpens this contract. The current generic birth
 analyzer has no controller caller, the ordinary-source closure is disabled and
 rejects spells, and every one of 57,553 global submissions was blocked before

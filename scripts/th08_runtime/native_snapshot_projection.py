@@ -16,6 +16,11 @@ import struct
 from dataclasses import asdict, dataclass
 from typing import Any, Iterable
 
+from th08_bullet_template_contract import (
+    BULLET_MANAGER_BASE,
+    BULLET_TEMPLATE_COUNT,
+    BULLET_TEMPLATE_STRIDE,
+)
 from th08_live.bullet_decode import BULLET_STATE_OFFSET, decode_bullets
 from th08_live.enemy_ecl_inventory import (
     EnemyMainEclVmInventory,
@@ -150,13 +155,11 @@ ENEMY_MOTION_ORBIT_CENTER_OFFSET = 0x2DD0
 ENEMY_MOTION_TIMER_OFFSET = 0x2DDC
 ENEMY_MOTION_DURATION_OFFSET = 0x2DE8
 
-# Revalidated in bullet_emitter_spawn_pattern (0x00430E10) and
-# bullet_spawn_from_emission_descriptor (0x0042F5F0).  The descriptor's type
-# selects one of the manager-owned templates; collision x/y are copied
-# without a clamp into live bullet +0xD34/+0xD38.
-BULLET_MANAGER_BASE = 0x00F54E90
-BULLET_TEMPLATE_COUNT = 16
-BULLET_TEMPLATE_STRIDE = 0x0D44
+# Revalidated in bullet_emitter_spawn_pattern (0x00430E10),
+# bullet_spawn_from_emission_descriptor (0x0042F5F0), and the 21-iteration
+# template initializer (0x00433070).  The descriptor's type selects one of
+# the manager-owned templates; collision x/y are copied without a clamp into
+# live bullet +0xD34/+0xD38.
 BULLET_TEMPLATE_COLLISION_OFFSET = 0x0D34
 
 _ENEMY_COMPONENT_NAMES = frozenset(
