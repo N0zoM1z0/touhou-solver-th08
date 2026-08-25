@@ -22,8 +22,11 @@ from th08_ecl_vm_state import (
 ENEMY_MAIN_ECL_VM_INVENTORY_LAYOUT_V1 = (
     "th08-enemy-main-ecl-vm-inventory-v1"
 )
-ENEMY_MAIN_ECL_VM_INVENTORY_LAYOUT = (
+ENEMY_MAIN_ECL_VM_INVENTORY_LAYOUT_V2 = (
     "th08-enemy-main-ecl-vm-inventory-v2"
+)
+ENEMY_MAIN_ECL_VM_INVENTORY_LAYOUT = (
+    "th08-enemy-main-ecl-vm-inventory-v3"
 )
 ENEMY_AUXILIARY_ECL_CONTEXT_POINTERS_OFFSET = 0x3384
 ENEMY_AUXILIARY_ECL_CONTEXT_COUNT = 4
@@ -46,7 +49,7 @@ class EnemyMainEclVmObservation:
     def record(self) -> list[object]:
         """Serialize one fixed-position row without repeated field names."""
 
-        return [
+        row: list[object] = [
             self.slot,
             self.enemy_pointer,
             self.enemy_flags,
@@ -57,6 +60,18 @@ class EnemyMainEclVmObservation:
             list(self.local_projection.float_local_bits),
             list(self.local_projection.scratch_integers),
         ]
+        if self.local_projection.copied_parameter_block_complete:
+            assert self.local_projection.spawn_float_parameter_bits is not None
+            assert self.local_projection.call_integer_parameters is not None
+            assert self.local_projection.call_float_parameter_bits is not None
+            row.extend(
+                (
+                    list(self.local_projection.spawn_float_parameter_bits),
+                    list(self.local_projection.call_integer_parameters),
+                    list(self.local_projection.call_float_parameter_bits),
+                )
+            )
+        return row
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,41 +148,31 @@ class EnemyMainEclVmInventory:
     auxiliary_pointer_coverage: bool = True
 
     def record(self) -> dict[str, object]:
-        if not self.auxiliary_pointer_coverage:
-            return {
-                "layout": ENEMY_MAIN_ECL_VM_INVENTORY_LAYOUT_V1,
-                "vm_local_layout": ECL_VM_LOCAL_PROJECTION_LAYOUT,
-                "scope": "ordinary_enemy_pool_prefix_main_vm_only",
-                "scanned_slots": self.scanned_slots,
-                "active_slots": self.active_slots,
-                "valid_vms": len(self.observations),
-                "invalid_active_vms": len(self.invalid),
-                "rows": [
-                    observation.record()
-                    for observation in self.observations
-                ],
-                "invalid_rows": [
-                    observation.record() for observation in self.invalid
-                ],
-                "decode_ms": self.decode_ms,
-            }
-        non_null_auxiliary_contexts = sum(
-            pointer != 0
-            for observation in self.auxiliary_contexts
-            for pointer in observation.context_pointers
-        )
-        return {
+        record: dict[str, object] = {
             "layout": ENEMY_MAIN_ECL_VM_INVENTORY_LAYOUT,
             "vm_local_layout": ECL_VM_LOCAL_PROJECTION_LAYOUT,
             "scope": (
                 "ordinary_enemy_pool_prefix_main_vm_and_auxiliary_pointers"
+                if self.auxiliary_pointer_coverage
+                else "ordinary_enemy_pool_prefix_main_vm_only"
             ),
+            "auxiliary_pointer_coverage": self.auxiliary_pointer_coverage,
             "scanned_slots": self.scanned_slots,
             "active_slots": self.active_slots,
             "valid_vms": len(self.observations),
             "invalid_active_vms": len(self.invalid),
             "rows": [observation.record() for observation in self.observations],
             "invalid_rows": [observation.record() for observation in self.invalid],
+            "decode_ms": self.decode_ms,
+        }
+        if not self.auxiliary_pointer_coverage:
+            return record
+        non_null_auxiliary_contexts = sum(
+            pointer != 0
+            for observation in self.auxiliary_contexts
+            for pointer in observation.context_pointers
+        )
+        record.update({
             "auxiliary_context_row_layout": (
                 "slot_enemy_pointer_enemy_flags_four_raw_context_pointers"
             ),
@@ -183,8 +188,8 @@ class EnemyMainEclVmInventory:
                 observation.record()
                 for observation in self.invalid_auxiliary_contexts
             ],
-            "decode_ms": self.decode_ms,
-        }
+        })
+        return record
 
 
 def decode_enemy_main_ecl_vm_inventory(
@@ -327,6 +332,7 @@ __all__ = [
     "ENEMY_AUXILIARY_ECL_CONTEXT_POINTERS_OFFSET",
     "ENEMY_MAIN_ECL_VM_INVENTORY_LAYOUT",
     "ENEMY_MAIN_ECL_VM_INVENTORY_LAYOUT_V1",
+    "ENEMY_MAIN_ECL_VM_INVENTORY_LAYOUT_V2",
     "EnemyAuxiliaryEclContextPointerObservation",
     "EnemyMainEclVmInventory",
     "EnemyMainEclVmObservation",

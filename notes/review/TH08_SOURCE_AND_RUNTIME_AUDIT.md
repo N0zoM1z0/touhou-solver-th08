@@ -1797,7 +1797,7 @@ integrated. No global-policy or physical-hit result is claimed.
 
 ### AUD-070 — The retained ``manager template`` address is actually enemy slot zero
 
-Status: **CONFIRMED SOURCE/LAYOUT BUG; NAMING FIXED, EXECUTOR REPAIR IN PROGRESS**
+Status: **CONFIRMED SOURCE/LAYOUT BUG; FIXED OFFLINE**
 
 The retained v14 payload key ``enemy_manager_template_source`` and the live
 constant ``ENEMY_MANAGER_TEMPLATE_BASE`` name address `0x0057D2F0` as the
@@ -1820,15 +1820,68 @@ The compatibility addresses and v14 payload key cannot be silently renamed,
 so the live layout now exposes explicit `ENEMY_SLOT_ZERO_BASE` and
 `ENEMY_SPAWN_TEMPLATE_BASE` names while retaining the old aliases for capsule
 replay.  New captures label the decoded row as native slot zero.  The executor
-must normalize the legacy local indices to native slots 0--479 and construct
+now normalizes the legacy local indices to native slots 0--479 and constructs
 births from the source-authoritative `EnemyManager::Initialize` template; it
-must never clone the retained slot-zero source.  No stage or spell identifier
-is involved in this correction.
+never clones the retained slot-zero source.  No stage or spell identifier is
+involved in this correction.
+
+### AUD-071 — Native child scheduling needed the complete copied VM ABI
+
+Status: **CONFIRMED SOURCE/CAPTURE/CAUSAL-METADATA BUGS; FIXED OFFLINE THROUGH THE CALLBACK-14 BOUNDARY**
+
+The old timeline draft copied a live slot-zero enemy and the old child draft
+stopped at constructor order.  Neither represents the executable.  Timeline
+lanes run before `EnemyManager::OnUpdate`; `SpawnEnemy1/2` choose the first
+inactive entry in the fixed 480-slot array, install the copy before calling
+`RunEcl`, and may recursively allocate more entries.  The later ascending
+manager scan gives a newly born higher-slot enemy a second update in its birth
+frame, but cannot revisit a lower slot that was already scanned.  The generic
+executor now reproduces this ownership and ordering for all five constructor
+opcodes.  A synthetic bidirectional slot test pins both cases: a higher-slot
+child receives bootstrap plus scan, while a child that reuses a terminated
+lower slot receives bootstrap only.
+
+Source comparison found three additional state errors while integrating that
+scheduler.  First, `SpawnEnemy2` copies VM bytes `+0x18..+0x8f`, but retained
+captures ended at `+0x67`; the missing two spawn floats, four call integers,
+and four call floats are real dynamic operands in child roots.  The capture is
+now a versioned `0x90`-byte projection.  Historical capsules remain readable
+but carry explicit absent values and fail closed if execution reaches them.
+The main-only inventory path also retains the current v3 layout instead of
+mislabeling a 12-field row as historical v1.
+
+Second, movement state zero does not clear a velocity left by an expired
+state-1/state-3 segment: `FUN_00422c40` has no state-zero case and the manager
+integrator continues to apply the residual vector.  The former rejection and
+implicit zeroing were removed.  Reached movement writes now also follow the
+dispatcher resolvers: opcode `0x41` normalizes its angle and clears the native
+motion timer, `0x42`/`0x4A` resolve dynamic durations, and `0x47` resolves its
+dynamic float.  No stage or spell selector participates.
+
+Third, solver-only affine angle-to-player metadata was allowed to survive a
+VM frame boundary and a parent-to-child VM copy.  The stored value interval is
+still valid, but its dependency belongs to the old frame or the parent's
+different source origin.  Reusing that coefficient lets global causal
+conditioning substitute the wrong player geometry and can understate future
+angles.  The executor now preserves the interval while forgetting obsolete
+correlation at both boundaries; same-update assignments and emissions retain
+their valid correlation.
+
+The shipped Stage-5 corpus supplies an end-to-end non-synthetic gate:
+subroutine 63 reaches an actual opcode-`0x5A` constructor, the pool installs
+and synchronously executes subroutine 64, copied variables `10094/10095`
+receive its world coordinates, and the child advances to the real auxiliary
+producer.  Closure then stops at unsupported future bullet flag `0x100000`,
+the known callback-14 boundary, rather than at allocation, VM state, or child
+topology.  Other reached children currently expose transform-composition
+boundaries.  This checkpoint therefore closes birth scheduling, not callback
+14, arbitrary ECL, global-planner authority, or physical route hits.  No Wine
+run is claimed.
 
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,474 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,487 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

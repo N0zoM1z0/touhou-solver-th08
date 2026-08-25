@@ -8,11 +8,16 @@ import struct
 import unittest
 
 from th08_ecl_vm_state import (
+    ECL_VM_CALL_FLOAT_PARAMETERS_OFFSET,
+    ECL_VM_CALL_INTEGER_PARAMETERS_OFFSET,
     ECL_VM_FLOAT_LOCALS_OFFSET,
     ECL_VM_INTEGER_LOCALS_OFFSET,
+    ECL_VM_LEGACY_LOCAL_PROJECTION_SIZE,
     ECL_VM_LOCAL_PROJECTION_LAYOUT,
+    ECL_VM_LOCAL_PROJECTION_LAYOUT_V1,
     ECL_VM_LOCAL_PROJECTION_SIZE,
     ECL_VM_SCRATCH_INTEGERS_OFFSET,
+    ECL_VM_SPAWN_FLOAT_PARAMETERS_OFFSET,
     EclVmLocalProjection,
     float32_bits,
     float32_from_bits,
@@ -54,6 +59,28 @@ class EclVmStateTests(unittest.TestCase):
             ECL_VM_SCRATCH_INTEGERS_OFFSET,
             *scratch_integers,
         )
+        struct.pack_into(
+            "<2I",
+            vm,
+            ECL_VM_SPAWN_FLOAT_PARAMETERS_OFFSET,
+            float32_bits(12.5),
+            float32_bits(-3.0),
+        )
+        struct.pack_into(
+            "<4i",
+            vm,
+            ECL_VM_CALL_INTEGER_PARAMETERS_OFFSET,
+            -7,
+            8,
+            9,
+            10,
+        )
+        struct.pack_into(
+            "<4I",
+            vm,
+            ECL_VM_CALL_FLOAT_PARAMETERS_OFFSET,
+            *(float32_bits(value) for value in (1.0, 2.0, 3.0, 4.0)),
+        )
 
         projection = EclVmLocalProjection.from_vm_bytes(bytes(vm))
 
@@ -64,6 +91,9 @@ class EclVmStateTests(unittest.TestCase):
         self.assertEqual(projection.integer_value(10039), (1 << 31) - 1)
         self.assertIsNone(projection.integer_value(10008))
         self.assertEqual(projection.float_bits_value(10017), 0x7FC12345)
+        self.assertEqual(projection.float_value(10094), 12.5)
+        self.assertEqual(projection.integer_value(10053), -7)
+        self.assertEqual(projection.float_value(10060), 4.0)
         self.assertIsNone(projection.float_bits_value(10024))
         self.assertTrue(math.isnan(projection.float_value(10017)))
 
@@ -72,18 +102,37 @@ class EclVmStateTests(unittest.TestCase):
             tuple(range(8)),
             tuple(range(8)),
             tuple(range(4)),
+            (10, 11),
+            (12, 13, 14, 15),
+            (16, 17, 18, 19),
         )
 
         self.assertEqual(
             projection.trace_record(),
             {
                 "layout": ECL_VM_LOCAL_PROJECTION_LAYOUT,
-                "capture_bytes": 0x68,
+                "capture_bytes": 0x90,
                 "integer_locals": list(range(8)),
                 "float_local_bits": list(range(8)),
                 "scratch_integers": list(range(4)),
+                "spawn_float_parameter_bits": [10, 11],
+                "call_integer_parameters": [12, 13, 14, 15],
+                "call_float_parameter_bits": [16, 17, 18, 19],
             },
         )
+
+    def test_legacy_projection_remains_explicitly_readable(self) -> None:
+        projection = EclVmLocalProjection.from_vm_bytes(
+            b"\0" * ECL_VM_LEGACY_LOCAL_PROJECTION_SIZE
+        )
+
+        self.assertFalse(projection.copied_parameter_block_complete)
+        self.assertEqual(
+            projection.trace_record()["layout"],
+            ECL_VM_LOCAL_PROJECTION_LAYOUT_V1,
+        )
+        self.assertEqual(projection.trace_record()["capture_bytes"], 0x68)
+        self.assertIsNone(projection.float_value(10094))
 
     def test_rejects_short_or_out_of_range_projections(self) -> None:
         with self.assertRaisesRegex(ValueError, "shorter"):

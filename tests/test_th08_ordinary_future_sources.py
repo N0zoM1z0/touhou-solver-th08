@@ -8,9 +8,15 @@ from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
-from th08_ecl_tool.core import SubInstruction, parse_ecl
+from th08_ecl_tool.core import SubInstruction, Subroutine, parse_ecl
+from th08_enemy_spawn_model import (
+    ENEMY_FLAG_CONTACT,
+    ENEMY_FLAG_LINKED_CHILD,
+)
 from th08_future_birth_envelope import FloatInterval
 from th08_ordinary_future_sources import (
+    FutureSourceClosureError,
+    _NativeEnemyPool,
     _VmState,
     _advance_motion,
     _define_bullet_transform,
@@ -19,8 +25,13 @@ from th08_ordinary_future_sources import (
     _eval_float_operand,
     _execute_auxiliary,
     _execute_main,
+    _execute_source_update,
     _health_transition_hp_loss_upper_bound,
+    _integrate_motion,
+    _instruction_map,
     _motion_state,
+    _source_initialized_spawn,
+    _spawn_vm,
     project_ordinary_future_sources,
 )
 
@@ -34,6 +45,37 @@ SOURCE_POINTER = 0x0057D2F0
 
 def _bits(value: float) -> int:
     return struct.unpack("<I", struct.pack("<f", value))[0]
+
+
+def _synthetic_subroutine(
+    index: int,
+    start: int,
+    rows: tuple[tuple[int, int, int, tuple[int, ...]], ...],
+) -> Subroutine:
+    instructions: list[SubInstruction] = []
+    offset = start
+    for time, opcode, parameter_mask, arguments in rows:
+        size = 12 + 4 * len(arguments)
+        instructions.append(
+            SubInstruction(
+                offset=offset,
+                time=time,
+                opcode=opcode,
+                size=size,
+                byte_08=0,
+                difficulty_mask=0xFF,
+                parameter_mask=parameter_mask,
+                arguments=arguments,
+            )
+        )
+        offset += size
+    return Subroutine(
+        index=index,
+        start=start,
+        end=offset,
+        instructions=tuple(instructions),
+        footer_offset=-1,
+    )
 
 
 def _inventory(rows: list[list[object]]) -> dict[str, object]:
@@ -262,6 +304,28 @@ def _payload() -> dict[str, object]:
 
 
 class OrdinaryFutureSourceTests(unittest.TestCase):
+    def test_complete_copied_vm_block_is_accepted_without_narrowing(self) -> None:
+        payload = deepcopy(_payload())
+        row = payload["enemy_manager_template_source"][
+            "main_ecl_vm_inventory"
+        ]["rows"][0]
+        row.extend(
+            (
+                [_bits(12.0), _bits(-4.0)],
+                [1, 2, 3, 4],
+                [_bits(5.0), _bits(6.0), _bits(7.0), _bits(8.0)],
+            )
+        )
+
+        closure = project_ordinary_future_sources(
+            payload,
+            ECL,
+            horizon_frames=1,
+        )
+
+        self.assertTrue(closure.projection.source_closure_complete)
+        self.assertEqual(len(closure.direct_fire_events), 1)
+
     def test_active_spell_bypasses_source_unreached_rank_interpolation(
         self,
     ) -> None:
@@ -668,6 +732,262 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
         self.assertEqual(vm.integer_locals[4], 8)
         self.assertTrue(vm.stopped)
 
+    def test_dynamic_polar_writes_follow_source_resolvers_and_reset_timer(
+        self,
+    ) -> None:
+        vm = _VmState(
+            instruction_offset=0,
+            timer_elapsed=0,
+            integer_locals=[0] * 8,
+            float_locals=[FloatInterval.point(0.0)] * 8,
+            scratch_integers=[0] * 4,
+            spawn_float_parameters=[
+                FloatInterval.point(4.0),
+                FloatInterval.point(2.5),
+            ],
+            spawn_float_parameter_aim_coefficients=[0.0, 0.0],
+            call_float_parameters=[FloatInterval.point(0.25)] + [None] * 3,
+            call_float_parameter_aim_coefficients=[0.0] + [None] * 3,
+        )
+        motion = _motion_state(
+            deepcopy(
+                _payload()["enemy_manager_template_source"]["motion_state"][
+                    "rows"
+                ][0]
+            )
+        )
+        motion.movement_state = 3
+        motion.motion_duration = 19
+        motion.motion_timer_elapsed = 7
+        motion.timed_duration = 19
+        motion.timed_remaining = 7
+        source = SimpleNamespace(identity="dynamic-polar", main=vm, motion=motion)
+        instructions = {
+            0: SubInstruction(
+                offset=0,
+                time=0,
+                opcode=0x41,
+                size=20,
+                byte_08=0,
+                difficulty_mask=0xFF,
+                parameter_mask=0x03,
+                arguments=(_bits(10094.0), _bits(10095.0)),
+            ),
+            20: SubInstruction(
+                offset=20,
+                time=0,
+                opcode=0x47,
+                size=16,
+                byte_08=0,
+                difficulty_mask=0xFF,
+                parameter_mask=0x01,
+                arguments=(_bits(10057.0),),
+            ),
+            36: SubInstruction(
+                offset=36,
+                time=0,
+                opcode=0x01,
+                size=12,
+                byte_08=0,
+                difficulty_mask=0xFF,
+                parameter_mask=0,
+                arguments=(),
+            ),
+        }
+
+        _execute_main(
+            source=source,
+            instructions=instructions,
+            difficulty_mask=0x08,
+            frame=1,
+            aim_angle=FloatInterval.point(0.0),
+            payload={},
+            ecl=ECL,
+            remaining_horizon=1,
+        )
+
+        self.assertTrue(-math.pi <= motion.angle <= math.pi)
+        self.assertAlmostEqual(motion.angle, 4.0 - 2.0 * math.pi, places=6)
+        self.assertEqual(motion.speed, 2.5)
+        self.assertEqual(motion.speed_acceleration, 0.25)
+        self.assertEqual(motion.movement_state, 1)
+        self.assertEqual(motion.motion_duration, 0)
+        self.assertEqual(motion.motion_timer_elapsed, 0)
+        self.assertEqual(motion.timed_duration, 0)
+        self.assertEqual(motion.timed_remaining, 0)
+
+    def test_timed_polar_resolves_dynamic_duration_and_truncates_mode(
+        self,
+    ) -> None:
+        vm = _VmState(
+            instruction_offset=0,
+            timer_elapsed=0,
+            integer_locals=[0] * 8,
+            float_locals=[FloatInterval.point(0.0)] * 8,
+            scratch_integers=[0] * 4,
+            spawn_float_parameters=[
+                FloatInterval.point(0.0),
+                FloatInterval.point(3.0),
+            ],
+            spawn_float_parameter_aim_coefficients=[0.0, 0.0],
+            call_integer_parameters=[6, 15, None, None],
+        )
+        motion = _motion_state(
+            deepcopy(
+                _payload()["enemy_manager_template_source"]["motion_state"][
+                    "rows"
+                ][0]
+            )
+        )
+        source = SimpleNamespace(
+            identity="dynamic-timed-polar",
+            main=vm,
+            motion=motion,
+            precompose_world_x=None,
+            precompose_world_y=None,
+        )
+        instructions = {
+            0: SubInstruction(
+                offset=0,
+                time=0,
+                opcode=0x42,
+                size=28,
+                byte_08=0,
+                difficulty_mask=0xFF,
+                parameter_mask=0x0F,
+                arguments=(
+                    10053,
+                    10054,
+                    _bits(10094.0),
+                    _bits(10095.0),
+                ),
+            ),
+            28: SubInstruction(
+                offset=28,
+                time=0,
+                opcode=0x01,
+                size=12,
+                byte_08=0,
+                difficulty_mask=0xFF,
+                parameter_mask=0,
+                arguments=(),
+            ),
+        }
+
+        _execute_main(
+            source=source,
+            instructions=instructions,
+            difficulty_mask=0x08,
+            frame=1,
+            aim_angle=FloatInterval.point(0.0),
+            payload={},
+            ecl=ECL,
+            remaining_horizon=1,
+        )
+
+        self.assertEqual(motion.movement_state, 2)
+        self.assertEqual(motion.timed_mode, 7)
+        self.assertEqual(motion.timed_duration, 6)
+        self.assertEqual(motion.timed_remaining, 6)
+        self.assertEqual(motion.motion_duration, 6)
+        self.assertEqual(motion.motion_timer_elapsed, 6)
+
+    def test_aim_dependency_expires_at_source_update_boundary(self) -> None:
+        vm = _VmState(
+            instruction_offset=0,
+            timer_elapsed=0,
+            integer_locals=[0] * 8,
+            float_locals=[FloatInterval.point(0.0)] * 8,
+            scratch_integers=[0] * 4,
+        )
+        motion = _motion_state(
+            deepcopy(
+                _payload()["enemy_manager_template_source"]["motion_state"][
+                    "rows"
+                ][0]
+            )
+        )
+        source = SimpleNamespace(
+            identity="frame-local-aim",
+            main=vm,
+            motion=motion,
+            auxiliaries=[],
+            active=True,
+            precompose_origin_x=None,
+            precompose_origin_y=None,
+            precompose_world_x=None,
+            precompose_world_y=None,
+        )
+        instructions = {
+            0: SubInstruction(
+                offset=0,
+                time=0,
+                opcode=0x07,
+                size=20,
+                byte_08=0,
+                difficulty_mask=0xFF,
+                parameter_mask=0x02,
+                arguments=(_bits(10016.0), _bits(10048.0)),
+            ),
+            20: SubInstruction(
+                offset=20,
+                time=99,
+                opcode=0x01,
+                size=12,
+                byte_08=0,
+                difficulty_mask=0xFF,
+                parameter_mask=0,
+                arguments=(),
+            ),
+        }
+
+        _execute_source_update(
+            source=source,
+            frame=1,
+            root_player_x=192.0,
+            root_player_y=400.0,
+            instructions=instructions,
+            difficulty_mask=0x08,
+            payload={},
+            ecl=ECL,
+            remaining_horizon=10,
+        )
+
+        self.assertGreater(vm.float_locals[0].upper, vm.float_locals[0].lower)
+        self.assertEqual(vm.float_local_aim_coefficients[0], 0.0)
+
+    def test_child_vm_copy_keeps_values_but_not_parent_aim_identity(
+        self,
+    ) -> None:
+        parent = _VmState(
+            instruction_offset=123,
+            timer_elapsed=9,
+            integer_locals=list(range(8)),
+            float_locals=[FloatInterval(-0.5, 0.75)]
+            + [FloatInterval.point(0.0)] * 7,
+            scratch_integers=list(range(4)),
+            float_local_aim_coefficients=[1.0] + [0.0] * 7,
+            spawn_float_parameters=[FloatInterval(-1.0, 1.0), None],
+            spawn_float_parameter_aim_coefficients=[1.0, None],
+            call_float_parameters=[FloatInterval(-2.0, 2.0)] + [None] * 3,
+            call_float_parameter_aim_coefficients=[1.0] + [None] * 3,
+        )
+
+        child = _spawn_vm(ecl=ECL, subroutine=0, parent_vm=parent)
+
+        self.assertEqual(child.float_locals, parent.float_locals)
+        self.assertEqual(child.spawn_float_parameters, parent.spawn_float_parameters)
+        self.assertEqual(child.call_float_parameters, parent.call_float_parameters)
+        self.assertEqual(child.float_local_aim_coefficients, [0.0] * 8)
+        self.assertEqual(
+            child.spawn_float_parameter_aim_coefficients,
+            [0.0, None],
+        )
+        self.assertEqual(
+            child.call_float_parameter_aim_coefficients,
+            [0.0, None, None, None],
+        )
+
     def test_main_loop_decrements_dynamic_local_before_branch(self) -> None:
         vm = _VmState(
             instruction_offset=24,
@@ -790,6 +1110,231 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
         self.assertEqual((motion.base_x, motion.base_y), (160.0, 82.0))
         self.assertEqual((motion.velocity_x, motion.velocity_y), (0.0, 0.0))
         self.assertEqual(motion.movement_state, 0)
+
+    def test_state_zero_preserves_and_integrates_residual_velocity(self) -> None:
+        row = deepcopy(
+            _payload()["enemy_manager_template_source"]["motion_state"][
+                "rows"
+            ][0]
+        )
+        row["movement_state"] = 0
+        row["velocity"] = [1.25, -0.75, 0.0]
+        motion = _motion_state(row)
+        source = SimpleNamespace(
+            identity="state-zero-residual",
+            motion=motion,
+            auxiliaries=[],
+            enemy_flags=0,
+            precompose_origin_x=None,
+            precompose_origin_y=None,
+            precompose_world_x=None,
+            precompose_world_y=None,
+        )
+
+        _advance_motion(source)
+
+        self.assertEqual(motion.base_x, 61.25)
+        self.assertEqual(motion.base_y, 31.25)
+        self.assertEqual(motion.velocity_x, 1.25)
+        self.assertEqual(motion.velocity_y, -0.75)
+
+    def test_native_pool_scan_orders_synchronous_child_updates(self) -> None:
+        parent_sub = _synthetic_subroutine(
+            0,
+            0x1000,
+            (
+                (
+                    0,
+                    0x5D,
+                    0,
+                    (
+                        1,
+                        _bits(10.0),
+                        _bits(20.0),
+                        _bits(0.0),
+                        1,
+                        0,
+                        0,
+                    ),
+                ),
+                (999, 0x01, 0, ()),
+            ),
+        )
+        child_sub = _synthetic_subroutine(
+            1,
+            0x2000,
+            (
+                (
+                    0,
+                    0x41,
+                    0x02,
+                    (_bits(0.0), _bits(10094.0)),
+                ),
+                (999, 0x01, 0, ()),
+            ),
+        )
+        terminator_sub = _synthetic_subroutine(
+            2,
+            0x3000,
+            ((0, 0x01, 0, ()),),
+        )
+        ecl = replace(
+            ECL,
+            subroutines=(parent_sub, child_sub, terminator_sub),
+            timelines=(),
+        )
+
+        def run(*, parent_slot: int, release_slot_zero: bool):
+            parent = _source_initialized_spawn(
+                identity=f"parent-slot-{parent_slot}",
+                pool_slot=parent_slot,
+                subroutine=0,
+                position_x=FloatInterval.point(0.0),
+                position_y=FloatInterval.point(0.0),
+                hitpoints=1,
+                parent_vm=None,
+                ecl=ecl,
+            )
+            parent.main.spawn_float_parameters[0] = FloatInterval.point(2.0)
+            initial = [parent]
+            if release_slot_zero:
+                initial.insert(
+                    0,
+                    _source_initialized_spawn(
+                        identity="slot-zero-terminator",
+                        pool_slot=0,
+                        subroutine=2,
+                        position_x=FloatInterval.point(0.0),
+                        position_y=FloatInterval.point(0.0),
+                        hitpoints=1,
+                        parent_vm=None,
+                        ecl=ecl,
+                    ),
+                )
+            births = []
+            payload = _payload()
+            instructions = _instruction_map(ecl)
+            pool = _NativeEnemyPool(
+                initial_sources=initial,
+                instructions=instructions,
+                difficulty_mask=8,
+                payload=payload,
+                ecl=ecl,
+                root_player_x=192.0,
+                root_player_y=400.0,
+                on_birth=births.append,
+            )
+            pool.begin_frame(frame=1, remaining_horizon=10)
+            for slot in range(480):
+                source = pool.slots[slot]
+                if source is None or not source.active:
+                    continue
+                _execute_source_update(
+                    source=source,
+                    frame=1,
+                    root_player_x=192.0,
+                    root_player_y=400.0,
+                    instructions=instructions,
+                    difficulty_mask=8,
+                    payload=payload,
+                    ecl=ecl,
+                    remaining_horizon=10,
+                    spawn_executor=pool.spawn_from_instruction,
+                )
+                if not source.active:
+                    pool.release(source)
+                    continue
+                _integrate_motion(source, parent=pool.parent_for(source))
+            self.assertEqual(len(births), 1)
+            return births[0]
+
+        higher_child = run(parent_slot=0, release_slot_zero=False)
+        self.assertEqual(higher_child.pool_slot, 1)
+        self.assertEqual(higher_child.motion.base_x, 12.0)
+        self.assertEqual(higher_child.main.timer_elapsed, 2)
+
+        lower_child = run(parent_slot=1, release_slot_zero=True)
+        self.assertEqual(lower_child.pool_slot, 0)
+        self.assertEqual(lower_child.motion.base_x, 10.0)
+        self.assertEqual(lower_child.motion.velocity_x, 2.0)
+        self.assertEqual(lower_child.main.timer_elapsed, 1)
+
+    def test_real_stage5_child_reaches_callback14_boundary(self) -> None:
+        payload = _payload()
+        payload["compact_state"]["spell_id"] = 111
+        payload["bullet_template_geometry"]["rows"] = [
+            {"type": value, "half_width": 4.0, "half_height": 4.0}
+            for value in range(21)
+        ]
+        parent = _source_initialized_spawn(
+            identity="stage5-parent",
+            pool_slot=0,
+            subroutine=0,
+            position_x=FloatInterval.point(192.0),
+            position_y=FloatInterval.point(100.0),
+            hitpoints=100,
+            parent_vm=None,
+            ecl=ECL,
+        )
+        parent.main.spawn_float_parameters = [
+            FloatInterval.point(192.0),
+            FloatInterval.point(100.0),
+        ]
+        births = []
+        pool = _NativeEnemyPool(
+            initial_sources=[parent],
+            instructions=_instruction_map(ECL),
+            difficulty_mask=8,
+            payload=payload,
+            ecl=ECL,
+            root_player_x=192.0,
+            root_player_y=400.0,
+            on_birth=births.append,
+        )
+        spawn = next(
+            instruction
+            for instruction in ECL.subroutines[63].instructions
+            if instruction.offset == 27864
+        )
+        pool.begin_frame(frame=1, remaining_horizon=268)
+
+        events, count = pool.spawn_from_instruction(
+            parent,
+            spawn,
+            FloatInterval.point(0.0),
+        )
+
+        self.assertEqual(events, ())
+        self.assertEqual(count, 1)
+        self.assertEqual(len(births), 1)
+        child = births[0]
+        self.assertTrue(child.enemy_flags & ENEMY_FLAG_LINKED_CHILD)
+        self.assertFalse(child.enemy_flags & ENEMY_FLAG_CONTACT)
+        # Sub64 immediately stores its constructed world position back into
+        # the copied 10094/10095 parameter slots.
+        self.assertEqual(child.main.spawn_float_parameters[0].lower, 16.0)
+        self.assertEqual(child.main.spawn_float_parameters[1].lower, 368.0)
+        instructions = _instruction_map(ECL)
+
+        with self.assertRaisesRegex(
+            (FutureSourceClosureError, ValueError),
+            "unsupported future bullet flags 0x100000",
+        ):
+            for frame in range(1, 80):
+                pool.begin_frame(frame=frame, remaining_horizon=268 - frame)
+                _execute_source_update(
+                    source=child,
+                    frame=frame,
+                    root_player_x=192.0,
+                    root_player_y=400.0,
+                    instructions=instructions,
+                    difficulty_mask=8,
+                    payload=payload,
+                    ecl=ECL,
+                    remaining_horizon=268 - frame,
+                    spawn_executor=pool.spawn_from_instruction,
+                )
+                _integrate_motion(child, parent=parent)
 
     def test_active_auxiliary_remains_closed_from_captured_state2(self) -> None:
         payload = deepcopy(_payload())
@@ -1523,7 +2068,7 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
         self.assertIn("future frame 5", closure.causal_prefix_reason)
         self.assertIn("unsupported opcode 0x35", closure.causal_prefix_reason)
 
-    def test_reached_random_x_timeline_spawn_is_lowered(self) -> None:
+    def test_reached_random_x_timeline_spawn_uses_fresh_constructor(self) -> None:
         payload = deepcopy(_payload())
         spawn = next(
             instruction
@@ -1547,12 +2092,10 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
             for event in closure.direct_fire_events
             if event.source.startswith("timeline:")
         ]
-        # The bootstrap and ordinary update share the physical spawn frame.
-        # The first fire arms opcode-0x02's two-tick delay; the second update
-        # consumes its remaining tick instead of emitting again.
-        self.assertEqual(len(timeline_events), 1)
-        self.assertEqual(timeline_events[0].origin_x.lower, 48.0)
-        self.assertEqual(timeline_events[0].origin_x.upper, 160.0)
+        # EnemyManager::SpawnEnemy1 copies firstEnemy, whose auxiliary VMs are
+        # empty.  The old model cloned the live slot-zero auxiliary and emitted
+        # a bullet here twenty frames before sub29 actually starts sub30.
+        self.assertEqual(timeline_events, [])
 
     def test_unit_scale_timeline_fraction_is_causally_inert(self) -> None:
         payload = deepcopy(_payload())
@@ -1640,7 +2183,10 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
         )
         self.assertTrue(closure.projection.source_closure_complete)
         self.assertEqual(closure.timeline_spawn_count, 9)
-        self.assertGreater(len(closure.direct_fire_events), 700)
+        # This locks the source-template result.  The former >700 expectation
+        # included inherited live-slot auxiliary emissions that SpawnEnemy1
+        # cannot produce.
+        self.assertEqual(len(closure.direct_fire_events), 598)
         self.assertTrue(closure.projection.coverage.complete)
 
     def test_runtime_program_identity_mismatch_fails_closed(self) -> None:

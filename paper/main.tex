@@ -135,9 +135,11 @@ runtime is exact only from that point through the supported pool, RNG,
 callback, transform, isolated spawn-lifecycle, and geometry paths.  The
 future-birth lowerer and complete-stage runtime share the type/flag contract
 for all 21 source-selected state-2/3/4 spawn rows.  Native spawn state is kept
-separate from callback phase state.  Composition of spawn lifecycle with
-callbacks/transforms still fails closed, while arbitrary ECL control flow,
-child VMs, general ANM execution, and unsupported callbacks remain
+separate from callback phase state.  The retained-source executor additionally
+models the generic 480-slot enemy pool, timeline and ECL constructors,
+synchronous child bootstrap, and the lowered child-VM subset.  Composition of
+spawn lifecycle with callbacks/transforms still fails closed, while ECL beyond
+that lowered subset, general ANM execution, and unsupported callbacks remain
 \unknown{}.  Hence unbounded seeded
 composition gives broad transition and
 pressure coverage without claiming that a generated stage is a particular
@@ -333,9 +335,10 @@ shared speed/angle parameter and analytically propagates an error term for
 each float32 operation, including a speed-scaled trig-component bound.  A
 256-root random speed/angle differential also remains contained, while this
 formulation makes the 1,536-birth stress about 7.9 times faster.  These
-lifecycle facts remain shadow-only because the
-retained root still reaches callback~14 before any birth.  Child/timeline
-producers and callback~14 are the next generic closure steps.
+lifecycle facts remain shadow-only because the retained root still reaches
+callback~14 before any admitted hostile birth.  Native child/timeline
+scheduling now reaches that same semantic boundary; callback~14 and transform
+composition are the next generic closure steps.
 
 We then carried that contract into the complete-stage runtime rather than
 leaving it as an isolated future-envelope result.  A versioned schema retains
@@ -364,15 +367,32 @@ position, so this repair is not counted as a policy improvement.
 The first child-birth closure separates three states that an approximate
 model can easily conflate: the spawning parent, the copied manager template,
 and the child after its synchronous ECL bootstrap.  One generic opcode table
-covers constructors 	exttt{0x5A}--	exttt{0x5E}.  Source inspection shows
+covers constructors \texttt{0x5A}--\texttt{0x5E}.  Source inspection shows
 that the linked-child suppress bit belongs to the parent, while link,
 collision, character-side, and follow-position writes occur only after the
 child bootstrap succeeds.  The follow constructor overwrites the resulting
 child relative position and then recomputes world position; it cannot assume
 that the bootstrap left either field unchanged.  A separate C transcription
 matches the Python transition for all five families and their guard branches.
-This is a constructor-order result only: manager-slot scheduling and arbitrary
-child-root execution still fail closed.
+The integrated executor now instantiates the source-initialized template,
+allocates the first free native slot, installs it before recursive bootstrap,
+and then follows the manager's ascending scan.  Therefore a child born above
+the scan cursor receives its ordinary update in the birth frame, whereas one
+born into an already scanned lower slot does not.
+
+This integration exposed two state-projection errors.  The native
+\texttt{SpawnEnemy2} copy spans VM bytes \texttt{+0x18} through
+\texttt{+0x8f}; the old capture ended at \texttt{+0x67}, omitting spawn and
+call parameter arrays used by real child roots.  The versioned capture now
+retains the full \texttt{0x90}-byte prefix, while old capsules fail closed if
+execution reaches an absent operand.  Separately, an affine angle-to-player
+tag is meaningful only for one source and one RunEcl update.  Preserving it
+across a frame boundary or copying it from parent to child caused causal
+conditioning to substitute the wrong player/source geometry.  The executor
+now retains the value interval but forgets that obsolete correlation.  A real
+Stage~5 subroutine-63 constructor consequently bootstraps subroutine~64 and
+runs until the independently known callback-14 boundary, without a stage or
+spell branch.  This remains semantic progress rather than a route-hit claim.
 
 The complete-stage laboratory then exposed several errors that short
 geometric fixtures had not revealed.  Callback-12 motion was modeled while

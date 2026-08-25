@@ -65,6 +65,9 @@ def _write_active_record(
         103,
         104,
     )
+    struct.pack_into("<2I", blob, base + _VM + 0x68, 201, 202)
+    struct.pack_into("<4i", blob, base + _VM + 0x70, -1, 2, 3, 4)
+    struct.pack_into("<4I", blob, base + _VM + 0x80, 301, 302, 303, 304)
     struct.pack_into(
         "<4I",
         blob,
@@ -154,6 +157,18 @@ class EnemyEclInventoryTests(unittest.TestCase):
             row.local_projection.scratch_integers,
             (101, 102, 103, 104),
         )
+        self.assertEqual(
+            row.local_projection.spawn_float_parameter_bits,
+            (201, 202),
+        )
+        self.assertEqual(
+            row.local_projection.call_integer_parameters,
+            (-1, 2, 3, 4),
+        )
+        self.assertEqual(
+            row.local_projection.call_float_parameter_bits,
+            (301, 302, 303, 304),
+        )
         self.assertEqual(inventory.invalid[0].slot, 1)
         self.assertEqual(inventory.invalid[0].instruction_pointer, 0)
         self.assertEqual(len(inventory.auxiliary_contexts), 2)
@@ -194,11 +209,12 @@ class EnemyEclInventoryTests(unittest.TestCase):
         self.assertEqual(record["non_null_auxiliary_contexts"], 3)
         self.assertEqual(record["invalid_auxiliary_contexts"], 1)
         self.assertEqual(len(record["auxiliary_context_rows"]), 2)
+        self.assertEqual(len(record["rows"][0]), 12)
         encoded = json.dumps(record, sort_keys=True, separators=(",", ":"))
         self.assertEqual(encoded, json.dumps(record, sort_keys=True, separators=(",", ":")))
         self.assertNotIn("instruction_pointer", encoded)
 
-    def test_main_only_baseline_remains_exact_schema_v1(self) -> None:
+    def test_main_only_capture_keeps_current_vm_schema(self) -> None:
         auxiliary = decode_enemy_main_ecl_vm_inventory(
             bytes(self.blob),
             pool_base=ENEMY_POOL_BASE,
@@ -220,8 +236,10 @@ class EnemyEclInventoryTests(unittest.TestCase):
         record = baseline.record()
         self.assertEqual(
             record["layout"],
-            "th08-enemy-main-ecl-vm-inventory-v1",
+            ENEMY_MAIN_ECL_VM_INVENTORY_LAYOUT,
         )
+        self.assertEqual(len(record["rows"][0]), 12)
+        self.assertFalse(record["auxiliary_pointer_coverage"])
         self.assertNotIn("auxiliary_context_rows", record)
         self.assertFalse(baseline.auxiliary_pointer_coverage)
 

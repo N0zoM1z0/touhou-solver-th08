@@ -201,6 +201,11 @@ class _IntegerProjection:
             },
         }
         self._float_bits = projection.float_local_bits
+        self._spawn_float_parameter_bits = (
+            projection.spawn_float_parameter_bits
+        )
+        self._call_integer_parameters = projection.call_integer_parameters
+        self._call_float_parameter_bits = projection.call_float_parameter_bits
 
     def read(self, variable: int) -> int | None:
         return self._values.get(variable)
@@ -216,6 +221,9 @@ class _IntegerProjection:
             tuple(self._values[10000 + index] for index in range(8)),
             self._float_bits,
             tuple(self._values[10036 + index] for index in range(4)),
+            self._spawn_float_parameter_bits,
+            self._call_integer_parameters,
+            self._call_float_parameter_bits,
         )
 
 

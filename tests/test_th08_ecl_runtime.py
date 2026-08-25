@@ -129,7 +129,10 @@ class EclRuntimeTests(unittest.TestCase):
                 (GAMEPLAY_TIME_SCALE_ADDRESS, 4),
             ],
         )
-        self.assertEqual(ECL_VM_SNAPSHOT_SIZE, 0x68)
+        self.assertEqual(ECL_VM_SNAPSHOT_SIZE, 0x90)
+        self.assertTrue(
+            snapshot.local_projection.copied_parameter_block_complete
+        )
 
     def test_snapshot_rejects_projection_compatibility_mismatch(self) -> None:
         vm = bytearray(ECL_VM_SNAPSHOT_SIZE)

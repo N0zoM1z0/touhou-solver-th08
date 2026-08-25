@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from th08_semantics.source_primitives import f32
+from numeric_model import binary32_store as f32
 
 
 SOURCE_AUTHORITY_COMMIT = "57ee34f"
