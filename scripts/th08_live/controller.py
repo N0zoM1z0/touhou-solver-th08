@@ -950,6 +950,7 @@ def _ordinary_submission_projection(
     if (
         projection is None
         or not projection.source_closure_complete
+        or not projection.current_pool_callback_composition_complete
         or projection.root_frame > policy_source_frame
         or projection.horizon_frame
         < policy_source_frame + policy_horizon_frames
@@ -1530,9 +1531,14 @@ def _robust_action_certificates(
         if (
             not future_hazard_projection.source_closure_complete
             or not future_hazard_projection.coverage.complete
+            or not (
+                future_hazard_projection
+                .current_pool_callback_composition_complete
+            )
         ):
             raise ValueError(
-                "future prefix certificate requires complete source coverage"
+                "future prefix certificate requires complete source and "
+                "current-pool callback coverage"
             )
         if future_projection_offset < 0:
             raise ValueError(
@@ -1762,6 +1768,12 @@ def _delayed_issue_action_certificates(
         raise ValueError("delayed causal certificate lacks source closure")
     if not future_hazard_projection.coverage.complete:
         raise ValueError("delayed causal certificate lacks future coverage")
+    if not (
+        future_hazard_projection.current_pool_callback_composition_complete
+    ):
+        raise ValueError(
+            "delayed causal certificate lacks current-pool callback coverage"
+        )
     certificates: dict[int, dict[str, RobustActionCertificate]] = {
         issue_delay: {} for issue_delay in issue_delay_frames
     }
@@ -4975,6 +4987,13 @@ def _run_live_session(
                             "direct_fire_event_count": len(
                                 closure.direct_fire_events
                             ),
+                            "tagged_callback_count": len(
+                                closure.tagged_callbacks
+                            ),
+                            "current_pool_callback_composition_complete": (
+                                closure.projection
+                                .current_pool_callback_composition_complete
+                            ),
                             "future_aabb_trajectory_count": len(
                                 closure.projection.aabb_trajectories
                             ),
@@ -5715,6 +5734,10 @@ def _run_live_session(
                 if (
                     candidate_projection.source_closure_complete
                     and candidate_projection.coverage.complete
+                    and (
+                        candidate_projection
+                        .current_pool_callback_composition_complete
+                    )
                     and candidate_offset >= 0
                     and (
                         candidate_offset

@@ -1916,8 +1916,10 @@ already present in the retained root pool. The projection now retains the
 complete standalone callback action stream and explicitly reports that
 current-pool callback composition is incomplete whenever it is nonempty. The
 narrow complete-stage bridge rejects such a stream instead of silently
-dropping it. Therefore this checkpoint does not authorize the global planner
-until the sensed live pool is stepped through these actions.
+dropping it. Corridor submission, publication-prefix certification, and
+delayed causal certification also require that gate. Therefore this checkpoint
+does not authorize the global planner until the sensed live pool is stepped
+through these actions.
 
 On the physical spell-115 root, source closure now admits the real type-16
 tagged birth at future frame 87 and advances from the former 86-frame boundary

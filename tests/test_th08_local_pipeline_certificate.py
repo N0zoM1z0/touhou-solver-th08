@@ -7,7 +7,11 @@ import unittest
 import numpy as np
 
 from th08_ecl_vm_state import float32_from_bits
-from th08_future_birth_envelope import FloatInterval, FutureDirectFire
+from th08_future_birth_envelope import (
+    FloatInterval,
+    FutureDirectFire,
+    FutureTaggedBulletCallback,
+)
 from th08_future_hazard_projection import complete_future_hazard_projection
 from th08_trace_replay import local_pipeline_root_from_trace
 from th08_live_dodge_agent import (
@@ -596,6 +600,51 @@ class Th08LocalPipelineCertificateTests(unittest.TestCase):
         self.assertEqual(current_only["stay"].worst_collisions, 0)
         self.assertGreater(covered["stay"].worst_collisions, 0)
         self.assertLessEqual(covered["stay"].min_clearance, 0.0)
+
+        callback = FutureTaggedBulletCallback(
+            source="test:prefix:callback12",
+            frame=1,
+            callback_index=12,
+            tag_mask=0x100000,
+            callback_angle=FloatInterval.point(0.0),
+            callback_speed=FloatInterval.point(1.0),
+        )
+        uncomposed = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=2,
+            events=(),
+            tagged_callbacks=(callback,),
+            source_semantics_version="test-uncomposed-callback-v1",
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "current-pool callback coverage",
+        ):
+            _robust_action_certificates(
+                **common,
+                future_hazard_projection=uncomposed,
+            )
+        with self.assertRaisesRegex(
+            ValueError,
+            "current-pool callback coverage",
+        ):
+            _delayed_issue_action_certificates(
+                root=LocalPipelineRoot("stay", "stay"),
+                actions=(),
+                issue_delay_frames=(0,),
+                pickup_delay_frames=(0,),
+                horizon_frames=2,
+                player_x=192.0,
+                player_y=400.0,
+                bullets=(),
+                lasers=(),
+                enemy_bodies=(),
+                snapshot_lag=0,
+                player_scale_bits=_unit_scale_bits(2),
+                laser_scale_bits=_unit_scale_bits(2),
+                future_hazard_projection=uncomposed,
+                source_frame=100,
+            )
 
     def test_explicit_root_certificate_reports_segmented_timing(self) -> None:
         root = LocalPipelineRoot(

@@ -288,6 +288,7 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
     def test_incomplete_source_never_consumes_a_solver_slot(self) -> None:
         incomplete = SimpleNamespace(
             source_closure_complete=False,
+            current_pool_callback_composition_complete=True,
             root_frame=100,
             horizon_frame=368,
         )
@@ -321,6 +322,7 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
     def test_complete_causal_prefix_must_cover_whole_policy(self) -> None:
         prefix = SimpleNamespace(
             source_closure_complete=True,
+            current_pool_callback_composition_complete=True,
             root_frame=100,
             horizon_frame=259,
         )
@@ -352,6 +354,7 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
     def test_submission_projection_requires_exact_captured_spell_id(self) -> None:
         projection = SimpleNamespace(
             source_closure_complete=True,
+            current_pool_callback_composition_complete=True,
             root_frame=100,
             horizon_frame=260,
         )
@@ -382,6 +385,29 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
             )
 
         result.snapshot.payload = {}
+        self.assertIsNone(
+            _ordinary_submission_projection(
+                result,
+                policy_source_frame=180,
+                policy_horizon_frames=80,
+                expected_spell_id=103,
+            )
+        )
+
+    def test_submission_rejects_uncomposed_current_pool_callbacks(self) -> None:
+        projection = SimpleNamespace(
+            source_closure_complete=True,
+            current_pool_callback_composition_complete=False,
+            root_frame=100,
+            horizon_frame=260,
+        )
+        result = SimpleNamespace(
+            snapshot=SimpleNamespace(
+                payload={"compact_state": {"spell_id": 103}}
+            ),
+            closure=SimpleNamespace(projection=projection),
+        )
+
         self.assertIsNone(
             _ordinary_submission_projection(
                 result,
