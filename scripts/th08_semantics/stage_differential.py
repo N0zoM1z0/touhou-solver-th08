@@ -9,6 +9,20 @@ from th08_semantics.native_oracle import NativeSourceOracle
 from th08_semantics.stage import StageProgram, StageRuntime
 
 
+_BINARY32_MIN_NORMAL = math.ldexp(1.0, -126)
+_BINARY32_MIN_SUBNORMAL = math.ldexp(1.0, -149)
+
+
+def _binary32_spacing(value: float) -> float:
+    """Return a conservative adjacent-float spacing at a finite value."""
+
+    magnitude = abs(value)
+    if magnitude < _BINARY32_MIN_NORMAL:
+        return _BINARY32_MIN_SUBNORMAL
+    _, exponent = math.frexp(magnitude)
+    return math.ldexp(1.0, exponent - 24)
+
+
 @dataclass(frozen=True)
 class StageSourceDifferentialResult:
     identity: str
@@ -52,6 +66,12 @@ def compare_stage_with_c_source_oracle(
     maximum_position_error = 0.0
     maximum_velocity_error = 0.0
     maximum_callback_velocity_error = 0.0
+    # Python uses double-libm sin/cos followed by a binary32 store; the C
+    # source oracle calls the host sinf/cosf.  A one-ULP velocity difference
+    # can cause the two binary32 position additions to round differently on
+    # every later frame.  Carry the actual velocity disagreement plus one
+    # coordinate ULP per update instead of using an empirical age threshold.
+    position_budgets: dict[int, tuple[str, int, float]] = {}
     frames = 0
     while not reference.complete and first_mismatch is None:
         reference_step = reference.step()
@@ -83,6 +103,14 @@ def compare_stage_with_c_source_oracle(
         ):
             first_mismatch = f"frame={reference_step.frame}:gameplay_rng"
             break
+        if (
+            reference_step.bullet_collision_slots
+            != candidate_step.bullet_collision_slots
+            or reference_step.laser_collision_slots
+            != candidate_step.laser_collision_slots
+        ):
+            first_mismatch = f"frame={reference_step.frame}:collision_membership"
+            break
         for slot, (left, right) in enumerate(
             zip(reference.bullets, candidate.bullets)
         ):
@@ -90,6 +118,7 @@ def compare_stage_with_c_source_oracle(
                 first_mismatch = f"frame={reference_step.frame}:slot={slot}:occupancy"
                 break
             if left is None or right is None:
+                position_budgets.pop(slot, None)
                 continue
             if (
                 left.source != right.source
@@ -137,9 +166,30 @@ def compare_stage_with_c_source_oracle(
                     velocity_error,
                 )
             # Separate libm sin/cos versus sinf/cosf approximations can differ
-            # by a handful of binary32 ULPs. Admit bounded accumulated drift,
-            # but never a discrete lifecycle/RNG difference.
-            position_tolerance = 2.0e-5 + 1.0e-6 * (left.age + 1)
+            # by a binary32 ULP. Propagate only the forward error admitted by
+            # the observed velocity difference and binary32 addition. A slot
+            # reuse resets the budget. Collision membership, discrete state,
+            # and RNG remain exact requirements.
+            previous = position_budgets.get(slot)
+            if (
+                previous is None
+                or previous[0] != left.source
+                or left.age <= previous[1]
+            ):
+                position_tolerance = 0.0
+            else:
+                position_tolerance = previous[2]
+            position_tolerance += velocity_error + max(
+                _binary32_spacing(left.x),
+                _binary32_spacing(left.y),
+                _binary32_spacing(right.x),
+                _binary32_spacing(right.y),
+            )
+            position_budgets[slot] = (
+                left.source,
+                left.age,
+                position_tolerance,
+            )
             if (
                 position_error > position_tolerance
                 or velocity_error > 2.0e-5
@@ -148,7 +198,9 @@ def compare_stage_with_c_source_oracle(
             ):
                 first_mismatch = (
                     f"frame={reference_step.frame}:slot={slot}:numeric:"
-                    f"position={position_error}:velocity={velocity_error}"
+                    f"position={position_error}:"
+                    f"position_tolerance={position_tolerance}:"
+                    f"velocity={velocity_error}"
                 )
                 break
 

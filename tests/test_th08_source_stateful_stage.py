@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 import unittest
 
 from th08_semantics.stage import (
@@ -16,6 +17,7 @@ from th08_semantics.stage import (
 )
 from th08_semantics.stage_generation import generate_stage_program
 from th08_semantics.stage_differential import (
+    _binary32_spacing,
     compare_stage_with_c_source_oracle,
 )
 from th08_semantics.stage_shrink import shrink_stage_program
@@ -58,6 +60,11 @@ def _emitter(
 
 
 class SourceStatefulStageTests(unittest.TestCase):
+    def test_source_differential_uses_binary32_position_spacing(self) -> None:
+        self.assertEqual(_binary32_spacing(0.0), math.ldexp(1.0, -149))
+        self.assertEqual(_binary32_spacing(1.0), math.ldexp(1.0, -23))
+        self.assertEqual(_binary32_spacing(388.0), math.ldexp(1.0, -15))
+
     def test_callback_history_is_derived_instead_of_randomized_snapshot(self) -> None:
         program = StageProgram(
             seed=1,
