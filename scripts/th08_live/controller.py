@@ -108,6 +108,9 @@ from th08_runtime.ordinary_future_source_capture import (
     OrdinaryFutureSourceCaptureResult,
     capture_and_project_ordinary_future_sources,
 )
+from th08_runtime.future_source_retention import (
+    FutureSourceRetentionExpectation,
+)
 from th08_live.scale_schedule_authority import (
     FinalBScaleScheduleAuthority,
     NO_SCALE_WRITER_STAGE_ROUTE_INDICES,
@@ -4985,6 +4988,10 @@ def _run_live_session(
                                 is not None
                                 else None
                             ),
+                            "retention_rejection_reason": (
+                                completed_future_source_result
+                                .retention_rejection_reason
+                            ),
                             "changes_input": False,
                         }
                     )
@@ -5024,6 +5031,8 @@ def _run_live_session(
             retain_current_spell = bool(
                 observed_spell_id is not None
                 and observed_spell_id in future_source_retain_spells
+                and int(player["phase"]) == 0
+                and int(player["bomb_active"]) == 0
                 and future_source_retained_counts.get(
                     observed_spell_id,
                     0,
@@ -5066,6 +5075,21 @@ def _run_live_session(
                             ORDINARY_FUTURE_SOURCE_HORIZON_FRAMES
                         ),
                         retain_dir=retain_dir_for_submission,
+                        retention_expectation=(
+                            FutureSourceRetentionExpectation(
+                                route_id=int(state["route_id"]),
+                                difficulty_index=int(
+                                    state["difficulty_index"]
+                                ),
+                                stage_route_index=int(
+                                    state["stage_route_index"]
+                                ),
+                                spell_id=int(observed_spell_id),
+                            )
+                            if retain_current_spell
+                            and observed_spell_id is not None
+                            else None
+                        ),
                     )
                 )
                 ordinary_future_source_last_submit = counter_after_read

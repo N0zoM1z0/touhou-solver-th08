@@ -51,6 +51,64 @@ class RetainedFutureSourceRoot:
         }
 
 
+@dataclass(frozen=True)
+class FutureSourceRetentionExpectation:
+    """Exact gameplay context required before a root may consume quota."""
+
+    route_id: int
+    difficulty_index: int
+    stage_route_index: int
+    spell_id: int
+
+    def __post_init__(self) -> None:
+        if self.route_id < 0:
+            raise ValueError("retained-root route ID cannot be negative")
+        if self.difficulty_index < 0:
+            raise ValueError(
+                "retained-root difficulty index cannot be negative"
+            )
+        if self.stage_route_index < 0:
+            raise ValueError(
+                "retained-root stage route index cannot be negative"
+            )
+        if not 0 <= self.spell_id <= 255:
+            raise ValueError("retained-root spell ID is out of range")
+
+    def record(self) -> dict[str, int]:
+        return {
+            "route_id": self.route_id,
+            "difficulty_index": self.difficulty_index,
+            "stage_route_index": self.stage_route_index,
+            "spell_id": self.spell_id,
+            "player_phase": 0,
+            "bomb_active": 0,
+        }
+
+
+def future_source_retention_rejection_reason(
+    snapshot: Any,
+    expectation: FutureSourceRetentionExpectation,
+) -> str | None:
+    """Return why an asynchronous snapshot is not a planner-root sample."""
+
+    if not snapshot.stable:
+        return "capture_clock_incoherent"
+    payload = snapshot.payload
+    if not isinstance(payload, dict):
+        return "root_payload_not_mapping"
+    compact = payload.get("compact_state")
+    if not isinstance(compact, dict):
+        return "compact_state_absent"
+    for field, expected in expectation.record().items():
+        actual = compact.get(field)
+        if type(actual) is not int or actual != expected:
+            return (
+                f"captured_{field}_mismatch:"
+                f"expected={expected},actual={actual!r}"
+            )
+    return None
+
+
 def _canonical_bytes(record: dict[str, object]) -> bytes:
     try:
         text = json.dumps(
@@ -255,8 +313,10 @@ def read_retained_future_source_root(path: Path) -> dict[str, object]:
 
 
 __all__ = [
+    "FutureSourceRetentionExpectation",
     "RETAINED_FUTURE_SOURCE_ROOT_SCHEMA",
     "RetainedFutureSourceRoot",
+    "future_source_retention_rejection_reason",
     "read_retained_future_source_root",
     "write_retained_future_source_root",
 ]

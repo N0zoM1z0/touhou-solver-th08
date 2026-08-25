@@ -1437,7 +1437,7 @@ authority is claimed by this fix.
 
 ### AUD-059 — No real retained Stage-5 producer root existed
 
-Status: **CONFIRMED EVIDENCE GAP; SHADOW-ONLY RETENTION IMPLEMENTED; PHYSICAL ROOT PENDING**
+Status: **EVIDENCE GAP CLOSED PHYSICALLY; FOUR CONTENT-ADDRESSED ROOTS RETAINED**
 
 The source-exact spell-103 fixture was synthetic. The retained 2026-08-24
 Stage-5 trace predates full future-source capture and contains neither a
@@ -1459,8 +1459,10 @@ Most importantly, capture-only completion never populates the controller's
 future-source action result. It cannot enter a corridor submission, prefix
 certificate, or input filter; its only effects are diagnostic read/CPU/I/O
 load and trace metadata. The complete offline suite passes 1,443 tests with 5
-platform skips. One isolated Stage-5 Practice capture remains necessary to
-turn this infrastructure into real retained-root evidence.
+platform skips. Corrected physical capture
+`lunatic_route2_stage5_unattended_20260825_011207` subsequently retained four
+integrity-checked capsules; their eligibility and first semantic boundaries
+are audited in AUD-061.
 
 ### AUD-060 — Practice Start and Spell Practice were conflated
 
@@ -1492,10 +1494,46 @@ identity/scale, producer-contract, Wine-command, and Practice-supervisor tests
 pass. This fixes acquisition identity only; it does not itself add a producer
 event or global-planner authority.
 
+### AUD-061 — Asynchronous transition roots consumed the per-spell quota
+
+Status: **CONFIRMED PHYSICALLY; FIXED OFFLINE; ROOT CORPUS RETAINED**
+
+The corrected isolated Stage-5 capture completed at manager frame 43,173 with
+termination `route_complete`. It ran from clean commit `b771d31` on private
+display `:98`, CPU set `24-47`, used the 86,400/86,700-second limits, and left
+no process in the exact prefix. Runtime ECL identity was an exact
+`ecldata5.ecl` match and the no-scale-writer schedule was complete. Four
+capsules were retained for physically observed cards 103, 107, 111, and 115;
+card 118 was not part of the Sakuya/Remilia Stage-5 Practice sequence. The raw
+trace SHA-256 is `c8a35929...`; the ignored host report SHA-256 is
+`31e442f6...`.
+
+Capsules 103 and 115 have player phase 0. The initial projections stop,
+respectively, at an address-specific singleton auxiliary callback and at
+future frame 87 where bullet type 16 lacks unique template geometry. Capsules
+107 and 111 were captured at player phase 3 while an earlier phase-0 request
+was still executing on the worker. The old controller counted any returned
+non-null spell ID, so those transition samples consumed the one-root quota.
+This was harmless to action authority—the lane is capture-only and their
+closures remained fail-closed—but it biased the retained corpus away from
+planner-eligible roots.
+
+Retention submissions now carry an immutable expectation over route,
+difficulty, stage, spell, player phase 0, and bomb-inactive state. The worker
+checks its own coherent snapshot against that expectation before persistence;
+an asynchronous context/phase change writes no capsule, records an exact
+rejection reason, and consumes no quota. The initial live submit gate also
+requires phase 0 and bomb inactive. Dedicated tests reproduce both the
+phase-3 transition and a 103-to-107 spell change. The four physical capsules
+remain tracked: the two transition roots are valuable stateful-fuzzer inputs,
+but are explicitly not planner-root samples. This run's 22 hits are not an
+algorithm comparison because root capture added observer work and no new
+future projection received action authority.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,443 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,446 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

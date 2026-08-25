@@ -10,6 +10,7 @@ from unittest.mock import patch
 from tests.test_th08_ordinary_future_sources import ECL, _payload
 from th08_ordinary_future_sources import project_ordinary_future_sources
 from th08_runtime.future_source_retention import (
+    FutureSourceRetentionExpectation,
     RETAINED_FUTURE_SOURCE_ROOT_SCHEMA,
     read_retained_future_source_root,
     write_retained_future_source_root,
@@ -28,6 +29,7 @@ def _root() -> tuple[OrdinaryFutureSourceSnapshot, object]:
         difficulty_index=3,
         stage_route_index=5,
         spell_id=103,
+        bomb_active=0,
     )
     closure = project_ordinary_future_sources(
         payload,
@@ -44,6 +46,15 @@ def _root() -> tuple[OrdinaryFutureSourceSnapshot, object]:
         attempts=1,
     )
     return snapshot, closure
+
+
+def _expectation() -> FutureSourceRetentionExpectation:
+    return FutureSourceRetentionExpectation(
+        route_id=2,
+        difficulty_index=3,
+        stage_route_index=5,
+        spell_id=103,
+    )
 
 
 class FutureSourceRetentionTests(unittest.TestCase):
@@ -152,11 +163,95 @@ class FutureSourceRetentionTests(unittest.TestCase):
                 ECL,
                 horizon_frames=1,
                 retain_dir=Path(directory),
+                retention_expectation=_expectation(),
             )
             self.assertIsNotNone(result.retained_root)
             assert result.retained_root is not None
             self.assertTrue(result.retained_root.path.is_file())
             self.assertEqual(result.retained_root.spell_id, 103)
+            self.assertIsNone(result.retention_rejection_reason)
+
+    def test_async_phase_transition_does_not_write_or_consume_a_root(self) -> None:
+        snapshot, closure = _root()
+        payload = deepcopy(snapshot.payload)
+        payload["compact_state"]["player_phase"] = 3
+        transitioned = OrdinaryFutureSourceSnapshot(
+            frame_before=snapshot.frame_before,
+            frame_after=snapshot.frame_after,
+            update_serial_before=snapshot.update_serial_before,
+            update_serial_after=snapshot.update_serial_after,
+            payload=payload,
+            read_ms=snapshot.read_ms,
+            attempts=snapshot.attempts,
+        )
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch(
+                "th08_runtime.ordinary_future_source_capture."
+                "capture_ordinary_future_source_snapshot",
+                return_value=transitioned,
+            ),
+            patch(
+                "th08_runtime.ordinary_future_source_capture."
+                "project_ordinary_future_sources",
+                return_value=closure,
+            ),
+        ):
+            destination = Path(directory)
+            result = capture_and_project_ordinary_future_sources(
+                object(),
+                ECL,
+                horizon_frames=1,
+                retain_dir=destination,
+                retention_expectation=_expectation(),
+            )
+
+            self.assertIsNone(result.retained_root)
+            self.assertEqual(
+                result.retention_rejection_reason,
+                "captured_player_phase_mismatch:expected=0,actual=3",
+            )
+            self.assertEqual(list(destination.iterdir()), [])
+
+    def test_async_context_change_is_rejected_before_persistence(self) -> None:
+        snapshot, closure = _root()
+        payload = deepcopy(snapshot.payload)
+        payload["compact_state"]["spell_id"] = 107
+        changed = OrdinaryFutureSourceSnapshot(
+            frame_before=snapshot.frame_before,
+            frame_after=snapshot.frame_after,
+            update_serial_before=snapshot.update_serial_before,
+            update_serial_after=snapshot.update_serial_after,
+            payload=payload,
+            read_ms=snapshot.read_ms,
+            attempts=snapshot.attempts,
+        )
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch(
+                "th08_runtime.ordinary_future_source_capture."
+                "capture_ordinary_future_source_snapshot",
+                return_value=changed,
+            ),
+            patch(
+                "th08_runtime.ordinary_future_source_capture."
+                "project_ordinary_future_sources",
+                return_value=closure,
+            ),
+        ):
+            result = capture_and_project_ordinary_future_sources(
+                object(),
+                ECL,
+                horizon_frames=1,
+                retain_dir=Path(directory),
+                retention_expectation=_expectation(),
+            )
+
+            self.assertIsNone(result.retained_root)
+            self.assertEqual(
+                result.retention_rejection_reason,
+                "captured_spell_id_mismatch:expected=103,actual=107",
+            )
 
 
 if __name__ == "__main__":

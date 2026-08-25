@@ -43,7 +43,9 @@ from th08_ordinary_future_sources import (
     project_ordinary_future_sources,
 )
 from th08_runtime.future_source_retention import (
+    FutureSourceRetentionExpectation,
     RetainedFutureSourceRoot,
+    future_source_retention_rejection_reason,
     write_retained_future_source_root,
 )
 
@@ -81,6 +83,7 @@ class OrdinaryFutureSourceCaptureResult:
     snapshot: OrdinaryFutureSourceSnapshot
     closure: OrdinaryFutureSourceClosure
     retained_root: RetainedFutureSourceRoot | None = None
+    retention_rejection_reason: str | None = None
 
 
 _CAPTURE_BUFFERS = threading.local()
@@ -501,7 +504,12 @@ def capture_and_project_ordinary_future_sources(
     horizon_frames: int,
     maximum_attempts: int = 2,
     retain_dir: Path | None = None,
+    retention_expectation: FutureSourceRetentionExpectation | None = None,
 ) -> OrdinaryFutureSourceCaptureResult:
+    if (retain_dir is None) != (retention_expectation is None):
+        raise ValueError(
+            "future-source retention directory and expectation must be paired"
+        )
     snapshot = capture_ordinary_future_source_snapshot(
         reader,
         maximum_attempts=maximum_attempts,
@@ -518,6 +526,14 @@ def capture_and_project_ordinary_future_sources(
         ecl,
         horizon_frames=horizon_frames,
     )
+    retention_rejection_reason = (
+        future_source_retention_rejection_reason(
+            snapshot,
+            retention_expectation,
+        )
+        if retention_expectation is not None
+        else None
+    )
     retained_root = (
         write_retained_future_source_root(
             snapshot,
@@ -526,13 +542,14 @@ def capture_and_project_ordinary_future_sources(
             snapshot_schema=ORDINARY_FUTURE_SOURCE_SNAPSHOT_SCHEMA,
             requested_horizon_frames=horizon_frames,
         )
-        if retain_dir is not None
+        if retain_dir is not None and retention_rejection_reason is None
         else None
     )
     return OrdinaryFutureSourceCaptureResult(
         snapshot=snapshot,
         closure=closure,
         retained_root=retained_root,
+        retention_rejection_reason=retention_rejection_reason,
     )
 
 

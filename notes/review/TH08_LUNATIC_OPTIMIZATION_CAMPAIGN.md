@@ -639,6 +639,18 @@ the tag bits as globally nonprogrammatic. After retained-root projection and
 same-root viability differentials pass, run one focused Practice acceptance
 gate before considering a full route.
 
+The corrected physical acquisition is now complete. Run
+`lunatic_route2_stage5_unattended_20260825_011207` reached `route_complete`
+without duration or prefix-cleanup failure and retained coherent capsules for
+the four cards actually observed on this route: 103/107/111/115. No card-118
+root appeared. Two roots landed in player phase 3 because the asynchronous
+worker crossed a hit/respawn transition; that exposed and motivated an exact
+completion-time context gate, so such samples no longer consume the bounded
+planner-root quota. They remain useful transition-fuzzer corpus entries. The
+phase-0 roots identify the next concrete boundaries: singleton auxiliary
+callback handling on 103 and bullet-template/ANM geometry on 115. No root has
+yet emitted a complete future event stream, and none can affect input.
+
 ## Boundary And Focus Contract
 
 Boundary/focus work begins with shadow attribution, not a new score.  It must

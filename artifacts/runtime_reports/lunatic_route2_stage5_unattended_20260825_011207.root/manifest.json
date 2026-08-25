@@ -1,0 +1,52 @@
+{
+  "capsules": [
+    {
+      "causal_prefix_reason": null,
+      "content_sha256": "19821383f7ed28f32529c788f8bbef3fb326b48ba35e2c007acd2730ae4352af",
+      "initial_direct_fire_events": 0,
+      "initial_source_closure_reason": "enemy_manager_template_or_special_singleton auxiliary installed callback requires address-specific lowering",
+      "manager_frame": 22644,
+      "planner_root_eligible": true,
+      "player_phase": 0,
+      "spell_id": 103
+    },
+    {
+      "causal_prefix_reason": "source UNKNOWN begins at future frame 87: ECL float lvalue 10094 is not a captured local",
+      "content_sha256": "d75955b8fe7d6704e894cd1363be3c1bfd1bf5dc16ffcbde987a848373841fd7",
+      "initial_direct_fire_events": 0,
+      "initial_source_closure_reason": null,
+      "manager_frame": 27988,
+      "planner_root_eligible": false,
+      "player_phase": 3,
+      "spell_id": 107
+    },
+    {
+      "causal_prefix_reason": null,
+      "content_sha256": "06b4b66b6089cca6352140ad47550db17b4d1611a9c471d8f38080f2fbbc454f",
+      "initial_direct_fire_events": 0,
+      "initial_source_closure_reason": "health phase transition damage envelope is incomplete: ordinary_player_phase_0,spell_inactive",
+      "manager_frame": 36813,
+      "planner_root_eligible": false,
+      "player_phase": 3,
+      "spell_id": 111
+    },
+    {
+      "causal_prefix_reason": "source UNKNOWN begins at future frame 87: bullet type 16 has no unique template geometry",
+      "content_sha256": "93412e3feb352f55fd80b8fe2451316c3069304b93d53c48ad3d3aa4031b41ce",
+      "initial_direct_fire_events": 0,
+      "initial_source_closure_reason": null,
+      "manager_frame": 39998,
+      "planner_root_eligible": true,
+      "player_phase": 0,
+      "spell_id": 115
+    }
+  ],
+  "claim": "physical coherent roots and initial fail-closed projection boundaries; no arbitrary-ECL, complete-future, hit, or action authority",
+  "difficulty_index": 3,
+  "route_id": 2,
+  "run_id": "lunatic_route2_stage5_unattended_20260825_011207",
+  "runtime_ecl_canonical_sha256": "3148f45faf78bd8211a956edcdc353be73d2781995d3dadd36bdca8132f8fe19",
+  "schema": "th08-stage5-retained-future-root-corpus-v1",
+  "stage_route_index": 5,
+  "trace_sha256": "c8a35929d04b5c7c3a625608bfb7dffa334ff4709a073b81d4ff6aadd0d3830e"
+}
