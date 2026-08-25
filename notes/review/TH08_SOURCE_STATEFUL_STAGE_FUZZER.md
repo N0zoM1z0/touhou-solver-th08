@@ -97,8 +97,9 @@ The following remain outside the exactness claim:
 - general ANM VM execution, and composition of spawn lifecycle with callback
   tags or transform programs; those compositions currently fail closed;
 - callback 14 and other callbacks beyond the modeled callback-12 subset;
-- derived child-pattern transform `0x1000000`, wrap transforms, and unsupported
-  transform kinds;
+- derived child-pattern transform `0x1000000`, complete-stage-runtime wrap
+  composition, and unsupported transform kinds (the retained-current scalar/C
+  frame now covers wrap itself);
 - enemy bodies, items, shots, damage/power feedback, and global future-birth
   authority;
 - Win32 x87/libm bit identity. The Linux C oracle is a source-level oracle;
@@ -183,7 +184,10 @@ from both the Python model and the optimized planner and covers:
   with arbitrary post-bootstrap position and flag state;
 - callback 12;
 - inclusive bullet/player AABB;
-- the eight supported transform handlers.
+- the eight motion handlers; and
+- a complete retained-current transform frame covering queue admission,
+  immediate records, barrier/wrap, source-order handlers, movement, visual
+  culling, and retirement, with template/derived births failing closed.
 
 The build helper hashes the C source, header, and compiler flags into a stamp.
 Loading the oracle rebuilds when that stamp differs, preventing a changed
@@ -243,6 +247,14 @@ all eight handlers.
     asset proves the fields can differ substantially (type 10 is 12 px for
     collision versus 32 px for culling), so the stage runtime and independent
     C oracle now carry the two geometries separately.
+13. The Python timer reference compared native `float32(0.99)` with a Python
+    binary64 literal. At that exact threshold it could take a different
+    full-rate/fractional branch than `Supervisor::TickTimer`/`Decrement`.
+    Frame operands and source thresholds are now canonical binary32 values.
+14. A batched C call stops at its first unsupported transition, after earlier
+    entries may already have advanced. The Python owner now poisons that batch
+    and refuses decode/reuse; fade entries are stable nonlethal terminals for
+    the covered prefix instead of invalidating all later entries.
 
 These are source-backed semantic corrections. None is presented as a route
 hit improvement until it changes a complete future projection and passes a
@@ -282,17 +294,21 @@ Wine. The next work should remain incremental and differential:
 
 1. preserve the completed retained-root importer, child/timeline scheduler,
    callback-12/14 stream, 21-type lifecycle, and source/C differentials;
-2. execute the retained 18-record current-bullet program in source order,
-   first for the eight C-locked motion handlers, then barrier/wrap/immediate
-   records, while derived births and any unknown composition fail closed;
-3. expand the independent C oracle to the queue, handlers, movement, and
-   culling transition, then benchmark native batches at realistic pool sizes;
-4. feed only a complete, version-matched current-plus-future horizon into the
+2. preserve the completed scalar/C execution of the retained 18-record
+   current-bullet program: source-order motion, barrier/wrap/immediates,
+   movement, culling, typed unsupported births, and long differential corpus;
+3. retain the measured persistent native batch boundary. Its 1,536-state
+   kernel is 0.02446 ms median, while Python encode/decode makes the wrapper
+   22.233 ms; do not put the object wrapper in the 16 ms local issue loop;
+4. add template replacement and derived finite-pool child births, then feed
+   only a complete, version-matched current-plus-future horizon into the
    global viability planner in offline shadow mode, with player-relative
    re-aim explicitly action-conditioned or conservatively set-valued;
 5. use focused Practice and Wine only after a same-capsule global-policy
    differential changes a losing predecessor into a certified viable one and
-   the submission/publication latency is bounded.
+   the submission/publication latency is bounded. In parallel, use a full
+   Easy Route-2 NMNB attempt as an infrastructure falsifier: any Easy hit is
+   investigated as a sensing/model/issue failure, not excused as search cost.
 
 This keeps the core general. Per-stage/spell compiled programs and caches are
 appropriate once their source dependencies are reached; handwritten policies

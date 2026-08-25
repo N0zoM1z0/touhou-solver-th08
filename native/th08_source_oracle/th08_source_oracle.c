@@ -551,3 +551,441 @@ int32_t th08_oracle_transform_step(
     }
     return 0;
 }
+
+#define TH08_TRANSFORM_DECELERATE UINT32_C(0x1)
+#define TH08_TRANSFORM_VECTOR UINT32_C(0x10)
+#define TH08_TRANSFORM_ANGULAR UINT32_C(0x20)
+#define TH08_TRANSFORM_STOP_TURN UINT32_C(0x40)
+#define TH08_TRANSFORM_STOP_REAIM UINT32_C(0x80)
+#define TH08_TRANSFORM_STOP_SNAP UINT32_C(0x100)
+#define TH08_TRANSFORM_REFLECT_ALL UINT32_C(0x400)
+#define TH08_TRANSFORM_REFLECT_SIDES_TOP UINT32_C(0x800)
+#define TH08_TRANSFORM_CULL_SUPPRESSION UINT32_C(0x2000)
+#define TH08_TRANSFORM_TEMPLATE UINT32_C(0x4000)
+#define TH08_TRANSFORM_BARRIER UINT32_C(0x20000)
+#define TH08_TRANSFORM_FADE UINT32_C(0x40000)
+#define TH08_TRANSFORM_SOUND UINT32_C(0x80000)
+#define TH08_TRANSFORM_WRAP_HORIZONTAL UINT32_C(0x400000)
+#define TH08_TRANSFORM_WRAP_VERTICAL UINT32_C(0x800000)
+#define TH08_TRANSFORM_DERIVED UINT32_C(0x1000000)
+
+#define TH08_TRANSFORM_STOP_MASK UINT32_C(0x1c0)
+#define TH08_TRANSFORM_REFLECTION_MASK UINT32_C(0xc00)
+#define TH08_TRANSFORM_WRAP_MASK UINT32_C(0xc00000)
+#define TH08_TRANSFORM_OFFSCREEN_GRACE_MASK UINT32_C(0xdc0)
+#define TH08_TRANSFORM_SUPPORTED_ACTIVE_MASK UINT32_C(0xc20df1)
+
+_Static_assert(sizeof(Th08OracleTransformTimer) == 12U,
+               "transform timer ABI changed");
+_Static_assert(sizeof(Th08OracleTransformRecord) == 24U,
+               "transform record ABI changed");
+_Static_assert(sizeof(Th08OracleTransformProgramState) == 640U,
+               "transform program ABI changed");
+
+static void th08_program_timer_set(
+    Th08OracleTransformTimer *timer,
+    int32_t current) {
+    timer->previous = -999;
+    timer->subframe = 0.0F;
+    timer->current = current;
+}
+
+static void th08_program_timer_tick(
+    Th08OracleTransformTimer *timer,
+    float timer_scale) {
+    timer->previous = timer->current;
+    if (timer_scale <= 0.99F) {
+        timer->subframe += timer_scale;
+        if (timer->subframe >= 1.0F) {
+            timer->current += 1;
+            timer->subframe -= 1.0F;
+        }
+    } else {
+        timer->current += 1;
+    }
+}
+
+static void th08_program_timer_decrement(
+    Th08OracleTransformTimer *timer,
+    float timer_scale,
+    int32_t force_tick) {
+    if (force_tick != 0) {
+        timer->current -= 1;
+        timer->subframe = 0.0F;
+        timer->previous = -999;
+    }
+    if (timer_scale > 0.99F) {
+        timer->current -= 1;
+        return;
+    }
+    timer->previous = timer->current;
+    timer->subframe -= timer_scale;
+    while (timer->subframe < 0.0F) {
+        timer->current -= 1;
+        timer->subframe += 1.0F;
+    }
+}
+
+static int32_t th08_program_inside(
+    const Th08OracleTransformProgramState *state) {
+    return !(state->x + state->cull_half_width < 0.0F ||
+             state->x - state->cull_half_width > 384.0F ||
+             state->y + state->cull_half_height < 0.0F ||
+             state->y - state->cull_half_height > 448.0F);
+}
+
+static void th08_program_stop_handler(
+    Th08OracleTransformProgramState *state,
+    uint32_t kind,
+    float player_x,
+    float player_y,
+    float ecl_time_scale,
+    float timer_scale) {
+    float magnitude;
+    if (state->stop_timer.current >= state->stop_duration) {
+        state->stop_repeat_count += 1;
+        if (state->stop_repeat_count >= state->stop_repeat_limit) {
+            state->active_flags &= ~kind;
+        }
+        if (kind == TH08_TRANSFORM_STOP_TURN) {
+            state->base_angle += state->stop_angle_operand;
+        } else if (kind == TH08_TRANSFORM_STOP_REAIM) {
+            state->base_angle = th08_normalize_angle(
+                atan2f(player_y - state->y, player_x - state->x),
+                state->stop_angle_operand);
+        } else {
+            state->base_angle = state->stop_angle_operand;
+        }
+        state->base_speed = state->stop_resume_speed;
+        magnitude = state->base_speed;
+        th08_program_timer_set(&state->stop_timer, 0);
+    } else {
+        magnitude = state->base_speed -
+                    ((float)state->stop_timer.current * state->base_speed) /
+                        state->stop_duration;
+    }
+    th08_polar(
+        state->base_angle,
+        magnitude * ecl_time_scale,
+        &state->velocity_x,
+        &state->velocity_y);
+    th08_program_timer_tick(&state->stop_timer, timer_scale);
+}
+
+int32_t th08_oracle_transform_program_frame(
+    Th08OracleTransformProgramState *state,
+    float player_x,
+    float player_y,
+    float ecl_time_scale,
+    float timer_scale,
+    int32_t movement_frozen,
+    int32_t timer_force_tick) {
+    Th08OracleTransformRecord *record;
+    float magnitude;
+    uint32_t kind;
+    if (state == NULL || !isfinite(player_x) || !isfinite(player_y) ||
+        !isfinite(ecl_time_scale) || !isfinite(timer_scale)) {
+        return 1;
+    }
+    state->unsupported_kind = 0U;
+    if (state->retired != 0U || state->native_state == 5) {
+        return 0;
+    }
+    if (state->native_state != 1 || state->queue_cursor < 0 ||
+        state->queue_cursor > 18) {
+        return 1;
+    }
+    if ((state->active_flags & ~TH08_TRANSFORM_SUPPORTED_ACTIVE_MASK) != 0U) {
+        state->unsupported_kind =
+            state->active_flags & ~TH08_TRANSFORM_SUPPORTED_ACTIVE_MASK;
+        return 4;
+    }
+
+    while (state->queue_cursor < 18) {
+        record = &state->program[state->queue_cursor];
+        kind = record->kind;
+        if (kind == 0U ||
+            (record->allow_while_active == 0U &&
+             state->active_flags != 0U)) {
+            break;
+        }
+        if ((state->original_flags & kind) == 0U) {
+            state->queue_cursor += 1;
+            continue;
+        }
+        switch (kind) {
+        case TH08_TRANSFORM_DECELERATE:
+            state->active_flags |= kind;
+            th08_program_timer_set(&state->decelerate_timer, 0);
+            break;
+        case TH08_TRANSFORM_VECTOR:
+            state->active_flags |= kind;
+            state->vector_magnitude = record->float0;
+            state->vector_angle = record->float1 > -990.0F
+                                      ? record->float1
+                                      : state->base_angle;
+            th08_program_timer_set(&state->vector_timer, 0);
+            state->vector_duration = record->int0;
+            th08_polar(
+                state->vector_angle,
+                ecl_time_scale * state->vector_magnitude,
+                &state->acceleration_x,
+                &state->acceleration_y);
+            break;
+        case TH08_TRANSFORM_ANGULAR:
+            state->active_flags |= kind;
+            state->speed_acceleration = record->float0;
+            state->angular_velocity = record->float1;
+            th08_program_timer_set(&state->angular_timer, 0);
+            state->angular_duration = record->int0;
+            break;
+        case TH08_TRANSFORM_STOP_TURN:
+        case TH08_TRANSFORM_STOP_REAIM:
+        case TH08_TRANSFORM_STOP_SNAP:
+            state->active_flags |= kind;
+            state->stop_angle_operand = record->float0;
+            state->stop_resume_speed = record->float1 > -999.0F
+                                           ? record->float1
+                                           : state->base_speed;
+            th08_program_timer_set(&state->stop_timer, 0);
+            state->stop_duration = record->int0;
+            state->stop_repeat_limit = record->int1;
+            state->stop_repeat_count = 0;
+            break;
+        case TH08_TRANSFORM_REFLECT_ALL:
+        case TH08_TRANSFORM_REFLECT_SIDES_TOP:
+            state->active_flags |= kind;
+            state->reflection_restored_speed = record->float0 >= 0.0F
+                                                   ? record->float0
+                                                   : state->base_speed;
+            state->reflection_event_limit = record->int0;
+            state->reflection_event_count = 0;
+            break;
+        case TH08_TRANSFORM_WRAP_HORIZONTAL:
+        case TH08_TRANSFORM_WRAP_VERTICAL:
+            state->active_flags |= kind;
+            th08_program_timer_set(&state->wrap_timer, record->int0);
+            break;
+        case TH08_TRANSFORM_BARRIER:
+            state->active_flags |= kind;
+            th08_program_timer_set(&state->barrier_timer, record->int0);
+            break;
+        case TH08_TRANSFORM_CULL_SUPPRESSION:
+            state->cull_suppression_countdown = record->int0;
+            state->queue_cursor += 1;
+            continue;
+        case TH08_TRANSFORM_TEMPLATE:
+            state->unsupported_kind = kind;
+            return 2;
+        case TH08_TRANSFORM_FADE:
+            state->native_state = 5;
+            break;
+        case TH08_TRANSFORM_SOUND:
+            state->queue_cursor += 1;
+            continue;
+        case TH08_TRANSFORM_DERIVED:
+            state->unsupported_kind = kind;
+            return 3;
+        default:
+            break;
+        }
+        state->queue_cursor += 1;
+        break;
+    }
+
+    if ((state->active_flags & TH08_TRANSFORM_DECELERATE) != 0U) {
+        if (state->decelerate_timer.current <= 16) {
+            magnitude =
+                5.0F -
+                ((float)state->decelerate_timer.current * 5.0F) / 16.0F;
+            th08_polar(
+                state->base_angle,
+                (magnitude + state->base_speed) * ecl_time_scale,
+                &state->velocity_x,
+                &state->velocity_y);
+        } else {
+            state->active_flags ^= TH08_TRANSFORM_DECELERATE;
+        }
+        th08_program_timer_tick(&state->decelerate_timer, timer_scale);
+    }
+    if ((state->active_flags & TH08_TRANSFORM_VECTOR) != 0U) {
+        if (state->vector_timer.current >= state->vector_duration) {
+            state->active_flags &= ~TH08_TRANSFORM_VECTOR;
+        } else {
+            state->velocity_x += state->acceleration_x * ecl_time_scale;
+            state->velocity_y += state->acceleration_y * ecl_time_scale;
+            if (fabsf(state->velocity_x) > 0.0001F ||
+                fabsf(state->velocity_y) > 0.0001F) {
+                state->base_angle = atan2f(
+                    state->velocity_y,
+                    state->velocity_x);
+            }
+        }
+        th08_program_timer_tick(&state->vector_timer, timer_scale);
+    }
+    if ((state->active_flags & TH08_TRANSFORM_ANGULAR) != 0U) {
+        if (state->angular_timer.current >= state->angular_duration) {
+            state->active_flags &= ~TH08_TRANSFORM_ANGULAR;
+        } else {
+            state->base_angle = th08_normalize_angle(
+                state->base_angle,
+                ecl_time_scale * state->angular_velocity);
+            state->base_speed +=
+                ecl_time_scale * state->speed_acceleration;
+            th08_polar(
+                state->base_angle,
+                ecl_time_scale * state->base_speed,
+                &state->velocity_x,
+                &state->velocity_y);
+        }
+        th08_program_timer_tick(&state->angular_timer, timer_scale);
+    }
+    if ((state->active_flags & TH08_TRANSFORM_STOP_TURN) != 0U) {
+        th08_program_stop_handler(
+            state,
+            TH08_TRANSFORM_STOP_TURN,
+            player_x,
+            player_y,
+            ecl_time_scale,
+            timer_scale);
+    }
+    if ((state->active_flags & TH08_TRANSFORM_STOP_SNAP) != 0U) {
+        th08_program_stop_handler(
+            state,
+            TH08_TRANSFORM_STOP_SNAP,
+            player_x,
+            player_y,
+            ecl_time_scale,
+            timer_scale);
+    }
+    if ((state->active_flags & TH08_TRANSFORM_STOP_REAIM) != 0U) {
+        th08_program_stop_handler(
+            state,
+            TH08_TRANSFORM_STOP_REAIM,
+            player_x,
+            player_y,
+            ecl_time_scale,
+            timer_scale);
+    }
+    if ((state->active_flags & TH08_TRANSFORM_REFLECTION_MASK) != 0U &&
+        !th08_program_inside(state)) {
+        if (state->x < 0.0F || state->x >= 384.0F) {
+            state->base_angle = th08_normalize_angle(
+                -state->base_angle - TH08_PI,
+                0.0F);
+        }
+        if (state->y < 0.0F ||
+            (state->y >= 448.0F &&
+             (state->active_flags & TH08_TRANSFORM_REFLECT_ALL) != 0U)) {
+            state->base_angle = -state->base_angle;
+        }
+        state->base_speed = state->reflection_restored_speed;
+        th08_polar(
+            state->base_angle,
+            state->base_speed * ecl_time_scale,
+            &state->velocity_x,
+            &state->velocity_y);
+        state->reflection_event_count += 1;
+        if (state->reflection_event_count >=
+            state->reflection_event_limit) {
+            state->active_flags &= ~TH08_TRANSFORM_REFLECTION_MASK;
+        }
+    }
+    if ((state->active_flags & TH08_TRANSFORM_WRAP_HORIZONTAL) != 0U) {
+        if (state->x < 0.0F) {
+            state->x += 384.0F;
+        } else if (state->x > 384.0F) {
+            state->x -= 384.0F;
+        }
+        if (state->wrap_timer.current <= 0) {
+            state->active_flags ^= TH08_TRANSFORM_WRAP_HORIZONTAL;
+        } else {
+            th08_program_timer_decrement(
+                &state->wrap_timer,
+                timer_scale,
+                timer_force_tick);
+        }
+    }
+    if ((state->active_flags & TH08_TRANSFORM_WRAP_VERTICAL) != 0U) {
+        if (state->y < 0.0F) {
+            state->y += 448.0F;
+        } else if (state->y > 448.0F) {
+            state->y -= 448.0F;
+        }
+        if (state->wrap_timer.current <= 0) {
+            state->active_flags ^= TH08_TRANSFORM_WRAP_VERTICAL;
+        } else {
+            th08_program_timer_decrement(
+                &state->wrap_timer,
+                timer_scale,
+                timer_force_tick);
+        }
+    }
+    if ((state->active_flags & TH08_TRANSFORM_BARRIER) != 0U) {
+        if (state->barrier_timer.current <= 0) {
+            state->active_flags ^= TH08_TRANSFORM_BARRIER;
+        } else {
+            th08_program_timer_decrement(
+                &state->barrier_timer,
+                timer_scale,
+                timer_force_tick);
+        }
+    }
+
+    if (state->cull_suppression_countdown != 0) {
+        state->cull_suppression_countdown -= 1;
+    }
+    if (movement_frozen == 0) {
+        state->x += state->velocity_x;
+        state->y += state->velocity_y;
+    }
+    if (state->cull_suppression_countdown == 0) {
+        if (!th08_program_inside(state)) {
+            if ((state->active_flags &
+                 TH08_TRANSFORM_OFFSCREEN_GRACE_MASK) != 0U) {
+                state->offscreen_counter =
+                    (uint16_t)(state->offscreen_counter + 1U);
+                if (state->offscreen_counter >= UINT16_C(0x80)) {
+                    state->retired = 1U;
+                }
+            } else if (state->offscreen_counter == 0U) {
+                state->retired = 1U;
+            } else {
+                state->offscreen_counter -= 1U;
+            }
+        } else {
+            state->offscreen_counter = 0U;
+        }
+    }
+    return 0;
+}
+
+int32_t th08_oracle_transform_program_batch(
+    Th08OracleTransformProgramState *states,
+    uint32_t count,
+    float player_x,
+    float player_y,
+    float ecl_time_scale,
+    float timer_scale,
+    int32_t movement_frozen,
+    int32_t timer_force_tick) {
+    uint32_t index;
+    int32_t status;
+    if (states == NULL && count != 0U) {
+        return 1;
+    }
+    for (index = 0U; index < count; index++) {
+        status = th08_oracle_transform_program_frame(
+            &states[index],
+            player_x,
+            player_y,
+            ecl_time_scale,
+            timer_scale,
+            movement_frozen,
+            timer_force_tick);
+        if (status != 0) {
+            return status;
+        }
+    }
+    return 0;
+}

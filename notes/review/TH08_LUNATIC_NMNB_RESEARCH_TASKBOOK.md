@@ -688,14 +688,21 @@ it.
    regression also proves the old
    transform envelope unsound: 1,069/1,969 survivor samples escape it, worst
    97.060802px versus 31px. Global geometry v4 must therefore remain
-   shadow-only whenever a current transform is active. Next execute the
-   retained 18-record program in source order with an expanded C differential
-   and realistic pool-size batch benchmark, then take one fresh v2 Stage-5
-   root and require a same-root losing-to-viable change plus bounded
+   shadow-only whenever a current transform is active. The retained 18-record
+   program now executes in source order in independent Python/C kernels;
+   queue/immediates, eight motion handlers, barrier/wrap, movement, culling,
+   and retirement pass long differential histories. Template replacement and
+   derived births still fail closed. The persistent 1,536-state C kernel is
+   0.02446 ms median, but Python conversion makes one wrapped frame 22.233 ms;
+   preserve flat native state in the global worker. Before another expensive
+   Lunatic route, run one complete Easy Route-2 hard-no-Bomb diagnostic and
+   root-cause every hit. Then close template/derived births, connect a complete
+   current-plus-future horizon to global shadow, take one fresh v2 Stage-5
+   root, and require a same-root losing-to-viable change plus bounded
    solve/publication cost. Evaluate local micro ranking only after this exact
-   global future is useful; repeat a physical winner before a full route. Use
-   surplus VPS cores for parallel independent roots: controlled per-root
-   scaling improves through 16 workers and regresses at 24/32.
+   global future is useful; repeat a physical winner before a full Lunatic
+   route. Use surplus VPS cores for parallel independent roots: controlled
+   per-root scaling improves through 16 workers and regresses at 24/32.
 
 Optional warm-service work and learned/MCTS candidate ordering stay behind
 this backlog unless branch latency becomes the measured bottleneck.

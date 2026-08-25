@@ -2312,13 +2312,72 @@ reported source-closed or executable by the authoritative runtime.
 
 This correction improves offline transition fidelity only. It does not yet
 promote transformed current hazards, alter live input, run Wine, or establish
-a hit-count change. The complete source-order transform stepper remains the
-next gate.
+a hit-count change. The complete source-order transform stepper was the next
+gate and is recorded in AUD-082 below.
+
+### AUD-082 — Retained transform programs had no executable source-order kernel
+
+Status: **CONFIRMED COVERAGE GAP; PYTHON REFERENCE AND BATCHED C ORACLE
+IMPLEMENTED OFFLINE**
+
+The v2 retained root was finally sufficient to resume a bullet, but no
+consumer executed it. The only older C differential called one isolated
+handler at a time; it could not falsify queue admission, immediate-record
+chaining, shared handler blocks, handler order, movement, or retirement. A
+global artifact therefore still had to reject every active transform even
+when all required bytes were present.
+
+The new scalar reference executes one complete source prefix: native queue
+admission and skip rules, cull-suppression and sound immediates, all eight
+motion handlers in `BulletManager::OnUpdate` order, shared stop/reflection/wrap
+state, timed barriers, movement, visual-geometry culling, and retirement.
+Template replacement (`0x4000`) and derived child emission (`0x1000000`) have
+typed fail-closed exits because their color/geometry mutation and finite-pool
+child allocation are not yet carried through this kernel. Fade is retained as
+the post-frame native state; collision/lifecycle work after this transform and
+culling prefix is not silently claimed.
+
+The separately compiled C oracle now accepts the same flat 640-byte state and
+can advance a persistent array in one call. Long independent Python/C
+histories cover a sequential queue through fade, six reflections, fractional
+and forced shared timers, 48 deterministic mixed eight-record programs, typed
+unsupported births, and batch-versus-scalar equivalence. Integer state,
+program bytes, flags, cursors, timers, and retirement agree; only a bounded
+Linux `sinf`/`cosf` versus Python-libm tolerance is admitted for floats.
+Fade is a stable nonlethal terminal for this prefix so a persistent batch can
+continue advancing other entries; its later ANM/pool-slot lifetime remains
+outside the claim. Any batch error poisons the wrapper because the native loop
+may already have advanced earlier entries, preventing a partial frame from
+being decoded or reused as coherent state.
+
+This differential found a real scalar boundary error before integration.
+Python compared a native binary32 time scale against the binary64 literal
+`0.99`; `float32(0.99)` could consequently choose the full-rate branch while C
+chose the fractional-timer branch. Frame operands and the `0.99f` and
+`0.0001f` thresholds are now canonical binary32 values, with the exact
+threshold path locked in regression.
+
+The VPS pool benchmark separates useful compute from object-boundary cost:
+
+| States | Python scalar | Native prepare | Native kernel | Native decode | Native end-to-end |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 128 | 5.838 ms | 0.753 ms | 0.00365 ms | 1.029 ms | 1.818 ms |
+| 512 | 23.493 ms | 3.075 ms | 0.00935 ms | 4.187 ms | 7.301 ms |
+| 1,536 | 70.778 ms | 9.275 ms | 0.02446 ms | 12.766 ms | 22.233 ms |
+
+At full native pool size the transition kernel sustains about 62.8 million
+state-frames/s; an H80 rollout is roughly 1.96 ms of kernel work. The complete
+Python-object wrapper still exceeds a 16 ms issue budget because encoding and
+decoding dominate. This is direct architectural evidence: keep a persistent
+flat batch in the offline/global worker and eventually populate it from packed
+sensing, rather than materializing 1,536 Python dataclasses on each projected
+frame. The kernel is not yet connected to global geometry v4 and grants no
+live authority or route claim.
 
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,526 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,544 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

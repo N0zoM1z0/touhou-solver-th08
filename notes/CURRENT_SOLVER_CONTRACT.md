@@ -80,10 +80,21 @@ among 1,969 identity-preserving samples, with a 97.060802px center error
 against a 31px bound. Any contact-relevant current bullet with nonzero active
 transform flags therefore makes the global artifact shadow-only and yields
 `current_bullet_transform_geometry_incomplete`. This gate is not an exact
-stepper. Coherent diagnostic roots now retain the complete 18-record program,
-including queued records whose active flags are still zero, but no global
-consumer executes that program yet. Source-order execution and its independent
-C differential remain the explicit coverage gap.
+global recurrence. Coherent diagnostic roots retain the complete 18-record
+program, including queued records whose active flags are still zero. A scalar
+Python reference and separately compiled C batch now execute the supported
+queue, source-order handlers, movement, and visual-geometry culling with long
+differential coverage. Template replacement and derived child births remain
+typed unsupported, and global geometry v4 has not yet consumed the kernel, so
+the live authority gate remains unchanged.
+
+The measured full-pool native transition itself is cheap: 1,536 states take
+0.02446 ms median on this VPS. Python object preparation and decoding make the
+composed one-frame wrapper 22.233 ms, beyond the 16 ms local issue budget.
+Any authoritative integration must therefore retain the flat native batch
+across projected frames (and ultimately ingest packed sensing) in the due/free
+global worker. It may not materialize the full object graph in the local
+decision loop merely because the transition kernel is fast.
 
 Explicit retained future-source captures use v2 to join producer state and
 canonical active bullet/laser planner slots inside one manager-frame/update-
@@ -95,7 +106,7 @@ embed current-hazard schema v2: exact 432-byte transform programs, queue and
 culling state, and every meaningful active handler block round-trip for
 deterministic planner replay. Historical current-hazard v1 state remains
 readable without inventing those fields. This is still not arbitrary game
-state or exact transform execution.
+state or globally integrated exact transform execution.
 
 The certificate belongs to the worker's historical bullet snapshot. A later
 local prefix or delayed issue computation over newly sensed bullets may not

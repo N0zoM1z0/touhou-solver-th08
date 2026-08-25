@@ -513,11 +513,26 @@ growing uncertainty margin.  In a fixed generic stage, more than half of the
 identity-preserving transform samples leave that margin; the worst H80 center
 error is over three times its claimed bound.  Geometry version~4 therefore
 records transform completeness and forbids action authority for such a pool.
-This fail-closed change is not the solution: the next kernel must capture and
-execute the now-retained ordered native transform program and pass the
-independent C differential before transformed current bullets regain
-authority.  A batched native implementation must additionally meet a measured
-pool-size latency gate; the Python reference remains offline if it does not.
+This fail-closed change is not the solution: the retained ordered native
+transform program must execute before transformed current bullets regain
+authority.  We implemented a readable binary32 Python reference and a
+separately compiled C transition over one flat state.  Long independent
+histories cover queue admission, immediate records, shared handler blocks,
+source-order motion, wraps, movement, and visual-geometry culling; template
+replacement and derived finite-pool births stop with typed unknowns.  The
+differential also found a language-boundary error: comparing native
+$\mathrm{float32}(0.99)$ with a Python binary64 literal selected the wrong
+timer branch exactly at the source threshold.
+
+The pool-size experiment changes the architectural conclusion.  At 1,536
+states, one persistent native transition takes 0.02446 ms median (about
+62.8 million state-frames/s), making an 80-frame transform rollout roughly
+1.96 ms of kernel work.  Python-object preparation and decoding dominate:
+the composed one-frame wrapper takes 22.233 ms, versus 70.778 ms for the
+scalar reference.  More CPU therefore helps only after representation is
+fixed.  The global worker should own a persistent flat batch populated from
+packed sensing and emit compact planner geometry; reconstructing every bullet
+as a Python object per horizon frame cannot enter the 16-ms issue loop.
 
 A route-work audit also exposed avoidable serial work inside the fresh issue
 layer.  Almost all changed-prefix transactions ultimately preserved the

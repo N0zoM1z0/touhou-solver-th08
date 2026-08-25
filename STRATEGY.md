@@ -21,6 +21,12 @@ The active physical objective is Lunatic Sakuya/Remilia Route-2 Final-B NMNB.
 Extra is deferred, and fixed-root wind-tunnel results cannot promote a change
 without a named original-engine physical mechanism.
 
+Before spending another full Lunatic route, complete one Easy Route-2
+Sakuya/Remilia NMNB diagnostic. Easy is an infrastructure acceptance rung, not
+a replacement target: every hit is analyzed against sensing, native state,
+geometry/future coverage, planning, issue latency, and delivered input. Search
+cost is not an adequate explanation for an Easy hit without profiler evidence.
+
 ## Live
 
 ### L1 — Robust no-Bomb survival
@@ -504,11 +510,14 @@ roots now retain the exact 18-record program and every meaningful active
 handler block without changing packed local sensing. Stateful schema v4 also
 separates collision geometry from the ANM visual geometry used by reflection
 and culling for all 21 real templates. Therefore this remains
-offline/default-off infrastructure inside L3; the next gate is source-order
-exact execution plus C/batch differential, followed by a fresh v2 Stage-5
-same-root global-policy change, not physical sampling. No deadline, Wine
-action, or hit reduction exists. Complete Linux discovery passes 1,526 tests with five
-conditional skips, and the paper builds to eight pages.
+offline/default-off infrastructure inside L3. Source-order Python/C execution
+and the batch differential now pass; template/derived births and global
+consumption remain open. The next physical falsifier is a complete Easy
+Route-2 diagnostic, followed by a fresh v2 Stage-5 same-root global-policy
+change after those remaining semantics close. No deadline, Wine action, or
+hit reduction follows from the offline kernel. Complete Linux discovery
+passes 1,544 tests with five conditional skips, and the paper builds to nine
+pages.
 
 ### L4 — Continuous-position coarse-cell lower bound
 
@@ -557,6 +566,15 @@ action divergence.
 The current unresolved canonical mismatch is the pre-enemy/pre-aux producer
 before the known auxiliary fires at root 2129. Retrospective RNG alignment is
 diagnostic, not causal closure.
+
+The retained-current transform prefix now has independent scalar and C
+executors. They cover queue/immediate semantics, all source-order motion
+handlers, barrier/wrap, movement, visual culling, and retirement; template
+replacement and derived finite-pool births remain typed UNKNOWN. At 1,536
+states the persistent native kernel is 0.02446 ms median, versus 22.233 ms for
+Python-object encode, one frame, and decode. Global work may exploit the
+kernel through persistent flat state; the local issue loop may not claim the
+object wrapper meets deadline.
 
 ### O3 — Route-2 combat/resource reconstruction
 

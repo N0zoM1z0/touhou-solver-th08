@@ -54,14 +54,21 @@ ordered implementation plan are in
   blocks only on the coherent diagnostic path; packed local sensing is
   unchanged. Source/asset audit also proved that reflection/culling must use
   visual sprite geometry rather than the collision AABB; stateful schema v4
-  now carries both for all 21 real templates. This is offline integration,
-  not arbitrary ECL, exact current-
-  transform execution, a same-root policy win, or physical hit authority. The
-  next ordered work is source-order transform execution plus C/batch
-  differential, then a fresh physical v2 Stage-5 root and offline global
-  replay. Import smoke, 57
-  focused tests, and all 1,526 Linux tests pass with five conditional skips;
-  the paper builds to eight pages. The retained compact 3,600-frame
+  now carries both for all 21 real templates. The retained program now has a
+  source-order scalar stepper and a separately compiled persistent C batch;
+  long mixed histories agree, including queue order, shared blocks, wraps,
+  movement, and culling. Template replacement and derived births fail closed.
+  The 1,536-state native kernel takes 0.02446 ms median, but Python
+  prepare/decode raises full wrapper time to 22.233 ms, so global integration
+  must retain flat native state and cannot enter the 16 ms local loop. This is
+  offline integration, not arbitrary ECL, a global same-root policy win, or
+  physical hit authority. The next physical diagnostic is a complete Easy
+  Sakuya/Remilia Route-2 hard-no-Bomb attempt; every Easy hit must be audited
+  as infra/model/issue evidence. The ultimate target remains Lunatic NMNB.
+  Then close template/derived births and connect the current-plus-future
+  kernel to global shadow replay. Thirty-one focused transform/oracle tests
+  and all 1,544 Linux tests pass with five conditional skips; the paper builds
+  to nine pages. The retained compact 3,600-frame
   compatibility artifact remains
   `artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json`; routine
   successful raw reports are not retained.

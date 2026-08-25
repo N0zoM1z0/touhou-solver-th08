@@ -133,6 +133,66 @@ typedef struct Th08OracleTransformState {
     int32_t active;
 } Th08OracleTransformState;
 
+typedef struct Th08OracleTransformTimer {
+    int32_t previous;
+    float subframe;
+    int32_t current;
+} Th08OracleTransformTimer;
+
+typedef struct Th08OracleTransformRecord {
+    float float0;
+    float float1;
+    int32_t int0;
+    int32_t int1;
+    uint32_t kind;
+    uint32_t allow_while_active;
+} Th08OracleTransformRecord;
+
+typedef struct Th08OracleTransformProgramState {
+    float x;
+    float y;
+    float velocity_x;
+    float velocity_y;
+    float collision_half_width;
+    float collision_half_height;
+    float cull_half_width;
+    float cull_half_height;
+    float base_speed;
+    float base_angle;
+    int32_t bullet_type;
+    int32_t native_state;
+    uint32_t active_flags;
+    uint32_t original_flags;
+    int32_t queue_cursor;
+    int32_t cull_suppression_countdown;
+    uint16_t offscreen_counter;
+    uint16_t retired;
+    Th08OracleTransformRecord program[18];
+    Th08OracleTransformTimer decelerate_timer;
+    Th08OracleTransformTimer vector_timer;
+    float vector_magnitude;
+    float vector_angle;
+    float acceleration_x;
+    float acceleration_y;
+    int32_t vector_duration;
+    Th08OracleTransformTimer angular_timer;
+    float speed_acceleration;
+    float angular_velocity;
+    int32_t angular_duration;
+    Th08OracleTransformTimer stop_timer;
+    float stop_resume_speed;
+    float stop_angle_operand;
+    int32_t stop_duration;
+    int32_t stop_repeat_limit;
+    int32_t stop_repeat_count;
+    float reflection_restored_speed;
+    int32_t reflection_event_count;
+    int32_t reflection_event_limit;
+    Th08OracleTransformTimer barrier_timer;
+    Th08OracleTransformTimer wrap_timer;
+    uint32_t unsupported_kind;
+} Th08OracleTransformProgramState;
+
 TH08_ORACLE_API uint16_t th08_oracle_rng_next_u16(Th08OracleRng *rng);
 TH08_ORACLE_API uint32_t th08_oracle_rng_next_u32(Th08OracleRng *rng);
 TH08_ORACLE_API float th08_oracle_rng_next_f32(Th08OracleRng *rng);
@@ -189,6 +249,25 @@ TH08_ORACLE_API int32_t th08_oracle_transform_step(
     float player_x,
     float player_y,
     float time_scale);
+
+TH08_ORACLE_API int32_t th08_oracle_transform_program_frame(
+    Th08OracleTransformProgramState *state,
+    float player_x,
+    float player_y,
+    float ecl_time_scale,
+    float timer_scale,
+    int32_t movement_frozen,
+    int32_t timer_force_tick);
+
+TH08_ORACLE_API int32_t th08_oracle_transform_program_batch(
+    Th08OracleTransformProgramState *states,
+    uint32_t count,
+    float player_x,
+    float player_y,
+    float ecl_time_scale,
+    float timer_scale,
+    int32_t movement_frozen,
+    int32_t timer_force_tick);
 
 #ifdef __cplusplus
 }
