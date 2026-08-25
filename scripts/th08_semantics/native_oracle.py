@@ -6,7 +6,7 @@ import ctypes
 from dataclasses import dataclass
 from pathlib import Path
 
-from build_th08_source_oracle import DEFAULT_OUTPUT, build
+from build_th08_source_oracle import DEFAULT_OUTPUT, build, requires_rebuild
 from th08_rng import Th08Rng
 from th08_semantics.source_primitives import (
     Callback12State,
@@ -60,6 +60,51 @@ class _Callback12State(ctypes.Structure):
     ]
 
 
+class _TransformState(ctypes.Structure):
+    _fields_ = [
+        ("x", ctypes.c_float),
+        ("y", ctypes.c_float),
+        ("half_width", ctypes.c_float),
+        ("half_height", ctypes.c_float),
+        ("velocity_x", ctypes.c_float),
+        ("velocity_y", ctypes.c_float),
+        ("base_speed", ctypes.c_float),
+        ("base_angle", ctypes.c_float),
+        ("parameter_0", ctypes.c_float),
+        ("parameter_1", ctypes.c_float),
+        ("restored_speed", ctypes.c_float),
+        ("acceleration_x", ctypes.c_float),
+        ("acceleration_y", ctypes.c_float),
+        ("timer", ctypes.c_int32),
+        ("duration", ctypes.c_int32),
+        ("repeat_limit", ctypes.c_int32),
+        ("repeat_count", ctypes.c_int32),
+        ("active", ctypes.c_int32),
+    ]
+
+
+@dataclass(frozen=True)
+class NativeTransformState:
+    x: float
+    y: float
+    half_width: float
+    half_height: float
+    velocity_x: float
+    velocity_y: float
+    base_speed: float
+    base_angle: float
+    parameter_0: float
+    parameter_1: float
+    restored_speed: float
+    acceleration_x: float
+    acceleration_y: float
+    timer: int
+    duration: int
+    repeat_limit: int
+    repeat_count: int
+    active: bool = True
+
+
 @dataclass
 class NativeSourceOracle:
     """Loaded native authority with explicit gameplay-RNG synchronization."""
@@ -68,7 +113,7 @@ class NativeSourceOracle:
 
     @classmethod
     def load(cls, path: Path = DEFAULT_OUTPUT, *, rebuild: bool = False) -> "NativeSourceOracle":
-        if rebuild or not path.exists():
+        if rebuild or requires_rebuild(path):
             build(path)
         library = ctypes.CDLL(str(path))
         library.th08_oracle_pattern_sample.argtypes = [
@@ -92,6 +137,14 @@ class NativeSourceOracle:
         library.th08_oracle_aabb_overlap.restype = ctypes.c_int32
         library.th08_oracle_rng_next_f32.argtypes = [ctypes.POINTER(_Rng)]
         library.th08_oracle_rng_next_f32.restype = ctypes.c_float
+        library.th08_oracle_transform_step.argtypes = [
+            ctypes.c_uint32,
+            ctypes.POINTER(_TransformState),
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_float,
+        ]
+        library.th08_oracle_transform_step.restype = ctypes.c_int32
         return cls(library)
 
     @staticmethod
@@ -209,5 +262,66 @@ class NativeSourceOracle:
             )
         )
 
+    def transform_step(
+        self,
+        kind: int,
+        state: NativeTransformState,
+        *,
+        player_x: float,
+        player_y: float,
+        time_scale: float = 1.0,
+    ) -> NativeTransformState:
+        native = _TransformState(
+            state.x,
+            state.y,
+            state.half_width,
+            state.half_height,
+            state.velocity_x,
+            state.velocity_y,
+            state.base_speed,
+            state.base_angle,
+            state.parameter_0,
+            state.parameter_1,
+            state.restored_speed,
+            state.acceleration_x,
+            state.acceleration_y,
+            state.timer,
+            state.duration,
+            state.repeat_limit,
+            state.repeat_count,
+            int(state.active),
+        )
+        status = self.library.th08_oracle_transform_step(
+            kind,
+            native,
+            player_x,
+            player_y,
+            time_scale,
+        )
+        if status != 0:
+            raise ValueError(
+                f"native source oracle rejected transform {kind:#x}"
+            )
+        return NativeTransformState(
+            x=float(native.x),
+            y=float(native.y),
+            half_width=float(native.half_width),
+            half_height=float(native.half_height),
+            velocity_x=float(native.velocity_x),
+            velocity_y=float(native.velocity_y),
+            base_speed=float(native.base_speed),
+            base_angle=float(native.base_angle),
+            parameter_0=float(native.parameter_0),
+            parameter_1=float(native.parameter_1),
+            restored_speed=float(native.restored_speed),
+            acceleration_x=float(native.acceleration_x),
+            acceleration_y=float(native.acceleration_y),
+            timer=int(native.timer),
+            duration=int(native.duration),
+            repeat_limit=int(native.repeat_limit),
+            repeat_count=int(native.repeat_count),
+            active=bool(native.active),
+        )
 
-__all__ = ["NativeSourceOracle"]
+
+__all__ = ["NativeSourceOracle", "NativeTransformState"]

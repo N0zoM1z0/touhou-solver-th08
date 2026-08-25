@@ -193,3 +193,138 @@ int32_t th08_oracle_aabb_overlap(
            player_y - player_half_height <= hazard_y + hazard_half_height &&
            player_y + player_half_height >= hazard_y - hazard_half_height;
 }
+
+static void th08_polar(
+    float angle,
+    float magnitude,
+    float *velocity_x,
+    float *velocity_y) {
+    *velocity_x = cosf(angle) * magnitude;
+    *velocity_y = sinf(angle) * magnitude;
+}
+
+static int32_t th08_transform_inside(
+    const Th08OracleTransformState *state) {
+    return !(state->x + state->half_width < 0.0F ||
+             state->x - state->half_width > 384.0F ||
+             state->y + state->half_height < 0.0F ||
+             state->y - state->half_height > 448.0F);
+}
+
+int32_t th08_oracle_transform_step(
+    uint32_t kind,
+    Th08OracleTransformState *state,
+    float player_x,
+    float player_y,
+    float time_scale) {
+    float magnitude;
+    if (state == NULL || state->active == 0) {
+        return 0;
+    }
+    switch (kind) {
+    case UINT32_C(0x1):
+        if (state->timer <= 16) {
+            magnitude =
+                5.0F - ((float)state->timer * 5.0F) / 16.0F;
+            th08_polar(
+                state->base_angle,
+                (magnitude + state->base_speed) * time_scale,
+                &state->velocity_x,
+                &state->velocity_y);
+        } else {
+            state->active = 0;
+        }
+        state->timer += 1;
+        break;
+    case UINT32_C(0x10):
+        if (state->timer >= state->duration) {
+            state->active = 0;
+        } else {
+            state->velocity_x += state->acceleration_x * time_scale;
+            state->velocity_y += state->acceleration_y * time_scale;
+            if (fabsf(state->velocity_x) > 0.0001F ||
+                fabsf(state->velocity_y) > 0.0001F) {
+                state->base_angle = atan2f(
+                    state->velocity_y,
+                    state->velocity_x);
+            }
+        }
+        state->timer += 1;
+        break;
+    case UINT32_C(0x20):
+        if (state->timer >= state->duration) {
+            state->active = 0;
+        } else {
+            state->base_angle = th08_normalize_angle(
+                state->base_angle,
+                time_scale * state->parameter_1);
+            state->base_speed += time_scale * state->parameter_0;
+            th08_polar(
+                state->base_angle,
+                time_scale * state->base_speed,
+                &state->velocity_x,
+                &state->velocity_y);
+        }
+        state->timer += 1;
+        break;
+    case UINT32_C(0x40):
+    case UINT32_C(0x80):
+    case UINT32_C(0x100):
+        if (state->timer >= state->duration) {
+            state->repeat_count += 1;
+            if (state->repeat_count >= state->repeat_limit) {
+                state->active = 0;
+            }
+            if (kind == UINT32_C(0x40)) {
+                state->base_angle += state->parameter_0;
+            } else if (kind == UINT32_C(0x80)) {
+                state->base_angle = th08_normalize_angle(
+                    atan2f(player_y - state->y, player_x - state->x),
+                    state->parameter_0);
+            } else {
+                state->base_angle = state->parameter_0;
+            }
+            state->base_speed = state->restored_speed;
+            magnitude = state->base_speed;
+            state->timer = 0;
+        } else {
+            magnitude = state->base_speed -
+                        ((float)state->timer * state->base_speed) /
+                            state->duration;
+        }
+        th08_polar(
+            state->base_angle,
+            magnitude * time_scale,
+            &state->velocity_x,
+            &state->velocity_y);
+        state->timer += 1;
+        break;
+    case UINT32_C(0x400):
+    case UINT32_C(0x800):
+        if (!th08_transform_inside(state)) {
+            if (state->x < 0.0F || state->x >= 384.0F) {
+                state->base_angle = th08_normalize_angle(
+                    -state->base_angle - TH08_PI,
+                    0.0F);
+            }
+            if (state->y < 0.0F ||
+                (state->y >= 448.0F && kind == UINT32_C(0x400))) {
+                state->base_angle = -state->base_angle;
+            }
+            state->base_speed = state->restored_speed;
+            th08_polar(
+                state->base_angle,
+                state->base_speed * time_scale,
+                &state->velocity_x,
+                &state->velocity_y);
+            state->repeat_count += 1;
+            if (state->repeat_count >= state->repeat_limit) {
+                state->active = 0;
+            }
+        }
+        break;
+    default:
+        return 2;
+    }
+    return 0;
+}

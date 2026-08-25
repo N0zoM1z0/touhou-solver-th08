@@ -59,6 +59,27 @@ typedef struct Th08OracleCallback12State {
     float velocity_y;
 } Th08OracleCallback12State;
 
+typedef struct Th08OracleTransformState {
+    float x;
+    float y;
+    float half_width;
+    float half_height;
+    float velocity_x;
+    float velocity_y;
+    float base_speed;
+    float base_angle;
+    float parameter_0;
+    float parameter_1;
+    float restored_speed;
+    float acceleration_x;
+    float acceleration_y;
+    int32_t timer;
+    int32_t duration;
+    int32_t repeat_limit;
+    int32_t repeat_count;
+    int32_t active;
+} Th08OracleTransformState;
+
 TH08_ORACLE_API uint16_t th08_oracle_rng_next_u16(Th08OracleRng *rng);
 TH08_ORACLE_API uint32_t th08_oracle_rng_next_u32(Th08OracleRng *rng);
 TH08_ORACLE_API float th08_oracle_rng_next_f32(Th08OracleRng *rng);
@@ -87,6 +108,13 @@ TH08_ORACLE_API int32_t th08_oracle_aabb_overlap(
     float hazard_y,
     float hazard_half_width,
     float hazard_half_height);
+
+TH08_ORACLE_API int32_t th08_oracle_transform_step(
+    uint32_t kind,
+    Th08OracleTransformState *state,
+    float player_x,
+    float player_y,
+    float time_scale);
 
 #ifdef __cplusplus
 }

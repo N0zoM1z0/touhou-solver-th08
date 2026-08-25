@@ -9,7 +9,8 @@ Source basis (authority repository commit `57ee34f`):
 - `src/Global.cpp`: `Rng::GetRandomU16`, `GetRandomU32`, `GetRandomF32`, and
   `AddNormalizeAngle`;
 - `src/BulletManager.cpp`: `BulletManager::FUN_0042f5f0` direct-fire modes
-  0–8 and the inclusive player/bullet AABB ordering in `OnUpdate`;
+  0–8, transform handlers `FUN_00432210` through `FUN_00432830`, and the
+  inclusive player/bullet AABB ordering in `OnUpdate`;
 - `src/EclExIns.cpp`: `EclExIns::ReisenFreezeBullets` at `0x424A20`.
 
 The C code is kept independent of both the Python model and the optimized

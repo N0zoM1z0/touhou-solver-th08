@@ -13,14 +13,33 @@ import unittest
 
 from build_th08_source_oracle import build
 from th08_rng import Th08Rng
-from th08_semantics.native_oracle import NativeSourceOracle
+from th08_semantics.native_oracle import (
+    NativeSourceOracle,
+    NativeTransformState,
+)
 from th08_semantics.source_primitives import (
     Callback12State,
     SourcePattern,
     aabb_overlap,
     apply_callback12,
+    f32,
     pattern_sample,
 )
+from th08_semantics.stage import (
+    RuntimeBullet,
+    StageRuntime,
+    TRANSFORM_ANGULAR_VELOCITY,
+    TRANSFORM_DECELERATE,
+    TRANSFORM_REFLECT_ALL,
+    TRANSFORM_REFLECT_SIDES_TOP,
+    TRANSFORM_STOP_REAIM,
+    TRANSFORM_STOP_SNAP,
+    TRANSFORM_STOP_TURN,
+    TRANSFORM_VECTOR_ACCELERATION,
+    TransformSpec,
+    _TransformRuntime,
+)
+from th08_semantics.stage_generation import generate_stage_program
 
 
 def _bits(value: float) -> int:
@@ -184,6 +203,124 @@ class Th08SourceOracleTests(unittest.TestCase):
                 aabb_overlap(**values),
                 self.oracle.aabb_overlap(**values),
             )
+
+    def test_transform_handlers_match_c_field_transitions(self) -> None:
+        generator = random.Random(0x432210)
+        kinds = (
+            TRANSFORM_DECELERATE,
+            TRANSFORM_VECTOR_ACCELERATION,
+            TRANSFORM_ANGULAR_VELOCITY,
+            TRANSFORM_STOP_TURN,
+            TRANSFORM_STOP_REAIM,
+            TRANSFORM_STOP_SNAP,
+            TRANSFORM_REFLECT_ALL,
+            TRANSFORM_REFLECT_SIDES_TOP,
+        )
+        runtime = StageRuntime(
+            generate_stage_program(seed=3, profile="quick")
+        )
+        for kind in kinds:
+            for case_index in range(48):
+                duration = generator.randint(0, 45)
+                repeat_limit = generator.randint(1, 4)
+                parameter_0 = f32(generator.uniform(-2.5, 2.5))
+                parameter_1 = f32(generator.uniform(-0.2, 4.0))
+                spec = TransformSpec(
+                    kind=kind,
+                    duration=duration,
+                    repeat_limit=repeat_limit,
+                    float_0=parameter_0,
+                    float_1=parameter_1,
+                )
+                x = f32(
+                    generator.choice((-8.0, 192.0, 392.0))
+                    if kind in (TRANSFORM_REFLECT_ALL, TRANSFORM_REFLECT_SIDES_TOP)
+                    else generator.uniform(16.0, 368.0)
+                )
+                y = f32(
+                    generator.choice((-8.0, 200.0, 456.0))
+                    if kind in (TRANSFORM_REFLECT_ALL, TRANSFORM_REFLECT_SIDES_TOP)
+                    else generator.uniform(16.0, 432.0)
+                )
+                velocity_x = f32(generator.uniform(-5.0, 5.0))
+                velocity_y = f32(generator.uniform(-5.0, 5.0))
+                base_speed = f32(generator.uniform(0.2, 6.0))
+                base_angle = f32(generator.uniform(-math.pi, math.pi))
+                restored_speed = f32(generator.uniform(0.2, 5.0))
+                acceleration_x = f32(generator.uniform(-0.1, 0.1))
+                acceleration_y = f32(generator.uniform(-0.1, 0.1))
+                timer = generator.randint(0, max(17, duration + 1))
+                repeat_count = generator.randint(0, repeat_limit - 1)
+                bullet = RuntimeBullet(
+                    slot=0,
+                    source="transform-differential",
+                    x=x,
+                    y=y,
+                    velocity_x=velocity_x,
+                    velocity_y=velocity_y,
+                    half_width=2.0,
+                    half_height=3.0,
+                    base_speed=base_speed,
+                    base_angle=base_angle,
+                    tag_flags=0,
+                    transforms=(),
+                )
+                transform = _TransformRuntime(
+                    spec=spec,
+                    timer=timer,
+                    repeat_count=repeat_count,
+                    restored_speed=restored_speed,
+                    acceleration_x=acceleration_x,
+                    acceleration_y=acceleration_y,
+                )
+                bullet.active_transforms[kind] = transform
+                authority = self.oracle.transform_step(
+                    kind,
+                    NativeTransformState(
+                        x=x,
+                        y=y,
+                        half_width=2.0,
+                        half_height=3.0,
+                        velocity_x=velocity_x,
+                        velocity_y=velocity_y,
+                        base_speed=base_speed,
+                        base_angle=base_angle,
+                        parameter_0=parameter_0,
+                        parameter_1=parameter_1,
+                        restored_speed=restored_speed,
+                        acceleration_x=acceleration_x,
+                        acceleration_y=acceleration_y,
+                        timer=timer,
+                        duration=duration,
+                        repeat_limit=repeat_limit,
+                        repeat_count=repeat_count,
+                    ),
+                    player_x=192.0,
+                    player_y=400.0,
+                )
+
+                runtime._apply_transform_handlers(
+                    bullet,
+                    player_x=192.0,
+                    player_y=400.0,
+                )
+
+                self.assertEqual(
+                    kind in bullet.active_transforms,
+                    authority.active,
+                )
+                self.assertEqual(transform.timer, authority.timer)
+                self.assertEqual(
+                    transform.repeat_count,
+                    authority.repeat_count,
+                )
+                for candidate, expected in (
+                    (bullet.base_speed, authority.base_speed),
+                    (bullet.base_angle, authority.base_angle),
+                    (bullet.velocity_x, authority.velocity_x),
+                    (bullet.velocity_y, authority.velocity_y),
+                ):
+                    self.assertLessEqual(abs(candidate - expected), 2.0e-6)
 
 
 if __name__ == "__main__":
