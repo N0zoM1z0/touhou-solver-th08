@@ -1530,10 +1530,51 @@ but are explicitly not planner-root samples. This run's 22 hits are not an
 algorithm comparison because root capture added observer work and no new
 future projection received action authority.
 
+### AUD-062 — Retained producer roots had no resolved event-stream adapter
+
+Status: **CONFIRMED ARCHITECTURE GAP; EXACT PREFIX ADAPTER FIXED OFFLINE;
+ACTION AUTHORITY WITHHELD**
+
+The retained-root lane and ordinary future-source executor ended at two
+different representations. The executor could return resolved
+`FutureDirectFire` records, while the source-stateful long-stage runtime began
+at `BulletEmitter` records. No integrity-checked path connected a physical
+capsule to that runtime, so retained roots could test source closure but could
+not exercise the downstream finite-pool, transform, geometry, or planner
+laboratory. Treating an UNKNOWN projection's requested slab width as a proven
+prefix would also have overstated coverage.
+
+The new adapter is generic and fail-closed. It verifies the content-addressed
+capsule and exact runtime ECL SHA-256, requires a coherent phase-0,
+bomb-inactive root, replays the ordinary source executor, and lowers only
+point-valued direct-fire operands. Every activation becomes one immutable
+one-shot emitter. The already-resolved native aim angle is retained explicitly
+instead of being recomputed from an unrelated offline player position. An
+interval operand is never replaced by its midpoint. Any unresolved bullet
+flag, ANM/lifecycle state, transform program, callback effect, or whole-root
+UNKNOWN rejects the program; a causal truncation may publish only the prefix
+strictly before its first unsupported dependency. Existing generated-stage
+payloads omit the optional resolved-aim field and remain schema v1, preserving
+their canonical identities. Programs carrying the new field use schema v2, so
+an older reader cannot silently ignore it; an attempted v2-to-v1 downgrade
+fails closed.
+
+There is no stage or spell dispatch in this production path. The four physical
+Stage-5 capsules are corpus counterexamples only. The phase-3 transition roots
+are rejected by the common eligibility predicate. The phase-0 callback root
+has no proven prefix, while the phase-0 template-geometry root produces an
+empty 86-frame causal prefix before type-16 geometry becomes UNKNOWN. Thus the
+adapter is exercised on physical state, but the present corpus still supplies
+zero resolved births and cannot change a global winning set. Synthetic exact
+events prove aim preservation, activation timing, StageProgram round-trip,
+finite-pool execution, midpoint refusal, and lifecycle-flag rejection. The
+next general checkpoint is source-authoritative ANM/lifecycle and template
+geometry lowering, not a card-specific exception.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,446 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,450 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

@@ -9,6 +9,7 @@ import unittest
 
 from th08_semantics.stage import (
     BULLET_POOL_SIZE,
+    STAGE_SCHEMA,
     BulletEmitter,
     Callback12Event,
     StagePhase,
@@ -148,6 +149,7 @@ class SourceStatefulStageTests(unittest.TestCase):
         different = generate_stage_program(seed=0xCE0133, profile="quick")
 
         self.assertEqual(first, second)
+        self.assertEqual(first.schema, STAGE_SCHEMA)
         self.assertEqual(first.digest, second.digest)
         self.assertNotEqual(first.digest, different.digest)
         replay = StageProgram.from_payload(

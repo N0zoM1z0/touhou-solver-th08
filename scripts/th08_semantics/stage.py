@@ -37,6 +37,7 @@ from th08_semantics.source_primitives import (
 
 
 STAGE_SCHEMA = "th08-source-stateful-stage-v1"
+RESOLVED_AIM_STAGE_SCHEMA = "th08-source-stateful-stage-v2"
 SOURCE_AUTHORITY_COMMIT = "57ee34f"
 BULLET_POOL_SIZE = 0x600
 LASER_POOL_SIZE = 0x100
@@ -156,6 +157,7 @@ class BulletEmitter:
     half_width: float
     half_height: float
     transforms: tuple[TransformSpec, ...] = ()
+    resolved_aim_override: float | None = None
 
     def __post_init__(self) -> None:
         if not self.emitter_id:
@@ -171,6 +173,10 @@ class BulletEmitter:
             raise ValueError("invalid bullet emitter schedule")
         if self.half_width < 0.0 or self.half_height < 0.0:
             raise ValueError("bullet half extents cannot be negative")
+        if self.resolved_aim_override is not None and not math.isfinite(
+            self.resolved_aim_override
+        ):
+            raise ValueError("resolved emitter aim override must be finite")
         if len({transform.kind for transform in self.transforms}) != len(
             self.transforms
         ):
@@ -219,7 +225,11 @@ class BulletEmitter:
             _add(self.origin_y, _mul(emission, self.origin_velocity_y)),
             _mul(self.origin_wave_y, math.cos(wave_angle)),
         )
-        aim = f32(math.atan2(f32(player_y - y), f32(player_x - x)))
+        aim = (
+            f32(self.resolved_aim_override)
+            if self.resolved_aim_override is not None
+            else f32(math.atan2(f32(player_y - y), f32(player_x - x)))
+        )
         return (
             x,
             y,
@@ -240,7 +250,7 @@ class BulletEmitter:
         )
 
     def to_payload(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "id": self.emitter_id,
             "schedule": [self.start_frame, self.end_frame, self.interval],
             "origin": [
@@ -266,6 +276,12 @@ class BulletEmitter:
             "geometry": [self.half_width, self.half_height],
             "transforms": [value.to_payload() for value in self.transforms],
         }
+        # Preserve existing generated-stage identities.  This field is only
+        # present for an already-resolved retained producer event; ordinary
+        # synthetic emitters continue to derive aim from the supplied player.
+        if self.resolved_aim_override is not None:
+            payload["resolved_aim_override"] = self.resolved_aim_override
+        return payload
 
     @classmethod
     def from_payload(cls, payload: dict[str, object]) -> "BulletEmitter":
@@ -303,6 +319,11 @@ class BulletEmitter:
             transforms=tuple(
                 TransformSpec.from_payload(values)
                 for values in payload["transforms"]
+            ),
+            resolved_aim_override=(
+                float(payload["resolved_aim_override"])
+                if payload.get("resolved_aim_override") is not None
+                else None
             ),
         )
 
@@ -507,9 +528,19 @@ class StageProgram:
     def identity(self) -> str:
         return f"{self.profile}:{self.seed:016x}:{self.digest[:16]}"
 
+    @property
+    def schema(self) -> str:
+        if any(
+            emitter.resolved_aim_override is not None
+            for phase in self.phases
+            for emitter in phase.emitters
+        ):
+            return RESOLVED_AIM_STAGE_SCHEMA
+        return STAGE_SCHEMA
+
     def unsigned_payload(self) -> dict[str, object]:
         return {
-            "schema": STAGE_SCHEMA,
+            "schema": self.schema,
             "source_authority_commit": self.source_authority_commit,
             "seed": self.seed,
             "profile": self.profile,
@@ -536,7 +567,8 @@ class StageProgram:
 
     @classmethod
     def from_payload(cls, payload: dict[str, object]) -> "StageProgram":
-        if payload.get("schema") != STAGE_SCHEMA:
+        schema = payload.get("schema")
+        if schema not in (STAGE_SCHEMA, RESOLVED_AIM_STAGE_SCHEMA):
             raise ValueError("unsupported source-stage schema")
         unsigned = dict(payload)
         digest = unsigned.pop("sha256", None)
@@ -548,7 +580,7 @@ class StageProgram:
         ).encode()
         if digest is not None and hashlib.sha256(canonical).hexdigest() != digest:
             raise ValueError("source-stage digest mismatch")
-        return cls(
+        program = cls(
             seed=int(unsigned["seed"]),
             profile=str(unsigned["profile"]),
             frame_count=int(unsigned["frame_count"]),
@@ -557,8 +589,15 @@ class StageProgram:
                 StagePhase.from_payload(value) for value in unsigned["phases"]
             ),
             source_authority_commit=str(unsigned["source_authority_commit"]),
-            source_unknowns=tuple(str(value) for value in unsigned["source_unknowns"]),
+            source_unknowns=tuple(
+                str(value) for value in unsigned["source_unknowns"]
+            ),
         )
+        if program.schema != schema:
+            raise ValueError(
+                "source-stage schema does not cover resolved-aim features"
+            )
+        return program
 
 
 @dataclass(slots=True)
@@ -1320,6 +1359,7 @@ __all__ = [
     "LASER_POOL_SIZE",
     "LaserSpawnEvent",
     "RuntimeBullet",
+    "RESOLVED_AIM_STAGE_SCHEMA",
     "SOURCE_AUTHORITY_COMMIT",
     "STAGE_SCHEMA",
     "StageMetrics",

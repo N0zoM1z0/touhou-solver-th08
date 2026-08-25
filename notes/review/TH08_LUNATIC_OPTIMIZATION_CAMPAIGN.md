@@ -651,6 +651,18 @@ phase-0 roots identify the next concrete boundaries: singleton auxiliary
 callback handling on 103 and bullet-template/ANM geometry on 115. No root has
 yet emitted a complete future event stream, and none can affect input.
 
+The representation gap is now closed without card dispatch. A generic
+content-addressed adapter verifies root/ECL identity, reruns the reached-source
+executor, and converts only point-valued, flag-free direct-fire events into
+one-shot source-stateful emitters. It preserves resolved player aim and refuses
+interval midpoints. Whole-root UNKNOWN produces no program; a causal UNKNOWN
+may publish only the preceding proven prefix. On the physical corpus this
+correctly rejects the two phase-3 samples and the singleton-callback root, and
+executes an empty 86-frame prefix before the type-16 geometry boundary. This is
+an integration checkpoint, not a planner gain: the corpus has not yet supplied
+one resolved hostile birth. GLOBAL-001C therefore proceeds to generic ANM
+lifecycle/template geometry, then child/timeline births and callback 14.
+
 ## Boundary And Focus Contract
 
 Boundary/focus work begins with shadow attribution, not a new score.  It must

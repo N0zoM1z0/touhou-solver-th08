@@ -9,6 +9,7 @@ from th08_semantics.model import (
 )
 from th08_semantics.shrink import shrink_case
 from th08_semantics.stage import (
+    RESOLVED_AIM_STAGE_SCHEMA,
     STAGE_SCHEMA,
     StageProgram,
     StageRuntime,
@@ -25,6 +26,7 @@ __all__ = [
     "FAMILIES",
     "SCHEMA",
     "SemanticCase",
+    "RESOLVED_AIM_STAGE_SCHEMA",
     "STAGE_PROFILES",
     "STAGE_SCHEMA",
     "StageProgram",

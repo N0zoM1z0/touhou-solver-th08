@@ -697,10 +697,11 @@ and explicit `STRATEGY.md` decision.
 TH08 work is active. The next promotion extends the new offline laboratory;
 do not run another route merely to sample a different RNG root:
 
-1. import retained resolved Stage-5 producer roots into the source-stateful
-   event stream and require prefix equality with the existing future-source
-   executor;
-2. close ANM-dependent bullet lifecycle states with an independent oracle;
+1. extend the new retained-root event stream with source-derived ANM lifecycle
+   and template geometry, preserving exact prefix equality and typed UNKNOWN
+   boundaries;
+2. differential ANM-dependent bullet lifecycle states against an independent
+   oracle before admitting flagged births;
 3. lower child VM/timeline births and callback 14 incrementally, retaining an
    explicit `UNKNOWN` at every unsupported reached dependency;
 4. join a complete action-conditioned future to the already-closed Stage-5
