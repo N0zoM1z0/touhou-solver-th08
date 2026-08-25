@@ -26,10 +26,10 @@ from th08_stage_ecl_catalog import NO_SCALE_WRITER_STAGE_ROUTE_INDICES
 from th08_live.scale_source_trace import (
     CompleteScaleSourceCapture,
     FINAL_B_QUARTER_SCALE_BITS,
-    FINAL_B_SCALE_SPELL_ID,
     FINAL_B_STAGE_ROUTE_INDEX,
     FinalBScaleSourceTraceService,
     capture_complete_scale_sources,
+    final_b_scale_spell_id,
 )
 from th08_time_scale import (
     SCALE_COVERAGE_COMPLETE,
@@ -664,9 +664,9 @@ class FinalBScaleScheduleAuthority:
         )
         target_context = (
             route_id == 2
-            and difficulty_index == 3
+            and 0 <= difficulty_index <= 3
             and stage_route_index == FINAL_B_STAGE_ROUTE_INDEX
-            and spell_id == FINAL_B_SCALE_SPELL_ID
+            and spell_id == final_b_scale_spell_id(difficulty_index)
         )
         if self._origin_schedule is None and (
             not target_context

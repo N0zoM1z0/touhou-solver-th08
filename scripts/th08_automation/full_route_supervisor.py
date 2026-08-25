@@ -615,13 +615,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.trial_timeout <= args.agent_duration:
         raise ValueError("trial timeout must exceed the agent duration")
     if args.enable_finalb_scale_source_authority and (
-        args.difficulty.menu_index != 3
-        or args.runtime_ecl_static_image is None
+        args.runtime_ecl_static_image is None
         or args.runtime_ecl_static_sha256 != FINAL_B_ECL_STATIC_SHA256
     ):
         raise ValueError(
-            "full-route Final-B scale authority requires Lunatic and the "
-            "exact ecldata7 identity"
+            "full-route Final-B scale authority requires a main difficulty "
+            "and the exact ecldata7 identity"
         )
     if (
         args.diagnostic_continue_root_only_scale

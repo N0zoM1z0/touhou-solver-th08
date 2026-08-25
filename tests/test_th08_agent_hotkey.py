@@ -14,6 +14,7 @@ from th08_agent_hotkey import (
     read_runtime_summary,
 )
 from th08_live.controller import _prepare_live_run
+from th08_live import controller as live_controller
 from th08_live_dodge_agent import build_parser
 
 
@@ -101,6 +102,34 @@ class AgentHotkeyTests(unittest.TestCase):
         parsed = build_parser().parse_args(arguments)
         self.assertTrue(parsed.enable_finalb_scale_source_authority)
         self.assertEqual(parsed.runtime_ecl_static_image, image)
+
+        easy = build_parser().parse_args(
+            _arguments(
+                difficulty=0,
+                expected_stage=0,
+                runtime_ecl_static_image=image,
+                runtime_ecl_static_sha256="2" * 64,
+                enable_finalb_scale_source_authority=True,
+            )
+        )
+        original_backends = (
+            live_controller._LOCAL_HAZARD_BACKEND,
+            live_controller._LOCAL_BEAM_REDUCER,
+            live_controller._LOCAL_BULLET_DECODER,
+        )
+        try:
+            _prepare_live_run(easy)
+        finally:
+            live_controller._configure_local_hazard_backend(
+                original_backends[0]
+            )
+            live_controller._configure_local_beam_reducer(
+                original_backends[1]
+            )
+            live_controller._configure_local_bullet_decoder(
+                original_backends[2]
+            )
+        self.assertEqual(easy.difficulty, 0)
 
         with self.assertRaisesRegex(ValueError, "full route or stage 7"):
             _arguments(

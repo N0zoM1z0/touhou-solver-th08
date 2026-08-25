@@ -118,6 +118,7 @@ from th08_live.scale_schedule_authority import (
     NoScaleWriterScheduleAuthority,
 )
 from th08_live.scale_source_trace import (
+    FINAL_B_STAGE_ROUTE_INDEX,
     FinalBScaleSourceTraceConfiguration,
     FinalBScaleSourceTraceService,
 )
@@ -2882,11 +2883,12 @@ def _prepare_live_run(args: argparse.Namespace) -> None:
         getattr(args, "enable_finalb_scale_source_authority", False)
     )
     if enable_finalb_scale_source_authority and (
-        args.difficulty != 3 or args.expected_stage not in {0, 7}
+        args.difficulty not in {0, 1, 2, 3}
+        or args.expected_stage not in {0, 7}
     ):
         raise ValueError(
-            "Final-B scale-source authority requires Lunatic full route or "
-            "stage 7"
+            "Final-B scale-source authority requires a main-difficulty "
+            "full route or stage 7"
         )
     if enable_finalb_scale_source_authority and not args.no_bomb:
         raise ValueError(
@@ -3139,7 +3141,9 @@ def _run_live_session(
                             ),
                             expected_route_id=2,
                             expected_difficulty_index=args.difficulty,
-                            expected_stage_route_index=args.expected_stage,
+                            expected_stage_route_index=(
+                                FINAL_B_STAGE_ROUTE_INDEX
+                            ),
                         )
                     )
                 )

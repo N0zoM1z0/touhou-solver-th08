@@ -16,6 +16,7 @@ from th08_live.scale_schedule_authority import (
     NoScaleWriterScheduleAuthority,
     audit_no_scale_writer_ecl,
 )
+from th08_live.scale_source_trace import final_b_scale_spell_id
 from th08_live.sensing_trace import _time_scale_schedule_hard_authority
 from th08_live.controller import (
     CORRIDOR_POLICY_MAXIMUM_LEAD_FRAMES,
@@ -195,7 +196,8 @@ def _resolve(
     source_frame: int = 100,
     scale_bits: int = QUARTER_SCALE_BITS,
     gameplay_epoch: int = 1,
-    spell_id: int | None = 190,
+    difficulty_index: int = 3,
+    spell_id: int | None = None,
     bomb_active: int = 0,
     player_phase: int = 0,
     predeath_counter: int = 0,
@@ -207,9 +209,13 @@ def _resolve(
         source_frame=source_frame,
         gameplay_epoch=gameplay_epoch,
         route_id=2,
-        difficulty_index=3,
+        difficulty_index=difficulty_index,
         stage_route_index=7,
-        spell_id=spell_id,
+        spell_id=(
+            final_b_scale_spell_id(difficulty_index)
+            if spell_id is None
+            else spell_id
+        ),
         observed_root_scale_bits=scale_bits,
         observed_player_bomb_active=bomb_active,
         player_phase=player_phase,
@@ -341,6 +347,17 @@ class NoScaleWriterScheduleAuthorityTests(unittest.TestCase):
 
 
 class FinalBScaleScheduleAuthorityTests(unittest.TestCase):
+    def test_easy_uses_the_same_source_authority_with_spell_187(self) -> None:
+        service = _TraceService(_origin())
+        resolution = _resolve(
+            FinalBScaleScheduleAuthority(service),
+            difficulty_index=0,
+            spell_id=187,
+        )
+
+        self.assertTrue(resolution.planner_scale_authority)
+        self.assertEqual(service.calls, 1)
+
     def test_authority_only_submission_skips_diagnostic_schedules(
         self,
     ) -> None:

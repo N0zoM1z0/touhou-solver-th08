@@ -2374,10 +2374,49 @@ sensing, rather than materializing 1,536 Python dataclasses on each projected
 frame. The kernel is not yet connected to global geometry v4 and grants no
 live authority or route claim.
 
+### AUD-083 — Final-B scale authority encoded Lunatic identity as mechanics
+
+Status: **CONFIRMED LIVE AUTHORITY BUG; FIXED OFFLINE, PHYSICAL EASY
+VALIDATION PENDING**
+
+The isolated Wine wrapper could only request Lunatic, and four independent
+live gates rejected exact Final-B scale authority unless the difficulty index
+was exactly 3. More seriously, whole-route controller construction passed its
+stage-0 launch sentinel into the Final-B source service as the expected
+physical stage. The service therefore required the impossible conjunction
+``stage == 0`` and terminal Final-B spell 190; it could never capture at the
+actual stage-route index 7. This is a concrete instance of the route-wide
+identity/dispatch defect already described by AUD-039.
+
+The decoded authoritative ``ecldata7.ecl`` makes the correction mechanical.
+Its terminal records are spell IDs 187, 188, 189, and 190 with difficulty
+masks ``0xf1``, ``0xf2``, ``0xf4``, and ``0xf8`` in shared subroutine 87.
+Their slow-time transition is shared all-difficulty subroutine 44: every
+instruction has mask ``0xff``, callback 18 writes reciprocal 1/4 at offset
+``0x5c44``, and callback 18 restores 1/1 at ``0x6018``. Difficulty therefore
+selects the shipped spell-family member ``187 + difficulty_index``; it does
+not select a different scale algorithm.
+
+The source trace now derives and validates that family member for main
+difficulties 0..3, while retaining exact route 2, stage 7, ECL digest,
+complete-source capture, no-Bomb, and continuation gates. The live delivery
+target uses the same derivation. Whole-route setup always binds the source
+service to physical stage 7 even though the launch supervisor still uses
+expected-stage 0 as its whole-route sentinel. Agent, hotkey, Practice, and
+full-route gates now admit all four main difficulties; Extra remains rejected.
+The isolated Wine wrapper exposes one difficulty argument and propagates it
+to the Windows supervisor and compact host report without changing the
+86,400/86,700-second budgets.
+
+Focused regression executes the same complete 300-frame source capture for
+all four difficulty/spell pairs and verifies Easy live delivery at spell 187.
+This grants no hit-count claim yet. The next evidence is one clean-checkpoint
+Easy Sakuya/Remilia Route-2 hard-no-Bomb run through terminal unload.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,544 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,547 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

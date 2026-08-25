@@ -235,6 +235,43 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertNotIn("--ordinary-preexhaustion-authority", command)
         self.assertIn("--authority-only-corridor", command)
         self.assertNotIn("--trace-items", command)
+        self.assertEqual(
+            command[command.index("--difficulty") + 1],
+            "lunatic",
+        )
+
+    def test_full_route_command_can_select_easy_without_shortening_budget(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            command = runner.build_windows_controller_command(
+                mode="full-route",
+                python=root / "python.exe",
+                game_dir=root / "game",
+                artifact_dir=root / "artifacts",
+                agent_duration=86_400.0,
+                trial_timeout=86_700.0,
+                kill_before_saturation=False,
+                ordinary_preexhaustion_authority=False,
+                authority_only_corridor=True,
+                trace_items=False,
+                difficulty="easy",
+            )
+
+        self.assertEqual(
+            command[command.index("--difficulty") + 1],
+            "easy",
+        )
+        self.assertEqual(
+            command[command.index("--agent-duration") + 1],
+            "86400.0",
+        )
+        self.assertEqual(
+            command[command.index("--trial-timeout") + 1],
+            "86700.0",
+        )
+        self.assertIn("--enable-finalb-scale-source-authority", command)
 
     def test_practice_command_pins_selected_stage_ecl_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -139,11 +139,12 @@ class AgentHotkey:
                 "runtime ECL identity requires an explicit expected stage"
             )
         if enable_finalb_scale_source_authority and (
-            expected_difficulty != 3 or expected_stage not in {0, 7}
+            expected_difficulty not in {0, 1, 2, 3}
+            or expected_stage not in {0, 7}
         ):
             raise ValueError(
-                "Final-B scale-source authority requires Lunatic full route "
-                "or stage 7"
+                "Final-B scale-source authority requires a main-difficulty "
+                "full route or stage 7"
             )
         if enable_finalb_scale_source_authority and (
             runtime_ecl_static_image is None

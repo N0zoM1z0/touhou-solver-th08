@@ -927,12 +927,11 @@ def main(argv: list[str] | None = None) -> int:
         )
     if args.enable_finalb_scale_source_authority and (
         args.stage.route_index != 7
-        or args.difficulty.menu_index != 3
         or args.runtime_ecl_static_sha256 != FINAL_B_ECL_STATIC_SHA256
     ):
         raise ValueError(
-            "Final-B scale-source authority requires Lunatic Stage 6B "
-            "Practice and the exact ecldata7 identity"
+            "Final-B scale-source authority requires main-difficulty Stage "
+            "6B Practice and the exact ecldata7 identity"
         )
     if min(
         args.cooldown,

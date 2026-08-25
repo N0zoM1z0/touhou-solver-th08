@@ -30,6 +30,7 @@ from th08_live.scale_source_trace import (  # noqa: E402
     FinalBScaleSourceTraceConfiguration,
     FinalBScaleSourceTraceService,
     decode_scale_vm_source,
+    final_b_scale_spell_id,
 )
 from th08_runtime.game_state import (  # noqa: E402
     ADDR_DIFFICULTY_INDEX,
@@ -105,6 +106,8 @@ class _Reader:
         installed_callback: int = 0,
         auxiliary: tuple[int, int, int, int] = (0, 0, 0, 0),
         outside_spell_owner: bool = False,
+        difficulty_index: int = 3,
+        spell_id: int = 190,
     ) -> None:
         static = STATIC_PATH.read_bytes()
         self.relocated = _relocate_static_ecl(static, RUNTIME_BASE)
@@ -129,13 +132,13 @@ class _Reader:
             0,
             0x825,
             spell_owner,
-            190,
+            spell_id,
         )
         struct.pack_into("<i", spell, 0x110, 120)
         self.fixed = {
             ADDR_ENEMY_MANAGER_FRAME: struct.pack("<I", 100),
             ADDR_ROUTE_ID: b"\x02",
-            ADDR_DIFFICULTY_INDEX: struct.pack("<I", 3),
+            ADDR_DIFFICULTY_INDEX: struct.pack("<I", difficulty_index),
             ADDR_STAGE_ROUTE_INDEX: struct.pack("<I", 7),
             ADDR_ENGINE_FLAGS: struct.pack("<I", 4),
             ADDR_SPELL_CARD_STATE: bytes(spell),
@@ -192,24 +195,33 @@ class _BufferedReader(_Reader):
 
 
 class ScaleSourceTraceTests(unittest.TestCase):
-    def _service(self) -> FinalBScaleSourceTraceService:
+    def _service(
+        self,
+        difficulty_index: int = 3,
+    ) -> FinalBScaleSourceTraceService:
         return FinalBScaleSourceTraceService(
             FinalBScaleSourceTraceConfiguration(
                 static_path=STATIC_PATH,
                 expected_static_sha256=FINAL_B_ECL_STATIC_SHA256,
+                expected_difficulty_index=difficulty_index,
             )
         )
 
-    def _observe(self, reader: _Reader) -> dict[str, object]:
-        record = self._service().observe_if_due(
+    def _observe(
+        self,
+        reader: _Reader,
+        *,
+        difficulty_index: int = 3,
+    ) -> dict[str, object]:
+        record = self._service(difficulty_index).observe_if_due(
             reader,
             decision_frame=101,
             expected_manager_frame=100,
             gameplay_epoch=4,
             route_id=2,
-            difficulty_index=3,
+            difficulty_index=difficulty_index,
             stage_route_index=7,
-            spell_id=190,
+            spell_id=final_b_scale_spell_id(difficulty_index),
             observed_root_scale_bits=FINAL_B_QUARTER_SCALE_BITS,
             observed_player_bomb_active=0,
         )
@@ -255,6 +267,23 @@ class ScaleSourceTraceTests(unittest.TestCase):
             ],
             [(237, 18, 0x3F800000)],
         )
+
+    def test_all_main_difficulties_share_the_exact_scale_program(self) -> None:
+        for difficulty_index in range(4):
+            with self.subTest(difficulty_index=difficulty_index):
+                spell_id = final_b_scale_spell_id(difficulty_index)
+                record = self._observe(
+                    _Reader(
+                        difficulty_index=difficulty_index,
+                        spell_id=spell_id,
+                    ),
+                    difficulty_index=difficulty_index,
+                )
+                self.assertEqual(
+                    record["status"],
+                    "accepted_complete_source_trace",
+                )
+                self.assertEqual(record["spell_id"], spell_id)
 
     def test_runtime_pool_buffer_is_allocated_once_and_reused(self) -> None:
         reader = _BufferedReader()

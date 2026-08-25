@@ -211,11 +211,14 @@ def build_windows_controller_command(
     ordinary_preexhaustion_authority: bool,
     authority_only_corridor: bool,
     trace_items: bool,
+    difficulty: str = "lunatic",
     practice_stage: str = "5",
     diagnostic_continue_root_only_scale: bool = False,
     future_source_retain_spells: tuple[int, ...] = (),
     future_source_retain_max_per_spell: int = 1,
 ) -> list[str]:
+    if difficulty not in {"easy", "normal", "hard", "lunatic"}:
+        raise ValueError(f"unsupported main difficulty: {difficulty}")
     launcher = ROOT / "scripts" / "tools" / "run_th08_wine_launch.bat"
     if mode == "smoke":
         return [
@@ -238,7 +241,7 @@ def build_windows_controller_command(
             "--stage",
             practice_stage,
             "--difficulty",
-            "lunatic",
+            difficulty,
             "--unlock-requested-stage",
             "--game-dir",
             windows_path(game_dir),
@@ -291,6 +294,8 @@ def build_windows_controller_command(
         "--runtime-ecl-static-sha256",
         FINAL_B_ECL_SHA256,
         "--enable-finalb-scale-source-authority",
+        "--difficulty",
+        difficulty,
         "--agent-duration",
         str(agent_duration),
         "--trial-timeout",
@@ -318,7 +323,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--practice-stage",
         choices=PRACTICE_STAGE_KEYS,
         default="5",
-        help="Lunatic Sakuya/Remilia Practice Start stage",
+        help="Sakuya/Remilia Practice Start stage",
+    )
+    parser.add_argument(
+        "--difficulty",
+        choices=("easy", "normal", "hard", "lunatic"),
+        default="lunatic",
+        help="Sakuya/Remilia main difficulty; defaults to lunatic",
     )
     parser.add_argument(
         "--game-dir",
@@ -418,6 +429,7 @@ def run(args: argparse.Namespace) -> int:
         "schema": "th08-isolated-wine-run-v1",
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "mode": args.mode,
+        "difficulty": args.difficulty,
         "practice_stage": args.practice_stage if args.mode == "practice" else None,
         "artifact_dir": str(artifact_dir),
         "display_requested": args.display,
@@ -704,6 +716,7 @@ def run(args: argparse.Namespace) -> int:
             ),
             authority_only_corridor=args.authority_only_corridor,
             trace_items=args.trace_items,
+            difficulty=args.difficulty,
             practice_stage=args.practice_stage,
             diagnostic_continue_root_only_scale=(
                 args.diagnostic_continue_root_only_scale

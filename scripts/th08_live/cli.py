@@ -362,9 +362,9 @@ def build_live_parser(
         "--enable-finalb-scale-source-authority",
         action="store_true",
         help=(
-            "enable the exact Final-B spell-190 complete-source schedule "
-            "consumer; requires Lunatic stage 7, hard no-Bomb, and exact "
-            "runtime ECL identity"
+            "enable the exact Final-B difficulty-selected spell-family "
+            "complete-source schedule consumer; requires main-difficulty "
+            "stage 7, hard no-Bomb, and exact runtime ECL identity"
         ),
     )
     bomb_group = parser.add_mutually_exclusive_group()

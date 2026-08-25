@@ -81,7 +81,8 @@ from th08_time_scale import (
 FINAL_B_SCALE_SOURCE_TRACE_SCHEMA = "th08-finalb-scale-source-trace-v1"
 FINAL_B_SCALE_SOURCE_TRACE_AUTHORITY = "trace_only_no_action_authority"
 FINAL_B_STAGE_ROUTE_INDEX = 7
-FINAL_B_SCALE_SPELL_ID = 190
+FINAL_B_SCALE_SPELL_IDS = (187, 188, 189, 190)
+FINAL_B_SCALE_SPELL_ID = FINAL_B_SCALE_SPELL_IDS[3]
 FINAL_B_SCALE_SUBROUTINE = 44
 FINAL_B_SCALE_HORIZON_FRAMES = 300
 FINAL_B_QUARTER_SCALE_BITS = 0x3E800000
@@ -106,6 +107,23 @@ _SCALE_CALLBACK_INDICES = frozenset(
 _SCALE_CALLBACK_ADDRESSES = frozenset(
     CALLBACK_ADDRESSES[index] for index in _SCALE_CALLBACK_INDICES
 )
+
+
+def final_b_scale_spell_id(difficulty_index: int) -> int:
+    """Return the shipped Final-B terminal spell for one main difficulty.
+
+    ``ecldata7.ecl`` contains the four difficulty records 187..190 in one
+    shared spell root.  The scale transition itself is the all-difficulty
+    subroutine 44, so difficulty selects only the active spell-card record.
+    """
+
+    if type(difficulty_index) is not int or not 0 <= difficulty_index < len(
+        FINAL_B_SCALE_SPELL_IDS
+    ):
+        raise ValueError(
+            "Final-B scale authority requires a main difficulty index 0..3"
+        )
+    return FINAL_B_SCALE_SPELL_IDS[difficulty_index]
 
 
 class ScaleSourceReader(Protocol):
@@ -604,10 +622,25 @@ class FinalBScaleSourceTraceConfiguration:
     expected_route_id: int = 2
     expected_difficulty_index: int = 3
     expected_stage_route_index: int = FINAL_B_STAGE_ROUTE_INDEX
-    target_spell_id: int = FINAL_B_SCALE_SPELL_ID
+    target_spell_id: int | None = None
     target_subroutine: int = FINAL_B_SCALE_SUBROUTINE
     horizon_frames: int = FINAL_B_SCALE_HORIZON_FRAMES
     maximum_capture_attempts: int = 3
+
+    def __post_init__(self) -> None:
+        shipped_spell_id = final_b_scale_spell_id(
+            self.expected_difficulty_index
+        )
+        if self.target_spell_id is None:
+            object.__setattr__(self, "target_spell_id", shipped_spell_id)
+        elif self.target_spell_id != shipped_spell_id:
+            raise ValueError(
+                "Final-B scale target spell does not match its difficulty"
+            )
+        if self.expected_stage_route_index != FINAL_B_STAGE_ROUTE_INDEX:
+            raise ValueError(
+                "Final-B scale authority requires stage route index 7"
+            )
 
 
 class FinalBScaleSourceTraceService:
@@ -1034,6 +1067,7 @@ __all__ = [
     "FINAL_B_SCALE_SOURCE_TRACE_AUTHORITY",
     "FINAL_B_SCALE_SOURCE_TRACE_SCHEMA",
     "FINAL_B_SCALE_SPELL_ID",
+    "FINAL_B_SCALE_SPELL_IDS",
     "FINAL_B_SCALE_SUBROUTINE",
     "FINAL_B_STAGE_ROUTE_INDEX",
     "FinalBScaleSourceTraceConfiguration",
@@ -1042,4 +1076,5 @@ __all__ = [
     "ScaleVmSource",
     "capture_complete_scale_sources",
     "decode_scale_vm_source",
+    "final_b_scale_spell_id",
 ]
