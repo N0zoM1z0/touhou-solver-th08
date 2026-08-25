@@ -33,15 +33,22 @@ ENEMY_CONTACT_SIZE_OFFSET = 0x2D70
 ENEMY_POSITION_OFFSET = 0x2D88
 ENEMY_FLAGS_OFFSET = 0x3324
 
-# First of 480 ordinary timeline-enemy slots. Spell owners may live outside
-# this range, so their authoritative pointers have a separate guard path.
+# Historical live-sensor layout: ``ENEMY_POOL_BASE`` is native
+# ``EnemyManager::enemies[1]``, not the beginning of the manager's 480-slot
+# update pool.  The immediately preceding record is ``enemies[0]`` and can be
+# the active spell owner.  Keep the established names as compatibility aliases
+# for retained v14 roots, but expose the source-authoritative names so new
+# producer code cannot accidentally clone slot 0 as ``firstEnemy``.
 ENEMY_POOL_BASE = 0x005826C0
 ENEMY_POOL_SIZE = 480
 ENEMY_STRIDE = 0x53D0
-# The manager-owned record immediately before the ordinary pool is reused as
-# an active non-spell hostile source.  It is not merely inert template bytes:
-# retained native root 2129 observed a body and auxiliary ECL fire here.
 ENEMY_MANAGER_TEMPLATE_BASE = ENEMY_POOL_BASE - ENEMY_STRIDE
+ENEMY_SLOT_ZERO_BASE = ENEMY_MANAGER_TEMPLATE_BASE
+ENEMY_SPAWN_TEMPLATE_BASE = ENEMY_SLOT_ZERO_BASE - ENEMY_STRIDE
+# ``EnemyManager::OnUpdate`` scans enemies[0..479].  The legacy 480-record
+# read beginning at ENEMY_POOL_BASE therefore contains native slots 1..480;
+# index 479 is the inactive failure sentinel and is not manager-scanned.
+ENEMY_MANAGER_SCANNED_SLOT_COUNT = 480
 ENEMY_LOCAL_PREFIX_SIZE = 64
 ENEMY_BODY_READ_OFFSET = ENEMY_VELOCITY_OFFSET
 ENEMY_BODY_READ_SIZE = ENEMY_FLAGS_OFFSET + 4 - ENEMY_BODY_READ_OFFSET

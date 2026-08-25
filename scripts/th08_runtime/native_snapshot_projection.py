@@ -1477,7 +1477,7 @@ def capture_collision_control_projection(
         enemy_blob=manager_template_blob,
         pool_base=TH08_ENEMY_MANAGER_TEMPLATE_BASE,
         pool_size=1,
-        source_role="enemy_manager_template_or_special_singleton",
+        source_role="native_enemy_slot_zero_legacy_manager_singleton",
     )
     player_x = float(compact_state["player_x"])
     player_y = float(compact_state["player_y"])

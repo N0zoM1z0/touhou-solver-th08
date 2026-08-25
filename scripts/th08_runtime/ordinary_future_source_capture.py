@@ -286,7 +286,9 @@ def _read_active_enemy_records(
     *,
     slab_buffer: Any | None = None,
 ) -> tuple[memoryview, memoryview, int]:
-    # The manager singleton is immediately before the ordinary pool.  Capture
+    # The active native slot zero is immediately before the legacy ordinary
+    # range.  It is *not* EnemyManager::firstEnemy: that spawn template is one
+    # additional stride earlier.  Capture
     # both in one ReadProcessMemory transaction: the former sparse scan made
     # at least 481 cross-process calls, and retained physical traces showed
     # that 1,726/1,754 roots crossed enemy_manager_frame before closure could
@@ -399,7 +401,7 @@ def _payload(
         enemy_blob=manager_blob,
         pool_base=ENEMY_MANAGER_TEMPLATE_BASE,
         pool_size=1,
-        source_role="enemy_manager_template_or_special_singleton",
+        source_role="native_enemy_slot_zero_legacy_manager_singleton",
     )
     ordinary = _enemy_source_record(
         reader,

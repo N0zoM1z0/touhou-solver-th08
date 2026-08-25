@@ -1795,6 +1795,36 @@ still stops before allocating and synchronously executing arbitrary child
 roots, and manager-slot scheduling/same-frame second updates remain to be
 integrated. No global-policy or physical-hit result is claimed.
 
+### AUD-070 — The retained ``manager template`` address is actually enemy slot zero
+
+Status: **CONFIRMED SOURCE/LAYOUT BUG; NAMING FIXED, EXECUTOR REPAIR IN PROGRESS**
+
+The retained v14 payload key ``enemy_manager_template_source`` and the live
+constant ``ENEMY_MANAGER_TEMPLATE_BASE`` name address `0x0057D2F0` as the
+spawn template.  Authoritative layout and update code prove that this address
+is instead `EnemyManager::enemies[0]`: `g_EnemyManager` begins at
+`0x00577F20`, `firstEnemy` occupies its first `0x53D0` bytes, and
+`EnemyManager::OnUpdate` starts its 480-entry scan at manager `+0x53D0`.
+The historical ordinary range at `0x005826C0` consequently begins at native
+slot 1 and extends through the unscanned `enemies[480]` failure sentinel.
+
+This explains why retained spell roots show an active ``manager template``
+VM even when the legacy ordinary range is empty: the row is the live boss in
+slot zero, not an active copy template.  More importantly, the future-source
+executor selected that mutated boss as `template = sources[0]` for timeline
+births.  Any later birth could therefore inherit the boss's current emission
+descriptor, motion, auxiliary contexts, flags, and body state instead of the
+zeroed/source-initialized `firstEnemy` state copied by `SpawnEnemy1/2`.
+
+The compatibility addresses and v14 payload key cannot be silently renamed,
+so the live layout now exposes explicit `ENEMY_SLOT_ZERO_BASE` and
+`ENEMY_SPAWN_TEMPLATE_BASE` names while retaining the old aliases for capsule
+replay.  New captures label the decoded row as native slot zero.  The executor
+must normalize the legacy local indices to native slots 0--479 and construct
+births from the source-authoritative `EnemyManager::Initialize` template; it
+must never clone the retained slot-zero source.  No stage or spell identifier
+is involved in this correction.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
