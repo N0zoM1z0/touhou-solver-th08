@@ -75,8 +75,8 @@ the cheap projection candidate and an explicit not-ready reason.
 
 The v4 transform component is necessary because the historical
 constant-velocity plus `3px + 0.35px/frame` transform envelope is demonstrably
-not conservative: a generic source-stateful H80 regression has 1,037 escapes
-among 1,937 identity-preserving samples, with a 97.060802px center error
+not conservative: a generic source-stateful H80 regression has 1,069 escapes
+among 1,969 identity-preserving samples, with a 97.060802px center error
 against a 31px bound. Any contact-relevant current bullet with nonzero active
 transform flags therefore makes the global artifact shadow-only and yields
 `current_bullet_transform_geometry_incomplete`. This gate is not an exact

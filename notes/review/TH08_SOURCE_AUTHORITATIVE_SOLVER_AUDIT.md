@@ -300,8 +300,8 @@ accumulating pattern-specific uncertainty.
 
 The source-stateful laboratory now proves that this is an authority blocker,
 not just a precision improvement. At generic quick-stage seed `0xCE0132`, 28
-active-transform bullets rooted at frame 20 produce 1,937 identity-preserving
-survivor samples through H80; 1,037 leave the old 3px + 0.35px/frame envelope.
+active-transform bullets rooted at frame 20 produce 1,969 identity-preserving
+survivor samples through H80; 1,069 leave the old 3px + 0.35px/frame envelope.
 The worst angular-velocity survivor is 97.060802px from the constant-velocity
 x forecast against a 31px claimed bound. Global geometry v4 therefore marks
 any active current transform incomplete and keeps that solution shadow-only.

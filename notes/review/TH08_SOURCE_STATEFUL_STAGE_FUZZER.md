@@ -46,10 +46,13 @@ seeded stage grammar
 Every capsule records source authority commit `57ee34f` and carries a
 canonical SHA-256 digest. Schema v1 preserves the original resolved-descriptor
 programs, v2 adds an already-resolved aim, and v3 adds the native bullet
-type/lifecycle flags. Readers recompute the required schema from program
-features, so a v2/v3 payload cannot be relabeled as v1. The tracked v1 gate
-remains replayable with its original digest after the v3 implementation.
-Generator implementation changes cannot alter an already serialized replay.
+type/lifecycle flags. Schema v4 makes every new emitter select one of the 21
+real template rows and records the distinct collision and visual/culling
+geometries. Readers recompute the required schema from program features, so a
+v2/v3/v4 payload cannot be relabeled as v1. The tracked v1 gate remains
+hash-verifiable and parseable, but is no longer source-closed because it lacks
+visual culling geometry. Generator implementation changes cannot alter an
+already serialized replay.
 
 ## Modeled Source Contract
 
@@ -58,6 +61,7 @@ The runtime currently closes the following source-derived behavior:
 - one shared 16-bit TH08 gameplay RNG, including U16/U32/F32 conversion order;
 - all direct-fire modes 0 through 8, including fan parity and player aim;
 - the real 1,536-slot bullet pool and 256-slot laser pool;
+- all 21 source/asset template collision and visual-culling geometries;
 - allocation before random-mode parameter sampling, and early loop termination
   at the first failed allocation;
 - phase clears, moving resolved origins, periodic producer schedules, and
@@ -234,6 +238,11 @@ all eight handlers.
     the 18-record program were lost across serialization. The diagnostic and
     long-stage roots now retain the exact program plus only active, meaningful
     handler blocks; the fast packed decision decoder remains unchanged.
+12. Reflection and offscreen culling reused the lethal collision half-extents.
+    Source instead tests the current ANM sprite width/height. The shipped
+    asset proves the fields can differ substantially (type 10 is 12 px for
+    collision versus 32 px for culling), so the stage runtime and independent
+    C oracle now carry the two geometries separately.
 
 These are source-backed semantic corrections. None is presented as a route
 hit improvement until it changes a complete future projection and passes a

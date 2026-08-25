@@ -19,8 +19,7 @@ from th08_semantics.retained_event_stream import (
 )
 from th08_semantics.source_primitives import f32
 from th08_semantics.stage import (
-    LIFECYCLE_STAGE_SCHEMA,
-    RESOLVED_AIM_STAGE_SCHEMA,
+    CULL_GEOMETRY_STAGE_SCHEMA,
     STAGE_SCHEMA,
     StageProgram,
     StageRuntime,
@@ -53,7 +52,7 @@ def _event(**updates: object) -> FutureDirectFire:
         "angle2": FloatInterval.point(0.0),
         "aim_angle": FloatInterval.point(1.0),
         "half_width": 2.0,
-        "half_height": 3.0,
+        "half_height": 2.0,
         "original_flags": 0,
         "transform_program_zero": True,
     }
@@ -85,7 +84,7 @@ class RetainedEventStreamTests(unittest.TestCase):
         )
 
         self.assertEqual(len(program.phases[0].emitters), 2)
-        self.assertEqual(program.schema, RESOLVED_AIM_STAGE_SCHEMA)
+        self.assertEqual(program.schema, CULL_GEOMETRY_STAGE_SCHEMA)
         emitter = program.phases[0].emitters[0]
         self.assertIn("resolved_aim_override", emitter.to_payload())
         _x, _y, descriptor = emitter.resolved_descriptor(
@@ -116,7 +115,7 @@ class RetainedEventStreamTests(unittest.TestCase):
         downgraded["schema"] = STAGE_SCHEMA
         with self.assertRaisesRegex(
             ValueError,
-            "resolved-aim/lifecycle features",
+            "cull-geometry features",
         ):
             StageProgram.from_payload(downgraded)
 
@@ -150,7 +149,7 @@ class RetainedEventStreamTests(unittest.TestCase):
             root_sha256="c" * 64,
         )
 
-        self.assertEqual(program.schema, LIFECYCLE_STAGE_SCHEMA)
+        self.assertEqual(program.schema, CULL_GEOMETRY_STAGE_SCHEMA)
         replay = StageProgram.from_payload(program.to_payload())
         runtime = StageRuntime(replay)
         steps = [runtime.step() for _frame in range(replay.frame_count)]

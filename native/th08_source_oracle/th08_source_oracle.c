@@ -428,10 +428,10 @@ static void th08_polar(
 
 static int32_t th08_transform_inside(
     const Th08OracleTransformState *state) {
-    return !(state->x + state->half_width < 0.0F ||
-             state->x - state->half_width > 384.0F ||
-             state->y + state->half_height < 0.0F ||
-             state->y - state->half_height > 448.0F);
+    return !(state->x + state->cull_half_width < 0.0F ||
+             state->x - state->cull_half_width > 384.0F ||
+             state->y + state->cull_half_height < 0.0F ||
+             state->y - state->cull_half_height > 448.0F);
 }
 
 int32_t th08_oracle_transform_step(

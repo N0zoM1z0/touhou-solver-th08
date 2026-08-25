@@ -2200,8 +2200,8 @@ laboratory provides a direct generic falsifier without any stage/spell branch:
 quick profile seed `0xCE0132`, root frame 20, and H80.
 
 At that root, 28 bullets have active transforms. Tracking the same runtime
-objects rather than merely matching reused pool slots yields 1,937 survivor
-samples. Of those, 1,037 leave the old per-axis envelope, beginning by frame
+objects rather than merely matching reused pool slots yields 1,969 survivor
+samples. Of those, 1,069 leave the old per-axis envelope, beginning by frame
 30. The worst survivor is slot 13 with active angular velocity (`0x20`) at
 H80: its x center is 97.060802 px away from the constant-velocity forecast,
 while the claimed bound is 31 px, a 3.13099-fold escape. This is now an exact
@@ -2274,10 +2274,51 @@ or any native batch that misses its measured budget remains offline/shadow.
 No transform authority, Wine action, policy win, or hit-count improvement is
 claimed by this root-state correction.
 
+### AUD-081 — Reflection and culling reused the collision hitbox geometry
+
+Status: **CONFIRMED SOURCE/ASSET GEOMETRY BUG; OFFLINE FUZZER AND C ORACLE
+FIXED**
+
+The stateful runtime and its C handler oracle used the bullet collision
+half-extents for `Bullet::FUN_00432830` reflection and for the manager's
+offscreen test. Authoritative source uses two different fields. Player
+collision receives the full dimensions stored at bullet `+0xd34`; reflection
+and offscreen culling instead dereference the current normal ANM sprite and
+pass its visual width and height to `GameManager::IsWithinPlayfield`, which
+halves them internally.
+
+The distinction is material and generic. In the exact shipped `etama.anm`,
+type 10 has a 12 px collision half-extent but a 32 px visual/culling
+half-extent. Type 2 is also anisotropic for culling (7 by 8 px) while its
+collision half-extents are 2 by 2 px. Near a boundary the old fuzzer could
+therefore reflect or retire a legal bullet at the wrong frame even when its
+motion-handler equations matched C.
+
+`BulletTemplateProfile` now carries both geometries for all 21 source-
+initialized rows. The culling values are regenerated from each normal
+script's time-zero sprite in the hash-pinned decoded asset, so the existing
+shipped-archive test checks every pin. `RuntimeBullet._inside_playfield` and
+the independent C transform oracle now name and use the visual extents; the
+lethal AABB continues to use the collision extents. A boundary regression
+places a type-10-shaped bullet at x=-20: it remains visually inside at a 32 px
+radius and retires only past x=-32.
+
+The stage IR is now schema v4 for newly generated/source-closed programs. Each
+ordinary emitter selects one of the 21 real template rows rather than
+inventing arbitrary collision geometry, and serializes both collision and
+culling half-extents. Older v1-v3 programs remain hash-verifiable and
+parseable, but a program missing explicit culling geometry is no longer
+reported source-closed or executable by the authoritative runtime.
+
+This correction improves offline transition fidelity only. It does not yet
+promote transformed current hazards, alter live input, run Wine, or establish
+a hit-count change. The complete source-order transform stepper remains the
+next gate.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,525 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,526 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

@@ -115,8 +115,8 @@ typedef struct Th08OracleCallback12State {
 typedef struct Th08OracleTransformState {
     float x;
     float y;
-    float half_width;
-    float half_height;
+    float cull_half_width;
+    float cull_half_height;
     float velocity_x;
     float velocity_y;
     float base_speed;

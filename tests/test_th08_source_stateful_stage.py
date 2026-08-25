@@ -11,10 +11,11 @@ import unittest
 
 from th08_semantics.stage import (
     BULLET_POOL_SIZE,
-    LIFECYCLE_STAGE_SCHEMA,
+    CULL_GEOMETRY_STAGE_SCHEMA,
     STAGE_SCHEMA,
     BulletEmitter,
     Callback12Event,
+    RuntimeBullet,
     StagePhase,
     StageProgram,
     StageRuntime,
@@ -63,10 +64,35 @@ def _emitter(
         tag_flags=tag,
         half_width=2.0,
         half_height=2.0,
+        cull_half_width=4.0,
+        cull_half_height=4.0,
+        bullet_type=0,
     )
 
 
 class SourceStatefulStageTests(unittest.TestCase):
+    def test_culling_uses_visual_sprite_geometry_not_collision_hitbox(self) -> None:
+        bullet = RuntimeBullet(
+            slot=0,
+            source="cull-geometry-regression",
+            x=-20.0,
+            y=224.0,
+            velocity_x=0.0,
+            velocity_y=0.0,
+            half_width=12.0,
+            half_height=12.0,
+            cull_half_width=32.0,
+            cull_half_height=32.0,
+            base_speed=0.0,
+            base_angle=0.0,
+            tag_flags=0,
+            transforms=(),
+        )
+
+        self.assertTrue(StageRuntime._inside_playfield(bullet))
+        bullet.x = -33.0
+        self.assertFalse(StageRuntime._inside_playfield(bullet))
+
     def test_source_differential_uses_binary32_position_spacing(self) -> None:
         self.assertEqual(_binary32_spacing(0.0), math.ldexp(1.0, -149))
         self.assertEqual(_binary32_spacing(1.0), math.ldexp(1.0, -23))
@@ -155,7 +181,7 @@ class SourceStatefulStageTests(unittest.TestCase):
         different = generate_stage_program(seed=0xCE0133, profile="quick")
 
         self.assertEqual(first, second)
-        self.assertEqual(first.schema, LIFECYCLE_STAGE_SCHEMA)
+        self.assertEqual(first.schema, CULL_GEOMETRY_STAGE_SCHEMA)
         self.assertEqual(first.digest, second.digest)
         self.assertNotEqual(first.digest, different.digest)
         replay = StageProgram.from_payload(
@@ -172,10 +198,12 @@ class SourceStatefulStageTests(unittest.TestCase):
         downgraded = replay.to_payload()
         downgraded.pop("sha256")
         downgraded["schema"] = STAGE_SCHEMA
-        with self.assertRaisesRegex(ValueError, "lifecycle features"):
+        with self.assertRaisesRegex(ValueError, "cull-geometry features"):
             StageProgram.from_payload(downgraded)
 
-    def test_tracked_v1_gate_program_remains_replayable(self) -> None:
+    def test_tracked_v1_gate_program_remains_parseable_but_not_closed(
+        self,
+    ) -> None:
         report = json.loads(
             (
                 ROOT
@@ -188,6 +216,7 @@ class SourceStatefulStageTests(unittest.TestCase):
 
         self.assertEqual(program.schema, STAGE_SCHEMA)
         self.assertEqual(program.digest, payload["sha256"])
+        self.assertFalse(program.source_closed)
 
     def test_extreme_generator_covers_all_generic_lifecycle_types(self) -> None:
         program = generate_stage_program(seed=0xCE0132, profile="extreme")
@@ -266,6 +295,8 @@ class SourceStatefulStageTests(unittest.TestCase):
             speed2=2.0,
             half_width=5.0,
             half_height=5.0,
+            cull_half_width=16.0,
+            cull_half_height=16.0,
             bullet_type=7,
             spawn_flags=0x02,
         )
@@ -304,6 +335,8 @@ class SourceStatefulStageTests(unittest.TestCase):
             _emitter(tag=0, start=0, end=0),
             half_width=12.0,
             half_height=12.0,
+            cull_half_width=32.0,
+            cull_half_height=32.0,
             bullet_type=10,
             spawn_flags=0x0E,
         )
@@ -341,6 +374,8 @@ class SourceStatefulStageTests(unittest.TestCase):
                 _emitter(tag=0x100000),
                 half_width=5.0,
                 half_height=5.0,
+                cull_half_width=16.0,
+                cull_half_height=16.0,
                 bullet_type=7,
                 spawn_flags=0x02,
             )

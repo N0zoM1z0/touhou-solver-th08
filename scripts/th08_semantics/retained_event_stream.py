@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from th08_bullet_template_contract import bullet_template_profile
 from th08_ecl_tool.core import parse_ecl
 from th08_future_birth_envelope import (
     FloatInterval,
@@ -131,6 +132,7 @@ def _event_emitters(
     angle1 = _point(event.angle1, label="angle1")
     angle2 = _point(event.angle2, label="angle2")
     aim_angle = _point(event.aim_angle, label="aim_angle")
+    template = bullet_template_profile(event.bullet_type)
     return tuple(
         BulletEmitter(
             emitter_id=(
@@ -157,8 +159,10 @@ def _event_emitters(
             tag_flags=0,
             half_width=event.half_width,
             half_height=event.half_height,
+            cull_half_width=template.cull_half_width,
+            cull_half_height=template.cull_half_height,
             resolved_aim_override=aim_angle,
-            bullet_type=(event.bullet_type if spawn_flags else None),
+            bullet_type=event.bullet_type,
             spawn_flags=spawn_flags,
         )
         for frame in event.activation_frames

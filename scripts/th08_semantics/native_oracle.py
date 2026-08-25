@@ -123,8 +123,8 @@ class _TransformState(ctypes.Structure):
     _fields_ = [
         ("x", ctypes.c_float),
         ("y", ctypes.c_float),
-        ("half_width", ctypes.c_float),
-        ("half_height", ctypes.c_float),
+        ("cull_half_width", ctypes.c_float),
+        ("cull_half_height", ctypes.c_float),
         ("velocity_x", ctypes.c_float),
         ("velocity_y", ctypes.c_float),
         ("base_speed", ctypes.c_float),
@@ -146,8 +146,8 @@ class _TransformState(ctypes.Structure):
 class NativeTransformState:
     x: float
     y: float
-    half_width: float
-    half_height: float
+    cull_half_width: float
+    cull_half_height: float
     velocity_x: float
     velocity_y: float
     base_speed: float
@@ -541,8 +541,8 @@ class NativeSourceOracle:
         native = _TransformState(
             state.x,
             state.y,
-            state.half_width,
-            state.half_height,
+            state.cull_half_width,
+            state.cull_half_height,
             state.velocity_x,
             state.velocity_y,
             state.base_speed,
@@ -572,8 +572,8 @@ class NativeSourceOracle:
         return NativeTransformState(
             x=float(native.x),
             y=float(native.y),
-            half_width=float(native.half_width),
-            half_height=float(native.half_height),
+            cull_half_width=float(native.cull_half_width),
+            cull_half_height=float(native.cull_half_height),
             velocity_x=float(native.velocity_x),
             velocity_y=float(native.velocity_y),
             base_speed=float(native.base_speed),

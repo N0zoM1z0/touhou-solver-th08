@@ -45,19 +45,22 @@ ordered implementation plan are in
   a 319-bullet/two-laser stateful root round-trips to an identical H16 policy.
   The four existing physical Stage-5 roots are v1 and omit current hazards, so
   they cannot support the intended same-root solve. The same laboratory
-  falsified the active-transform growth heuristic in 1,037/1,937 samples,
+  falsified the active-transform growth heuristic in 1,069/1,969 samples,
   worst 97.060802px error against a 31px bound. Global geometry v4 now makes
   every such current pool shadow-only. Composition is deferred until a global
   worker slot is due and free, and a worker-root certificate is not reused by
   later local prefixes. Current-hazard schema v2 now retains each complete
   18-record program, queue/culling state, and all meaningful active handler
   blocks only on the coherent diagnostic path; packed local sensing is
-  unchanged. This is offline integration, not arbitrary ECL, exact current-
+  unchanged. Source/asset audit also proved that reflection/culling must use
+  visual sprite geometry rather than the collision AABB; stateful schema v4
+  now carries both for all 21 real templates. This is offline integration,
+  not arbitrary ECL, exact current-
   transform execution, a same-root policy win, or physical hit authority. The
   next ordered work is source-order transform execution plus C/batch
   differential, then a fresh physical v2 Stage-5 root and offline global
   replay. Import smoke, 57
-  focused tests, and all 1,525 Linux tests pass with five conditional skips;
+  focused tests, and all 1,526 Linux tests pass with five conditional skips;
   the paper builds to eight pages. The retained compact 3,600-frame
   compatibility artifact remains
   `artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json`; routine

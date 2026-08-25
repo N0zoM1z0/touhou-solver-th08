@@ -63,6 +63,14 @@ class BulletTemplateContractTests(unittest.TestCase):
              bullet_template_profile(20).half_height),
             (2.0, 2.5),
         )
+        self.assertEqual(
+            (
+                bullet_template_profile(2).cull_half_width,
+                bullet_template_profile(10).cull_half_height,
+                bullet_template_profile(14).cull_half_height,
+            ),
+            (7.0, 32.0, 15.5),
+        )
 
     def test_lifecycle_ages_are_selected_by_type_not_one_global_age(self) -> None:
         self.assertEqual(bullet_template_profile(0).state2_terminal_age, 10)

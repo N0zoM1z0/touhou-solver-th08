@@ -686,7 +686,7 @@ it.
    queued native transform record plus active handler and culling state, while
    leaving the packed local decoder unchanged. The generic quick-stage
    regression also proves the old
-   transform envelope unsound: 1,037/1,937 survivor samples escape it, worst
+   transform envelope unsound: 1,069/1,969 survivor samples escape it, worst
    97.060802px versus 31px. Global geometry v4 must therefore remain
    shadow-only whenever a current transform is active. Next execute the
    retained 18-record program in source order with an expanded C differential

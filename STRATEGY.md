@@ -498,14 +498,16 @@ All four Stage-5 capsules are v1 producer roots without current bullets/lasers,
 so they cannot be completed by pairing another pool. New explicit retention
 uses a clock-joined v2 compact current-hazard root and passes a 319-bullet,
 two-laser stateful replay. Separately, the generic fuzzer proves the historical
-active-transform growth heuristic unsound: 1,037/1,937 samples escape, worst
+active-transform growth heuristic unsound: 1,069/1,969 samples escape, worst
 97.060802px versus 31px. Such roots are now shadow-only. Coherent diagnostic
 roots now retain the exact 18-record program and every meaningful active
-handler block without changing packed local sensing. Therefore this remains
+handler block without changing packed local sensing. Stateful schema v4 also
+separates collision geometry from the ANM visual geometry used by reflection
+and culling for all 21 real templates. Therefore this remains
 offline/default-off infrastructure inside L3; the next gate is source-order
 exact execution plus C/batch differential, followed by a fresh v2 Stage-5
 same-root global-policy change, not physical sampling. No deadline, Wine
-action, or hit reduction exists. Complete Linux discovery passes 1,525 tests with five
+action, or hit reduction exists. Complete Linux discovery passes 1,526 tests with five
 conditional skips, and the paper builds to eight pages.
 
 ### L4 — Continuous-position coarse-cell lower bound

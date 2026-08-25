@@ -225,8 +225,8 @@ class Th08GlobalAuthorityTests(unittest.TestCase):
                 if worst is None or ratio > worst[0]:
                     worst = (ratio, horizon, slot, error_x, old_bound)
 
-        self.assertEqual(survivor_samples, 1_937)
-        self.assertEqual(violations, 1_037)
+        self.assertEqual(survivor_samples, 1_969)
+        self.assertEqual(violations, 1_069)
         assert worst is not None
         ratio, horizon, slot, error_x, old_bound = worst
         self.assertEqual((horizon, slot), (80, 13))

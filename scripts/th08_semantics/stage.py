@@ -54,6 +54,9 @@ from th08_semantics.source_primitives import (
 STAGE_SCHEMA = "th08-source-stateful-stage-v1"
 RESOLVED_AIM_STAGE_SCHEMA = "th08-source-stateful-stage-v2"
 LIFECYCLE_STAGE_SCHEMA = "th08-source-stateful-stage-v3-spawn-lifecycle"
+CULL_GEOMETRY_STAGE_SCHEMA = (
+    "th08-source-stateful-stage-v4-template-cull-geometry"
+)
 SOURCE_AUTHORITY_COMMIT = "57ee34f"
 BULLET_POOL_SIZE = 0x600
 LASER_POOL_SIZE = 0x100
@@ -182,6 +185,8 @@ class BulletEmitter:
     tag_flags: int
     half_width: float
     half_height: float
+    cull_half_width: float | None = None
+    cull_half_height: float | None = None
     transforms: tuple[TransformSpec, ...] = ()
     resolved_aim_override: float | None = None
     bullet_type: int | None = None
@@ -201,6 +206,17 @@ class BulletEmitter:
             raise ValueError("invalid bullet emitter schedule")
         if self.half_width < 0.0 or self.half_height < 0.0:
             raise ValueError("bullet half extents cannot be negative")
+        if (self.cull_half_width is None) != (self.cull_half_height is None):
+            raise ValueError("bullet cull half extents must be supplied together")
+        if self.cull_half_width is not None and (
+            not math.isfinite(self.cull_half_width)
+            or not math.isfinite(self.cull_half_height)
+            or self.cull_half_width < 0.0
+            or self.cull_half_height < 0.0
+        ):
+            raise ValueError(
+                "bullet cull half extents must be finite and nonnegative"
+            )
         if self.resolved_aim_override is not None and not math.isfinite(
             self.resolved_aim_override
         ):
@@ -209,18 +225,35 @@ class BulletEmitter:
             raise ValueError("spawn lifecycle flags must be a nonnegative integer")
         if self.spawn_flags & ~0x0E:
             raise ValueError("spawn lifecycle emitter has unsupported flags")
-        if self.spawn_flags:
+        profile = None
+        if self.bullet_type is not None:
             if type(self.bullet_type) is not int:
-                raise ValueError("spawn lifecycle emitter requires bullet type")
+                raise ValueError("bullet template type must be an integer")
             try:
-                lifecycle = bullet_spawn_lifecycle(
-                    self.bullet_type,
-                    self.spawn_flags,
-                )
+                profile = bullet_template_profile(self.bullet_type)
             except ValueError as error:
+                raise ValueError("bullet template type is invalid") from error
+            if (
+                f32(self.half_width) != f32(profile.half_width)
+                or f32(self.half_height) != f32(profile.half_height)
+            ):
                 raise ValueError(
-                    "spawn lifecycle emitter bullet type is invalid"
-                ) from error
+                    "emitter collision geometry disagrees with template"
+                )
+            if self.cull_half_width is not None and (
+                f32(self.cull_half_width) != f32(profile.cull_half_width)
+                or f32(self.cull_half_height) != f32(
+                    profile.cull_half_height
+                )
+            ):
+                raise ValueError("emitter cull geometry disagrees with template")
+        if self.spawn_flags:
+            if profile is None:
+                raise ValueError("spawn lifecycle emitter requires bullet type")
+            lifecycle = bullet_spawn_lifecycle(
+                self.bullet_type,
+                self.spawn_flags,
+            )
             if lifecycle is None:
                 raise ValueError("spawn lifecycle flags select no native state")
             if self.tag_flags or self.transforms:
@@ -228,16 +261,6 @@ class BulletEmitter:
                     "spawn lifecycle composition with callbacks/transforms "
                     "is not yet source-closed"
                 )
-            profile = bullet_template_profile(self.bullet_type)
-            if (
-                f32(self.half_width) != f32(profile.half_width)
-                or f32(self.half_height) != f32(profile.half_height)
-            ):
-                raise ValueError(
-                    "spawn lifecycle geometry disagrees with bullet template"
-                )
-        elif self.bullet_type is not None:
-            raise ValueError("bullet type without spawn lifecycle is ambiguous")
         if len({transform.kind for transform in self.transforms}) != len(
             self.transforms
         ):
@@ -337,6 +360,11 @@ class BulletEmitter:
             "geometry": [self.half_width, self.half_height],
             "transforms": [value.to_payload() for value in self.transforms],
         }
+        if self.cull_half_width is not None:
+            payload["cull_geometry"] = [
+                self.cull_half_width,
+                self.cull_half_height,
+            ]
         # Preserve existing generated-stage identities.  This field is only
         # present for an already-resolved retained producer event; ordinary
         # synthetic emitters continue to derive aim from the supplied player.
@@ -348,6 +376,8 @@ class BulletEmitter:
                 self.bullet_type,
                 self.spawn_flags,
             ]
+        elif self.bullet_type is not None:
+            payload["bullet_type"] = self.bullet_type
         return payload
 
     @classmethod
@@ -356,11 +386,16 @@ class BulletEmitter:
         origin = payload["origin"]
         pattern = payload["pattern"]
         geometry = payload["geometry"]
+        cull_geometry = payload.get("cull_geometry")
         spawn_lifecycle = payload.get("spawn_lifecycle")
         assert isinstance(schedule, list)
         assert isinstance(origin, list)
         assert isinstance(pattern, list)
         assert isinstance(geometry, list)
+        if cull_geometry is not None and (
+            type(cull_geometry) is not list or len(cull_geometry) != 2
+        ):
+            raise ValueError("cull_geometry must contain two values")
         if spawn_lifecycle is not None and (
             type(spawn_lifecycle) is not list
             or len(spawn_lifecycle) != 2
@@ -393,6 +428,16 @@ class BulletEmitter:
             tag_flags=int(payload["tags"]),
             half_width=float(geometry[0]),
             half_height=float(geometry[1]),
+            cull_half_width=(
+                float(cull_geometry[0])
+                if cull_geometry is not None
+                else None
+            ),
+            cull_half_height=(
+                float(cull_geometry[1])
+                if cull_geometry is not None
+                else None
+            ),
             transforms=tuple(
                 TransformSpec.from_payload(values)
                 for values in payload["transforms"]
@@ -405,7 +450,11 @@ class BulletEmitter:
             bullet_type=(
                 spawn_lifecycle[0]
                 if spawn_lifecycle is not None
-                else None
+                else (
+                    int(payload["bullet_type"])
+                    if payload.get("bullet_type") is not None
+                    else None
+                )
             ),
             spawn_flags=(
                 spawn_lifecycle[1]
@@ -609,7 +658,11 @@ class StageProgram:
 
     @property
     def source_closed(self) -> bool:
-        return not self.source_unknowns
+        return not self.source_unknowns and all(
+            emitter.cull_half_width is not None
+            for phase in self.phases
+            for emitter in phase.emitters
+        )
 
     @property
     def identity(self) -> str:
@@ -617,6 +670,12 @@ class StageProgram:
 
     @property
     def schema(self) -> str:
+        if all(
+            emitter.cull_half_width is not None
+            for phase in self.phases
+            for emitter in phase.emitters
+        ):
+            return CULL_GEOMETRY_STAGE_SCHEMA
         if any(
             emitter.spawn_flags
             for phase in self.phases
@@ -665,6 +724,7 @@ class StageProgram:
             STAGE_SCHEMA,
             RESOLVED_AIM_STAGE_SCHEMA,
             LIFECYCLE_STAGE_SCHEMA,
+            CULL_GEOMETRY_STAGE_SCHEMA,
         ):
             raise ValueError("unsupported source-stage schema")
         unsigned = dict(payload)
@@ -692,8 +752,8 @@ class StageProgram:
         )
         if program.schema != schema:
             raise ValueError(
-                "source-stage schema does not cover resolved-aim/lifecycle "
-                "features"
+                "source-stage schema does not cover resolved-aim/lifecycle/"
+                "cull-geometry features"
             )
         return program
 
@@ -719,6 +779,8 @@ class RuntimeBullet:
     velocity_y: float
     half_width: float
     half_height: float
+    cull_half_width: float
+    cull_half_height: float
     base_speed: float
     base_angle: float
     tag_flags: int
@@ -1121,6 +1183,12 @@ class StageRuntime:
                     bullet_y = _sub(
                         bullet_y,
                         _mul(sample.velocity_y, 4.0),
+                )
+                cull_half_width = emitter.cull_half_width
+                cull_half_height = emitter.cull_half_height
+                if cull_half_width is None or cull_half_height is None:
+                    raise ValueError(
+                        "source-closed stage emitter lacks cull geometry"
                     )
                 bullet = RuntimeBullet(
                     slot=slot,
@@ -1131,6 +1199,8 @@ class StageRuntime:
                     velocity_y=sample.velocity_y,
                     half_width=f32(emitter.half_width),
                     half_height=f32(emitter.half_height),
+                    cull_half_width=f32(cull_half_width),
+                    cull_half_height=f32(cull_half_height),
                     base_speed=sample.speed,
                     base_angle=sample.angle,
                     tag_flags=emitter.tag_flags,
@@ -1316,10 +1386,10 @@ class StageRuntime:
     @staticmethod
     def _inside_playfield(bullet: RuntimeBullet) -> bool:
         return not (
-            bullet.x + bullet.half_width < 0.0
-            or bullet.x - bullet.half_width > PLAYFIELD_WIDTH
-            or bullet.y + bullet.half_height < 0.0
-            or bullet.y - bullet.half_height > PLAYFIELD_HEIGHT
+            bullet.x + bullet.cull_half_width < 0.0
+            or bullet.x - bullet.cull_half_width > PLAYFIELD_WIDTH
+            or bullet.y + bullet.cull_half_height < 0.0
+            or bullet.y - bullet.cull_half_height > PLAYFIELD_HEIGHT
         )
 
     def _update_bullets(
@@ -1664,6 +1734,7 @@ def run_stage(
 
 __all__ = [
     "BULLET_POOL_SIZE",
+    "CULL_GEOMETRY_STAGE_SCHEMA",
     "BulletEmitter",
     "Callback12Event",
     "LASER_POOL_SIZE",

@@ -50,6 +50,8 @@ class BulletTemplateProfile:
     despawn_script: int
     half_width: float
     half_height: float
+    cull_half_width: float
+    cull_half_height: float
     state2_terminal_age: int
     state3_terminal_age: int
     state4_terminal_age: int
@@ -67,6 +69,8 @@ class BulletTemplateProfile:
             },
             "half_width": self.half_width,
             "half_height": self.half_height,
+            "cull_half_width": self.cull_half_width,
+            "cull_half_height": self.cull_half_height,
             "terminal_ages": {
                 "state2": self.state2_terminal_age,
                 "state3": self.state3_terminal_age,
@@ -139,6 +143,34 @@ _NORMAL_SCRIPT_HALF_EXTENT = {
     115: 2.5,
 }
 
+# Half-extents of the time-zero normal sprite selected by each template.  The
+# manager uses these visual dimensions for reflection and offscreen culling;
+# they are independent of the collision AABB above.  The exact decoded
+# ``etama.anm`` is checked against these pins below.
+_NORMAL_SCRIPT_CULL_HALF_EXTENTS = {
+    0: (4.0, 4.0),
+    1: (8.0, 8.0),
+    2: (7.0, 8.0),
+    3: (8.0, 8.0),
+    4: (7.0, 8.0),
+    5: (7.0, 8.0),
+    6: (7.0, 8.0),
+    7: (16.0, 16.0),
+    8: (16.0, 16.0),
+    9: (16.0, 16.0),
+    25: (32.0, 32.0),
+    106: (8.0, 8.0),
+    107: (8.0, 8.0),
+    108: (8.0, 8.0),
+    109: (16.0, 15.5),
+    110: (16.0, 15.5),
+    111: (8.0, 8.0),
+    112: (8.0, 8.0),
+    113: (16.0, 16.0),
+    114: (16.0, 16.0),
+    115: (16.0, 16.0),
+}
+
 # First reachable AnmOpcode_Delete time in the exact lifecycle scripts.
 _LIFECYCLE_TERMINAL_AGE = {
     15: 12,
@@ -170,6 +202,9 @@ def _profile_from_pins(
 ) -> BulletTemplateProfile:
     normal, state2, state3, state4, despawn = scripts
     half_extent = _NORMAL_SCRIPT_HALF_EXTENT[normal]
+    cull_half_width, cull_half_height = _NORMAL_SCRIPT_CULL_HALF_EXTENTS[
+        normal
+    ]
     return BulletTemplateProfile(
         bullet_type=bullet_type,
         normal_script=normal,
@@ -179,6 +214,8 @@ def _profile_from_pins(
         despawn_script=despawn,
         half_width=half_extent,
         half_height=half_extent,
+        cull_half_width=cull_half_width,
+        cull_half_height=cull_half_height,
         state2_terminal_age=_LIFECYCLE_TERMINAL_AGE[state2],
         state3_terminal_age=_LIFECYCLE_TERMINAL_AGE[state3],
         state4_terminal_age=_LIFECYCLE_TERMINAL_AGE[state4],
@@ -439,7 +476,7 @@ def derive_decoded_etama_profiles(data: bytes) -> tuple[BulletTemplateProfile, .
             raise BulletTemplateContractError(
                 f"normal script {normal} selects an absent sprite"
             )
-        _sprite_width, sprite_height = sprites[sprite_index]
+        sprite_width, sprite_height = sprites[sprite_index]
         half_extent = _source_collision_half_extent(normal, sprite_height)
         profiles.append(
             BulletTemplateProfile(
@@ -451,6 +488,8 @@ def derive_decoded_etama_profiles(data: bytes) -> tuple[BulletTemplateProfile, .
                 despawn_script=despawn,
                 half_width=half_extent,
                 half_height=half_extent,
+                cull_half_width=sprite_width * 0.5,
+                cull_half_height=sprite_height * 0.5,
                 state2_terminal_age=terminal_ages[state2],
                 state3_terminal_age=terminal_ages[state3],
                 state4_terminal_age=terminal_ages[state4],

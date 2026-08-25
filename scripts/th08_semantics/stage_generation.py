@@ -222,23 +222,23 @@ def generate_stage_program(*, seed: int, profile: str) -> StageProgram:
             angle = generator.uniform(-math.pi, math.pi)
             angle_step = generator.uniform(-0.32, 0.32)
             angle_per_emission = generator.uniform(-0.15, 0.15)
-            generated_half_width = generator.uniform(1.5, 7.0)
-            generated_half_height = generator.uniform(1.5, 7.0)
+            template_selector_0 = generator.uniform(1.5, 7.0)
+            template_selector_1 = generator.uniform(1.5, 7.0)
             generated_transforms = _transform_queue(
                 generator,
                 probability=limits.transform_probability,
                 selector=phase_index * limits.emitters_per_phase
                 + local_index,
             )
-            if bullet_type is not None:
-                template = bullet_template_profile(bullet_type)
-                half_width = template.half_width
-                half_height = template.half_height
-                transforms = ()
-            else:
-                half_width = generated_half_width
-                half_height = generated_half_height
-                transforms = generated_transforms
+            if bullet_type is None:
+                bullet_type = int(
+                    (template_selector_0 * 17.0 + template_selector_1 * 31.0)
+                    * 1024.0
+                ) % 21
+            template = bullet_template_profile(bullet_type)
+            half_width = template.half_width
+            half_height = template.half_height
+            transforms = () if has_spawn_lifecycle else generated_transforms
             emitters.append(
                 BulletEmitter(
                     emitter_id=f"p{phase_index:02d}-e{local_index:02d}-m{mode}",
@@ -263,6 +263,8 @@ def generate_stage_program(*, seed: int, profile: str) -> StageProgram:
                     tag_flags=tag,
                     half_width=half_width,
                     half_height=half_height,
+                    cull_half_width=template.cull_half_width,
+                    cull_half_height=template.cull_half_height,
                     transforms=transforms,
                     bullet_type=bullet_type,
                     spawn_flags=spawn_flags,
