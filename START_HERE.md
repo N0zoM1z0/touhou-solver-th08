@@ -37,7 +37,11 @@ ordered implementation plan are in
   completed the extreme 12,000-frame runtime, saturated all 1,536 bullet
   slots, and exercised 156,186 transforms. This is a source-closed stress
   result after resolved producer events, not arbitrary ECL or route-hit
-  authority. Read
+  authority. The retained 3,600-frame gate artifact
+  `artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json` passes
+  complete C lockstep, 180 NumPy/native geometry comparisons, 120 real local
+  planner calls, hard no-Bomb, and exact RNG/collision membership. The latest
+  repository suite passes 1,433 tests with 5 conditional skips. Read
   `notes/review/TH08_SOURCE_STATEFUL_STAGE_FUZZER.md` before extending it.
 - **Current Lunatic physical checkpoint:**
   `lunatic_route2_fullrun_unattended_20260824_051944` completed Sakuya/Remilia

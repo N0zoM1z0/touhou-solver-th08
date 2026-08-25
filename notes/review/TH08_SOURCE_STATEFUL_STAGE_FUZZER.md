@@ -114,6 +114,21 @@ changes, and spawned 336 lasers. Its final source-state digest was
 This demonstrates pressure and long-state execution, not equivalence to a
 specific ZUN-authored stage.
 
+The retained acceptance campaign is
+`artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json` (artifact
+SHA-256 `17f62a08e17d207ac371a51b11187e310ad27d27411a921763359045e553a851`).
+Its identity is `gate:0000000000ce0132:48cf57f51adf6519`. It completed all
+3,600 frames with 50,297 allocated births, 32,301 transform activations,
+35,056 callback changes, 60 laser spawns, 122 pool-saturated frames, and 120
+real planner calls. Hard no-Bomb, planner exceptions, and all 180 periodic
+geometry comparisons passed. Complete C lockstep retained exact RNG and
+collision membership; maximum admitted source-libm position/velocity drift
+was `0.0005874634 px`/`4.7683716e-7`.
+
+The campaign recorded 134 cooldown-normalized collision events. That number
+measures this deliberately hostile synthetic capsule and is not a route score
+or a claim that the current local planner solves beyond-Lunatic pressure.
+
 ## Independent C Differential
 
 `native/th08_source_oracle/th08_source_oracle.c` is a deliberately small,
@@ -150,6 +165,12 @@ all eight handlers.
    The source allocates first, so a full-pool rejected tail consumes no RNG.
 5. The native test loader could silently reuse an old `.so` after C/header
    edits. Content-stamped rebuilds now close that infrastructure hole.
+6. The first long-stage C differential used an empirical age tolerance that
+   rejected valid accumulated binary32/libm drift. It now propagates a
+   per-slot forward roundoff budget while requiring exact collision membership.
+7. The older dense AABB oracle was stale after callback-aux promotion and
+   encoded the old state-5-only filter. It now differentially isolates
+   geometry, state-5, and callback-aux effects.
 
 These are source-backed semantic corrections. None is presented as a route
 hit improvement until it changes a complete future projection and passes a

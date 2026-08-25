@@ -116,6 +116,15 @@ and callback 14 remain explicit unknowns and block global action authority.
 The complete contract and commands are in
 `TH08_SOURCE_STATEFUL_STAGE_FUZZER.md`.
 
+The retained normal gate
+`artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json` completes
+3,600/3,600 frames and passes complete C lockstep, exact RNG/collision
+membership, 180 NumPy/native geometry checks, 120 real planner calls, and
+hard no-Bomb. The first attempt exposed an invalid empirical float-drift
+tolerance; a per-slot forward binary32 error budget replaced it without
+weakening discrete or collision equality. The complete suite then exposed and
+fixed a stale dense AABB oracle that omitted the callback-aux collision gate.
+
 ## OPT-001 — Persistent Local Enemy-Prefix Destination
 
 Status: **VALIDATED-PHYSICAL**

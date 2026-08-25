@@ -1386,10 +1386,48 @@ cannot yet authorize the live global planner for spell 190 or any other card.
 That promotion still requires a retained coherent VM/emitter root and complete
 versioned future coverage over the exact policy horizon.
 
+### AUD-056 — Empirical age tolerance rejected valid source/C float histories
+
+Status: **CONFIRMED DIFFERENTIAL-INFRA BUG; REPLACED BY FORWARD ERROR BUDGET**
+
+The first 3,600-frame gate stopped at frame 65 although every discrete field
+and the gameplay RNG still agreed. The reported position difference was one
+binary32 coordinate ULP (`6.1035e-5`) and velocity differed by only
+`2.38e-7`. A threshold of `2e-5 + age * 1e-6` had been chosen empirically and
+was not a valid bound for repeated binary32 additions after Python double-libm
+`sin`/`cos` and C `sinf`/`cosf` choose adjacent velocities.
+
+The differential now carries a per-slot forward budget: the previous admitted
+position error plus the actual current velocity disagreement plus at most one
+binary32 coordinate ULP for the next stored addition. Slot reuse resets the
+budget. Velocity, speed, and angle limits remain strict; pool/lifecycle/RNG
+state and bullet/laser collision membership must still match exactly. An
+unbounded diagnostic over the whole gate established zero discrete, RNG, or
+collision disagreement. The accepted maximum position drift was
+`0.0005874634 px` and maximum velocity drift was `4.7683716e-7`.
+
+### AUD-057 — The dense source-AABB oracle omitted callback collision state
+
+Status: **CONFIRMED STALE-ORACLE BUG; THREE-WAY DIFFERENTIAL RESTORED**
+
+The complete suite initially failed after AUD-050 with 566
+NumPy-versus-oracle collision-count mismatches. The live NumPy and native
+kernels agreed with each other. The supposedly independent dense source-AABB
+oracle still filtered only native state 5 and included every nonzero callback
+aux bullet, so the test encoded the old model rather than the source.
+
+The workload now defines source collision eligibility as both `state != 5`
+and `callback_aux == 0`. Its effect decomposition separately counts physical
+geometry, retired state-5, and callback-aux changes. On the retained
+1,024-position by 512-bullet workload, source oracle, NumPy, and native
+collision counts have zero mismatch; 566 positions exercise the callback-aux
+difference. This is a reminder that an oracle must have separate code, but it
+must also carry the same declared semantic version and coverage inventory.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,417 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,433 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.
