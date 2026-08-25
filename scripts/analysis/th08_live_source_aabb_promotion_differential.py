@@ -235,16 +235,18 @@ def density_stress(
         bullet_count=bullet_count,
         seed=seed,
     )
-    retained = workload["native_state"] != 5
+    state_retained = workload["native_state"] != 5
+    callback_collision_enabled = workload["callback_aux"] == 0
+    collision_enabled = state_retained & callback_collision_enabled
     oracle_started = time.perf_counter()
     oracle_counts = _collision_counts(
         oracle_overlap_mask(
             positions_x=workload["positions_x"],
             positions_y=workload["positions_y"],
-            hazard_x=workload["bullet_x"][retained],
-            hazard_y=workload["bullet_y"][retained],
-            hazard_half_width=workload["half_width"][retained],
-            hazard_half_height=workload["half_height"][retained],
+            hazard_x=workload["bullet_x"][collision_enabled],
+            hazard_y=workload["bullet_y"][collision_enabled],
+            hazard_half_width=workload["half_width"][collision_enabled],
+            hazard_half_height=workload["half_height"][collision_enabled],
         )
     )
     oracle_ms = (time.perf_counter() - oracle_started) * 1000.0
@@ -284,10 +286,10 @@ def density_stress(
         legacy_radius2_overlap_mask(
             positions_x=workload["positions_x"],
             positions_y=workload["positions_y"],
-            hazard_x=workload["bullet_x"][retained],
-            hazard_y=workload["bullet_y"][retained],
-            hazard_half_width=workload["half_width"][retained],
-            hazard_half_height=workload["half_height"][retained],
+            hazard_x=workload["bullet_x"][collision_enabled],
+            hazard_y=workload["bullet_y"][collision_enabled],
+            hazard_half_width=workload["half_width"][collision_enabled],
+            hazard_half_height=workload["half_height"][collision_enabled],
         )
     )
     legacy_all_counts = _collision_counts(
@@ -308,6 +310,26 @@ def density_stress(
             hazard_y=workload["bullet_y"],
             hazard_half_width=workload["half_width"],
             hazard_half_height=workload["half_height"],
+        )
+    )
+    source_state_retained_counts = _collision_counts(
+        oracle_overlap_mask(
+            positions_x=workload["positions_x"],
+            positions_y=workload["positions_y"],
+            hazard_x=workload["bullet_x"][state_retained],
+            hazard_y=workload["bullet_y"][state_retained],
+            hazard_half_width=workload["half_width"][state_retained],
+            hazard_half_height=workload["half_height"][state_retained],
+        )
+    )
+    source_callback_enabled_counts = _collision_counts(
+        oracle_overlap_mask(
+            positions_x=workload["positions_x"],
+            positions_y=workload["positions_y"],
+            hazard_x=workload["bullet_x"][callback_collision_enabled],
+            hazard_y=workload["bullet_y"][callback_collision_enabled],
+            hazard_half_width=workload["half_width"][callback_collision_enabled],
+            hazard_half_height=workload["half_height"][callback_collision_enabled],
         )
     )
     decomposition_ms = (time.perf_counter() - geometry_started) * 1000.0
@@ -337,10 +359,17 @@ def density_stress(
         "seed": seed,
         "position_count": position_count,
         "bullet_count": bullet_count,
-        "retained_bullet_count": int(retained.sum()),
-        "retired_state5_count": int((~retained).sum()),
+        "retained_bullet_count": int(collision_enabled.sum()),
+        "state_retained_bullet_count": int(state_retained.sum()),
+        "callback_collision_enabled_bullet_count": int(
+            callback_collision_enabled.sum()
+        ),
+        "callback_collision_disabled_bullet_count": int(
+            (~callback_collision_enabled).sum()
+        ),
+        "retired_state5_count": int((~state_retained).sum()),
         "pair_count": position_count * bullet_count,
-        "retained_pair_count": position_count * int(retained.sum()),
+        "retained_pair_count": position_count * int(collision_enabled.sum()),
         "oracle_collision_total": int(oracle_counts.sum()),
         "numpy_collision_total": int(numpy_result[1].sum()),
         "native_collision_total": int(native_result[1].sum()),
@@ -364,7 +393,10 @@ def density_stress(
             np.count_nonzero(legacy_retained_counts != oracle_counts)
         ),
         "retired_state5_changed_positions": int(
-            np.count_nonzero(source_all_counts != oracle_counts)
+            np.count_nonzero(source_callback_enabled_counts != oracle_counts)
+        ),
+        "callback_aux_changed_positions": int(
+            np.count_nonzero(source_state_retained_counts != oracle_counts)
         ),
         "combined_historical_changed_positions": int(
             np.count_nonzero(legacy_all_counts != oracle_counts)
@@ -418,6 +450,9 @@ def build_report(
         "retired_state5_difference_exercised": (
             stress["retired_state5_changed_positions"] > 0
         ),
+        "callback_aux_difference_exercised": (
+            stress["callback_aux_changed_positions"] > 0
+        ),
         "all_outputs_valid": stress["finite_outputs"],
     }
     return {
@@ -429,8 +464,8 @@ def build_report(
             PLAYER_LETHAL_HALF_HEIGHT,
         ],
         "lifecycle_policy": (
-            "filter_state5_only_retain_states2_3_4_and_callback_aux_"
-            "conservatively_without_future_anm_callback_authority"
+            "filter_state5_and_nonzero_callback_aux_retain_states2_3_4_"
+            "conservatively_without_future_anm_authority"
         ),
         "native_available": native_available,
         "stress": stress,
