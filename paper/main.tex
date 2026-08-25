@@ -30,7 +30,9 @@ world projection, parallel long-horizon viability, short-horizon robust
 control, and fresh input publication.  Unsupported future producers become
 \unknown{} rather than silently safe.  The design is generic first; a
 stage- or spell-specific adapter is admitted only after practice and full-route
-evidence falsifies the shared kernel or policy.
+evidence falsifies the shared kernel or policy.  A replayable source-stateful
+stage laboratory and an independently compiled C oracle now exercise this
+boundary over long, pool-saturating histories before Wine is used.
 \end{abstract}
 
 \section{Objective and Evidence Discipline}
@@ -114,6 +116,37 @@ Throughput, queue age, coverage, and publication compatibility are recorded
 separately so that ``many CPU cycles'' cannot be confused with useful action
 authority.
 
+\section{Source-Stateful Offline Laboratory}
+
+The previous synthetic tests mutated snapshots.  Such a frame can look
+plausible while having no legal causal history: pool occupancy, RNG position,
+callback selection, transform timers, and phase clears need not agree.  The
+replacement fuzzer generates an immutable stage program and executes its
+state forward.  The program contains contiguous phases, resolved direct-fire
+descriptors, one shared gameplay RNG root, callback and laser events, and
+explicit transform queues.  The runtime retains the native 1,536-bullet and
+256-laser limits and the source update order.  It then drives the ordinary
+Sakuya/Remilia local planner through configurable sensing and issue queues
+under a hard no-bomb assertion.
+
+This laboratory uses a deliberately narrow exactness boundary.  A resolved
+descriptor is treated as the output of an ECL or timeline producer; the
+runtime is exact only from that point through the supported pool, RNG,
+callback, transform, lifecycle, and geometry paths.  Arbitrary ECL control
+flow, child VMs, ANM-dependent states, and unsupported callbacks remain
+\unknown{}.  Hence unbounded seeded composition gives broad transition and
+pressure coverage without claiming that a generated stage is a particular
+shipped spell.
+
+A reduced C oracle is tracked with the solver and compiled independently of
+the Python model and optimized planner.  It transcribes bounded recovered
+kernels for RNG, all nine direct-fire modes, callback~12, inclusive AABB, and
+eight transform handlers.  Complete-stage lockstep requires exact discrete
+state and RNG agreement; only bounded \code{sinf}/\code{cosf} versus Python
+libm drift is admitted.  Capsules are canonical JSON with a source revision
+and SHA-256 identity, so a failing long history can be replayed and
+delta-debugged after the generator changes.
+
 \section{Generic First, Specialization by Evidence}
 
 One ECL/timeline/emitter kernel, one bullet/laser stepper, and one viability
@@ -155,6 +188,10 @@ latency regresses. \\
 H5 & Generic source semantics cover most stages; specialization is needed only
 for a small, measured residual. & Repeated per-spell unsupported coverage or
 policy failure after the generic gates pass. \\
+H6 & Source-stateful complete-stage fuzzing detects causal transition and
+performance failures that isolated snapshots miss. & A retained failure does
+not replay, shrinks to an impossible state, or disagrees only outside the
+declared source subset. \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -238,6 +275,28 @@ without weakening the unknown boundary: callback-tagged future trajectories,
 not spell metadata or random-variable syntax, now gate global authority.  No
 physical result is attributed to this offline checkpoint.
 
+The complete-stage laboratory then exposed several errors that short
+geometric fixtures had not revealed.  Callback-12 motion was modeled while
+its auxiliary non-collision state was omitted, and future frames shared a
+mutable auxiliary-state buffer, allowing a later callback to rewrite earlier
+history.  The gameplay RNG rounded after a double-precision division rather
+than casting the numerator to binary32 first; exhaustive first-step testing
+disagreed on 62,784 of 65,536 roots.  Finally, random pattern parameters were
+sampled before pool allocation, whereas the source allocates first and
+consumes no RNG for the suppressed tail of a full pool.  These corrections
+matter because each error shifts a long future globally, even when its
+single-frame geometric displacement is small.
+
+An extreme generated program completed 12,000 frames, repeatedly filled all
+1,536 bullet slots, and exercised more than $10^5$ transform transitions.
+This is evidence that the harness can apply pressure beyond a normal Lunatic
+stage while retaining finite-pool semantics.  It is not survival evidence:
+the current normalized collision count is an offline same-capsule metric, and
+the generator begins after producer resolution.  The next causal experiment
+imports retained resolved producer roots, closes child/timeline/callback
+dependencies, and asks whether a complete future changes a same-root global
+winning set before any physical route is launched.
+
 A route-work audit also exposed avoidable serial work inside the fresh issue
 layer.  Almost all changed-prefix transactions ultimately preserved the
 already selected, freshly safe action, yet the implementation recomputed all
@@ -268,13 +327,14 @@ foreground-versus-thread/process benchmark is needed before assigning causal
 latency, but the implementation does not yet provide the process and affinity
 isolation assumed by our parallel-search design.
 
-Development after this diagnosis uses source-driven and retained-root
-differentials as the primary experiment.  Physical Wine trials are delayed
-until submissions, completions, version matching, and producer coverage pass
-offline on the same Stage~5 roots.  This makes engine semantics and planner
-logic deterministic while reserving the expensive physical gate for residual
-effects that offline execution cannot establish: sensing latency, process
-scheduling, native RNG roots, and realized input delivery.
+Development after this diagnosis uses source-driven, complete-stage, and
+retained-root differentials as the primary experiment.  Physical Wine trials
+are delayed until submissions, completions, version matching, and producer
+coverage pass offline on the same Stage~5 roots.  This makes engine semantics
+and planner logic deterministic while reserving the expensive physical gate
+for residual effects that offline execution cannot establish: process
+scheduling, physical sensing cadence, executable numeric behavior, damage
+feedback, and realized input delivery.
 
 \section{Conclusion}
 
@@ -283,5 +343,8 @@ of source-derived transition kernels, explicit uncertainty and coverage,
 parallel long-horizon viability, and a bounded low-latency issue layer.  This
 architecture makes the VPS useful while preserving a falsifiable boundary
 between physical truth, conservative uncertainty, and incomplete prediction.
+The source-stateful laboratory makes that boundary executable: it can generate
+arbitrarily many long source-closed tests, but it refuses to turn unresolved
+producer semantics into fictitious empty space.
 
 \end{document}

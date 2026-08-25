@@ -1,6 +1,6 @@
 # Touhou Solver Current Handoff
 
-Last updated: 2026-08-24.
+Last updated: 2026-08-25.
 
 This is the only volatile entrypoint. Read `AGENTS.md`, `GOAL.MD`, then this
 file, `STRATEGY.md`, and the focused task card in
@@ -28,6 +28,17 @@ ordered implementation plan are in
 ## Checkpoint
 
 - Branch: `codex/th08-lunatic-source-audit`.
+- **Current offline source-stateful checkpoint:** the solver repo now contains
+  a replayable complete-stage IR/runtime/generator, closed-loop hard-no-Bomb
+  campaign, source/C lockstep, geometry differential, and failure shrinker.
+  The independent reduced C is tracked under `native/th08_source_oracle/`;
+  the reference repo remains unmodified and was current at `57ee34f` after
+  `git pull --ff-only`. Profiles span 480 to 12,000 frames. Seed `0xce0132`
+  completed the extreme 12,000-frame runtime, saturated all 1,536 bullet
+  slots, and exercised 156,186 transforms. This is a source-closed stress
+  result after resolved producer events, not arbitrary ECL or route-hit
+  authority. Read
+  `notes/review/TH08_SOURCE_STATEFUL_STAGE_FUZZER.md` before extending it.
 - **Current Lunatic physical checkpoint:**
   `lunatic_route2_fullrun_unattended_20260824_051944` completed Sakuya/Remilia
   Route 2 through Final-B at frame 230561 with 60 native hit edges, stage
@@ -679,21 +690,20 @@ and explicit `STRATEGY.md` decision.
 
 ## Next Implementation Gate
 
-TH08 work is active. The next promotion is deliberately simpler than global
-future births:
+TH08 work is active. The next promotion extends the new offline laboratory;
+do not run another route merely to sample a different RNG root:
 
-1. capture a complete-schema route corpus with the newly retained player
-   geometry, bullet lifecycle/callback aux, lasers, and bodies;
-2. run the legacy/source hazard and action-set differential on actual pre-hit
-   windows rather than only the root-2129 lower bound;
-3. promote only after exact fixtures and retained-root replay agree, commit,
-   then run one complete isolated Lunatic Route-2 gate;
-4. retain the offline-closed Stage-5 time-scale and immutable global-version
-   join; build source-authoritative future-producer coverage in shadow before
-   allowing any active-spell global action authority;
-5. converge on one generic ECL/timeline/emitter simulator and adaptive global
-   viability planner. Per-spell compiled metadata/caches are encouraged;
-   handwritten waypoints are not authority.
+1. import retained resolved Stage-5 producer roots into the source-stateful
+   event stream and require prefix equality with the existing future-source
+   executor;
+2. close ANM-dependent bullet lifecycle states with an independent oracle;
+3. lower child VM/timeline births and callback 14 incrementally, retaining an
+   explicit `UNKNOWN` at every unsupported reached dependency;
+4. join a complete action-conditioned future to the already-closed Stage-5
+   scale/root/geometry/policy version and submit global work in offline shadow;
+5. require a same-capsule losing-to-viable global-policy change, zero oracle
+   disagreement, and bounded latency before one focused Practice gate. Run a
+   full route only after that integrated gain.
 
 Never unblock corridor action authority by provenance alone. The current
 active-spell request can omit future births, so scale, complete reached-source
@@ -760,6 +770,24 @@ python3 scripts/tools/build_native_planner.py --target windows-x86
 Wine; the runtime loader selects between them from Python's pointer width.
 
 Use `TOUHOU_DISABLE_NATIVE_PLANNER=1` only for an explicit rollback/ablation.
+
+### Source-stateful complete-stage fuzzer
+
+```bash
+PYTHONPATH=scripts .venv/bin/python scripts/build_th08_source_oracle.py
+
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=scripts .venv/bin/python \
+  scripts/analysis/th08_source_stage_fuzzer.py \
+  --profile gate --seed 0xce0132 --count 1 \
+  --planner-stride 30 --geometry-oracle-stride 60 \
+  --output artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json
+```
+
+The command runs to the program's full frame count; it has no duration-based
+early kill. Use `--replay` for an exact stored program and
+`--counterexample-dir --shrink-failures` to retain and reduce failures. Exact
+coverage and nonclaims are in
+`notes/review/TH08_SOURCE_STATEFUL_STAGE_FUZZER.md`.
 
 ### Physical trials
 

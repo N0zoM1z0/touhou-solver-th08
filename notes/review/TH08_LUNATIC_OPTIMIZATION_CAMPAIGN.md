@@ -1,6 +1,6 @@
 # TH08 Lunatic Optimization Campaign
 
-Last updated: 2026-08-24.
+Last updated: 2026-08-25.
 
 This ledger tracks the active sequence of general solver optimizations after
 the source/runtime audit.  The semantic reference at `../th08` is used to
@@ -79,6 +79,7 @@ change when its semantic and timing gate passes.
 | GEO-002A | conservative source geometry promotion | Exact bullet/body player AABB plus irreversible state-5 removal; retain activatable states and approximate laser | medium | VALIDATED-SEMANTICS; REJECTED-AS-STANDALONE-POLICY | 93 hits; Stage 5 31; keep physical truth, repair exposed timing |
 | TIME-001 | capture/control timing | Exact lazy fresh-enemy recertification; then separate bulk-pool epoch and realized issue-delay uncertainty from physical hitboxes | medium | MECHANISM VALIDATED PHYSICALLY; ROUTE PENDING | Stage-5: 88.28% lazy; lazy `3.97/6.99ms`, fallback `62.45/76.42ms`; 28 observational hits |
 | TIME-001B | local/control timing | Bound exact full-fallback and initial-beam work; benchmark process-isolated background services before changing ownership | medium | ROOT LOCATED | Spell 107 owns 300/351 fallbacks and cadence p95 13; background services are threads |
+| FUZZ-001 | offline infrastructure | Replace snapshot mutation with replayable source-stateful complete stages and an independent tracked C oracle | low, offline | COMPLETE FOR ENUMERATED SUBSET | 12,000-frame pressure run saturated all 1,536 bullet slots; five semantic/infra bugs exposed |
 | MOT-001 | exact current entities | Replace heuristic transformed-bullet projection with the matching native update/transform semantics | medium-high | QUEUED | pending |
 | GD-001 | global delivery shadow | Establish per-stage hard scale roots, submit jobs in shadow, and add complete future-coverage plus solution-version authority gates | medium, shadow | ROOT CAUSE CONFIRMED | one Final-B/Stage-1 mismatch; 50,669/50,669 due jobs blocked |
 | FB-001 | future births | Capture a coherent VM/emitter/RNG root and implement one generic exact ECL/timeline/emitter kernel, starting with reached direct-fire producers | high | QUEUED | pending |
@@ -90,6 +91,30 @@ change when its semantic and timing gate passes.
 Only one row may be live-changing at a time.  Shadow-only instrumentation may
 be prepared alongside analysis, but it must not silently influence action
 selection.
+
+## FUZZ-001 — Source-Stateful Offline Laboratory
+
+Status: **COMPLETE FOR RESOLVED PRODUCERS; RETAINED ECL/CHILD INTEGRATION OPEN**
+
+The prior fuzzer could stress arrays but not a legal shared history. The new
+stage capsule retains phase schedule, gameplay RNG, finite pools, callbacks,
+transform queues, lasers, delayed observations, and delayed hard-no-Bomb
+actions from frame zero through completion. Its seeded profiles compose all
+nine direct-fire modes and can intentionally exceed shipped Lunatic pressure.
+An independently compiled reduced C oracle checks RNG, pattern construction,
+callback 12, collision, and eight transform handlers; NumPy/native geometry is
+also checked during the real local-solver loop.
+
+The first pressure gate completed 12,000 frames, reached all 1,536 bullet
+slots, and executed 156,186 transform activations. More importantly, source
+differentials found wrong callback collision gating, mutable future-frame
+aliasing, wrong RNG float conversion order, wrong pool-allocation/RNG order,
+and stale-oracle build reuse. These corrections are retained, but this row has
+no physical hit claim. Generated producer schedules are already-resolved
+descriptors. Arbitrary ECL, child/timeline births, ANM-dependent lifecycle,
+and callback 14 remain explicit unknowns and block global action authority.
+The complete contract and commands are in
+`TH08_SOURCE_STATEFUL_STAGE_FUZZER.md`.
 
 ## OPT-001 — Persistent Local Enemy-Prefix Destination
 
