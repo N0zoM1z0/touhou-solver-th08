@@ -46,6 +46,17 @@ class _PatternSample(ctypes.Structure):
     ]
 
 
+class _SpawnLifecycleSample(ctypes.Structure):
+    _fields_ = [
+        ("state", ctypes.c_int32),
+        ("lethal_active", ctypes.c_int32),
+        ("terminal_age", ctypes.c_int32),
+        ("motion_divisor", ctypes.c_float),
+        ("x", ctypes.c_float),
+        ("y", ctypes.c_float),
+    ]
+
+
 class _Callback12State(ctypes.Structure):
     _fields_ = [
         ("phase_state", ctypes.c_int16),
@@ -105,6 +116,16 @@ class NativeTransformState:
     active: bool = True
 
 
+@dataclass(frozen=True)
+class NativeSpawnLifecycleSample:
+    state: int
+    lethal_active: bool
+    terminal_age: int
+    motion_divisor: float
+    x: float
+    y: float
+
+
 @dataclass
 class NativeSourceOracle:
     """Loaded native authority with explicit gameplay-RNG synchronization."""
@@ -124,6 +145,17 @@ class NativeSourceOracle:
             ctypes.POINTER(_PatternSample),
         ]
         library.th08_oracle_pattern_sample.restype = ctypes.c_int32
+        library.th08_oracle_spawn_lifecycle_sample.argtypes = [
+            ctypes.c_int32,
+            ctypes.c_uint32,
+            ctypes.c_int32,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.c_float,
+            ctypes.POINTER(_SpawnLifecycleSample),
+        ]
+        library.th08_oracle_spawn_lifecycle_sample.restype = ctypes.c_int32
         library.th08_oracle_callback12.argtypes = [
             ctypes.POINTER(_Callback12State),
             ctypes.c_uint32,
@@ -198,6 +230,39 @@ class NativeSourceOracle:
             float(output.angle),
             float(output.velocity_x),
             float(output.velocity_y),
+        )
+
+    def spawn_lifecycle_sample(
+        self,
+        *,
+        bullet_type: int,
+        original_flags: int,
+        age: int,
+        origin_x: float,
+        origin_y: float,
+        velocity_x: float,
+        velocity_y: float,
+    ) -> NativeSpawnLifecycleSample:
+        output = _SpawnLifecycleSample()
+        status = self.library.th08_oracle_spawn_lifecycle_sample(
+            bullet_type,
+            original_flags,
+            age,
+            origin_x,
+            origin_y,
+            velocity_x,
+            velocity_y,
+            output,
+        )
+        if status != 0:
+            raise ValueError("native source oracle rejected spawn lifecycle")
+        return NativeSpawnLifecycleSample(
+            state=int(output.state),
+            lethal_active=bool(output.lethal_active),
+            terminal_age=int(output.terminal_age),
+            motion_divisor=float(output.motion_divisor),
+            x=float(output.x),
+            y=float(output.y),
         )
 
     def callback12(
@@ -324,4 +389,8 @@ class NativeSourceOracle:
         )
 
 
-__all__ = ["NativeSourceOracle", "NativeTransformState"]
+__all__ = [
+    "NativeSourceOracle",
+    "NativeSpawnLifecycleSample",
+    "NativeTransformState",
+]

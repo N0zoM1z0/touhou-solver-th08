@@ -1568,8 +1568,9 @@ adapter is exercised on physical state, but the present corpus still supplies
 zero resolved births and cannot change a global winning set. Synthetic exact
 events prove aim preservation, activation timing, StageProgram round-trip,
 finite-pool execution, midpoint refusal, and lifecycle-flag rejection. The
-next general checkpoint is source-authoritative ANM/lifecycle and template
-geometry lowering, not a card-specific exception.
+subsequent AUD-063--AUD-065 checkpoints close the generic template and bounded
+spawn-lifecycle parts of that boundary. Child/timeline producers and callback
+semantics remain typed UNKNOWNs; no card-specific exception was introduced.
 
 ### AUD-063 — Template capture truncated the source-initialized type table
 
@@ -1604,10 +1605,10 @@ and locates the next exact boundary without a physical rerun.
 
 ### AUD-064 — Spawn lifecycle used one completion age for different ANM rows
 
-Status: **CONFIRMED SOURCE/ASSET MODEL BUG; CONTRACT RECOVERED; LOWERING OPEN**
+Status: **CONFIRMED SOURCE/ASSET MODEL BUG; FIXED AND DIFFERENTIALED OFFLINE**
 
-`th08_future_birth_envelope.py` currently uses one global state-2 completion
-age of 10 updates and rejects states 3/4. The source instead selects one of
+`th08_future_birth_envelope.py` used one global state-2 completion age of 10
+updates and rejected states 3/4. The source instead selects one of
 three spawn scripts from the descriptor's bullet type and prioritizes flags
 `0x02`, `0x04`, then `0x08`. The decoded asset proves that the state-2 terminal
 age is 10, 24, or 30 depending on that type; state 3 uses 15, 24, or 30, and
@@ -1616,18 +1617,72 @@ state by velocity divided by 2, 2.5, or 3, then enters the full state-1 update
 in the same manager call when the ANM script completes. Thus the old global
 10-frame coefficient can place many generic future bullets incorrectly.
 
-The 21-row contract now retains the exact script IDs and terminal ages, but
-`FutureDirectFire` still omits `bullet_type`; using the recovered table without
-carrying that causal operand would merely replace one guess with another. The
-next checkpoint must add the type to the event IR, select lifecycle by
-type+flag priority, reproduce same-update activation, and differential every
-type/flag class. Callback tag `0x100000` remains UNKNOWN and must not be cleared
-or treated as a harmless flag. No lifecycle change has action authority yet.
+The event IR now carries the validated native bullet type through causal
+conditioning, and both AABB and annular-sector lowerings select the lifecycle
+from type plus the source's flag-priority chain. A pre-activation bullet is
+absent from the lethal field; on its asset-derived terminal update the model
+performs the divided motion, activates it, and performs the full state-1
+motion in that same manager call. This is one generic mechanism table for all
+21 initialized types, with no stage or spell dispatch.
+
+The tracked C oracle independently transcribes the state selection, divided
+motion, same-update activation, and binary32 position writes. A deterministic
+sweep covers all 21 types, the three singleton flag classes, no lifecycle,
+and the mixed classes `0x06`, `0x0c`, and `0x0e`, including samples immediately
+before, at, and after each terminal age. Every discrete state and lethal gate
+matches, and every C position is contained by both solver representations.
+Callback tag `0x100000` remains UNKNOWN and is neither cleared nor treated as
+a harmless flag. The physical retained root therefore still stops at frame
+87 with an empty 86-frame prefix; this correction has no action or hit-count
+authority yet.
+
+### AUD-065 — A fixed numeric guard did not enclose repeated binary32 motion
+
+Status: **CONFIRMED DIFFERENTIAL GEOMETRY BUG; FIXED OFFLINE**
+
+The old future geometry evaluated an ideal binary64 expression and added a
+fixed `2e-5` positional guard. That is not a bound on source execution: every
+binary32 add/divide/store can round, and its accumulated displacement depends
+on velocity, origin, lifecycle divisor, activation age, and horizon. In the
+fixed-seed C-oracle lifecycle sweep, 392 of 420 lethal samples escaped that
+guard. The largest axis error was about `8.17512e-4`, or `7.97512e-4` beyond
+the claimed guard. The witness was a generic type/flag/age tuple, not a
+particular stage or spell.
+
+The replacement replays the source operation order with outward-rounded
+binary32 intervals after every scale, divide, and add. AABB lowering consumes
+those intervals directly. The compact sector representation keeps the common
+speed/angle parameter correlated and analytically accumulates one explicit
+error term for every native float32 operation. Its initial `sinf`/`cosf`
+component guard scales with speed and is propagated through every later
+update; it is not a fixed final-position constant. The point sweep and a
+second 256-root random speed/angle sweep now contain every C-authoritative
+sample. Removing per-bullet interval-trajectory materialization also reduces
+the joint 1,536-birth 16/269-frame stress from 4.84 s to 0.61 s (about 7.9x)
+at roughly 67 MiB peak RSS, without writing a report artifact.
+
+### AUD-066 — Future projection identity omitted lifecycle-selecting type
+
+Status: **CONFIRMED VERSION-JOIN BUG; FIXED OFFLINE**
+
+After `bullet_type` became a causal lifecycle operand, the event survived
+conditioning and geometry lowering but was absent from the canonical future-
+projection identity payload. Two otherwise identical events could therefore
+share a digest when their currently selected flag-free trajectories happened
+to match, even though a valid later lifecycle flag would give them different
+terminal ages. A cached global result must never alias across such an operand.
+
+Projection schema/version v6 records `bullet_type` explicitly. A regression
+constructs type-2 and type-7 events with identical supplied geometry and no
+lifecycle flag, proves their trajectories are equal, and nevertheless requires
+different digests and `VersionIdentity` values. A second case applies state-2
+and proves their lethal terminal frames diverge. This is an identity/integrity
+repair only; action authority remains withheld.
 
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,455 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,463 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

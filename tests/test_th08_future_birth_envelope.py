@@ -6,13 +6,14 @@ import math
 import struct
 import unittest
 
+from th08_bullet_template_contract import bullet_spawn_lifecycle
 from th08_future_birth_envelope import (
     FloatInterval,
     FutureDirectFire,
     _pattern_speed_angle,
     lower_future_direct_fire,
     lower_future_direct_fire_sectors,
-    state2_position_coefficient,
+    spawn_lifecycle_position_coefficient,
 )
 
 
@@ -20,6 +21,7 @@ def _h1_event(**updates: object) -> FutureDirectFire:
     fields: dict[str, object] = {
         "source": "root2129:singleton:aux0",
         "activation_frames": (1,),
+        "bullet_type": 2,
         "origin_x": FloatInterval.point(60.05625534057617),
         "origin_y": FloatInterval.point(32.0),
         "mode": 1,
@@ -122,10 +124,69 @@ class FutureBirthEnvelopeTests(unittest.TestCase):
         self.assertEqual(angle, FloatInterval.point(expected))
 
     def test_native_state2_coefficients_retain_half_step_completion(self) -> None:
-        self.assertEqual(state2_position_coefficient(1), -3.5)
-        self.assertEqual(state2_position_coefficient(9), 0.5)
-        self.assertEqual(state2_position_coefficient(10), 2.0)
-        self.assertEqual(state2_position_coefficient(16), 8.0)
+        lifecycle = bullet_spawn_lifecycle(2, 0x02)
+        assert lifecycle is not None
+        self.assertEqual(
+            spawn_lifecycle_position_coefficient(1, lifecycle),
+            -3.5,
+        )
+        self.assertEqual(
+            spawn_lifecycle_position_coefficient(9, lifecycle),
+            0.5,
+        )
+        self.assertEqual(
+            spawn_lifecycle_position_coefficient(10, lifecycle),
+            2.0,
+        )
+        self.assertEqual(
+            spawn_lifecycle_position_coefficient(16, lifecycle),
+            8.0,
+        )
+
+    def test_lifecycle_completion_varies_by_generic_bullet_type(self) -> None:
+        cases = (
+            (0, 0x02, 10),
+            (7, 0x02, 30),
+            (10, 0x02, 24),
+            (2, 0x04, 15),
+            (7, 0x04, 30),
+            (10, 0x08, 24),
+        )
+        for bullet_type, flags, terminal_age in cases:
+            with self.subTest(bullet_type=bullet_type, flags=flags):
+                event = _h1_event(
+                    bullet_type=bullet_type,
+                    original_flags=flags,
+                )
+                trajectory = lower_future_direct_fire(
+                    event,
+                    horizon_frames=terminal_age,
+                )[0].trajectory
+                self.assertIsNone(trajectory.sample(terminal_age - 1))
+                self.assertIsNotNone(trajectory.sample(terminal_age))
+
+    def test_lifecycle_flag_priority_matches_native_else_if_chain(self) -> None:
+        lifecycle = bullet_spawn_lifecycle(10, 0x0E)
+
+        self.assertIsNotNone(lifecycle)
+        assert lifecycle is not None
+        self.assertEqual(lifecycle.state, 2)
+        self.assertEqual(lifecycle.flag, 0x02)
+        self.assertEqual(lifecycle.motion_divisor, 2.0)
+        self.assertEqual(lifecycle.terminal_age, 24)
+
+    def test_state3_completion_uses_divisor_and_same_update_activation(self) -> None:
+        lifecycle = bullet_spawn_lifecycle(2, 0x04)
+        assert lifecycle is not None
+
+        self.assertEqual(
+            spawn_lifecycle_position_coefficient(14, lifecycle),
+            -4.0 + 14.0 / 2.5,
+        )
+        self.assertEqual(
+            spawn_lifecycle_position_coefficient(15, lifecycle),
+            -4.0 + 15.0 / 2.5 + 1.0,
+        )
 
     def test_root2129_first_endpoint_matches_origin_minus_three_point_five_v(
         self,
@@ -160,12 +221,12 @@ class FutureBirthEnvelopeTests(unittest.TestCase):
         self.assertAlmostEqual(
             sample.x,
             60.05625534057617 + 2.0 * speed * math.cos(angle),
-            places=5,
+            delta=2.0e-5,
         )
         self.assertAlmostEqual(
             sample.y,
             32.0 + 2.0 * speed * math.sin(angle),
-            places=5,
+            delta=2.0e-5,
         )
 
     def test_rng_angle_interval_is_a_bounded_envelope(self) -> None:
@@ -252,6 +313,10 @@ class FutureBirthEnvelopeTests(unittest.TestCase):
     def test_unknown_native_flag_fails_closed(self) -> None:
         with self.assertRaisesRegex(ValueError, "unsupported future bullet flags"):
             _h1_event(original_flags=0x40000203)
+
+    def test_bullet_type_outside_initialized_table_fails_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "outside the initialized table"):
+            _h1_event(bullet_type=21)
 
 
 if __name__ == "__main__":

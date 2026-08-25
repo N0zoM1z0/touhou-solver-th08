@@ -13,6 +13,11 @@ import math
 import struct
 from dataclasses import dataclass
 
+from th08_bullet_template_contract import (
+    BulletSpawnLifecycle,
+    bullet_spawn_lifecycle,
+    bullet_template_profile,
+)
 from touhou_control.corridor import (
     AabbHazard,
     AabbTrajectoryHazard,
@@ -21,17 +26,21 @@ from touhou_control.corridor import (
 
 
 FUTURE_BIRTH_ENVELOPE_SEMANTICS_VERSION = (
-    "th08-future-birth-envelope-v4-source-spawn-pattern"
+    "th08-future-birth-envelope-v5-source-anm-lifecycle"
 )
 FUTURE_BIRTH_SECTOR_SEMANTICS_VERSION = (
-    "th08-future-birth-sector-v4-source-spawn-pattern"
+    "th08-future-birth-sector-v5-source-anm-lifecycle"
 )
 _TWO_PI = 2.0 * math.pi
 _ZUN_PI = struct.unpack("<f", struct.pack("<f", math.pi))[0]
 _ZUN_TWO_PI = struct.unpack("<f", struct.pack("<f", _ZUN_PI * 2.0))[0]
+_FLOAT32_MIN_SUBNORMAL = math.ldexp(1.0, -149)
+# Eight binary32 ulps on a unit result, scaled by possible speed.  This covers
+# the bounded source-pattern/libm component drift observed by the independent
+# C oracle and is propagated through every later source update.
+_INITIAL_VELOCITY_COMPONENT_RELATIVE_GUARD = math.ldexp(1.0, -20)
 AUTOMATIC_PLAYER_AIM_MODES = frozenset((0, 2, 4))
-_STATE2_COMPLETION_AGE = 10
-_KNOWN_NONPROGRAM_FLAGS = 0x0203
+_KNOWN_NONPROGRAM_FLAGS = 0x020F
 _TRANSFORM_PROGRAM_LENGTH = 18
 _TRANSFORM_RECORD_SIZE = 24
 _VECTOR_ACCELERATION = 0x0000010
@@ -155,6 +164,7 @@ class FutureDirectFire:
 
     source: str
     activation_frames: tuple[int, ...]
+    bullet_type: int
     origin_x: FloatInterval
     origin_y: FloatInterval
     mode: int
@@ -183,6 +193,14 @@ class FutureDirectFire:
     def __post_init__(self) -> None:
         if not self.source:
             raise ValueError("future direct-fire source must not be empty")
+        if type(self.bullet_type) is not int:
+            raise ValueError("future direct-fire bullet type must be an integer")
+        try:
+            bullet_template_profile(self.bullet_type)
+        except ValueError as error:
+            raise ValueError(
+                "future direct-fire bullet type is outside the initialized table"
+            ) from error
         if (
             not self.activation_frames
             or any(frame <= 0 for frame in self.activation_frames)
@@ -261,11 +279,6 @@ class FutureDirectFire:
             raise ValueError(
                 f"unsupported future bullet flags 0x{unsupported_flags:x}"
             )
-        if self.original_flags & (0x04 | 0x08):
-            raise ValueError(
-                "future lifecycle states 3/4 require separate geometry"
-            )
-
     @property
     def active_transform_records(self) -> tuple[_TransformRecord, ...]:
         if self.transform_program_zero:
@@ -330,12 +343,12 @@ def _transform_path_radius_bound(
     profile: tuple[float, float] | None,
     *,
     age: int,
-    state2: bool,
+    preactivation: bool,
 ) -> float | None:
     if profile is None:
         return None
     maximum_speed, acceleration = profile
-    steps = age + 4 if state2 else age
+    steps = age + 4 if preactivation else age
     return (
         maximum_speed * steps
         + acceleration * steps * (steps + 1) * 0.5
@@ -362,14 +375,23 @@ class FutureBirthSectorEnvelope:
     trajectory: AnnularSectorTrajectoryHazard
 
 
-def state2_position_coefficient(age: int) -> float:
-    """Return the exact velocity coefficient after ``age`` manager updates."""
+def spawn_lifecycle_position_coefficient(
+    age: int,
+    lifecycle: BulletSpawnLifecycle,
+) -> float:
+    """Return the source-order velocity coefficient after manager updates."""
 
     if age <= 0:
-        raise ValueError("state-2 age must be positive")
-    if age < _STATE2_COMPLETION_AGE:
-        return -4.0 + 0.5 * age
-    return float(age - 8)
+        raise ValueError("spawn lifecycle age must be positive")
+    preactivation_updates = min(age, lifecycle.terminal_age)
+    coefficient = -4.0 + (
+        preactivation_updates / lifecycle.motion_divisor
+    )
+    if age >= lifecycle.terminal_age:
+        # Completion enters state 1 and executes its full-velocity update in
+        # the same BulletManager::OnUpdate call.
+        coefficient += 1.0 + age - lifecycle.terminal_age
+    return coefficient
 
 
 def _trig_bounds(angle: FloatInterval, *, cosine: bool) -> FloatInterval:
@@ -391,9 +413,227 @@ def _velocity_intervals(
     speed: FloatInterval,
     angle: FloatInterval,
 ) -> tuple[FloatInterval, FloatInterval]:
+    component_guard = _initial_velocity_component_guard(speed)
+    return tuple(
+        FloatInterval(
+            component.lower - component_guard,
+            component.upper + component_guard,
+        )
+        for component in (
+            speed.multiply(_trig_bounds(angle, cosine=True)),
+            speed.multiply(_trig_bounds(angle, cosine=False)),
+        )
+    )
+
+
+def _initial_velocity_component_guard(speed: FloatInterval) -> float:
+    maximum_speed = max(abs(speed.lower), abs(speed.upper))
     return (
-        speed.multiply(_trig_bounds(angle, cosine=True)),
-        speed.multiply(_trig_bounds(angle, cosine=False)),
+        (1.0 + maximum_speed)
+        * _INITIAL_VELOCITY_COMPONENT_RELATIVE_GUARD
+    )
+
+
+def _f32(value: float) -> float:
+    return struct.unpack("<f", struct.pack("<f", value))[0]
+
+
+def _adjacent_f32(value: float, *, upward: bool) -> float:
+    """Return the adjacent finite binary32 value in one direction."""
+
+    rounded = _f32(value)
+    if rounded == 0.0:
+        bits = 0x00000001 if upward else 0x80000001
+        return struct.unpack("<f", struct.pack("<I", bits))[0]
+    bits = struct.unpack("<I", struct.pack("<f", rounded))[0]
+    if rounded > 0.0:
+        bits = bits + 1 if upward else bits - 1
+    else:
+        bits = bits - 1 if upward else bits + 1
+    result = struct.unpack("<f", struct.pack("<I", bits))[0]
+    if not math.isfinite(result):
+        raise ValueError("future position escaped finite binary32")
+    return result
+
+
+def _outward_f32(interval: FloatInterval) -> FloatInterval:
+    """Enclose one native binary32 rounding with one-ulp outward slack."""
+
+    return FloatInterval(
+        _adjacent_f32(interval.lower, upward=False),
+        _adjacent_f32(interval.upper, upward=True),
+    )
+
+
+def _f32_add(
+    left: FloatInterval,
+    right: FloatInterval,
+) -> FloatInterval:
+    return _outward_f32(left.add(right))
+
+
+def _f32_scale(interval: FloatInterval, value: float) -> FloatInterval:
+    return _outward_f32(interval.scale(value))
+
+
+def _f32_divide(interval: FloatInterval, divisor: float) -> FloatInterval:
+    if divisor <= 0.0 or not math.isfinite(divisor):
+        raise ValueError("future binary32 divisor must be finite and positive")
+    return _outward_f32(
+        FloatInterval(interval.lower / divisor, interval.upper / divisor)
+    )
+
+
+def _source_position_intervals(
+    *,
+    origin_x: FloatInterval,
+    origin_y: FloatInterval,
+    velocity_x: FloatInterval,
+    velocity_y: FloatInterval,
+    lifecycle: BulletSpawnLifecycle | None,
+    max_age: int,
+) -> tuple[tuple[FloatInterval, FloatInterval], ...]:
+    """Replay source-order float32 position updates through ``max_age``."""
+
+    if max_age < 0:
+        raise ValueError("future source position age cannot be negative")
+    velocity_x = _outward_f32(velocity_x)
+    velocity_y = _outward_f32(velocity_y)
+    position_x = _outward_f32(origin_x)
+    position_y = _outward_f32(origin_y)
+    if lifecycle is not None:
+        position_x = _f32_add(position_x, _f32_scale(velocity_x, -4.0))
+        position_y = _f32_add(position_y, _f32_scale(velocity_y, -4.0))
+        spawn_step_x = _f32_divide(
+            velocity_x,
+            lifecycle.motion_divisor,
+        )
+        spawn_step_y = _f32_divide(
+            velocity_y,
+            lifecycle.motion_divisor,
+        )
+    else:
+        spawn_step_x = None
+        spawn_step_y = None
+    positions = [(position_x, position_y)]
+    for age in range(1, max_age + 1):
+        if lifecycle is not None and age <= lifecycle.terminal_age:
+            assert spawn_step_x is not None and spawn_step_y is not None
+            position_x = _f32_add(position_x, spawn_step_x)
+            position_y = _f32_add(position_y, spawn_step_y)
+            if age == lifecycle.terminal_age:
+                position_x = _f32_add(position_x, velocity_x)
+                position_y = _f32_add(position_y, velocity_y)
+        else:
+            position_x = _f32_add(position_x, velocity_x)
+            position_y = _f32_add(position_y, velocity_y)
+        positions.append((position_x, position_y))
+    return tuple(positions)
+
+
+def _binary32_rounding_error_bound(maximum_absolute_value: float) -> float:
+    """Return one full binary32 ulp over a finite magnitude interval."""
+
+    if (
+        maximum_absolute_value < 0.0
+        or not math.isfinite(maximum_absolute_value)
+    ):
+        raise ValueError("binary32 magnitude bound must be finite and positive")
+    if maximum_absolute_value == 0.0:
+        return _FLOAT32_MIN_SUBNORMAL
+    _mantissa, exponent = math.frexp(maximum_absolute_value)
+    return max(
+        _FLOAT32_MIN_SUBNORMAL,
+        math.ldexp(1.0, exponent - 24),
+    )
+
+
+def _rounded_component(
+    maximum_absolute_value: float,
+    error_from_ideal: float,
+) -> tuple[float, float]:
+    rounding = _binary32_rounding_error_bound(maximum_absolute_value)
+    return maximum_absolute_value + rounding, error_from_ideal + rounding
+
+
+def _add_component(
+    value: tuple[float, float],
+    step: tuple[float, float],
+) -> tuple[float, float]:
+    value_magnitude, value_error = value
+    step_magnitude, step_error = step
+    return _rounded_component(
+        value_magnitude + step_magnitude,
+        value_error + step_error,
+    )
+
+
+def _source_position_numeric_uncertainty(
+    *,
+    origin_x: FloatInterval,
+    origin_y: FloatInterval,
+    speed: FloatInterval,
+    lifecycle: BulletSpawnLifecycle | None,
+    max_age: int,
+) -> float:
+    """Bound source float32 position drift from the ideal sector trajectory.
+
+    Unlike subtracting two independently widened interval boxes, this keeps
+    the common speed/angle parameter correlated: only operation-level numeric
+    error is accumulated.  The result therefore applies to point and
+    continuous speed/angle sets alike.
+    """
+
+    if max_age < 0:
+        raise ValueError("future numeric uncertainty age cannot be negative")
+    origin_components = [
+        _rounded_component(
+            max(abs(interval.lower), abs(interval.upper)),
+            0.0,
+        )
+        for interval in (origin_x, origin_y)
+    ]
+    maximum_speed = max(abs(speed.lower), abs(speed.upper))
+    velocity_guard = _initial_velocity_component_guard(speed)
+    velocity_component = _rounded_component(
+        maximum_speed + velocity_guard,
+        velocity_guard,
+    )
+    if lifecycle is not None:
+        scaled_velocity = _rounded_component(
+            velocity_component[0] * 4.0,
+            velocity_component[1] * 4.0,
+        )
+        origin_components = [
+            _add_component(component, scaled_velocity)
+            for component in origin_components
+        ]
+        spawn_step = _rounded_component(
+            velocity_component[0] / lifecycle.motion_divisor,
+            velocity_component[1] / lifecycle.motion_divisor,
+        )
+    else:
+        spawn_step = None
+    for age in range(1, max_age + 1):
+        if lifecycle is not None and age <= lifecycle.terminal_age:
+            assert spawn_step is not None
+            origin_components = [
+                _add_component(component, spawn_step)
+                for component in origin_components
+            ]
+            if age == lifecycle.terminal_age:
+                origin_components = [
+                    _add_component(component, velocity_component)
+                    for component in origin_components
+                ]
+        else:
+            origin_components = [
+                _add_component(component, velocity_component)
+                for component in origin_components
+            ]
+    return math.hypot(
+        origin_components[0][1],
+        origin_components[1][1],
     )
 
 
@@ -478,8 +718,9 @@ def _sample_from_bounds(
     half_width: float,
     half_height: float,
 ) -> AabbHazard:
-    # Two ulps at screen-scale prevents a binary32 endpoint from escaping a
-    # real-valued interval solely because Python evaluated trig in binary64.
+    # Source-order binary32 stores are enclosed by the interval recurrence.
+    # This residual guard covers only bounded C sinf/cosf versus Python-libm
+    # drift at the initial velocity construction.
     numeric_guard = 2.0e-5
     return AabbHazard(
         x=x.midpoint,
@@ -499,7 +740,10 @@ def lower_future_direct_fire(
     if horizon_frames < 0:
         raise ValueError("future birth horizon cannot be negative")
     envelopes: list[FutureBirthEnvelope] = []
-    state2 = bool(event.original_flags & 0x02)
+    lifecycle = bullet_spawn_lifecycle(
+        event.bullet_type,
+        event.original_flags,
+    )
     transform_profile = _transform_path_profile(event)
     for activation_frame in event.activation_frames:
         if activation_frame > horizon_frames:
@@ -511,17 +755,37 @@ def lower_future_direct_fire(
                     bullet_index=bullet_index,
                     ring_index=ring_index,
                 )
-                velocity_x, velocity_y = _velocity_intervals(speed, angle)
+                if transform_profile is None:
+                    velocity_x, velocity_y = _velocity_intervals(
+                        speed,
+                        angle,
+                    )
+                    positions = _source_position_intervals(
+                        origin_x=event.origin_x,
+                        origin_y=event.origin_y,
+                        velocity_x=velocity_x,
+                        velocity_y=velocity_y,
+                        lifecycle=lifecycle,
+                        max_age=max(
+                            0,
+                            horizon_frames - activation_frame + 1,
+                        ),
+                    )
+                else:
+                    positions = None
                 samples: list[AabbHazard | None] = []
                 for frame in range(horizon_frames + 1):
                     age = frame - activation_frame + 1
-                    if age <= 0 or (state2 and age < _STATE2_COMPLETION_AGE):
+                    if age <= 0 or (
+                        lifecycle is not None
+                        and age < lifecycle.terminal_age
+                    ):
                         samples.append(None)
                         continue
                     transformed_radius = _transform_path_radius_bound(
                         transform_profile,
                         age=age,
-                        state2=state2,
+                        preactivation=lifecycle is not None,
                     )
                     if transformed_radius is not None:
                         radius = transformed_radius
@@ -542,19 +806,12 @@ def lower_future_direct_fire(
                             )
                         )
                     else:
-                        coefficient = (
-                            state2_position_coefficient(age)
-                            if state2
-                            else float(age)
-                        )
+                        assert positions is not None
+                        position_x, position_y = positions[age]
                         samples.append(
                             _sample_from_bounds(
-                                event.origin_x.add(
-                                    velocity_x.scale(coefficient)
-                                ),
-                                event.origin_y.add(
-                                    velocity_y.scale(coefficient)
-                                ),
+                                position_x,
+                                position_y,
                                 half_width=event.half_width,
                                 half_height=event.half_height,
                             )
@@ -580,7 +837,10 @@ def lower_future_direct_fire_sectors(
     if horizon_frames < 0:
         raise ValueError("future birth horizon cannot be negative")
     envelopes: list[FutureBirthSectorEnvelope] = []
-    state2 = bool(event.original_flags & 0x02)
+    lifecycle = bullet_spawn_lifecycle(
+        event.bullet_type,
+        event.original_flags,
+    )
     transform_profile = _transform_path_profile(event)
     origin_uncertainty = math.hypot(
         event.origin_x.radius,
@@ -591,6 +851,25 @@ def lower_future_direct_fire_sectors(
         if activation_frame > horizon_frames:
             continue
         for ring_index in range(event.count2):
+            ring_speed, _ring_angle = _pattern_speed_angle(
+                event,
+                bullet_index=0,
+                ring_index=ring_index,
+            )
+            numeric_uncertainty = (
+                _source_position_numeric_uncertainty(
+                    origin_x=event.origin_x,
+                    origin_y=event.origin_y,
+                    speed=ring_speed,
+                    lifecycle=lifecycle,
+                    max_age=max(
+                        0,
+                        horizon_frames - activation_frame + 1,
+                    ),
+                )
+                if transform_profile is None
+                else 0.0
+            )
             for bullet_index in range(event.count1):
                 speed, angle = _pattern_speed_angle(
                     event,
@@ -601,20 +880,14 @@ def lower_future_direct_fire_sectors(
                     raise ValueError(
                         "annular-sector lowering requires nonnegative speed"
                     )
-                transformed_path = (
-                    _transform_path_radius_bound(
-                        transform_profile,
-                        age=1,
-                        state2=state2,
-                    )
-                    is not None
-                )
+                transformed_path = transform_profile is not None
                 minimum_radii: list[float | None] = []
                 maximum_radii: list[float | None] = []
                 for frame in range(horizon_frames + 1):
                     age = frame - activation_frame + 1
                     if age <= 0 or (
-                        state2 and age < _STATE2_COMPLETION_AGE
+                        lifecycle is not None
+                        and age < lifecycle.terminal_age
                     ):
                         minimum_radii.append(None)
                         maximum_radii.append(None)
@@ -622,15 +895,18 @@ def lower_future_direct_fire_sectors(
                     transformed_radius = _transform_path_radius_bound(
                         transform_profile,
                         age=age,
-                        state2=state2,
+                        preactivation=lifecycle is not None,
                     )
                     if transformed_radius is not None:
                         minimum_radii.append(0.0)
                         maximum_radii.append(transformed_radius)
                     else:
                         coefficient = (
-                            state2_position_coefficient(age)
-                            if state2
+                            spawn_lifecycle_position_coefficient(
+                                age,
+                                lifecycle,
+                            )
+                            if lifecycle is not None
                             else float(age)
                         )
                         minimum_radii.append(speed.lower * coefficient)
@@ -657,6 +933,9 @@ def lower_future_direct_fire_sectors(
                             maximum_radii=tuple(maximum_radii),
                             half_extent_radius=half_extent_radius,
                             origin_uncertainty=origin_uncertainty,
+                            base_uncertainty=(
+                                numeric_uncertainty + 2.0e-5
+                            ),
                         ),
                     )
                 )
@@ -709,5 +988,5 @@ __all__ = [
     "lower_complete_future_birth_sectors",
     "lower_future_direct_fire",
     "lower_future_direct_fire_sectors",
-    "state2_position_coefficient",
+    "spawn_lifecycle_position_coefficient",
 ]

@@ -131,17 +131,21 @@ under a hard no-bomb assertion.
 
 This laboratory uses a deliberately narrow exactness boundary.  A resolved
 descriptor is treated as the output of an ECL or timeline producer; the
-runtime is exact only from that point through the supported pool, RNG,
-callback, transform, lifecycle, and geometry paths.  Arbitrary ECL control
-flow, child VMs, ANM-dependent states, and unsupported callbacks remain
-\unknown{}.  Hence unbounded seeded composition gives broad transition and
+runtime is exact only from that point through the supported state-1 pool,
+RNG, callback, transform, lifecycle, and geometry paths.  A separate
+future-birth lowerer now has a bounded exact subset for the 21 source-selected
+state-2/3/4 spawn rows; importing those states into the complete-stage runtime
+remains open.  Arbitrary ECL control flow, child VMs, general ANM execution,
+and unsupported callbacks remain \unknown{}.  Hence unbounded seeded
+composition gives broad transition and
 pressure coverage without claiming that a generated stage is a particular
 shipped spell.
 
 A reduced C oracle is tracked with the solver and compiled independently of
 the Python model and optimized planner.  It transcribes bounded recovered
-kernels for RNG, all nine direct-fire modes, callback~12, inclusive AABB, and
-eight transform handlers.  Complete-stage lockstep requires exact discrete
+kernels for RNG, all nine direct-fire modes, the generic state-2/3/4 spawn
+lifecycle, callback~12, inclusive AABB, and eight transform handlers.
+Complete-stage lockstep requires exact discrete
 state and RNG agreement; only bounded \code{sinf}/\code{cosf} versus Python
 libm drift is admitted.  Capsules are canonical JSON with a source revision
 and SHA-256 identity, so a failing long history can be replayed and
@@ -314,8 +318,21 @@ the genuine callback-14 tag, while retaining the same empty 86-frame proven
 prefix.  This is semantic progress, not a survival result.  The derivation
 also falsified a global ten-update spawn assumption: state-2 completion is 10,
 24, or 30 updates depending on bullet type, with separate state-3/4 profiles.
-Those lifecycle facts remain shadow-only until bullet type is carried through
-the producer IR and same-update activation is differentially validated.
+Bullet type now survives the producer IR, and one generic type/flag selector
+reproduces native flag priority, divided pre-activation motion, and same-update
+state-1 activation.  An independent C sweep spans all 21 types and seven
+no/singleton/mixed flag classes.  It exposed a second geometry bug: an ideal
+binary64 trajectory plus fixed $2\times10^{-5}$ guard lost 392 of 420 lethal
+samples, with maximum axis error about $8.18\times10^{-4}$.  Replaying each
+source-order binary32 operation with an outward-rounded interval contains
+every C point in the AABB path.  The compact sector instead preserves the
+shared speed/angle parameter and analytically propagates an error term for
+each float32 operation, including a speed-scaled trig-component bound.  A
+256-root random speed/angle differential also remains contained, while this
+formulation makes the 1,536-birth stress about 7.9 times faster.  These
+lifecycle facts remain shadow-only because the
+retained root still reaches callback~14 before any birth.  Child/timeline
+producers and callback~14 are the next generic closure steps.
 
 The complete-stage laboratory then exposed several errors that short
 geometric fixtures had not revealed.  Callback-12 motion was modeled while

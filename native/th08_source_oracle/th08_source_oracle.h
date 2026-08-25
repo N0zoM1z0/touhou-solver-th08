@@ -47,6 +47,15 @@ typedef struct Th08OraclePatternSample {
     float velocity_y;
 } Th08OraclePatternSample;
 
+typedef struct Th08OracleSpawnLifecycleSample {
+    int32_t state;
+    int32_t lethal_active;
+    int32_t terminal_age;
+    float motion_divisor;
+    float x;
+    float y;
+} Th08OracleSpawnLifecycleSample;
+
 typedef struct Th08OracleCallback12State {
     int16_t phase_state;
     uint8_t collision_aux;
@@ -90,6 +99,16 @@ TH08_ORACLE_API int32_t th08_oracle_pattern_sample(
     int32_t ring_index,
     Th08OracleRng *rng,
     Th08OraclePatternSample *sample);
+
+TH08_ORACLE_API int32_t th08_oracle_spawn_lifecycle_sample(
+    int32_t bullet_type,
+    uint32_t original_flags,
+    int32_t age,
+    float origin_x,
+    float origin_y,
+    float velocity_x,
+    float velocity_y,
+    Th08OracleSpawnLifecycleSample *sample);
 
 TH08_ORACLE_API int32_t th08_oracle_callback12(
     Th08OracleCallback12State *state,

@@ -145,6 +145,82 @@ int32_t th08_oracle_pattern_sample(
     return 0;
 }
 
+static const int32_t TH08_STATE2_TERMINAL_AGES[21] = {
+    10, 10, 10, 10, 10, 10, 10, 30, 30, 30, 24,
+    10, 10, 10, 30, 30, 10, 10, 30, 30, 30,
+};
+
+static const int32_t TH08_STATE3_TERMINAL_AGES[21] = {
+    15, 15, 15, 15, 15, 15, 15, 30, 30, 30, 24,
+    15, 15, 15, 30, 30, 15, 15, 30, 30, 30,
+};
+
+static const int32_t TH08_STATE4_TERMINAL_AGES[21] = {
+    30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 24,
+    30, 30, 30, 30, 30, 30, 30, 30, 30, 30,
+};
+
+int32_t th08_oracle_spawn_lifecycle_sample(
+    int32_t bullet_type,
+    uint32_t original_flags,
+    int32_t age,
+    float origin_x,
+    float origin_y,
+    float velocity_x,
+    float velocity_y,
+    Th08OracleSpawnLifecycleSample *sample) {
+    const int32_t *terminal_ages = NULL;
+    int32_t state = 1;
+    int32_t terminal_age = 0;
+    float divisor = 1.0F;
+    float x = origin_x;
+    float y = origin_y;
+    int32_t update;
+
+    if (sample == NULL || bullet_type < 0 || bullet_type >= 21 || age <= 0) {
+        return 1;
+    }
+    if ((original_flags & UINT32_C(0x02)) != 0U) {
+        state = 2;
+        divisor = 2.0F;
+        terminal_ages = TH08_STATE2_TERMINAL_AGES;
+    } else if ((original_flags & UINT32_C(0x04)) != 0U) {
+        state = 3;
+        divisor = 2.5F;
+        terminal_ages = TH08_STATE3_TERMINAL_AGES;
+    } else if ((original_flags & UINT32_C(0x08)) != 0U) {
+        state = 4;
+        divisor = 3.0F;
+        terminal_ages = TH08_STATE4_TERMINAL_AGES;
+    }
+    if (terminal_ages != NULL) {
+        terminal_age = terminal_ages[bullet_type];
+        x -= velocity_x * 4.0F;
+        y -= velocity_y * 4.0F;
+    }
+    for (update = 1; update <= age; ++update) {
+        if (state == 1) {
+            x += velocity_x;
+            y += velocity_y;
+            continue;
+        }
+        x += velocity_x / divisor;
+        y += velocity_y / divisor;
+        if (update == terminal_age) {
+            state = 1;
+            x += velocity_x;
+            y += velocity_y;
+        }
+    }
+    sample->state = state;
+    sample->lethal_active = state == 1;
+    sample->terminal_age = terminal_age;
+    sample->motion_divisor = divisor;
+    sample->x = x;
+    sample->y = y;
+    return 0;
+}
+
 int32_t th08_oracle_callback12(
     Th08OracleCallback12State *state,
     uint32_t bullet_tags,

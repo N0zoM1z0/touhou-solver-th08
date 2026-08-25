@@ -105,6 +105,11 @@ An independently compiled reduced C oracle checks RNG, pattern construction,
 callback 12, collision, and eight transform handlers; NumPy/native geometry is
 also checked during the real local-solver loop.
 
+The same C oracle now also closes the generic 21-type state-2/3/4 lifecycle
+for the future-envelope path. The complete-stage `BulletEmitter` IR still
+rejects those flags, so long-history lifecycle composition remains the next
+fuzzer integration step rather than an implied capability.
+
 The first pressure gate completed 12,000 frames, reached all 1,536 bullet
 slots, and executed 156,186 transform activations. More importantly, source
 differentials found wrong callback collision gating, mutable future-frame
@@ -516,8 +521,18 @@ the missing suffix only after exact equality of their complete observed
 prefix. Same-root replay moved the first unknown from false type-16 geometry
 to the genuine callback-14 tag without changing its 86-frame empty prefix.
 The same audit disproved the envelope's single 10-frame state-2 age: the native
-scripts select 10, 24, or 30 by bullet type. That lifecycle correction is the
-next generic checkpoint and remains shadow-only.
+scripts select 10, 24, or 30 by bullet type. That correction is now closed
+offline for all state-2/3/4 type/flag classes. Bullet type survives the event
+IR, the exact native flag priority and same-update activation are shared by
+AABB and compact-sector lowering, and an independent C transcription contains
+every tested trajectory. The differential also falsified the old fixed
+`2e-5` numeric guard on 392/420 lethal samples. AABB now uses source-order
+outward binary32 intervals; sectors propagate operation-level numeric error
+without discarding speed/angle correlation. A random interval C sweep passes,
+and the compact 1,536-birth stress is about 7.9x faster. These remain
+generic, shadow-only mechanics. Child/timeline births and callback 14 are the
+next reached producer boundaries; the retained physical prefix still contains
+zero births and no hit claim follows.
 
 The post-route source audit sharpens this contract. The current generic birth
 analyzer has no controller caller, the ordinary-source closure is disabled and

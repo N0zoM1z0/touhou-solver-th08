@@ -697,16 +697,14 @@ and explicit `STRATEGY.md` decision.
 TH08 work is active. The next promotion extends the new offline laboratory;
 do not run another route merely to sample a different RNG root:
 
-1. carry bullet type through the producer IR and select the newly recovered
-   generic ANM lifecycle profile by type plus native flag priority; reproduce
-   same-update activation and preserve typed UNKNOWN boundaries;
-2. differential all ANM-dependent type/flag lifecycle classes against an
-   independent oracle before admitting flagged births;
-3. lower child VM/timeline births and callback 14 incrementally, retaining an
+1. preserve the completed generic 21-type ANM lifecycle and source-order
+   binary32 geometry differentials; do not replace them with a global age or
+   fixed numeric guard;
+2. lower child VM/timeline births and callback 14 incrementally, retaining an
    explicit `UNKNOWN` at every unsupported reached dependency;
-4. join a complete action-conditioned future to the already-closed Stage-5
+3. join a complete action-conditioned future to the already-closed Stage-5
    scale/root/geometry/policy version and submit global work in offline shadow;
-5. require a same-capsule losing-to-viable global-policy change, zero oracle
+4. require a same-capsule losing-to-viable global-policy change, zero oracle
    disagreement, and bounded latency before one focused Practice gate. Run a
    full route only after that integrated gain.
 

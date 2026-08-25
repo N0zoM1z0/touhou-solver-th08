@@ -176,6 +176,7 @@ def _solver_event(
     return FutureDirectFire(
         source="source-spawn-pattern-differential",
         activation_frames=(1,),
+        bullet_type=2,
         origin_x=FloatInterval.point(0.0),
         origin_y=FloatInterval.point(0.0),
         mode=mode,

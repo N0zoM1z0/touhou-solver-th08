@@ -548,6 +548,7 @@ class Th08LocalPipelineCertificateTests(unittest.TestCase):
         fire = FutureDirectFire(
             source="test:prefix",
             activation_frames=(1,),
+            bullet_type=2,
             origin_x=FloatInterval.point(192.0),
             origin_y=FloatInterval.point(400.0),
             mode=1,

@@ -19,6 +19,7 @@ def _event() -> FutureDirectFire:
     return FutureDirectFire(
         source="enemy:7:aux0",
         activation_frames=(1, 2),
+        bullet_type=2,
         origin_x=FloatInterval.point(100.0),
         origin_y=FloatInterval.point(80.0),
         mode=1,
@@ -125,6 +126,49 @@ class FutureHazardProjectionTests(unittest.TestCase):
             for frame in range(21)
             for trajectory in projection.trajectories
         ))
+
+    def test_bullet_type_is_part_of_projection_identity(self) -> None:
+        type_two = replace(_event(), original_flags=0, bullet_type=2)
+        type_seven = replace(type_two, bullet_type=7)
+        projection_two = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=20,
+            events=(type_two,),
+            source_semantics_version="test-source-v1",
+        )
+        projection_seven = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=20,
+            events=(type_seven,),
+            source_semantics_version="test-source-v1",
+        )
+
+        # With no lifecycle flag these two types have identical supplied
+        # geometry and trajectories. Their causal identities must still not
+        # alias now that type controls other valid future states.
+        self.assertEqual(
+            projection_two.trajectories,
+            projection_seven.trajectories,
+        )
+        self.assertNotEqual(projection_two.digest, projection_seven.digest)
+        self.assertNotEqual(projection_two.version, projection_seven.version)
+
+    def test_bullet_type_selects_lifecycle_terminal_age(self) -> None:
+        type_two = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=20,
+            events=(replace(_event(), bullet_type=2, original_flags=0x02),),
+            source_semantics_version="test-source-v1",
+        )
+        type_seven = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=20,
+            events=(replace(_event(), bullet_type=7, original_flags=0x02),),
+            source_semantics_version="test-source-v1",
+        )
+
+        self.assertIsNotNone(type_two.trajectories[0].radial_sample(10))
+        self.assertIsNone(type_seven.trajectories[0].radial_sample(20))
 
     def test_unknown_source_closure_has_no_authority(self) -> None:
         projection = unknown_future_hazard_projection(

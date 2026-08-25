@@ -207,15 +207,15 @@ program frame count.
 The fuzzer now provides the infrastructure needed to extend semantics without
 Wine. The next work should remain incremental and differential:
 
-1. import real retained resolved producer roots and compare their prefix to
-   the generated-runtime kernel;
-2. add ANM-dependent lifecycle transitions with an independent oracle;
-3. lower child VMs/timeline births and callback 14 into the same event stream;
-4. make future births action-conditioned where player aim or damage changes
+1. preserve the completed retained-root importer and generic future-envelope
+   lifecycle oracle; extend the StageProgram/emitter IR so the same type/flag
+   lifecycle can execute inside long generated histories;
+2. lower child VMs/timeline births and callback 14 into the same event stream;
+3. make future births action-conditioned where player aim or damage changes
    the producer root;
-5. feed only a complete, version-matched horizon into the global viability
+4. feed only a complete, version-matched horizon into the global viability
    planner, first in offline shadow mode;
-6. use focused Practice and Wine only after a same-capsule global-policy
+5. use focused Practice and Wine only after a same-capsule global-policy
    differential changes a losing predecessor into a certified viable one.
 
 This keeps the core general. Per-stage/spell compiled programs and caches are

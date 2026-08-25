@@ -12,6 +12,14 @@ import tempfile
 import unittest
 
 from build_th08_source_oracle import build
+from th08_bullet_template_contract import bullet_spawn_lifecycle
+from th08_future_birth_envelope import (
+    FloatInterval,
+    FutureDirectFire,
+    lower_future_direct_fire,
+    lower_future_direct_fire_sectors,
+    spawn_lifecycle_position_coefficient,
+)
 from th08_rng import Th08Rng
 from th08_semantics.native_oracle import (
     NativeSourceOracle,
@@ -59,6 +67,39 @@ def _ulp_distance(left: float, right: float) -> int:
     else:
         right_bits += 0x80000000
     return abs(left_bits - right_bits)
+
+
+def _distance_to_annular_sector(
+    x: float,
+    y: float,
+    *,
+    minimum_angle: float,
+    maximum_angle: float,
+    minimum_radius: float,
+    maximum_radius: float,
+) -> float:
+    radius = math.hypot(x, y)
+    angle = math.atan2(y, x)
+    candidates: list[float] = []
+    if minimum_angle <= angle <= maximum_angle:
+        candidates.append(
+            max(minimum_radius - radius, 0.0, radius - maximum_radius)
+        )
+    for boundary in (minimum_angle, maximum_angle):
+        direction_x = math.cos(boundary)
+        direction_y = math.sin(boundary)
+        projected = x * direction_x + y * direction_y
+        closest_radius = min(
+            maximum_radius,
+            max(minimum_radius, projected),
+        )
+        candidates.append(
+            math.hypot(
+                x - closest_radius * direction_x,
+                y - closest_radius * direction_y,
+            )
+        )
+    return min(candidates)
 
 
 class Th08SourceOracleTests(unittest.TestCase):
@@ -186,6 +227,231 @@ class Th08SourceOracleTests(unittest.TestCase):
                 _ulp_distance(candidate.velocity_y, authority.velocity_y),
                 1,
             )
+
+    def test_all_spawn_lifecycle_type_flag_classes_match_c(self) -> None:
+        generator = random.Random(0x433070)
+        flag_classes = (0, 0x02, 0x04, 0x08, 0x06, 0x0C, 0x0E)
+        legacy_guard_escape_samples = 0
+        maximum_legacy_axis_error = 0.0
+        for bullet_type in range(21):
+            for original_flags in flag_classes:
+                lifecycle = bullet_spawn_lifecycle(
+                    bullet_type,
+                    original_flags,
+                )
+                terminal_age = (
+                    lifecycle.terminal_age if lifecycle is not None else 0
+                )
+                ages = sorted(
+                    {
+                        1,
+                        max(1, terminal_age - 1),
+                        max(1, terminal_age),
+                        max(1, terminal_age + 1),
+                        max(1, terminal_age + 37),
+                    }
+                )
+                speed = f32(generator.uniform(0.1, 8.0))
+                angle = f32(generator.uniform(-math.pi, math.pi))
+                origin_x = f32(generator.uniform(16.0, 368.0))
+                origin_y = f32(generator.uniform(16.0, 432.0))
+                pattern = SourcePattern(
+                    mode=1,
+                    count1=1,
+                    count2=1,
+                    speed1=speed,
+                    speed2=speed,
+                    angle=angle,
+                    angle_step=0.0,
+                    angle_to_player=0.0,
+                    time_scale=1.0,
+                )
+                velocity = self.oracle.pattern_sample(
+                    pattern,
+                    bullet_index=0,
+                    ring_index=0,
+                    rng=Th08Rng(1),
+                )
+                event = FutureDirectFire(
+                    source="spawn-lifecycle-differential",
+                    activation_frames=(1,),
+                    bullet_type=bullet_type,
+                    origin_x=FloatInterval.point(origin_x),
+                    origin_y=FloatInterval.point(origin_y),
+                    mode=1,
+                    count1=1,
+                    count2=1,
+                    speed1=FloatInterval.point(speed),
+                    speed2=FloatInterval.point(speed),
+                    angle1=FloatInterval.point(angle),
+                    angle2=FloatInterval.point(0.0),
+                    aim_angle=FloatInterval.point(0.0),
+                    half_width=0.0,
+                    half_height=0.0,
+                    original_flags=original_flags,
+                    transform_program_zero=True,
+                )
+                trajectory = lower_future_direct_fire(
+                    event,
+                    horizon_frames=max(ages),
+                )[0].trajectory
+                sector = lower_future_direct_fire_sectors(
+                    event,
+                    horizon_frames=max(ages),
+                )[0].trajectory
+                for age in ages:
+                    with self.subTest(
+                        bullet_type=bullet_type,
+                        original_flags=original_flags,
+                        age=age,
+                    ):
+                        authority = self.oracle.spawn_lifecycle_sample(
+                            bullet_type=bullet_type,
+                            original_flags=original_flags,
+                            age=age,
+                            origin_x=origin_x,
+                            origin_y=origin_y,
+                            velocity_x=velocity.velocity_x,
+                            velocity_y=velocity.velocity_y,
+                        )
+                        expected_state = (
+                            lifecycle.state
+                            if lifecycle is not None
+                            and age < lifecycle.terminal_age
+                            else 1
+                        )
+                        self.assertEqual(authority.state, expected_state)
+                        self.assertEqual(
+                            authority.lethal_active,
+                            expected_state == 1,
+                        )
+                        self.assertEqual(authority.terminal_age, terminal_age)
+                        if lifecycle is not None:
+                            self.assertEqual(
+                                authority.motion_divisor,
+                                lifecycle.motion_divisor,
+                            )
+                        sample = trajectory.sample(age)
+                        if not authority.lethal_active:
+                            self.assertIsNone(sample)
+                            continue
+                        self.assertIsNotNone(sample)
+                        assert sample is not None
+                        self.assertLessEqual(
+                            abs(authority.x - sample.x),
+                            sample.half_width,
+                        )
+                        self.assertLessEqual(
+                            abs(authority.y - sample.y),
+                            sample.half_height,
+                        )
+                        coefficient = (
+                            spawn_lifecycle_position_coefficient(
+                                age,
+                                lifecycle,
+                            )
+                            if lifecycle is not None
+                            else float(age)
+                        )
+                        ideal_x = (
+                            origin_x
+                            + coefficient * speed * math.cos(angle)
+                        )
+                        ideal_y = (
+                            origin_y
+                            + coefficient * speed * math.sin(angle)
+                        )
+                        legacy_axis_error = max(
+                            abs(authority.x - ideal_x),
+                            abs(authority.y - ideal_y),
+                        )
+                        maximum_legacy_axis_error = max(
+                            maximum_legacy_axis_error,
+                            legacy_axis_error,
+                        )
+                        if legacy_axis_error > 2.0e-5:
+                            legacy_guard_escape_samples += 1
+                        self.assertLessEqual(
+                            math.hypot(
+                                authority.x - ideal_x,
+                                authority.y - ideal_y,
+                            ),
+                            sector.base_uncertainty,
+                        )
+        # The former fixed two-ulp-at-screen-scale guard is intentionally
+        # retained as a falsified baseline, not silently forgotten after the
+        # source-order interval recurrence replaced it.
+        self.assertGreater(legacy_guard_escape_samples, 0)
+        self.assertGreater(maximum_legacy_axis_error, 2.0e-5)
+
+    def test_random_speed_angle_sector_contains_c_lifecycle_samples(self) -> None:
+        origin_x = f32(192.0)
+        origin_y = f32(224.0)
+        pattern = SourcePattern(
+            mode=8,
+            count1=1,
+            count2=1,
+            speed1=f32(8.0),
+            speed2=f32(0.5),
+            angle=f32(1.0),
+            angle_step=f32(-1.0),
+            angle_to_player=0.0,
+            time_scale=1.0,
+        )
+        event = FutureDirectFire(
+            source="random-sector-lifecycle-differential",
+            activation_frames=(1,),
+            bullet_type=7,
+            origin_x=FloatInterval.point(origin_x),
+            origin_y=FloatInterval.point(origin_y),
+            mode=8,
+            count1=1,
+            count2=1,
+            speed1=FloatInterval.point(pattern.speed1),
+            speed2=FloatInterval.point(pattern.speed2),
+            angle1=FloatInterval.point(pattern.angle),
+            angle2=FloatInterval.point(pattern.angle_step),
+            aim_angle=FloatInterval.point(0.0),
+            half_width=0.0,
+            half_height=0.0,
+            original_flags=0x02,
+            transform_program_zero=True,
+        )
+        sector = lower_future_direct_fire_sectors(
+            event,
+            horizon_frames=67,
+        )[0].trajectory
+
+        for seed in range(256):
+            velocity = self.oracle.pattern_sample(
+                pattern,
+                bullet_index=0,
+                ring_index=0,
+                rng=Th08Rng(seed),
+            )
+            for age in (30, 31, 67):
+                with self.subTest(seed=seed, age=age):
+                    authority = self.oracle.spawn_lifecycle_sample(
+                        bullet_type=7,
+                        original_flags=0x02,
+                        age=age,
+                        origin_x=origin_x,
+                        origin_y=origin_y,
+                        velocity_x=velocity.velocity_x,
+                        velocity_y=velocity.velocity_y,
+                    )
+                    radial_sample = sector.radial_sample(age)
+                    self.assertIsNotNone(radial_sample)
+                    assert radial_sample is not None
+                    distance = _distance_to_annular_sector(
+                        authority.x - origin_x,
+                        authority.y - origin_y,
+                        minimum_angle=sector.minimum_angle,
+                        maximum_angle=sector.maximum_angle,
+                        minimum_radius=radial_sample[0],
+                        maximum_radius=radial_sample[1],
+                    )
+                    self.assertLessEqual(distance, sector.base_uncertainty)
 
     def test_inclusive_aabb_tangent_cases_match_c(self) -> None:
         for epsilon in (-1e-4, 0.0, 1e-4):

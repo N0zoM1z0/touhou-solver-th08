@@ -62,7 +62,7 @@ from touhou_control.corridor import AabbHazard, AabbTrajectoryHazard
 
 
 ORDINARY_FUTURE_SOURCE_SEMANTICS_VERSION = (
-    "th08-ordinary-future-sources-v20-source-asset-template-contract"
+    "th08-ordinary-future-sources-v21-source-anm-lifecycle"
 )
 _PROJECTION_SCHEMA = "th08-native-snapshot-collision-control-projection-v14"
 _DIRECT_FIRE_OPCODES = frozenset(range(0x60, 0x69))
@@ -1521,6 +1521,7 @@ def _direct_fire_events(
                 f"frame={frame}"
             ),
             activation_frames=(frame,),
+            bullet_type=bullet_type,
             origin_x=origin_x,
             origin_y=origin_y,
             mode=mode,

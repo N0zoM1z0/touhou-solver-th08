@@ -76,6 +76,17 @@ class BulletTemplateProfile:
         }
 
 
+@dataclass(frozen=True)
+class BulletSpawnLifecycle:
+    """Native pre-activation state selected by descriptor flag priority."""
+
+    state: int
+    flag: int
+    script: int
+    motion_divisor: float
+    terminal_age: int
+
+
 # BulletManager.cpp:g_BulletSpriteScripts[21] at the pinned source commit.
 _SOURCE_SCRIPT_ROWS = (
     (0, 18, 19, 20, 15),
@@ -182,6 +193,11 @@ BULLET_TEMPLATE_PROFILES = tuple(
 _PROFILE_BY_TYPE = {
     profile.bullet_type: profile for profile in BULLET_TEMPLATE_PROFILES
 }
+_SPAWN_LIFECYCLE_CLASSES = (
+    (0x02, 2, "state2_script", "state2_terminal_age", 2.0),
+    (0x04, 3, "state3_script", "state3_terminal_age", 2.5),
+    (0x08, 4, "state4_script", "state4_terminal_age", 3.0),
+)
 
 
 def bullet_template_profile(bullet_type: int) -> BulletTemplateProfile:
@@ -193,6 +209,31 @@ def bullet_template_profile(bullet_type: int) -> BulletTemplateProfile:
         raise BulletTemplateContractError(
             f"bullet type {bullet_type!r} is outside the initialized template table"
         ) from error
+
+
+def bullet_spawn_lifecycle(
+    bullet_type: int,
+    original_flags: int,
+) -> BulletSpawnLifecycle | None:
+    """Select state 2/3/4 with the exact native flag priority."""
+
+    profile = bullet_template_profile(bullet_type)
+    for (
+        flag,
+        state,
+        script_field,
+        terminal_field,
+        divisor,
+    ) in _SPAWN_LIFECYCLE_CLASSES:
+        if int(original_flags) & flag:
+            return BulletSpawnLifecycle(
+                state=state,
+                flag=flag,
+                script=int(getattr(profile, script_field)),
+                motion_divisor=divisor,
+                terminal_age=int(getattr(profile, terminal_field)),
+            )
+    return None
 
 
 def _checked_slice(data: bytes, offset: int, size: int, *, label: str) -> None:
@@ -478,9 +519,11 @@ __all__ = [
     "BULLET_TEMPLATE_STRIDE",
     "BulletTemplateContractError",
     "BulletTemplateProfile",
+    "BulletSpawnLifecycle",
     "ETAMA_DECODED_SHA256",
     "ETAMA_DECODED_SIZE",
     "SOURCE_AUTHORITY_COMMIT",
+    "bullet_spawn_lifecycle",
     "bullet_template_profile",
     "derive_decoded_etama_profiles",
     "fallback_geometry_from_observed_prefix",

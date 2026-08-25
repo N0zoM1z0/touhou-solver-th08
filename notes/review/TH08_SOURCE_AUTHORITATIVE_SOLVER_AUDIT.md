@@ -548,6 +548,19 @@ Spell 170 is the largest current spell cluster at seven hits and is an
 important later pressure gate, but the first semantic promotion should be the
 simplest reached producer family, not the largest card-specific patch.
 
+The bounded direct-fire lifecycle checkpoint is now closed offline without a
+stage/spell dispatch. The producer IR carries one of the 21 source-initialized
+bullet types; a shared type/flag table selects state-2/3/4 ANM terminal time,
+motion divisor, and native flag priority. Both AABB and sector futures match an
+independent C transcription at pre-terminal, terminal, and post-terminal
+updates. Replaying source-order binary32 operations was required: the former
+fixed `2e-5` guard failed on 392/420 lethal oracle samples. AABB uses outward
+source-order intervals, while sector error is propagated analytically so
+continuous speed/angle parameters remain correlated; 256 random C roots also
+stay contained. This does not close current-pool callback state or complete
+Stage-5 producer coverage. The next generic family is child/timeline birth
+execution, followed by callback 14.
+
 ### F. Promote global viability authority
 
 Only after scale, root, future-birth, geometry, and delay-prefix certificates

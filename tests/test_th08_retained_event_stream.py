@@ -36,6 +36,7 @@ def _event(**updates: object) -> FutureDirectFire:
     fields: dict[str, object] = {
         "source": "fixture:main",
         "activation_frames": (1, 3),
+        "bullet_type": 2,
         "origin_x": FloatInterval.point(120.0),
         "origin_y": FloatInterval.point(80.0),
         "mode": 0,

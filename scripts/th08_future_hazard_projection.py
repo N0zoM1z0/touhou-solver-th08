@@ -30,7 +30,7 @@ from touhou_control.pipeline_identity import VersionIdentity
 
 
 ORDINARY_FUTURE_HAZARD_PROJECTION_SCHEMA = (
-    "th08-ordinary-future-hazard-projection-v5-source-auto-aim"
+    "th08-ordinary-future-hazard-projection-v6-source-lifecycle-identity"
 )
 
 _TWO_PI = 2.0 * math.pi
@@ -80,6 +80,7 @@ def _causal_event_record(event: FutureDirectFire) -> dict[str, object]:
     return {
         "source": event.source,
         "activation_frames": event.activation_frames,
+        "bullet_type": event.bullet_type,
         "origin_x": _interval_record(event.origin_x),
         "origin_y": _interval_record(event.origin_y),
         "mode": event.mode,
@@ -319,7 +320,7 @@ def _build_projection(
         ).encode("utf-8")
     ).hexdigest()
     version = VersionIdentity.from_mapping(
-        "th08-ordinary-future-hazard-projection-v5",
+        "th08-ordinary-future-hazard-projection-v6",
         {
             "root_frame": root_frame,
             "horizon_frames": horizon_frames,
@@ -532,6 +533,7 @@ def condition_future_hazard_projection_on_player_paths(
                 FutureDirectFire(
                     source=f"{event.source}:causal@{activation}",
                     activation_frames=(relative_activation,),
+                    bullet_type=event.bullet_type,
                     origin_x=event.origin_x,
                     origin_y=event.origin_y,
                     mode=event.mode,
