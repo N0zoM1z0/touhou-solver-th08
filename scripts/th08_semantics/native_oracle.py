@@ -238,6 +238,14 @@ class NativeSourceOracle:
             ctypes.c_float,
         ]
         library.th08_oracle_callback12.restype = ctypes.c_int32
+        library.th08_oracle_callback14.argtypes = [
+            ctypes.POINTER(_Callback12State),
+            ctypes.c_uint32,
+            ctypes.c_uint32,
+            ctypes.c_float,
+            ctypes.c_float,
+        ]
+        library.th08_oracle_callback14.restype = ctypes.c_int32
         library.th08_oracle_aabb_overlap.argtypes = [ctypes.c_float] * 8
         library.th08_oracle_aabb_overlap.restype = ctypes.c_int32
         library.th08_oracle_rng_next_f32.argtypes = [ctypes.POINTER(_Rng)]
@@ -443,6 +451,49 @@ class NativeSourceOracle:
                 bullet_tags,
                 selected_tags,
                 callback_angle,
+                callback_speed,
+                time_scale,
+            )
+        )
+        return (
+            Callback12State(
+                int(native.phase_state),
+                int(native.collision_aux),
+                int(native.presentation_flags),
+                int(native.animation_index),
+                float(native.base_speed),
+                float(native.base_angle),
+                float(native.velocity_x),
+                float(native.velocity_y),
+            ),
+            changed,
+        )
+
+    def callback14(
+        self,
+        state: Callback12State,
+        *,
+        bullet_tags: int,
+        selected_tags: int,
+        callback_speed: float,
+        time_scale: float,
+    ) -> tuple[Callback12State, bool]:
+        native = _Callback12State(
+            state.phase_state,
+            state.collision_aux,
+            0,
+            state.presentation_flags,
+            state.animation_index,
+            state.base_speed,
+            state.base_angle,
+            state.velocity_x,
+            state.velocity_y,
+        )
+        changed = bool(
+            self.library.th08_oracle_callback14(
+                native,
+                bullet_tags,
+                selected_tags,
                 callback_speed,
                 time_scale,
             )

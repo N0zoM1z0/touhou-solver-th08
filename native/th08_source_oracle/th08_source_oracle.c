@@ -368,6 +368,40 @@ int32_t th08_oracle_callback12(
     return 1;
 }
 
+int32_t th08_oracle_callback14(
+    Th08OracleCallback12State *state,
+    uint32_t bullet_tags,
+    uint32_t selected_tags,
+    float callback_speed,
+    float time_scale) {
+    float speed;
+    if (state == NULL || (bullet_tags & selected_tags) == 0U) {
+        return 0;
+    }
+    if (state->phase_state == 1) {
+        state->phase_state = 0;
+        state->presentation_flags =
+            (state->presentation_flags & UINT32_C(0xffffffcf)) |
+            UINT32_C(0x10);
+        state->animation_index += 16;
+        state->collision_aux = 1;
+        speed = callback_speed * time_scale;
+        state->velocity_x = cosf(state->base_angle) * speed;
+        state->velocity_y = sinf(state->base_angle) * speed;
+    } else if (state->phase_state == 0) {
+        state->phase_state = 2;
+    } else {
+        state->phase_state = 1;
+        state->presentation_flags &= UINT32_C(0xffffffcf);
+        state->animation_index -= 16;
+        state->collision_aux = 0;
+        speed = state->base_speed * time_scale;
+        state->velocity_x = cosf(state->base_angle) * speed;
+        state->velocity_y = sinf(state->base_angle) * speed;
+    }
+    return 1;
+}
+
 int32_t th08_oracle_aabb_overlap(
     float player_x,
     float player_y,

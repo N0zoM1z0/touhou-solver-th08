@@ -49,6 +49,7 @@ from th08_semantics.source_primitives import (
     SourcePattern,
     aabb_overlap,
     apply_callback12,
+    apply_callback14,
     f32,
     pattern_sample,
 )
@@ -275,6 +276,58 @@ class Th08SourceOracleTests(unittest.TestCase):
                 _ulp_distance(candidate.velocity_y, authority.velocity_y),
                 1,
             )
+
+    def test_callback14_three_way_phase_transition_matches_c(self) -> None:
+        for phase in (-7, 0, 1, 2, 19):
+            for selected_tags in (0x100000, 0x40000000):
+                with self.subTest(phase=phase, selected_tags=selected_tags):
+                    state = Callback12State(
+                        phase_state=phase,
+                        collision_aux=9,
+                        presentation_flags=0xFFFF,
+                        animation_index=31,
+                        base_speed=2.25,
+                        base_angle=-0.75,
+                        velocity_x=3.0,
+                        velocity_y=-4.0,
+                    )
+                    candidate, candidate_changed = apply_callback14(
+                        state,
+                        bullet_tags=0x102000,
+                        selected_tags=selected_tags,
+                        callback_speed=4.5,
+                        time_scale=0.75,
+                    )
+                    authority, authority_changed = self.oracle.callback14(
+                        state,
+                        bullet_tags=0x102000,
+                        selected_tags=selected_tags,
+                        callback_speed=4.5,
+                        time_scale=0.75,
+                    )
+                    self.assertEqual(candidate_changed, authority_changed)
+                    self.assertEqual(
+                        candidate.__dict__
+                        | {
+                            "velocity_x": authority.velocity_x,
+                            "velocity_y": authority.velocity_y,
+                        },
+                        authority.__dict__,
+                    )
+                    self.assertLessEqual(
+                        _ulp_distance(
+                            candidate.velocity_x,
+                            authority.velocity_x,
+                        ),
+                        1,
+                    )
+                    self.assertLessEqual(
+                        _ulp_distance(
+                            candidate.velocity_y,
+                            authority.velocity_y,
+                        ),
+                        1,
+                    )
 
     def test_all_spawn_lifecycle_type_flag_classes_match_c(self) -> None:
         generator = random.Random(0x433070)

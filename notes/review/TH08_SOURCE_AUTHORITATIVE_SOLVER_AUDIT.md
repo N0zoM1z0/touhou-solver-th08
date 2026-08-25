@@ -565,6 +565,13 @@ Stage-5 producer coverage. Child/timeline execution and a conservative
 ordered callback-12/14 birth envelope are recorded below; exact live-pool
 callback composition remains open.
 
+Callback 14 now also has a source-order scalar primitive checked against an
+independently compiled C transcription. The implementation retains its
+three-way phase transition, including the phase-0 branch that changes neither
+velocity nor collision auxiliary state. This removes the need to approximate
+callback 14 through the older callback-12-specific lookahead, but does not by
+itself establish live-pool scheduling or planner authority.
+
 The same lifecycle is now part of the versioned complete-stage IR/runtime,
 not only a bounded envelope helper. A 3,600-frame stateful gate exercised all
 21 types, all three spawn-state flags, finite-pool saturation, delayed sensing,

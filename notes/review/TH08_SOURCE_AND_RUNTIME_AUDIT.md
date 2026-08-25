@@ -1901,6 +1901,16 @@ birth. Callback 13 is erased only after source proof that it changes the
 background tint. Unknown callback indices still fail closed, and no
 stage/spell selector participates.
 
+The exact callback-14 scalar transition is now a shared source primitive
+rather than an inferred variant of callback 12. It preserves the native
+three-way phase branch: phase 1 selects callback speed and disables collision,
+phase 0 advances to phase 2 without changing velocity or the auxiliary byte,
+and every other phase restores base velocity and collision. A separately
+compiled C transcription agrees with the Python candidate for matching and
+nonmatching tag masks across ordinary and out-of-domain phase values. This
+closes the scalar transition only; scheduled composition with the sensed live
+pool remains gated below.
+
 The first geometry consumer deliberately uses a conservative composition
 rather than an invented exact phase history. Any matched callback widens the
 birth to a full-direction disc whose speed bound is the maximum absolute base
@@ -1926,7 +1936,7 @@ tagged birth at future frame 87 and advances from the former 86-frame boundary
 to a 136-frame causal prefix. It next stops at genuinely unsupported auxiliary
 opcode `0x0B`. The resolved-stage bridge still rejects the birth because its
 angle is an interval, not because of its tag; no midpoint is substituted. The
-complete Linux suite passes 1,491 tests with five conditional skips. No Wine
+complete Linux suite passes 1,493 tests with five conditional skips. No Wine
 run, global action authority, or hit-count improvement is claimed.
 
 ## Offline Verification Record

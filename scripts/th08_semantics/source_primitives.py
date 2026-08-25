@@ -272,6 +272,63 @@ def apply_callback12(
     )
 
 
+def apply_callback14(
+    state: Callback12State,
+    *,
+    bullet_tags: int,
+    selected_tags: int,
+    callback_speed: float,
+    time_scale: float,
+) -> tuple[Callback12State, bool]:
+    """Apply source callback 14 to the shared bullet phase/aux state."""
+
+    if not bullet_tags & selected_tags:
+        return state, False
+    phase_state = state.phase_state
+    collision_aux = state.collision_aux
+    presentation_flags = state.presentation_flags
+    animation_index = state.animation_index
+    velocity_x = f32(state.velocity_x)
+    velocity_y = f32(state.velocity_y)
+    if phase_state == 1:
+        phase_state = 0
+        collision_aux = 1
+        presentation_flags = (
+            presentation_flags & 0xFFFFFFCF
+        ) | 0x10
+        animation_index += 16
+        angle = f32(state.base_angle)
+        speed = _mul(callback_speed, time_scale)
+        velocity_x = _mul(_cosf(angle), speed)
+        velocity_y = _mul(_sinf(angle), speed)
+    elif phase_state == 0:
+        # FUN_00424c40 starts the phase-2 presentation transition without
+        # changing collision aux or velocity.
+        phase_state = 2
+    else:
+        phase_state = 1
+        collision_aux = 0
+        presentation_flags &= 0xFFFFFFCF
+        animation_index -= 16
+        angle = f32(state.base_angle)
+        speed = _mul(state.base_speed, time_scale)
+        velocity_x = _mul(_cosf(angle), speed)
+        velocity_y = _mul(_sinf(angle), speed)
+    return (
+        Callback12State(
+            phase_state=phase_state,
+            collision_aux=collision_aux,
+            presentation_flags=presentation_flags,
+            animation_index=animation_index,
+            base_speed=f32(state.base_speed),
+            base_angle=f32(state.base_angle),
+            velocity_x=velocity_x,
+            velocity_y=velocity_y,
+        ),
+        True,
+    )
+
+
 def aabb_overlap(
     *,
     player_x: float,
@@ -303,6 +360,7 @@ __all__ = [
     "SourcePatternSample",
     "aabb_overlap",
     "apply_callback12",
+    "apply_callback14",
     "f32",
     "normalize_angle",
     "pattern_sample",

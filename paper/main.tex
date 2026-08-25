@@ -405,6 +405,11 @@ base or callback speed and keeps exact spawn-ANM activation.  Standalone
 callbacks are retained separately because they can mutate bullets already in
 the root snapshot; their presence explicitly blocks current-pool composition
 authority.  Thus this remains semantic progress rather than a route-hit claim.
+The callback-14 scalar transition is independently transcribed in C and
+differentially checked across all three source branches.  In particular, its
+phase-zero branch changes phase only, a detail that cannot be recovered by
+treating callback 14 as a parameter-reduced callback 12.  Scheduling this
+kernel against the sensed pool remains a separate, explicitly gated join.
 
 The complete-stage laboratory then exposed several errors that short
 geometric fixtures had not revealed.  Callback-12 motion was modeled while

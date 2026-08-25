@@ -166,6 +166,13 @@ TH08_ORACLE_API int32_t th08_oracle_callback12(
     float callback_speed,
     float time_scale);
 
+TH08_ORACLE_API int32_t th08_oracle_callback14(
+    Th08OracleCallback12State *state,
+    uint32_t bullet_tags,
+    uint32_t selected_tags,
+    float callback_speed,
+    float time_scale);
+
 TH08_ORACLE_API int32_t th08_oracle_aabb_overlap(
     float player_x,
     float player_y,
