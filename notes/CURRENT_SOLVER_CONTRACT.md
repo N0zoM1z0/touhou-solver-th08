@@ -80,18 +80,22 @@ among 1,937 identity-preserving samples, with a 97.060802px center error
 against a 31px bound. Any contact-relevant current bullet with nonzero active
 transform flags therefore makes the global artifact shadow-only and yields
 `current_bullet_transform_geometry_incomplete`. This gate is not an exact
-stepper. Queued programs whose active flags are still zero remain an explicit
-coverage gap until the complete 18-record program is captured and executed in
-source order.
+stepper. Coherent diagnostic roots now retain the complete 18-record program,
+including queued records whose active flags are still zero, but no global
+consumer executes that program yet. Source-order execution and its independent
+C differential remain the explicit coverage gap.
 
 Explicit retained future-source captures use v2 to join producer state and
 canonical active bullet/laser planner slots inside one manager-frame/update-
 serial bracket. Capture-before/after, compact-state, future-projection,
 root-identity, and current-hazard clocks must be exactly equal; update serials
 must also agree. Existing Stage-5 v1 capsules remain readable but contain no
-current pool and cannot support same-root policy authority. The v2 root
-round-trips current runtime/next-transform state for deterministic planner
-replay, not the full native queued transform program or arbitrary game state.
+current pool and cannot support same-root policy authority. New retained roots
+embed current-hazard schema v2: exact 432-byte transform programs, queue and
+culling state, and every meaningful active handler block round-trip for
+deterministic planner replay. Historical current-hazard v1 state remains
+readable without inventing those fields. This is still not arbitrary game
+state or exact transform execution.
 
 The certificate belongs to the worker's historical bullet snapshot. A later
 local prefix or delayed issue computation over newly sensed bullets may not

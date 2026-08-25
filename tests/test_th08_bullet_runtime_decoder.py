@@ -14,14 +14,36 @@ from numeric_model import binary32_store
 from th08_bullet_template_contract import BULLET_TEMPLATE_PROFILES
 from th08_bullet_transform_model import (
     BulletTransformRuntime,
+    TRANSFORM_PROGRAM_SIZE,
     TransformKind,
     TransformRecord,
+    parse_transform_program,
     parse_next_transform_record,
     parse_transform_record,
 )
 from th08_corridor_adapter import lower_bullets
 from th08_ecl_runtime import EclVmSnapshot, TaggedVelocityToggle
-from th08_live.bullet_decode import BULLET_STATE_TIMER_ELAPSED_OFFSET
+from th08_live.bullet_decode import (
+    BULLET_ANGULAR_DURATION_OFFSET,
+    BULLET_ANGULAR_SPEED_ACCELERATION_OFFSET,
+    BULLET_ANGULAR_TIMER_OFFSET,
+    BULLET_ANGULAR_VELOCITY_OFFSET,
+    BULLET_BARRIER_TIMER_OFFSET,
+    BULLET_CULL_SUPPRESSION_COUNTDOWN_OFFSET,
+    BULLET_DECELERATE_TIMER_OFFSET,
+    BULLET_OFFSCREEN_COUNTER_OFFSET,
+    BULLET_REFLECTION_EVENT_COUNT_OFFSET,
+    BULLET_REFLECTION_EVENT_LIMIT_OFFSET,
+    BULLET_REFLECTION_RESTORED_SPEED_OFFSET,
+    BULLET_STATE_TIMER_ELAPSED_OFFSET,
+    BULLET_STOP_TIMER_OFFSET,
+    BULLET_VECTOR_ACCELERATION_OFFSET,
+    BULLET_VECTOR_ANGLE_OFFSET,
+    BULLET_VECTOR_DURATION_OFFSET,
+    BULLET_VECTOR_MAGNITUDE_OFFSET,
+    BULLET_VECTOR_TIMER_OFFSET,
+    BULLET_WRAP_TIMER_OFFSET,
+)
 from th08_live_dodge_agent import (
     BULLET_ANGLE_OFFSET,
     BULLET_CALLBACK_AUX_STATE_OFFSET,
@@ -470,11 +492,22 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
             (runtime.next_record.index, runtime.next_record.kind),
             (3, TransformKind.REFLECT_ALL_EDGES),
         )
+        program_runtime = bullet.transform_program_runtime
+        self.assertIsNotNone(program_runtime)
+        assert program_runtime is not None
+        self.assertEqual(len(program_runtime.program), TRANSFORM_PROGRAM_SIZE)
+        self.assertEqual(
+            parse_transform_program(program_runtime.program)[3],
+            runtime.next_record,
+        )
+        self.assertEqual(program_runtime.queue_cursor, 3)
+        self.assertIsNone(program_runtime.stop)
         compact = decode_bullets(
             bytes(blob),
             retain_transform_runtime=False,
         )[0]
         self.assertIsNone(compact.transform_runtime)
+        self.assertIsNone(compact.transform_program_runtime)
         self.assertEqual(
             compact.original_transform_flags,
             runtime.original_flags,
@@ -509,6 +542,119 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
             "callback_aux_state",
         ):
             self.assertEqual(getattr(compact, field), getattr(bullet, field))
+
+    def test_diagnostic_decoder_retains_every_active_handler_block(self) -> None:
+        blob = bytearray(BULLET_POOL_SIZE * BULLET_STRIDE)
+        slot = 23
+        base = slot * BULLET_STRIDE
+        struct.pack_into("<H", blob, base + BULLET_STATE_OFFSET, 1)
+        struct.pack_into("<ff", blob, base + BULLET_GEOMETRY_OFFSET, 4.0, 6.0)
+        struct.pack_into("<ff", blob, base + BULLET_POSITION_OFFSET, 8.0, 9.0)
+        struct.pack_into("<ff", blob, base + BULLET_VELOCITY_OFFSET, 1.0, 2.0)
+        struct.pack_into("<f", blob, base + BULLET_SPEED_OFFSET, 3.0)
+        struct.pack_into("<f", blob, base + BULLET_ANGLE_OFFSET, 0.5)
+        active_flags = int(
+            TransformKind.DECELERATE_16F
+            | TransformKind.VECTOR_ACCELERATION
+            | TransformKind.ANGULAR_VELOCITY
+            | TransformKind.STOP_TURN_REPEAT
+            | TransformKind.REFLECT_ALL_EDGES
+            | TransformKind.TIMED_QUEUE_BARRIER
+            | TransformKind.WRAP_HORIZONTAL
+        )
+        struct.pack_into(
+            "<I", blob, base + BULLET_TRANSFORM_FLAGS_OFFSET, active_flags
+        )
+        struct.pack_into(
+            "<I",
+            blob,
+            base + BULLET_ORIGINAL_TRANSFORM_FLAGS_OFFSET,
+            active_flags,
+        )
+        struct.pack_into(
+            "<i", blob, base + BULLET_TRANSFORM_QUEUE_CURSOR_OFFSET, 18
+        )
+        struct.pack_into(
+            "<i", blob, base + BULLET_CULL_SUPPRESSION_COUNTDOWN_OFFSET, 41
+        )
+        struct.pack_into("<H", blob, base + BULLET_OFFSCREEN_COUNTER_OFFSET, 19)
+
+        def timer(offset: int, previous: int, subframe: float, current: int) -> None:
+            struct.pack_into(
+                "<ifi", blob, base + offset, previous, subframe, current
+            )
+
+        timer(BULLET_DECELERATE_TIMER_OFFSET, 1, 0.125, 2)
+        timer(BULLET_VECTOR_TIMER_OFFSET, 3, 0.25, 4)
+        struct.pack_into(
+            "<ff",
+            blob,
+            base + BULLET_VECTOR_MAGNITUDE_OFFSET,
+            0.75,
+            -0.5,
+        )
+        struct.pack_into(
+            "<ff",
+            blob,
+            base + BULLET_VECTOR_ACCELERATION_OFFSET,
+            0.125,
+            -0.25,
+        )
+        struct.pack_into("<i", blob, base + BULLET_VECTOR_DURATION_OFFSET, 30)
+        timer(BULLET_ANGULAR_TIMER_OFFSET, 5, 0.375, 6)
+        struct.pack_into(
+            "<ff",
+            blob,
+            base + BULLET_ANGULAR_SPEED_ACCELERATION_OFFSET,
+            0.0625,
+            -0.03125,
+        )
+        struct.pack_into("<i", blob, base + BULLET_ANGULAR_DURATION_OFFSET, 45)
+        timer(BULLET_STOP_TIMER_OFFSET, 7, 0.5, 8)
+        struct.pack_into("<f", blob, base + BULLET_STOP_RESUME_SPEED_OFFSET, 2.5)
+        struct.pack_into("<f", blob, base + BULLET_STOP_ANGLE_OPERAND_OFFSET, 1.25)
+        struct.pack_into("<i", blob, base + BULLET_STOP_DURATION_OFFSET, 12)
+        struct.pack_into("<i", blob, base + BULLET_STOP_REPEAT_LIMIT_OFFSET, 6)
+        struct.pack_into("<i", blob, base + BULLET_STOP_REPEAT_COUNT_OFFSET, 3)
+        struct.pack_into(
+            "<f", blob, base + BULLET_REFLECTION_RESTORED_SPEED_OFFSET, 4.5
+        )
+        struct.pack_into(
+            "<i", blob, base + BULLET_REFLECTION_EVENT_COUNT_OFFSET, 2
+        )
+        struct.pack_into(
+            "<i", blob, base + BULLET_REFLECTION_EVENT_LIMIT_OFFSET, 9
+        )
+        timer(BULLET_BARRIER_TIMER_OFFSET, 9, 0.625, 10)
+        timer(BULLET_WRAP_TIMER_OFFSET, 11, 0.75, 12)
+
+        bullet = decode_bullets(bytes(blob))[0]
+        retained = bullet.transform_program_runtime
+        self.assertIsNotNone(retained)
+        assert retained is not None
+        self.assertEqual(retained.original_flags, active_flags)
+        self.assertEqual(retained.queue_cursor, 18)
+        self.assertEqual(retained.cull_suppression_countdown, 41)
+        self.assertEqual(retained.offscreen_counter, 19)
+        self.assertEqual(
+            (retained.decelerate_timer.previous,
+             retained.decelerate_timer.subframe,
+             retained.decelerate_timer.current),
+            (1, 0.125, 2),
+        )
+        self.assertEqual(retained.vector_acceleration.duration, 30)
+        self.assertEqual(
+            (
+                retained.vector_acceleration.acceleration_x,
+                retained.vector_acceleration.acceleration_y,
+            ),
+            (0.125, -0.25),
+        )
+        self.assertEqual(retained.angular_velocity.duration, 45)
+        self.assertEqual(retained.stop.repeat_count, 3)
+        self.assertEqual(retained.reflection.event_limit, 9)
+        self.assertEqual(retained.barrier_timer.current, 10)
+        self.assertEqual(retained.wrap_timer.current, 12)
 
     def test_dense_planning_decoder_matches_diagnostic_gameplay_fields(
         self,

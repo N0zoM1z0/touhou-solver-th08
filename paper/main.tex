@@ -498,6 +498,15 @@ lasers, lifecycle state, and active transform runtime to the identical global
 viability tensor.  This makes a fresh physical capsule sufficient for offline
 planner replay without retaining multi-megabyte raw slabs.
 
+Review of that compact record found that its nominal transform runtime was in
+fact only the stop/turn union and one pending record.  The revised retained
+root stores the exact 18-record, 432-byte program, queue and offscreen state,
+and the timer/parameter block for every currently active handler.  Inactive
+union bytes are omitted rather than granting authority to uninitialized
+floats.  This richer state is decoded only for retained or due global roots;
+the packed local sensing path remains unchanged.  Thus source fidelity does
+not require interpreting the program inside the 16-ms issue loop.
+
 The same experiment found a more important model falsifier.  The old global
 adapter treated every active transform as constant velocity plus a linearly
 growing uncertainty margin.  In a fixed generic stage, more than half of the
@@ -505,8 +514,10 @@ identity-preserving transform samples leave that margin; the worst H80 center
 error is over three times its claimed bound.  Geometry version~4 therefore
 records transform completeness and forbids action authority for such a pool.
 This fail-closed change is not the solution: the next kernel must capture and
-execute the complete ordered native transform program and pass the independent
-C differential before transformed current bullets regain authority.
+execute the now-retained ordered native transform program and pass the
+independent C differential before transformed current bullets regain
+authority.  A batched native implementation must additionally meet a measured
+pool-size latency gate; the Python reference remains offline if it does not.
 
 A route-work audit also exposed avoidable serial work inside the fresh issue
 layer.  Almost all changed-prefix transactions ultimately preserved the

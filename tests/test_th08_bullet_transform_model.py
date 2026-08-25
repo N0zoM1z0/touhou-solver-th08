@@ -2,14 +2,20 @@
 """Regression tests for TH08 bullet-transform field semantics."""
 
 import math
+import struct
 import unittest
 from pathlib import Path
 
 from th08_bullet_transform_model import (
     ReflectionState,
+    TRANSFORM_PROGRAM_SIZE,
     TransformKind,
+    TransformRecord,
     apply_reflection_event,
+    copy_transform_program,
     decode_derived_pattern,
+    pack_transform_program,
+    parse_transform_program,
     step_countdown_transform,
     transform_field_meanings,
     transform_record_from_decoded,
@@ -22,6 +28,32 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class BulletTransformModelTests(unittest.TestCase):
+    def test_complete_program_pack_parse_and_copy_preserve_native_abi(self) -> None:
+        record = TransformRecord(
+            index=0,
+            kind=int(TransformKind.VECTOR_ACCELERATION),
+            allow_while_active=True,
+            int_0=-7,
+            int_1=11,
+            float_0=-0.0,
+            float_1=1.25,
+        )
+
+        program = pack_transform_program((record,))
+
+        self.assertEqual(len(program), TRANSFORM_PROGRAM_SIZE)
+        self.assertEqual(
+            program[:24],
+            struct.pack("<ffiiII", -0.0, 1.25, -7, 11, 0x10, 1),
+        )
+        self.assertEqual(program[24:], bytes(TRANSFORM_PROGRAM_SIZE - 24))
+        self.assertEqual(parse_transform_program(program)[0], record)
+        self.assertEqual(copy_transform_program(b"prefix" + program, program_offset=6), program)
+        with self.assertRaisesRegex(ValueError, "truncated"):
+            copy_transform_program(program[:-1])
+        with self.assertRaisesRegex(ValueError, "canonical indexed prefix"):
+            pack_transform_program((TransformRecord(1, 0, False, 0, 0, 0.0, 0.0),))
+
     def test_extra_derived_pattern_pair_decodes_exactly(self) -> None:
         ecl = parse_ecl(ROOT / "artifacts" / "decoded" / "ecldata8.ecl")
         instructions = ecl.subroutines[127].instructions

@@ -13,7 +13,15 @@ from th08_bullet_template_contract import (
     bullet_type_from_normal_script,
 )
 from th08_bullet_transform_model import (
+    AngularVelocityRuntime,
+    BulletTransformProgramRuntime,
     BulletTransformRuntime,
+    ReflectionTransformRuntime,
+    StopTransformRuntime,
+    TransformKind,
+    TransformTimerRuntime,
+    VectorAccelerationRuntime,
+    copy_transform_program,
     parse_next_transform_record,
 )
 from th08_ecl_runtime import (
@@ -34,12 +42,25 @@ BULLET_POSITION_OFFSET = 0x0D44
 BULLET_VELOCITY_OFFSET = 0x0D50
 BULLET_SPEED_OFFSET = 0x0D68
 BULLET_ANGLE_OFFSET = 0x0D74
+BULLET_CULL_SUPPRESSION_COUNTDOWN_OFFSET = 0x0DA8
 BULLET_TRANSFORM_FLAGS_OFFSET = 0x0DAC
 BULLET_ORIGINAL_TRANSFORM_FLAGS_OFFSET = 0x0DB0
 BULLET_STATE_OFFSET = 0x0DB8
+BULLET_OFFSCREEN_COUNTER_OFFSET = 0x0DBA
 BULLET_STATE_TIMER_ELAPSED_OFFSET = 0x0D88
 BULLET_TRANSFORM_QUEUE_CURSOR_OFFSET = 0x0DCC
 BULLET_TRANSFORM_PROGRAM_OFFSET = 0x0DD0
+BULLET_DECELERATE_TIMER_OFFSET = 0x0F80
+BULLET_VECTOR_TIMER_OFFSET = 0x0FAC
+BULLET_VECTOR_MAGNITUDE_OFFSET = 0x0FB8
+BULLET_VECTOR_ANGLE_OFFSET = 0x0FBC
+BULLET_VECTOR_ACCELERATION_OFFSET = 0x0FC0
+BULLET_VECTOR_DURATION_OFFSET = 0x0FCC
+BULLET_ANGULAR_TIMER_OFFSET = 0x0FD8
+BULLET_ANGULAR_SPEED_ACCELERATION_OFFSET = 0x0FE4
+BULLET_ANGULAR_VELOCITY_OFFSET = 0x0FE8
+BULLET_ANGULAR_DURATION_OFFSET = 0x0FF8
+BULLET_STOP_TIMER_OFFSET = 0x1004
 BULLET_STOP_TIMER_FRACTION_OFFSET = 0x1008
 BULLET_STOP_TIMER_ELAPSED_OFFSET = 0x100C
 BULLET_STOP_RESUME_SPEED_OFFSET = 0x1010
@@ -47,6 +68,11 @@ BULLET_STOP_ANGLE_OPERAND_OFFSET = 0x1014
 BULLET_STOP_DURATION_OFFSET = 0x1024
 BULLET_STOP_REPEAT_LIMIT_OFFSET = 0x1028
 BULLET_STOP_REPEAT_COUNT_OFFSET = 0x102C
+BULLET_REFLECTION_RESTORED_SPEED_OFFSET = 0x103C
+BULLET_REFLECTION_EVENT_COUNT_OFFSET = 0x1050
+BULLET_REFLECTION_EVENT_LIMIT_OFFSET = 0x1054
+BULLET_BARRIER_TIMER_OFFSET = 0x105C
+BULLET_WRAP_TIMER_OFFSET = 0x1088
 BULLET_CALLBACK_AUX_STATE_OFFSET = 0x10B4
 
 PLANNING_BULLET_VECTOR_THRESHOLD = 512
@@ -55,6 +81,19 @@ NATIVE_PACKED_BULLET_MIN_COUNT = 16
 
 def finite(values: tuple[float, ...]) -> bool:
     return all(math.isfinite(value) for value in values)
+
+
+def _transform_timer_runtime(
+    blob: bytes,
+    *,
+    offset: int,
+) -> TransformTimerRuntime:
+    previous, subframe, current = struct.unpack_from("<ifi", blob, offset)
+    return TransformTimerRuntime(
+        previous=previous,
+        subframe=subframe,
+        current=current,
+    )
 
 
 def native_bullet_half_extents(
@@ -481,6 +520,7 @@ def decode_bullets(
             height,
         )
         transform_runtime = None
+        transform_program_runtime = None
         queue_cursor = struct.unpack_from(
             "<i",
             blob,
@@ -496,6 +536,10 @@ def decode_bullets(
             or original_transform_flags
             or (next_record is not None and next_record.kind)
         ):
+            program = copy_transform_program(
+                blob,
+                program_offset=base + BULLET_TRANSFORM_PROGRAM_OFFSET,
+            )
             transform_runtime = BulletTransformRuntime(
                 original_flags=original_transform_flags,
                 queue_cursor=queue_cursor,
@@ -536,6 +580,135 @@ def decode_bullets(
                     base + BULLET_STOP_REPEAT_COUNT_OFFSET,
                 )[0],
             )
+            vector_acceleration = None
+            if transform_flags & int(TransformKind.VECTOR_ACCELERATION):
+                acceleration_x, acceleration_y = struct.unpack_from(
+                    "<ff",
+                    blob,
+                    base + BULLET_VECTOR_ACCELERATION_OFFSET,
+                )
+                vector_acceleration = VectorAccelerationRuntime(
+                    timer=_transform_timer_runtime(
+                        blob,
+                        offset=base + BULLET_VECTOR_TIMER_OFFSET,
+                    ),
+                    magnitude=struct.unpack_from(
+                        "<f", blob, base + BULLET_VECTOR_MAGNITUDE_OFFSET
+                    )[0],
+                    angle=struct.unpack_from(
+                        "<f", blob, base + BULLET_VECTOR_ANGLE_OFFSET
+                    )[0],
+                    acceleration_x=acceleration_x,
+                    acceleration_y=acceleration_y,
+                    duration=struct.unpack_from(
+                        "<i", blob, base + BULLET_VECTOR_DURATION_OFFSET
+                    )[0],
+                )
+            angular_velocity = None
+            if transform_flags & int(TransformKind.ANGULAR_VELOCITY):
+                angular_velocity = AngularVelocityRuntime(
+                    timer=_transform_timer_runtime(
+                        blob,
+                        offset=base + BULLET_ANGULAR_TIMER_OFFSET,
+                    ),
+                    speed_acceleration=struct.unpack_from(
+                        "<f",
+                        blob,
+                        base + BULLET_ANGULAR_SPEED_ACCELERATION_OFFSET,
+                    )[0],
+                    angular_velocity=struct.unpack_from(
+                        "<f", blob, base + BULLET_ANGULAR_VELOCITY_OFFSET
+                    )[0],
+                    duration=struct.unpack_from(
+                        "<i", blob, base + BULLET_ANGULAR_DURATION_OFFSET
+                    )[0],
+                )
+            stop = None
+            if transform_flags & int(
+                TransformKind.STOP_TURN_REPEAT
+                | TransformKind.STOP_REAIM_REPEAT
+                | TransformKind.STOP_SNAP_REPEAT
+            ):
+                stop = StopTransformRuntime(
+                    timer=_transform_timer_runtime(
+                        blob,
+                        offset=base + BULLET_STOP_TIMER_OFFSET,
+                    ),
+                    resume_speed=transform_runtime.resume_speed,
+                    angle_operand=transform_runtime.angle_operand,
+                    duration=transform_runtime.duration,
+                    repeat_limit=transform_runtime.repeat_limit,
+                    repeat_count=transform_runtime.repeat_count,
+                )
+            reflection = None
+            if transform_flags & int(
+                TransformKind.REFLECT_ALL_EDGES
+                | TransformKind.REFLECT_SIDES_AND_TOP
+            ):
+                reflection = ReflectionTransformRuntime(
+                    restored_speed=struct.unpack_from(
+                        "<f",
+                        blob,
+                        base + BULLET_REFLECTION_RESTORED_SPEED_OFFSET,
+                    )[0],
+                    event_count=struct.unpack_from(
+                        "<i",
+                        blob,
+                        base + BULLET_REFLECTION_EVENT_COUNT_OFFSET,
+                    )[0],
+                    event_limit=struct.unpack_from(
+                        "<i",
+                        blob,
+                        base + BULLET_REFLECTION_EVENT_LIMIT_OFFSET,
+                    )[0],
+                )
+            transform_program_runtime = BulletTransformProgramRuntime(
+                program=program,
+                original_flags=original_transform_flags,
+                queue_cursor=queue_cursor,
+                cull_suppression_countdown=struct.unpack_from(
+                    "<i",
+                    blob,
+                    base + BULLET_CULL_SUPPRESSION_COUNTDOWN_OFFSET,
+                )[0],
+                offscreen_counter=struct.unpack_from(
+                    "<H",
+                    blob,
+                    base + BULLET_OFFSCREEN_COUNTER_OFFSET,
+                )[0],
+                decelerate_timer=(
+                    _transform_timer_runtime(
+                        blob,
+                        offset=base + BULLET_DECELERATE_TIMER_OFFSET,
+                    )
+                    if transform_flags & int(TransformKind.DECELERATE_16F)
+                    else None
+                ),
+                vector_acceleration=vector_acceleration,
+                angular_velocity=angular_velocity,
+                stop=stop,
+                reflection=reflection,
+                barrier_timer=(
+                    _transform_timer_runtime(
+                        blob,
+                        offset=base + BULLET_BARRIER_TIMER_OFFSET,
+                    )
+                    if transform_flags & int(TransformKind.TIMED_QUEUE_BARRIER)
+                    else None
+                ),
+                wrap_timer=(
+                    _transform_timer_runtime(
+                        blob,
+                        offset=base + BULLET_WRAP_TIMER_OFFSET,
+                    )
+                    if transform_flags
+                    & int(
+                        TransformKind.WRAP_HORIZONTAL
+                        | TransformKind.WRAP_VERTICAL
+                    )
+                    else None
+                ),
+            )
         bullets.append(
             Bullet(
                 x=x,
@@ -549,6 +722,7 @@ def decode_bullets(
                 speed=speed if math.isfinite(speed) else None,
                 angle=angle if math.isfinite(angle) else None,
                 transform_runtime=transform_runtime,
+                transform_program_runtime=transform_program_runtime,
                 callback_phase_state=callback_phase_state,
                 callback_aux_state=callback_aux_state,
                 original_transform_flags=original_transform_flags,

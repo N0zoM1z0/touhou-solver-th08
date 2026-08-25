@@ -17,6 +17,16 @@ import math
 from typing import Callable
 
 import th08_live_dodge_agent as live
+from th08_bullet_transform_model import (
+    AngularVelocityRuntime,
+    BulletTransformProgramRuntime,
+    ReflectionTransformRuntime,
+    StopTransformRuntime,
+    TransformRecord,
+    TransformTimerRuntime,
+    VectorAccelerationRuntime,
+    pack_transform_program,
+)
 from th08_bullet_template_contract import (
     BulletSpawnLifecycle,
     bullet_spawn_lifecycle,
@@ -92,6 +102,16 @@ def _polar(angle: float, magnitude: float) -> tuple[float, float]:
     return (
         f32(f32(math.cos(f32(angle))) * f32(magnitude)),
         f32(f32(math.sin(f32(angle))) * f32(magnitude)),
+    )
+
+
+def _retained_timer(current: int) -> TransformTimerRuntime:
+    """Reconstruct the unit-scale ZunTimer state used by this offline stage."""
+
+    return TransformTimerRuntime(
+        previous=current - 1 if current > 0 else -999,
+        subframe=0.0,
+        current=current,
     )
 
 
@@ -686,6 +706,7 @@ class _TransformRuntime:
     restored_speed: float = 0.0
     acceleration_x: float = 0.0
     acceleration_y: float = 0.0
+    resolved_angle: float = 0.0
 
 
 @dataclass(slots=True)
@@ -727,6 +748,124 @@ class RuntimeBullet:
             result |= kind
         return result
 
+    @property
+    def original_transform_flags(self) -> int:
+        result = self.tag_flags | self.spawn_flags
+        for transform in self.transforms:
+            result |= transform.kind
+        return result
+
+    def retained_transform_program_runtime(
+        self,
+    ) -> BulletTransformProgramRuntime:
+        records = tuple(
+            TransformRecord(
+                index=index,
+                kind=spec.kind,
+                allow_while_active=spec.allow_while_active,
+                int_0=(
+                    spec.repeat_limit
+                    if spec.kind in (
+                        TRANSFORM_REFLECT_ALL,
+                        TRANSFORM_REFLECT_SIDES_TOP,
+                    )
+                    else spec.duration
+                ),
+                int_1=(
+                    spec.repeat_limit
+                    if spec.kind
+                    in (
+                        TRANSFORM_STOP_TURN,
+                        TRANSFORM_STOP_REAIM,
+                        TRANSFORM_STOP_SNAP,
+                    )
+                    else 0
+                ),
+                float_0=spec.float_0,
+                float_1=spec.float_1,
+            )
+            for index, spec in enumerate(self.transforms)
+        )
+
+        def one_shared_runtime(kinds: tuple[int, ...]) -> _TransformRuntime | None:
+            active = tuple(
+                runtime
+                for kind, runtime in self.active_transforms.items()
+                if kind in kinds
+            )
+            if len(active) > 1:
+                raise ValueError(
+                    "stateful stage retained two independent runtimes for "
+                    "one native shared transform block"
+                )
+            return active[0] if active else None
+
+        vector = self.active_transforms.get(TRANSFORM_VECTOR_ACCELERATION)
+        angular = self.active_transforms.get(TRANSFORM_ANGULAR_VELOCITY)
+        stop = one_shared_runtime(
+            (TRANSFORM_STOP_TURN, TRANSFORM_STOP_REAIM, TRANSFORM_STOP_SNAP)
+        )
+        reflection = one_shared_runtime(
+            (TRANSFORM_REFLECT_ALL, TRANSFORM_REFLECT_SIDES_TOP)
+        )
+        return BulletTransformProgramRuntime(
+            program=pack_transform_program(records),
+            original_flags=self.original_transform_flags,
+            queue_cursor=self.transform_cursor,
+            cull_suppression_countdown=0,
+            offscreen_counter=self.offscreen_counter,
+            decelerate_timer=(
+                _retained_timer(
+                    self.active_transforms[TRANSFORM_DECELERATE].timer
+                )
+                if TRANSFORM_DECELERATE in self.active_transforms
+                else None
+            ),
+            vector_acceleration=(
+                VectorAccelerationRuntime(
+                    timer=_retained_timer(vector.timer),
+                    magnitude=vector.spec.float_0,
+                    angle=vector.resolved_angle,
+                    acceleration_x=vector.acceleration_x,
+                    acceleration_y=vector.acceleration_y,
+                    duration=vector.spec.duration,
+                )
+                if vector is not None
+                else None
+            ),
+            angular_velocity=(
+                AngularVelocityRuntime(
+                    timer=_retained_timer(angular.timer),
+                    speed_acceleration=angular.spec.float_0,
+                    angular_velocity=angular.spec.float_1,
+                    duration=angular.spec.duration,
+                )
+                if angular is not None
+                else None
+            ),
+            stop=(
+                StopTransformRuntime(
+                    timer=_retained_timer(stop.timer),
+                    resume_speed=stop.restored_speed,
+                    angle_operand=stop.spec.float_0,
+                    duration=stop.spec.duration,
+                    repeat_limit=stop.spec.repeat_limit,
+                    repeat_count=stop.repeat_count,
+                )
+                if stop is not None
+                else None
+            ),
+            reflection=(
+                ReflectionTransformRuntime(
+                    restored_speed=reflection.restored_speed,
+                    event_count=reflection.repeat_count,
+                    event_limit=reflection.spec.repeat_limit,
+                )
+                if reflection is not None
+                else None
+            ),
+        )
+
     def as_live_bullet(self) -> live.Bullet:
         return live.Bullet(
             x=self.x,
@@ -739,13 +878,14 @@ class RuntimeBullet:
             slot=self.slot,
             speed=self.base_speed,
             angle=self.base_angle,
+            transform_program_runtime=(
+                self.retained_transform_program_runtime()
+                if self.original_transform_flags
+                else None
+            ),
             callback_phase_state=self.phase_state,
             callback_aux_state=self.collision_aux,
-            original_transform_flags=(
-                self.tag_flags
-                | self.spawn_flags
-                | sum((transform.kind for transform in self.transforms), 0)
-            ),
+            original_transform_flags=self.original_transform_flags,
             native_state=self.native_state,
             native_state_timer_elapsed=self.native_state_age,
             bullet_type=self.bullet_type,
@@ -906,6 +1046,7 @@ class StageRuntime:
                 angle = (
                     bullet.base_angle if spec.float_1 <= -990.0 else spec.float_1
                 )
+                runtime.resolved_angle = f32(angle)
                 runtime.acceleration_x, runtime.acceleration_y = _polar(
                     angle,
                     spec.float_0,

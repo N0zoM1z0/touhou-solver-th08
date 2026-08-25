@@ -13,13 +13,14 @@ import math
 import struct
 from dataclasses import dataclass, replace
 from enum import IntEnum
-from typing import Mapping
+from typing import Mapping, Sequence
 
 
 PLAYFIELD_WIDTH = 384.0
 PLAYFIELD_HEIGHT = 448.0
 TRANSFORM_PROGRAM_LENGTH = 18
 TRANSFORM_RECORD_SIZE = 24
+TRANSFORM_PROGRAM_SIZE = TRANSFORM_PROGRAM_LENGTH * TRANSFORM_RECORD_SIZE
 
 
 class TransformKind(IntEnum):
@@ -55,7 +56,12 @@ class TransformRecord:
 
 @dataclass(frozen=True)
 class BulletTransformRuntime:
-    """Native queue and stop-handler state retained by a live bullet."""
+    """Legacy queue plus stop-handler projection retained by old traces.
+
+    This is intentionally *not* the complete native transform runtime.  The
+    fields after ``next_record`` all come from the shared 0x1004 stop/turn
+    block.  New retained roots use :class:`BulletTransformProgramRuntime`.
+    """
 
     original_flags: int
     queue_cursor: int
@@ -67,6 +73,73 @@ class BulletTransformRuntime:
     duration: int
     repeat_limit: int
     repeat_count: int
+
+
+@dataclass(frozen=True)
+class TransformTimerRuntime:
+    """One native ``ZunTimer`` embedded in a transform-handler block."""
+
+    previous: int
+    subframe: float
+    current: int
+
+
+@dataclass(frozen=True)
+class VectorAccelerationRuntime:
+    timer: TransformTimerRuntime
+    magnitude: float
+    angle: float
+    acceleration_x: float
+    acceleration_y: float
+    duration: int
+
+
+@dataclass(frozen=True)
+class AngularVelocityRuntime:
+    timer: TransformTimerRuntime
+    speed_acceleration: float
+    angular_velocity: float
+    duration: int
+
+
+@dataclass(frozen=True)
+class StopTransformRuntime:
+    timer: TransformTimerRuntime
+    resume_speed: float
+    angle_operand: float
+    duration: int
+    repeat_limit: int
+    repeat_count: int
+
+
+@dataclass(frozen=True)
+class ReflectionTransformRuntime:
+    restored_speed: float
+    event_count: int
+    event_limit: int
+
+
+@dataclass(frozen=True)
+class BulletTransformProgramRuntime:
+    """Complete retained state required to resume the native transform queue.
+
+    ``program`` is the exact 18-record, 432-byte native program.  Handler
+    blocks are present only while their corresponding active flag is set, so
+    inactive/uninitialized union bytes never become false state authority.
+    """
+
+    program: bytes
+    original_flags: int
+    queue_cursor: int
+    cull_suppression_countdown: int
+    offscreen_counter: int
+    decelerate_timer: TransformTimerRuntime | None = None
+    vector_acceleration: VectorAccelerationRuntime | None = None
+    angular_velocity: AngularVelocityRuntime | None = None
+    stop: StopTransformRuntime | None = None
+    reflection: ReflectionTransformRuntime | None = None
+    barrier_timer: TransformTimerRuntime | None = None
+    wrap_timer: TransformTimerRuntime | None = None
 
 
 @dataclass(frozen=True)
@@ -136,6 +209,66 @@ def parse_next_transform_record(
         offset=program_offset + queue_cursor * TRANSFORM_RECORD_SIZE,
         index=queue_cursor,
     )
+
+
+def copy_transform_program(
+    blob: bytes | bytearray | memoryview,
+    *,
+    program_offset: int = 0,
+) -> bytes:
+    """Copy exactly one native 18-record transform program."""
+
+    view = memoryview(blob)
+    end = program_offset + TRANSFORM_PROGRAM_SIZE
+    if program_offset < 0 or end > len(view):
+        raise ValueError("transform program is truncated")
+    return bytes(view[program_offset:end])
+
+
+def parse_transform_program(
+    blob: bytes | bytearray | memoryview,
+    *,
+    program_offset: int = 0,
+) -> tuple[TransformRecord, ...]:
+    """Parse all 18 records, including zero terminators and unused slots."""
+
+    program = copy_transform_program(blob, program_offset=program_offset)
+    return tuple(
+        parse_transform_record(
+            program,
+            offset=index * TRANSFORM_RECORD_SIZE,
+            index=index,
+        )
+        for index in range(TRANSFORM_PROGRAM_LENGTH)
+    )
+
+
+def pack_transform_program(records: Sequence[TransformRecord]) -> bytes:
+    """Pack an indexed prefix and zero-fill the remaining native records."""
+
+    if len(records) > TRANSFORM_PROGRAM_LENGTH:
+        raise ValueError("transform program exceeds the native 18-record limit")
+    program = bytearray(TRANSFORM_PROGRAM_SIZE)
+    for index, record in enumerate(records):
+        if record.index != index:
+            raise ValueError("transform records must be a canonical indexed prefix")
+        if isinstance(record.float_0, str) or isinstance(record.float_1, str):
+            raise ValueError("native transform programs cannot contain VM operands")
+        try:
+            struct.pack_into(
+                "<ffiiII",
+                program,
+                index * TRANSFORM_RECORD_SIZE,
+                float(record.float_0),
+                float(record.float_1),
+                int(record.int_0),
+                int(record.int_1),
+                int(record.kind),
+                int(record.allow_while_active),
+            )
+        except (OverflowError, struct.error) as exc:
+            raise ValueError("transform record does not fit the native ABI") from exc
+    return bytes(program)
 
 
 def transform_record_from_decoded(

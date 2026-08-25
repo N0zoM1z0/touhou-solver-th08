@@ -49,11 +49,15 @@ ordered implementation plan are in
   worst 97.060802px error against a 31px bound. Global geometry v4 now makes
   every such current pool shadow-only. Composition is deferred until a global
   worker slot is due and free, and a worker-root certificate is not reused by
-  later local prefixes. This is offline integration, not arbitrary ECL, exact
-  current transforms, a same-root policy win, or physical hit authority. The
-  next ordered work is full 18-record source-exact transform execution, then a
-  fresh physical v2 Stage-5 root and offline global replay. Import smoke, 37
-  focused tests, and all 1,522 Linux tests pass with five conditional skips;
+  later local prefixes. Current-hazard schema v2 now retains each complete
+  18-record program, queue/culling state, and all meaningful active handler
+  blocks only on the coherent diagnostic path; packed local sensing is
+  unchanged. This is offline integration, not arbitrary ECL, exact current-
+  transform execution, a same-root policy win, or physical hit authority. The
+  next ordered work is source-order transform execution plus C/batch
+  differential, then a fresh physical v2 Stage-5 root and offline global
+  replay. Import smoke, 57
+  focused tests, and all 1,525 Linux tests pass with five conditional skips;
   the paper builds to eight pages. The retained compact 3,600-frame
   compatibility artifact remains
   `artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json`; routine

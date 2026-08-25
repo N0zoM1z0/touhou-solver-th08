@@ -73,6 +73,9 @@ The runtime currently closes the following source-derived behavior:
 - sequential transform queues with the native wait-for-active-clear rule for
   deceleration, vector acceleration, angular velocity, stop-turn, stop-reaim,
   stop-snap, reflect-all, and reflect-sides/top handlers;
+- exact export of each generated bullet's 18-record program, queue cursor,
+  active handler timers/parameters, and culling counters into the compact
+  retained-current-hazard root used by offline global replay;
 - unit-time-scale bullet motion, offscreen culling, and exact supported laser
   spawn/lifecycle/collision geometry;
 - exact player movement ordering used by the offline closed loop;
@@ -225,6 +228,12 @@ all eight handlers.
     to the state returned by `RunEcl`; a failed bootstrap receives no writes.
     The standalone Python/C constructor differential now locks that ordering
     before the long-stage VM is allowed to consume it.
+11. The retained live transform object was named like a complete runtime but
+    contained only the stop/turn union at native `+0x1004..+0x102c` and one
+    pending record. Vector, angular, reflection, barrier, wrap, and the rest of
+    the 18-record program were lost across serialization. The diagnostic and
+    long-stage roots now retain the exact program plus only active, meaningful
+    handler blocks; the fast packed decision decoder remains unchanged.
 
 These are source-backed semantic corrections. None is presented as a route
 hit improvement until it changes a complete future projection and passes a
@@ -262,17 +271,19 @@ program frame count.
 The fuzzer now provides the infrastructure needed to extend semantics without
 Wine. The next work should remain incremental and differential:
 
-1. preserve the completed retained-root importer, long-stage lifecycle
-   differential, and generic constructor oracle; allocate and synchronously
-   execute reached child VMs through that contract, then retain native
-   manager-slot/same-frame scheduling in the same event stream;
-2. close lifecycle/callback/transform composition order, then callback 14;
-3. make future births action-conditioned where player aim or damage changes
-   the producer root;
-4. feed only a complete, version-matched horizon into the global viability
-   planner, first in offline shadow mode;
+1. preserve the completed retained-root importer, child/timeline scheduler,
+   callback-12/14 stream, 21-type lifecycle, and source/C differentials;
+2. execute the retained 18-record current-bullet program in source order,
+   first for the eight C-locked motion handlers, then barrier/wrap/immediate
+   records, while derived births and any unknown composition fail closed;
+3. expand the independent C oracle to the queue, handlers, movement, and
+   culling transition, then benchmark native batches at realistic pool sizes;
+4. feed only a complete, version-matched current-plus-future horizon into the
+   global viability planner in offline shadow mode, with player-relative
+   re-aim explicitly action-conditioned or conservatively set-valued;
 5. use focused Practice and Wine only after a same-capsule global-policy
-   differential changes a losing predecessor into a certified viable one.
+   differential changes a losing predecessor into a certified viable one and
+   the submission/publication latency is bounded.
 
 This keeps the core general. Per-stage/spell compiled programs and caches are
 appropriate once their source dependencies are reached; handwritten policies

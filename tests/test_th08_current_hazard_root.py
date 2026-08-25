@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from dataclasses import replace
 import gzip
 import json
+import random
 import unittest
 
 import numpy as np
 
 from th08_bullet_transform_model import (
+    BulletTransformProgramRuntime,
     BulletTransformRuntime,
+    StopTransformRuntime,
     TransformKind,
     TransformRecord,
+    TransformTimerRuntime,
+    pack_transform_program,
+    parse_transform_program,
 )
 from th08_laser_model import LaserPhase, LaserState
 from th08_laser_runtime import Laser
@@ -20,6 +27,7 @@ from th08_future_hazard_projection import complete_future_hazard_projection
 from th08_live.models import Bullet
 from th08_runtime.current_hazard_root import (
     CURRENT_HAZARD_ROOT_SCHEMA,
+    CURRENT_HAZARD_ROOT_SCHEMA_V1,
     build_current_hazard_root,
     current_hazards_from_root,
 )
@@ -34,6 +42,18 @@ from touhou_control.corridor import CorridorConfig
 
 
 def _bullet(slot: int = 17) -> Bullet:
+    program_records = tuple(
+        TransformRecord(
+            index=index,
+            kind=(TransformKind.STOP_REAIM_REPEAT if index == 4 else 0),
+            allow_while_active=(index == 4),
+            int_0=(30 if index == 4 else 0),
+            int_1=(5 if index == 4 else 0),
+            float_0=(0.25 if index == 4 else 0.0),
+            float_1=(2.5 if index == 4 else 0.0),
+        )
+        for index in range(5)
+    )
     return Bullet(
         x=123.25,
         y=341.5,
@@ -64,6 +84,25 @@ def _bullet(slot: int = 17) -> Bullet:
             duration=30,
             repeat_limit=5,
             repeat_count=2,
+        ),
+        transform_program_runtime=BulletTransformProgramRuntime(
+            program=pack_transform_program(program_records),
+            original_flags=int(TransformKind.STOP_REAIM_REPEAT),
+            queue_cursor=4,
+            cull_suppression_countdown=13,
+            offscreen_counter=7,
+            stop=StopTransformRuntime(
+                timer=TransformTimerRuntime(
+                    previous=10,
+                    subframe=0.5,
+                    current=11,
+                ),
+                resume_speed=2.5,
+                angle_operand=0.25,
+                duration=30,
+                repeat_limit=5,
+                repeat_count=2,
+            ),
         ),
         callback_phase_state=2,
         callback_aux_state=1,
@@ -143,11 +182,25 @@ class CurrentHazardRootTests(unittest.TestCase):
         self.assertEqual([row["slot"] for row in root["lasers"]], [5, 9])
         self.assertEqual(replayed_bullets, (_bullet(2), _bullet(17)))
         self.assertEqual(replayed_lasers, (_laser(5), _laser(9)))
+        self.assertIn("program_le_b64", root["bullets"][0]["transform_program_runtime"])
 
     def test_record_contains_active_values_instead_of_raw_pool_slabs(self) -> None:
+        bullets = []
+        for slot in range(64):
+            bullet = _bullet(slot)
+            assert bullet.transform_program_runtime is not None
+            bullets.append(
+                replace(
+                    bullet,
+                    transform_program_runtime=replace(
+                        bullet.transform_program_runtime,
+                        program=random.Random(slot).randbytes(18 * 24),
+                    ),
+                )
+            )
         root = build_current_hazard_root(
             root_frame=9,
-            bullets=tuple(_bullet(slot) for slot in range(64)),
+            bullets=tuple(bullets),
             lasers=tuple(_laser(slot) for slot in range(16)),
         )
         canonical = json.dumps(
@@ -196,6 +249,38 @@ class CurrentHazardRootTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must be finite"):
             current_hazards_from_root(nonfinite)
 
+        missing_program = deepcopy(root)
+        missing_program["bullets"][0]["transform_program_runtime"] = None
+        with self.assertRaisesRegex(ValueError, "missing complete transform-program"):
+            current_hazards_from_root(missing_program)
+
+        short_program = deepcopy(root)
+        short_program["bullets"][0]["transform_program_runtime"][
+            "program_le_b64"
+        ] = "AA=="
+        with self.assertRaisesRegex(ValueError, "exactly 432 bytes"):
+            current_hazards_from_root(short_program)
+
+        mismatched_handler = deepcopy(root)
+        mismatched_handler["bullets"][0]["transform_program_runtime"]["stop"] = None
+        with self.assertRaisesRegex(ValueError, "active flag.*disagree"):
+            current_hazards_from_root(mismatched_handler)
+
+    def test_v1_root_without_full_program_remains_readable(self) -> None:
+        root = build_current_hazard_root(
+            root_frame=100,
+            bullets=(_bullet(2),),
+            lasers=(),
+        )
+        root["schema"] = CURRENT_HAZARD_ROOT_SCHEMA_V1
+        root["bullets"][0].pop("transform_program_runtime")
+
+        bullets, lasers = current_hazards_from_root(root)
+
+        self.assertEqual(len(bullets), 1)
+        self.assertIsNone(bullets[0].transform_program_runtime)
+        self.assertEqual(lasers, ())
+
     def test_stateful_stage_root_replays_the_same_current_plus_future_policy(
         self,
     ) -> None:
@@ -211,6 +296,31 @@ class CurrentHazardRootTests(unittest.TestCase):
             sum(bool(value.transform_flags) for value in bullets),
             0,
         )
+        self.assertTrue(
+            all(
+                value.transform_program_runtime is not None
+                for value in bullets
+                if value.original_transform_flags
+            )
+        )
+        for value in bullets:
+            retained = value.transform_program_runtime
+            source_bullet = runtime.bullets[value.slot]
+            if retained is None or source_bullet is None:
+                continue
+            records = parse_transform_program(retained.program)
+            for record, spec in zip(records, source_bullet.transforms):
+                if spec.kind in (
+                    TransformKind.REFLECT_ALL_EDGES,
+                    TransformKind.REFLECT_SIDES_AND_TOP,
+                ):
+                    self.assertEqual(record.int_0, spec.repeat_limit)
+                if spec.kind in (
+                    TransformKind.STOP_TURN_REPEAT,
+                    TransformKind.STOP_REAIM_REPEAT,
+                    TransformKind.STOP_SNAP_REPEAT,
+                ):
+                    self.assertEqual(record.int_1, spec.repeat_limit)
         root = build_current_hazard_root(
             root_frame=runtime.frame,
             bullets=bullets,

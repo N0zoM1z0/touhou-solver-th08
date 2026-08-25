@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Iterator
 import numpy as np
 
 from th08_bullet_transform_model import (
+    BulletTransformProgramRuntime,
     BulletTransformRuntime,
     TransformRecord,
 )
@@ -50,6 +51,7 @@ class Bullet:
     native_state: int = 1
     native_state_timer_elapsed: int = 0
     bullet_type: int | None = None
+    transform_program_runtime: BulletTransformProgramRuntime | None = None
 
 
 @dataclass(frozen=True)

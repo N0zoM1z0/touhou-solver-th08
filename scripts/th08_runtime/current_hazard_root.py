@@ -9,12 +9,22 @@ stores the multi-megabyte raw native slabs.
 
 from __future__ import annotations
 
+import base64
+import binascii
 import math
 from collections.abc import Mapping, Sequence
 
 from th08_bullet_transform_model import (
+    AngularVelocityRuntime,
+    BulletTransformProgramRuntime,
     BulletTransformRuntime,
+    ReflectionTransformRuntime,
+    StopTransformRuntime,
+    TRANSFORM_PROGRAM_SIZE,
+    TransformKind,
     TransformRecord,
+    TransformTimerRuntime,
+    VectorAccelerationRuntime,
 )
 from th08_laser_model import LaserPhase, LaserState
 from th08_laser_runtime import Laser
@@ -23,8 +33,14 @@ from th08_live.sensor import BULLET_POOL_SIZE, LASER_POOL_SIZE
 from touhou_control.trajectory import CollisionStateChange, VelocityChange
 
 
-CURRENT_HAZARD_ROOT_SCHEMA = (
+CURRENT_HAZARD_ROOT_SCHEMA_V1 = (
     "th08-current-hazard-root-v1-active-slot-planning-state"
+)
+CURRENT_HAZARD_ROOT_SCHEMA = (
+    "th08-current-hazard-root-v2-full-transform-program-state"
+)
+CURRENT_HAZARD_ROOT_SCHEMAS = frozenset(
+    (CURRENT_HAZARD_ROOT_SCHEMA_V1, CURRENT_HAZARD_ROOT_SCHEMA)
 )
 
 
@@ -171,6 +187,300 @@ def _transform_runtime_from_payload(
     )
 
 
+def _timer_payload(
+    timer: TransformTimerRuntime | None,
+) -> list[object] | None:
+    if timer is None:
+        return None
+    return [timer.previous, timer.subframe, timer.current]
+
+
+def _timer_from_payload(
+    payload: object,
+    *,
+    label: str,
+) -> TransformTimerRuntime | None:
+    if payload is None:
+        return None
+    if not isinstance(payload, Sequence) or isinstance(payload, (str, bytes)):
+        raise ValueError(f"{label} must be a timer triple")
+    if len(payload) != 3:
+        raise ValueError(f"{label} must contain three values")
+    return TransformTimerRuntime(
+        previous=_integer(payload[0], label=f"{label} previous"),
+        subframe=_finite_number(payload[1], label=f"{label} subframe"),
+        current=_integer(payload[2], label=f"{label} current"),
+    )
+
+
+def _required_timer(payload: object, *, label: str) -> TransformTimerRuntime:
+    timer = _timer_from_payload(payload, label=label)
+    if timer is None:
+        raise ValueError(f"{label} is required")
+    return timer
+
+
+def _vector_runtime_payload(
+    runtime: VectorAccelerationRuntime | None,
+) -> dict[str, object] | None:
+    if runtime is None:
+        return None
+    return {
+        "timer": _timer_payload(runtime.timer),
+        "magnitude": runtime.magnitude,
+        "angle": runtime.angle,
+        "acceleration": [runtime.acceleration_x, runtime.acceleration_y],
+        "duration": runtime.duration,
+    }
+
+
+def _vector_runtime_from_payload(
+    payload: object,
+) -> VectorAccelerationRuntime | None:
+    if payload is None:
+        return None
+    if not isinstance(payload, Mapping):
+        raise ValueError("vector-acceleration runtime must be a mapping")
+    acceleration = _pair(
+        payload.get("acceleration"),
+        label="vector-acceleration vector",
+    )
+    return VectorAccelerationRuntime(
+        timer=_required_timer(
+            payload.get("timer"),
+            label="vector-acceleration timer",
+        ),
+        magnitude=_finite_number(
+            payload.get("magnitude"),
+            label="vector-acceleration magnitude",
+        ),
+        angle=_finite_number(
+            payload.get("angle"),
+            label="vector-acceleration angle",
+        ),
+        acceleration_x=acceleration[0],
+        acceleration_y=acceleration[1],
+        duration=_integer(
+            payload.get("duration"),
+            label="vector-acceleration duration",
+        ),
+    )
+
+
+def _angular_runtime_payload(
+    runtime: AngularVelocityRuntime | None,
+) -> dict[str, object] | None:
+    if runtime is None:
+        return None
+    return {
+        "timer": _timer_payload(runtime.timer),
+        "speed_acceleration": runtime.speed_acceleration,
+        "angular_velocity": runtime.angular_velocity,
+        "duration": runtime.duration,
+    }
+
+
+def _angular_runtime_from_payload(
+    payload: object,
+) -> AngularVelocityRuntime | None:
+    if payload is None:
+        return None
+    if not isinstance(payload, Mapping):
+        raise ValueError("angular-velocity runtime must be a mapping")
+    return AngularVelocityRuntime(
+        timer=_required_timer(
+            payload.get("timer"),
+            label="angular-velocity timer",
+        ),
+        speed_acceleration=_finite_number(
+            payload.get("speed_acceleration"),
+            label="angular speed acceleration",
+        ),
+        angular_velocity=_finite_number(
+            payload.get("angular_velocity"),
+            label="angular velocity",
+        ),
+        duration=_integer(
+            payload.get("duration"),
+            label="angular-velocity duration",
+        ),
+    )
+
+
+def _stop_runtime_payload(
+    runtime: StopTransformRuntime | None,
+) -> dict[str, object] | None:
+    if runtime is None:
+        return None
+    return {
+        "timer": _timer_payload(runtime.timer),
+        "resume_speed": runtime.resume_speed,
+        "angle_operand": runtime.angle_operand,
+        "duration": runtime.duration,
+        "repeat_limit": runtime.repeat_limit,
+        "repeat_count": runtime.repeat_count,
+    }
+
+
+def _stop_runtime_from_payload(payload: object) -> StopTransformRuntime | None:
+    if payload is None:
+        return None
+    if not isinstance(payload, Mapping):
+        raise ValueError("stop-transform runtime must be a mapping")
+    return StopTransformRuntime(
+        timer=_required_timer(
+            payload.get("timer"),
+            label="stop-transform timer",
+        ),
+        resume_speed=_finite_number(
+            payload.get("resume_speed"),
+            label="stop-transform resume speed",
+        ),
+        angle_operand=_finite_number(
+            payload.get("angle_operand"),
+            label="stop-transform angle operand",
+        ),
+        duration=_integer(
+            payload.get("duration"),
+            label="stop-transform duration",
+        ),
+        repeat_limit=_integer(
+            payload.get("repeat_limit"),
+            label="stop-transform repeat limit",
+        ),
+        repeat_count=_integer(
+            payload.get("repeat_count"),
+            label="stop-transform repeat count",
+        ),
+    )
+
+
+def _reflection_runtime_payload(
+    runtime: ReflectionTransformRuntime | None,
+) -> dict[str, object] | None:
+    if runtime is None:
+        return None
+    return {
+        "restored_speed": runtime.restored_speed,
+        "event_count": runtime.event_count,
+        "event_limit": runtime.event_limit,
+    }
+
+
+def _reflection_runtime_from_payload(
+    payload: object,
+) -> ReflectionTransformRuntime | None:
+    if payload is None:
+        return None
+    if not isinstance(payload, Mapping):
+        raise ValueError("reflection runtime must be a mapping")
+    return ReflectionTransformRuntime(
+        restored_speed=_finite_number(
+            payload.get("restored_speed"),
+            label="reflection restored speed",
+        ),
+        event_count=_integer(
+            payload.get("event_count"),
+            label="reflection event count",
+        ),
+        event_limit=_integer(
+            payload.get("event_limit"),
+            label="reflection event limit",
+        ),
+    )
+
+
+def _transform_program_runtime_payload(
+    runtime: BulletTransformProgramRuntime | None,
+) -> dict[str, object] | None:
+    if runtime is None:
+        return None
+    if type(runtime.program) is not bytes or len(runtime.program) != TRANSFORM_PROGRAM_SIZE:
+        raise ValueError("bullet transform program must contain exactly 432 bytes")
+    return {
+        "program_le_b64": base64.b64encode(runtime.program).decode("ascii"),
+        "original_flags": runtime.original_flags,
+        "queue_cursor": runtime.queue_cursor,
+        "cull_suppression_countdown": runtime.cull_suppression_countdown,
+        "offscreen_counter": runtime.offscreen_counter,
+        "decelerate_timer": _timer_payload(runtime.decelerate_timer),
+        "vector_acceleration": _vector_runtime_payload(
+            runtime.vector_acceleration
+        ),
+        "angular_velocity": _angular_runtime_payload(runtime.angular_velocity),
+        "stop": _stop_runtime_payload(runtime.stop),
+        "reflection": _reflection_runtime_payload(runtime.reflection),
+        "barrier_timer": _timer_payload(runtime.barrier_timer),
+        "wrap_timer": _timer_payload(runtime.wrap_timer),
+    }
+
+
+def _transform_program_runtime_from_payload(
+    payload: object,
+) -> BulletTransformProgramRuntime | None:
+    if payload is None:
+        return None
+    if not isinstance(payload, Mapping):
+        raise ValueError("bullet transform-program runtime must be a mapping")
+    encoded = payload.get("program_le_b64")
+    if not isinstance(encoded, str):
+        raise ValueError("bullet transform program must be base64 text")
+    try:
+        program = base64.b64decode(encoded, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("bullet transform program base64 is malformed") from exc
+    if len(program) != TRANSFORM_PROGRAM_SIZE:
+        raise ValueError("bullet transform program must contain exactly 432 bytes")
+    queue_cursor = _integer(
+        payload.get("queue_cursor"),
+        label="transform-program queue cursor",
+    )
+    if not 0 <= queue_cursor <= 18:
+        raise ValueError("transform-program queue cursor is out of range")
+    original_flags = _integer(
+        payload.get("original_flags"),
+        label="transform-program original flags",
+    )
+    if not 0 <= original_flags <= 0xFFFFFFFF:
+        raise ValueError("transform-program original flags are out of range")
+    offscreen_counter = _integer(
+        payload.get("offscreen_counter"),
+        label="transform-program offscreen counter",
+    )
+    if not 0 <= offscreen_counter <= 0xFFFF:
+        raise ValueError("transform-program offscreen counter is out of range")
+    return BulletTransformProgramRuntime(
+        program=program,
+        original_flags=original_flags,
+        queue_cursor=queue_cursor,
+        cull_suppression_countdown=_integer(
+            payload.get("cull_suppression_countdown"),
+            label="transform-program cull-suppression countdown",
+        ),
+        offscreen_counter=offscreen_counter,
+        decelerate_timer=_timer_from_payload(
+            payload.get("decelerate_timer"),
+            label="decelerate timer",
+        ),
+        vector_acceleration=_vector_runtime_from_payload(
+            payload.get("vector_acceleration")
+        ),
+        angular_velocity=_angular_runtime_from_payload(
+            payload.get("angular_velocity")
+        ),
+        stop=_stop_runtime_from_payload(payload.get("stop")),
+        reflection=_reflection_runtime_from_payload(payload.get("reflection")),
+        barrier_timer=_timer_from_payload(
+            payload.get("barrier_timer"),
+            label="barrier timer",
+        ),
+        wrap_timer=_timer_from_payload(
+            payload.get("wrap_timer"),
+            label="wrap timer",
+        ),
+    )
+
+
 def _bullet_payload(bullet: Bullet) -> dict[str, object]:
     return {
         "slot": bullet.slot,
@@ -201,6 +511,9 @@ def _bullet_payload(bullet: Bullet) -> dict[str, object]:
         "transform_runtime": _transform_runtime_payload(
             bullet.transform_runtime
         ),
+        "transform_program_runtime": _transform_program_runtime_payload(
+            bullet.transform_program_runtime
+        ),
     }
 
 
@@ -215,7 +528,11 @@ def _pair(payload: object, *, label: str) -> tuple[float, float]:
     )
 
 
-def _bullet_from_payload(payload: object) -> Bullet:
+def _bullet_from_payload(
+    payload: object,
+    *,
+    require_transform_program: bool = False,
+) -> Bullet:
     if not isinstance(payload, Mapping):
         raise ValueError("retained bullet must be a mapping")
     position = _pair(payload.get("position"), label="bullet position")
@@ -268,23 +585,41 @@ def _bullet_from_payload(payload: object) -> Bullet:
     bullet_type_raw = payload.get("bullet_type")
     if bullet_type_raw is not None and type(bullet_type_raw) is not int:
         raise ValueError("bullet type must be an integer or null")
-    return Bullet(
+    transform_flags = _integer(
+        payload.get("transform_flags"),
+        label="bullet transform flags",
+    )
+    original_transform_flags = _integer(
+        payload.get("original_transform_flags"),
+        label="bullet original transform flags",
+    )
+    transform_runtime = _transform_runtime_from_payload(
+        payload.get("transform_runtime")
+    )
+    transform_program_runtime = _transform_program_runtime_from_payload(
+        payload.get("transform_program_runtime")
+    )
+    if (
+        require_transform_program
+        and transform_program_runtime is None
+        and (transform_flags or original_transform_flags or transform_runtime is not None)
+    ):
+        raise ValueError(
+            "v2 current-hazard root is missing complete transform-program state"
+        )
+    bullet = Bullet(
         x=position[0],
         y=position[1],
         vx=velocity[0],
         vy=velocity[1],
         half_width=half_extents[0],
         half_height=half_extents[1],
-        transform_flags=_integer(
-            payload.get("transform_flags"),
-            label="bullet transform flags",
-        ),
+        transform_flags=transform_flags,
         slot=_integer(payload.get("slot"), label="bullet slot"),
         speed=_optional_finite(payload.get("speed"), label="bullet speed"),
         angle=_optional_finite(payload.get("angle"), label="bullet angle"),
-        transform_runtime=_transform_runtime_from_payload(
-            payload.get("transform_runtime")
-        ),
+        transform_runtime=transform_runtime,
+        transform_program_runtime=transform_program_runtime,
         callback_phase_state=_integer(
             payload.get("callback_phase_state"),
             label="bullet callback phase",
@@ -297,10 +632,7 @@ def _bullet_from_payload(payload: object) -> Bullet:
         collision_state_changes=tuple(collision_changes),
         trajectory_uncertainty_x=uncertainty[0],
         trajectory_uncertainty_y=uncertainty[1],
-        original_transform_flags=_integer(
-            payload.get("original_transform_flags"),
-            label="bullet original transform flags",
-        ),
+        original_transform_flags=original_transform_flags,
         native_state=_integer(
             payload.get("native_state"),
             label="bullet native state",
@@ -313,6 +645,64 @@ def _bullet_from_payload(payload: object) -> Bullet:
             int(bullet_type_raw) if bullet_type_raw is not None else None
         ),
     )
+    if transform_program_runtime is not None:
+        if transform_program_runtime.original_flags != original_transform_flags:
+            raise ValueError("bullet transform-program original flags disagree")
+        handler_contracts = (
+            (
+                int(TransformKind.DECELERATE_16F),
+                transform_program_runtime.decelerate_timer,
+                "decelerate",
+            ),
+            (
+                int(TransformKind.VECTOR_ACCELERATION),
+                transform_program_runtime.vector_acceleration,
+                "vector acceleration",
+            ),
+            (
+                int(TransformKind.ANGULAR_VELOCITY),
+                transform_program_runtime.angular_velocity,
+                "angular velocity",
+            ),
+            (
+                int(
+                    TransformKind.STOP_TURN_REPEAT
+                    | TransformKind.STOP_REAIM_REPEAT
+                    | TransformKind.STOP_SNAP_REPEAT
+                ),
+                transform_program_runtime.stop,
+                "stop transform",
+            ),
+            (
+                int(
+                    TransformKind.REFLECT_ALL_EDGES
+                    | TransformKind.REFLECT_SIDES_AND_TOP
+                ),
+                transform_program_runtime.reflection,
+                "reflection",
+            ),
+            (
+                int(TransformKind.TIMED_QUEUE_BARRIER),
+                transform_program_runtime.barrier_timer,
+                "barrier",
+            ),
+            (
+                int(
+                    TransformKind.WRAP_HORIZONTAL
+                    | TransformKind.WRAP_VERTICAL
+                ),
+                transform_program_runtime.wrap_timer,
+                "wrap",
+            ),
+        )
+        for mask, handler_runtime, label in handler_contracts:
+            active = bool(transform_flags & mask)
+            present = handler_runtime is not None
+            if active != present:
+                raise ValueError(
+                    f"bullet {label} active flag and retained runtime disagree"
+                )
+    return bullet
 
 
 def _laser_state_payload(state: LaserState | None) -> dict[str, object] | None:
@@ -502,7 +892,8 @@ def current_hazards_from_root(
 
     if not isinstance(payload, Mapping):
         raise ValueError("current-hazard root must be a mapping")
-    if payload.get("schema") != CURRENT_HAZARD_ROOT_SCHEMA:
+    schema = payload.get("schema")
+    if schema not in CURRENT_HAZARD_ROOT_SCHEMAS:
         raise ValueError("current-hazard root schema is unsupported")
     root_frame = _integer(
         payload.get("root_frame"),
@@ -523,7 +914,13 @@ def current_hazards_from_root(
         list,
     ):
         raise ValueError("current-hazard active-slot arrays are malformed")
-    bullets = tuple(_bullet_from_payload(value) for value in bullet_payloads)
+    bullets = tuple(
+        _bullet_from_payload(
+            value,
+            require_transform_program=(schema == CURRENT_HAZARD_ROOT_SCHEMA),
+        )
+        for value in bullet_payloads
+    )
     lasers = tuple(_laser_from_payload(value) for value in laser_payloads)
     if tuple(value.slot for value in bullets) != tuple(
         sorted(value.slot for value in bullets)
@@ -542,6 +939,8 @@ def current_hazards_from_root(
 
 __all__ = [
     "CURRENT_HAZARD_ROOT_SCHEMA",
+    "CURRENT_HAZARD_ROOT_SCHEMAS",
+    "CURRENT_HAZARD_ROOT_SCHEMA_V1",
     "build_current_hazard_root",
     "current_hazards_from_root",
 ]

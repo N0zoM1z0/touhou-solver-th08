@@ -2156,8 +2156,8 @@ manager-frame/update-serial bracket they read both native hazard pools with
 two persistent buffers; decoding happens only after the bracket closes and
 only for a coherent attempt. The ordinary high-rate non-retention path is
 unchanged. The capsule stores only canonical active planner slots, including
-bullet lifecycle, callback schedules, current transform runtime/next record,
-and complete laser phase state. A reader reconstructs the ordinary `Bullet`
+bullet lifecycle, callback schedules, current transform program/active handler
+state, and complete laser phase state. A reader reconstructs the ordinary `Bullet`
 and `Laser` inputs and rejects malformed capacities, slots, order, nonfinite
 values, or schema. The v2 writer and reader also require exact agreement among
 capture-before, capture-after, compact-state, future-projection, root-identity,
@@ -2168,9 +2168,10 @@ A source-stateful 120-frame quick-stage root exercises 319 bullets, two
 lasers, and 92 active transforms. Original versus serialized/reconstructed
 inputs produce identical H16 global reachability, initial actions, action
 masks, and the complete viability tensor. A 64-bullet/16-laser regression
-keeps the compressed capsule below 64 KiB. This proves compact offline planner
-replay, not full native game-state replay: only the next transform record is
-currently represented, not every queued 18-record native program.
+keeps the compressed capsule below 64 KiB. AUD-080 subsequently extends that
+compact root from the one pending record to the complete 18-record program and
+meaningful active handler blocks. This proves compact offline planner replay,
+not full native game-state replay or exact transform execution.
 
 The VPS also has a measured rather than assumed parallel boundary. Five fair
 repetitions of the same spell-115 future-only solve produced identical 10,615
@@ -2216,12 +2217,11 @@ diagnostics, but the independent assessor returns
 authority. Native lifecycle state 5 remains correctly nonlethal and is
 excluded from this gate.
 
-This is a safety repair, not the desired geometry implementation. The compact
-v2 planner root preserves the current transform runtime and next record, but
-the fast live snapshot and global recurrence do not yet carry and execute the
-full ordered native program. A queued transform whose active flags are still
-zero is therefore an additional explicit coverage gap. The next general task
-is to retain the active slot's complete 18-record program and implement a
+This is a safety repair, not the desired geometry implementation. AUD-080 now
+retains the complete ordered program and meaningful active handler state in
+the compact diagnostic root, while the fast live snapshot and global
+recurrence remain unchanged. A queued transform whose active flags are still
+zero is therefore observable but not yet executed. The next general task is a
 source/C-differential current-transform stepper. Only that exact path may set
 the completeness component true for transformed current bullets.
 
@@ -2231,10 +2231,53 @@ conditional skips, and the updated paper builds to eight pages. No input
 behavior, Wine run, route result, or hit-count claim follows from fail-closing
 this previously unsound authority.
 
+### AUD-080 — The retained transform runtime was only the stop-handler union
+
+Status: **CONFIRMED ROOT-STATE BUG; COMPLETE PROGRAM/HANDLER ROOT ADDED
+OFFLINE, EXACT EXECUTION STILL OPEN**
+
+The v2 current-hazard root described its `BulletTransformRuntime` as native
+queue state, but every mutable field after `next_record` came from only the
+shared stop/turn block at bullet offsets `+0x1004..+0x102c`. A vector,
+angular, reflection, barrier, or wrap transform could therefore round-trip its
+active flag and next record while losing the timer and parameters that
+determine its next update. Records before or after the cursor were also absent.
+The root was planner-replay-stable only because global geometry v4 ignored
+those values and remained shadow-only; it was not a resumable transform root.
+
+Authoritative `Bullet::FUN_0042ffc0` copies and consumes a fixed 18-record
+program at `+0xdd0`, 24 bytes per record. `BulletManager::OnUpdate` then runs
+the active blocks in source order: deceleration, vector acceleration, angular
+velocity, the three shared stop variants, the shared reflection variants,
+horizontal/vertical wrap, and the timed barrier before movement and culling.
+The diagnostic decoder now retains the exact 432 program bytes, queue cursor,
+offscreen-suppression/count state, full `ZunTimer` triples, and only those
+handler blocks whose active flag makes their union bytes meaningful. Inactive
+uninitialized floats are never promoted to root state. The legacy stop-only
+record remains readable for old traces and is explicitly named as incomplete.
+
+Current-hazard schema v2 serializes the raw program as one base64 field plus
+typed active blocks, validates the 18-record size, cursor, flag/block agreement,
+finite operands, slot order, and original-flag identity, and continues to read
+v1 roots without fabricating missing state. The source-stateful long runtime
+emits the same representation and now combines original flags with bitwise OR
+rather than integer addition. A 120-frame generated root, raw-slot all-handler
+fixture, ABI bit round-trip, malformed-root cases, and future-root retention
+pass 57 focused tests. The ordinary packed decoder is unchanged.
+
+This is deliberately outside the 16 ms local decision path. Full-program
+decoding occurs only after a retained capture bracket closes or when a due and
+free global submission requests diagnostic objects. The next falsifier is a
+source-order program stepper differential against an expanded C oracle,
+followed by a 1/32/128/512/1,536-bullet batch benchmark. Python reference code
+or any native batch that misses its measured budget remains offline/shadow.
+No transform authority, Wine action, policy win, or hit-count improvement is
+claimed by this root-state correction.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,522 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,525 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

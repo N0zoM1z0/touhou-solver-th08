@@ -542,14 +542,18 @@ Replace heuristic transformed-bullet propagation with the source-exact
 transform/lifecycle stepper. Shadow old/new trajectories first, promote only
 the covered exact subset, commit, and run the same complete-route gate.
 
-Status: **FIRST UNSOUNDNESS PROVED AND FAIL-CLOSED; EXACT TRANSFORM EXECUTION
-OPEN.** The fixed-seed stateful regression above falsifies the old growth
-envelope, and global geometry v4 now prevents it from gaining authority. The
-next implementation is deliberately narrower than a new planner: capture all
-18 native transform records for each active slot, execute the reached
-`Bullet::FUN_0042ffc0` handlers in binary32/source order, and differential the
-complete per-frame state against the tracked C transcription. Queued programs
-with zero current active flags must be covered as well.
+Status: **FIRST UNSOUNDNESS PROVED AND FAIL-CLOSED; COMPLETE RETAINED ROOT
+IMPLEMENTED; EXACT EXECUTION OPEN.** The fixed-seed stateful regression above
+falsifies the old growth envelope, and global geometry v4 prevents it from
+gaining authority. Diagnostic/coherent-root decoding now retains the exact
+18-record program plus every active handler timer/parameter block, culling
+state, and queue cursor. It does not touch the packed per-decision decoder.
+The next implementation remains deliberately narrower than a new planner:
+execute the reached `Bullet::FUN_0042ffc0` queue and handlers in
+binary32/source order, differential the complete per-frame state against an
+expanded C transcription, and benchmark a native batch at realistic pool
+sizes. Queued programs with zero current active flags must be covered as well;
+until then geometry v4 remains shadow-only.
 
 ### D. Global delivery in shadow mode
 
