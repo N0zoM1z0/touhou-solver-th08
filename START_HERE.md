@@ -45,8 +45,12 @@ ordered implementation plan are in
   state-2 shortcut: type is recovered from the copied normal ANM script in the
   existing pool slab, and every type/state-2/3/4 path matches C without another
   sensing call. The post-fix long gate had the same synthetic outcome, so no
-  hit gain is claimed. Lifecycle/callback/transform composition still fails
-  closed; child/timeline births and callback 14 are next. The retained v1
+  hit gain is claimed. The pure generic `0x5A`--`0x5E` enemy-constructor
+  transition now also matches a separate C transcription across parent,
+  template, synchronous-bootstrap, pool, and post-link branches. It is not yet
+  wired into retained child VM execution. Lifecycle/callback/transform
+  composition still fails closed; child/timeline births and callback 14 are
+  next. The retained v1
   3,600-frame compatibility artifact
   `artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json` passes
   complete C lockstep, 180 NumPy/native geometry comparisons, 120 real local

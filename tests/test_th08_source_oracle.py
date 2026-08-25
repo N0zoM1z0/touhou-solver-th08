@@ -13,6 +13,20 @@ import unittest
 
 from build_th08_source_oracle import build
 from th08_bullet_template_contract import bullet_spawn_lifecycle
+from th08_enemy_spawn_model import (
+    ECL_OP_SPAWN_ENEMY,
+    ECL_OP_SPAWN_ENEMY_AT_PARENT,
+    ECL_OP_SPAWN_LINKED_CHILD,
+    ECL_OP_SPAWN_LINKED_CHILD_AT_PARENT,
+    ECL_OP_SPAWN_LINKED_CHILD_FOLLOW_PARENT,
+    ENEMY_FLAG_CONTACT,
+    ENEMY_FLAG_FOLLOW_PARENT_BASE,
+    ENEMY_FLAG_IS_YOUKAI,
+    ENEMY_FLAG_LINKED_CHILD,
+    ENEMY_FLAG_SUPPRESS_DEATH_EFFECTS,
+    enemy_spawn_point_sample,
+    enemy_spawn_profile,
+)
 from th08_future_birth_envelope import (
     FloatInterval,
     FutureDirectFire,
@@ -72,6 +86,35 @@ def _ulp_distance(left: float, right: float) -> int:
     else:
         right_bits += 0x80000000
     return abs(left_bits - right_bits)
+
+
+def _enemy_spawn_inputs(**overrides: object) -> dict[str, object]:
+    values: dict[str, object] = {
+        "opcode": ECL_OP_SPAWN_LINKED_CHILD,
+        "operand_x": 7.25,
+        "operand_y": -9.5,
+        "parent_base_x": 11.0,
+        "parent_base_y": 22.0,
+        "parent_world_x": 101.0,
+        "parent_world_y": 202.0,
+        "template_relative_x": 1.5,
+        "template_relative_y": -2.5,
+        "template_flags": 1,
+        "parent_flags": 1,
+        "parent_hitpoints": 100,
+        "player_is_youkais": False,
+        "pool_available": True,
+        "bootstrap_succeeded": True,
+        "bootstrap_base_x": 111.0,
+        "bootstrap_base_y": 222.0,
+        "bootstrap_relative_x": 3.0,
+        "bootstrap_relative_y": 4.0,
+        "bootstrap_world_x": 700.0,
+        "bootstrap_world_y": 800.0,
+        "bootstrap_flags": 1 | ENEMY_FLAG_CONTACT,
+    }
+    values.update(overrides)
+    return values
 
 
 def _distance_to_annular_sector(
@@ -388,6 +431,228 @@ class Th08SourceOracleTests(unittest.TestCase):
         # source-order interval recurrence replaced it.
         self.assertGreater(legacy_guard_escape_samples, 0)
         self.assertGreater(maximum_legacy_axis_error, 2.0e-5)
+
+    def test_enemy_spawn_profiles_cover_only_generic_constructor_opcodes(
+        self,
+    ) -> None:
+        expected = {
+            ECL_OP_SPAWN_LINKED_CHILD: (False, True, False, True),
+            ECL_OP_SPAWN_LINKED_CHILD_AT_PARENT: (True, True, False, True),
+            ECL_OP_SPAWN_LINKED_CHILD_FOLLOW_PARENT: (
+                False,
+                True,
+                True,
+                True,
+            ),
+            ECL_OP_SPAWN_ENEMY: (False, False, False, False),
+            ECL_OP_SPAWN_ENEMY_AT_PARENT: (True, False, False, False),
+        }
+        for opcode, fields in expected.items():
+            profile = enemy_spawn_profile(opcode)
+            self.assertEqual(
+                (
+                    profile.add_parent_world_to_constructor_base,
+                    profile.linked_child,
+                    profile.follow_parent_base,
+                    profile.requires_clear_suppress_death_effects,
+                ),
+                fields,
+            )
+        for invalid in (0x59, 0x5F, -1, True, "0x5a"):
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(ValueError):
+                    enemy_spawn_profile(invalid)  # type: ignore[arg-type]
+
+    def test_all_enemy_spawn_constructor_classes_match_c(self) -> None:
+        generator = random.Random(0x41F110)
+        opcodes = (
+            ECL_OP_SPAWN_LINKED_CHILD,
+            ECL_OP_SPAWN_LINKED_CHILD_AT_PARENT,
+            ECL_OP_SPAWN_LINKED_CHILD_FOLLOW_PARENT,
+            ECL_OP_SPAWN_ENEMY,
+            ECL_OP_SPAWN_ENEMY_AT_PARENT,
+        )
+        for opcode in opcodes:
+            for parent_suppressed in (False, True):
+                for parent_hitpoints in (-1, 0, 1, 9000):
+                    for player_is_youkais in (False, True):
+                        for pool_available in (False, True):
+                            for bootstrap_succeeded in (False, True):
+                                parent_flags = generator.getrandbits(32)
+                                if parent_suppressed:
+                                    parent_flags |= (
+                                        ENEMY_FLAG_SUPPRESS_DEATH_EFFECTS
+                                    )
+                                else:
+                                    parent_flags &= ~(
+                                        ENEMY_FLAG_SUPPRESS_DEATH_EFFECTS
+                                    )
+                                inputs = _enemy_spawn_inputs(
+                                    opcode=opcode,
+                                    operand_x=generator.uniform(-512.0, 512.0),
+                                    operand_y=generator.uniform(-512.0, 512.0),
+                                    parent_base_x=generator.uniform(
+                                        -512.0, 512.0
+                                    ),
+                                    parent_base_y=generator.uniform(
+                                        -512.0, 512.0
+                                    ),
+                                    parent_world_x=generator.uniform(
+                                        -512.0, 512.0
+                                    ),
+                                    parent_world_y=generator.uniform(
+                                        -512.0, 512.0
+                                    ),
+                                    template_relative_x=generator.uniform(
+                                        -128.0, 128.0
+                                    ),
+                                    template_relative_y=generator.uniform(
+                                        -128.0, 128.0
+                                    ),
+                                    template_flags=generator.getrandbits(32),
+                                    parent_flags=parent_flags,
+                                    parent_hitpoints=parent_hitpoints,
+                                    player_is_youkais=player_is_youkais,
+                                    pool_available=pool_available,
+                                    bootstrap_succeeded=bootstrap_succeeded,
+                                    bootstrap_base_x=generator.uniform(
+                                        -512.0, 512.0
+                                    ),
+                                    bootstrap_base_y=generator.uniform(
+                                        -512.0, 512.0
+                                    ),
+                                    bootstrap_relative_x=generator.uniform(
+                                        -128.0, 128.0
+                                    ),
+                                    bootstrap_relative_y=generator.uniform(
+                                        -128.0, 128.0
+                                    ),
+                                    bootstrap_world_x=generator.uniform(
+                                        -512.0, 512.0
+                                    ),
+                                    bootstrap_world_y=generator.uniform(
+                                        -512.0, 512.0
+                                    ),
+                                    bootstrap_flags=generator.getrandbits(32),
+                                )
+                                candidate = enemy_spawn_point_sample(**inputs)
+                                authority = self.oracle.enemy_spawn_sample(
+                                    **inputs
+                                )
+                                self.assertEqual(
+                                    candidate.__dict__,
+                                    authority.__dict__,
+                                )
+
+    def test_enemy_spawn_guards_and_post_bootstrap_order_are_explicit(
+        self,
+    ) -> None:
+        template_suppressed = enemy_spawn_point_sample(
+            **_enemy_spawn_inputs(
+                template_flags=ENEMY_FLAG_SUPPRESS_DEATH_EFFECTS,
+                parent_flags=0,
+            )
+        )
+        self.assertTrue(template_suppressed.spawned)
+
+        parent_suppressed = enemy_spawn_point_sample(
+            **_enemy_spawn_inputs(
+                template_flags=0,
+                parent_flags=ENEMY_FLAG_SUPPRESS_DEATH_EFFECTS,
+            )
+        )
+        self.assertFalse(parent_suppressed.constructor_admitted)
+        self.assertFalse(parent_suppressed.spawned)
+
+        ordinary = enemy_spawn_point_sample(
+            **_enemy_spawn_inputs(
+                opcode=ECL_OP_SPAWN_ENEMY,
+                parent_flags=ENEMY_FLAG_SUPPRESS_DEATH_EFFECTS,
+            )
+        )
+        self.assertTrue(ordinary.spawned)
+        self.assertFalse(ordinary.linked_child)
+
+        bootstrap_failed = enemy_spawn_point_sample(
+            **_enemy_spawn_inputs(
+                bootstrap_succeeded=False,
+                bootstrap_flags=(
+                    ENEMY_FLAG_CONTACT | ENEMY_FLAG_IS_YOUKAI
+                ),
+            )
+        )
+        self.assertTrue(bootstrap_failed.constructor_admitted)
+        self.assertFalse(bootstrap_failed.spawned)
+        self.assertEqual(
+            bootstrap_failed.post_link_flags,
+            ENEMY_FLAG_CONTACT | ENEMY_FLAG_IS_YOUKAI,
+        )
+        self.assertEqual(bootstrap_failed.post_link_world_x, 700.0)
+
+        follow = enemy_spawn_point_sample(
+            **_enemy_spawn_inputs(
+                opcode=ECL_OP_SPAWN_LINKED_CHILD_FOLLOW_PARENT,
+                player_is_youkais=True,
+            )
+        )
+        self.assertEqual(
+            (follow.post_link_base_x, follow.post_link_base_y),
+            (111.0, 222.0),
+        )
+        self.assertEqual(
+            (follow.post_link_relative_x, follow.post_link_relative_y),
+            (11.0, 22.0),
+        )
+        self.assertEqual(
+            (follow.post_link_world_x, follow.post_link_world_y),
+            (122.0, 244.0),
+        )
+        self.assertEqual(
+            follow.post_link_flags
+            & (
+                ENEMY_FLAG_CONTACT
+                | ENEMY_FLAG_LINKED_CHILD
+                | ENEMY_FLAG_FOLLOW_PARENT_BASE
+                | ENEMY_FLAG_IS_YOUKAI
+            ),
+            ENEMY_FLAG_LINKED_CHILD
+            | ENEMY_FLAG_FOLLOW_PARENT_BASE
+            | ENEMY_FLAG_IS_YOUKAI,
+        )
+
+        alternate = enemy_spawn_point_sample(
+            **_enemy_spawn_inputs(
+                opcode=ECL_OP_SPAWN_LINKED_CHILD_AT_PARENT,
+            )
+        )
+        self.assertEqual(
+            (alternate.constructor_base_x, alternate.constructor_base_y),
+            (108.25, 192.5),
+        )
+        self.assertEqual(
+            (alternate.post_link_world_x, alternate.post_link_world_y),
+            (700.0, 800.0),
+        )
+
+    def test_enemy_spawn_model_rejects_ambiguous_scalar_contracts(self) -> None:
+        for overrides in (
+            {"player_is_youkais": 1},
+            {"pool_available": 1},
+            {"bootstrap_succeeded": 1},
+            {"parent_flags": -1},
+            {"template_flags": 1 << 32},
+            {"bootstrap_flags": None},
+            {"parent_hitpoints": 1 << 31},
+        ):
+            with self.subTest(overrides=overrides):
+                with self.assertRaises(ValueError):
+                    enemy_spawn_point_sample(
+                        **_enemy_spawn_inputs(**overrides)
+                    )
+        with self.assertRaises(ValueError):
+            self.oracle.enemy_spawn_sample(
+                **_enemy_spawn_inputs(opcode=0x59)
+            )
 
     def test_local_projector_matches_c_for_every_spawn_lifecycle(self) -> None:
         origin_x = f32(173.25)

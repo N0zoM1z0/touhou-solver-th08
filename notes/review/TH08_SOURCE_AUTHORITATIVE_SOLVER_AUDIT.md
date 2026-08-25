@@ -574,6 +574,16 @@ their unaudited composition, as well as transform composition, fails closed.
 This remains generic offline evidence and grants neither a card policy nor
 global action authority.
 
+The first child-birth subgate is now source-locked before integration. One
+generic constructor table covers ECL `0x5A`--`0x5E`; it distinguishes parent
+guards and copied-template initialization from the arbitrary state returned
+by the synchronous child `RunEcl`. Only a successful bootstrap receives the
+later linked/contact/youkai/follow writes. An independent C product test
+covers all five opcode families and their HP, suppress-bit, pool, bootstrap,
+and player-type branches. This removes two plausible but false shortcuts
+(testing template bit 10 and assuming inert bootstrap geometry), but it does
+not yet execute retained child roots or alter future coverage.
+
 ### F. Promote global viability authority
 
 Only after scale, root, future-birth, geometry, and delay-prefix certificates

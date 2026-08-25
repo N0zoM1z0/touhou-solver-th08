@@ -57,6 +57,54 @@ class _SpawnLifecycleSample(ctypes.Structure):
     ]
 
 
+class _EnemySpawnInput(ctypes.Structure):
+    _fields_ = [
+        ("opcode", ctypes.c_int32),
+        ("operand_x", ctypes.c_float),
+        ("operand_y", ctypes.c_float),
+        ("parent_base_x", ctypes.c_float),
+        ("parent_base_y", ctypes.c_float),
+        ("parent_world_x", ctypes.c_float),
+        ("parent_world_y", ctypes.c_float),
+        ("template_relative_x", ctypes.c_float),
+        ("template_relative_y", ctypes.c_float),
+        ("template_flags", ctypes.c_uint32),
+        ("parent_flags", ctypes.c_uint32),
+        ("parent_hitpoints", ctypes.c_int32),
+        ("player_is_youkais", ctypes.c_int32),
+        ("pool_available", ctypes.c_int32),
+        ("bootstrap_succeeded", ctypes.c_int32),
+        ("bootstrap_base_x", ctypes.c_float),
+        ("bootstrap_base_y", ctypes.c_float),
+        ("bootstrap_relative_x", ctypes.c_float),
+        ("bootstrap_relative_y", ctypes.c_float),
+        ("bootstrap_world_x", ctypes.c_float),
+        ("bootstrap_world_y", ctypes.c_float),
+        ("bootstrap_flags", ctypes.c_uint32),
+    ]
+
+
+class _EnemySpawnSample(ctypes.Structure):
+    _fields_ = [
+        ("constructor_admitted", ctypes.c_int32),
+        ("spawned", ctypes.c_int32),
+        ("linked_child", ctypes.c_int32),
+        ("follow_parent_base", ctypes.c_int32),
+        ("constructor_base_x", ctypes.c_float),
+        ("constructor_base_y", ctypes.c_float),
+        ("constructor_world_x", ctypes.c_float),
+        ("constructor_world_y", ctypes.c_float),
+        ("constructor_flags", ctypes.c_uint32),
+        ("post_link_base_x", ctypes.c_float),
+        ("post_link_base_y", ctypes.c_float),
+        ("post_link_relative_x", ctypes.c_float),
+        ("post_link_relative_y", ctypes.c_float),
+        ("post_link_world_x", ctypes.c_float),
+        ("post_link_world_y", ctypes.c_float),
+        ("post_link_flags", ctypes.c_uint32),
+    ]
+
+
 class _Callback12State(ctypes.Structure):
     _fields_ = [
         ("phase_state", ctypes.c_int16),
@@ -126,6 +174,26 @@ class NativeSpawnLifecycleSample:
     y: float
 
 
+@dataclass(frozen=True)
+class NativeEnemySpawnSample:
+    constructor_admitted: bool
+    spawned: bool
+    linked_child: bool
+    follow_parent_base: bool
+    constructor_base_x: float
+    constructor_base_y: float
+    constructor_world_x: float
+    constructor_world_y: float
+    constructor_flags: int
+    post_link_base_x: float
+    post_link_base_y: float
+    post_link_relative_x: float
+    post_link_relative_y: float
+    post_link_world_x: float
+    post_link_world_y: float
+    post_link_flags: int
+
+
 @dataclass
 class NativeSourceOracle:
     """Loaded native authority with explicit gameplay-RNG synchronization."""
@@ -156,6 +224,11 @@ class NativeSourceOracle:
             ctypes.POINTER(_SpawnLifecycleSample),
         ]
         library.th08_oracle_spawn_lifecycle_sample.restype = ctypes.c_int32
+        library.th08_oracle_enemy_spawn_sample.argtypes = [
+            ctypes.POINTER(_EnemySpawnInput),
+            ctypes.POINTER(_EnemySpawnSample),
+        ]
+        library.th08_oracle_enemy_spawn_sample.restype = ctypes.c_int32
         library.th08_oracle_callback12.argtypes = [
             ctypes.POINTER(_Callback12State),
             ctypes.c_uint32,
@@ -263,6 +336,84 @@ class NativeSourceOracle:
             motion_divisor=float(output.motion_divisor),
             x=float(output.x),
             y=float(output.y),
+        )
+
+    def enemy_spawn_sample(
+        self,
+        *,
+        opcode: int,
+        operand_x: float,
+        operand_y: float,
+        parent_base_x: float,
+        parent_base_y: float,
+        parent_world_x: float,
+        parent_world_y: float,
+        template_relative_x: float,
+        template_relative_y: float,
+        template_flags: int,
+        parent_flags: int,
+        parent_hitpoints: int,
+        player_is_youkais: bool,
+        pool_available: bool,
+        bootstrap_succeeded: bool,
+        bootstrap_base_x: float,
+        bootstrap_base_y: float,
+        bootstrap_relative_x: float,
+        bootstrap_relative_y: float,
+        bootstrap_world_x: float,
+        bootstrap_world_y: float,
+        bootstrap_flags: int,
+    ) -> NativeEnemySpawnSample:
+        native_input = _EnemySpawnInput(
+            opcode,
+            operand_x,
+            operand_y,
+            parent_base_x,
+            parent_base_y,
+            parent_world_x,
+            parent_world_y,
+            template_relative_x,
+            template_relative_y,
+            template_flags,
+            parent_flags,
+            parent_hitpoints,
+            int(player_is_youkais),
+            int(pool_available),
+            int(bootstrap_succeeded),
+            bootstrap_base_x,
+            bootstrap_base_y,
+            bootstrap_relative_x,
+            bootstrap_relative_y,
+            bootstrap_world_x,
+            bootstrap_world_y,
+            bootstrap_flags,
+        )
+        output = _EnemySpawnSample()
+        status = self.library.th08_oracle_enemy_spawn_sample(
+            native_input,
+            output,
+        )
+        if status != 0:
+            raise ValueError(
+                f"native source oracle rejected enemy spawn opcode {opcode:#x}"
+            )
+        return NativeEnemySpawnSample(
+            constructor_admitted=bool(output.constructor_admitted),
+            spawned=bool(output.spawned),
+            linked_child=bool(output.linked_child),
+            follow_parent_base=bool(output.follow_parent_base),
+            constructor_base_x=float(output.constructor_base_x),
+            constructor_base_y=float(output.constructor_base_y),
+            constructor_world_x=float(output.constructor_world_x),
+            constructor_world_y=float(output.constructor_world_y),
+            constructor_flags=int(output.constructor_flags),
+            post_link_base_x=float(output.post_link_base_x),
+            post_link_base_y=float(output.post_link_base_y),
+            post_link_relative_x=float(output.post_link_relative_x),
+            post_link_relative_y=float(output.post_link_relative_y),
+            post_link_world_x=float(output.post_link_world_x),
+            post_link_world_y=float(output.post_link_world_y),
+            post_link_flags=int(output.post_link_flags),
         )
 
     def callback12(
@@ -390,6 +541,7 @@ class NativeSourceOracle:
 
 
 __all__ = [
+    "NativeEnemySpawnSample",
     "NativeSourceOracle",
     "NativeSpawnLifecycleSample",
     "NativeTransformState",

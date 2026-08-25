@@ -56,6 +56,50 @@ typedef struct Th08OracleSpawnLifecycleSample {
     float y;
 } Th08OracleSpawnLifecycleSample;
 
+typedef struct Th08OracleEnemySpawnInput {
+    int32_t opcode;
+    float operand_x;
+    float operand_y;
+    float parent_base_x;
+    float parent_base_y;
+    float parent_world_x;
+    float parent_world_y;
+    float template_relative_x;
+    float template_relative_y;
+    uint32_t template_flags;
+    uint32_t parent_flags;
+    int32_t parent_hitpoints;
+    int32_t player_is_youkais;
+    int32_t pool_available;
+    int32_t bootstrap_succeeded;
+    float bootstrap_base_x;
+    float bootstrap_base_y;
+    float bootstrap_relative_x;
+    float bootstrap_relative_y;
+    float bootstrap_world_x;
+    float bootstrap_world_y;
+    uint32_t bootstrap_flags;
+} Th08OracleEnemySpawnInput;
+
+typedef struct Th08OracleEnemySpawnSample {
+    int32_t constructor_admitted;
+    int32_t spawned;
+    int32_t linked_child;
+    int32_t follow_parent_base;
+    float constructor_base_x;
+    float constructor_base_y;
+    float constructor_world_x;
+    float constructor_world_y;
+    uint32_t constructor_flags;
+    float post_link_base_x;
+    float post_link_base_y;
+    float post_link_relative_x;
+    float post_link_relative_y;
+    float post_link_world_x;
+    float post_link_world_y;
+    uint32_t post_link_flags;
+} Th08OracleEnemySpawnSample;
+
 typedef struct Th08OracleCallback12State {
     int16_t phase_state;
     uint8_t collision_aux;
@@ -109,6 +153,10 @@ TH08_ORACLE_API int32_t th08_oracle_spawn_lifecycle_sample(
     float velocity_x,
     float velocity_y,
     Th08OracleSpawnLifecycleSample *sample);
+
+TH08_ORACLE_API int32_t th08_oracle_enemy_spawn_sample(
+    const Th08OracleEnemySpawnInput *input,
+    Th08OracleEnemySpawnSample *sample);
 
 TH08_ORACLE_API int32_t th08_oracle_callback12(
     Th08OracleCallback12State *state,

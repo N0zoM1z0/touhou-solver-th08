@@ -1758,6 +1758,43 @@ versus 27.49 ms, but one timing sample is not a performance claim. Thus this is
 a source-correctness and false-wall repair with no same-seed policy gain yet;
 it does not justify Wine or a route-hit claim.
 
+### AUD-069 — Enemy constructor drafts conflated parent, template, and child-bootstrap state
+
+Status: **CONFIRMED SOURCE-ORDER MODEL BUG; FIXED IN GENERIC ORACLE, RUNTIME INTEGRATION OPEN**
+
+The next child-birth draft initially treated the copied manager template's
+bit 10 as the linked-child suppress guard and derived the post-link child
+position directly from the constructor operand. Both assumptions are false.
+`SpawnChildStandard0041F110` and `SpawnChildAlternate0041F280` test the
+parent's HP and flag word before entering `EnemyManager::SpawnEnemy2`.
+`SpawnEnemy2` copies the manager template, installs the requested base
+position and copied ECL locals, and synchronously calls `RunEcl`. That child
+root may change its position and flags or terminate before the parent opcode
+continues.
+
+The three low-dispatch cases `0x5A`--`0x5C` perform their linked-child,
+youkai, and contact-gate writes only after a successful bootstrap. Case
+`0x5C` additionally replaces the *bootstrapped* child relative position with
+the parent base position and recomputes child world position before setting
+the follow flag. Cases `0x5D`/`0x5E` use the same constructor without the
+linked-child mutation; the alternate forms `0x5B`/`0x5E` add the parent world
+position to the resolved operand before construction. Pool exhaustion or a
+failed synchronous ECL return leaves no entity eligible for post-link writes.
+
+The solver now tracks these five opcode classes in one stage/spell-neutral
+Python kernel. Its input explicitly separates parent flags, copied-template
+state, and arbitrary post-bootstrap child state. A separately compiled C
+transcription exposes the same phase boundary. A 320-case product over all
+five opcodes, parent suppression, positive/nonpositive HP, player type, pool
+availability, and bootstrap success matches every integer, flag, and
+binary32 position exactly; focused cases pin the `0x5C` after-bootstrap
+overwrite and prove that template bit 10 does not suppress a child.
+
+This closes only the pure constructor contract. The retained-source executor
+still stops before allocating and synchronously executing arbitrary child
+roots, and manager-slot scheduling/same-frame second updates remain to be
+integrated. No global-policy or physical-hit result is claimed.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository

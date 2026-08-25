@@ -15,6 +15,10 @@ Source basis (authority repository commit `57ee34f`):
 - exact shipped `etama.anm` SHA-256 `c3d19370...`: first reachable delete
   times for the 21 source-selected spawn lifecycle rows;
 - `src/EclExIns.cpp`: `EclExIns::ReisenFreezeBullets` at `0x424A20`.
+- `src/EnemyTimeline.cpp`, `src/EclDependencies.cpp`, `src/EclRun.cpp`, and
+  `src/EclRunLow.inl` / `src/EclRunHigh.inl`: generic constructor geometry,
+  admission, and hazard-relevant first-flag-word/post-bootstrap transitions
+  for ECL opcodes `0x5A` through `0x5E`.
 
 The C code is kept independent of both the Python model and the optimized
 planner library. It intentionally exposes pure, bounded kernels only. Apart

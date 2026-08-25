@@ -361,6 +361,19 @@ four-step position, state, and lethal membership match C exactly.  The
 3,600-frame outcome remained 152 normalized collisions and the same final
 position, so this repair is not counted as a policy improvement.
 
+The first child-birth closure separates three states that an approximate
+model can easily conflate: the spawning parent, the copied manager template,
+and the child after its synchronous ECL bootstrap.  One generic opcode table
+covers constructors 	exttt{0x5A}--	exttt{0x5E}.  Source inspection shows
+that the linked-child suppress bit belongs to the parent, while link,
+collision, character-side, and follow-position writes occur only after the
+child bootstrap succeeds.  The follow constructor overwrites the resulting
+child relative position and then recomputes world position; it cannot assume
+that the bootstrap left either field unchanged.  A separate C transcription
+matches the Python transition for all five families and their guard branches.
+This is a constructor-order result only: manager-slot scheduling and arbitrary
+child-root execution still fail closed.
+
 The complete-stage laboratory then exposed several errors that short
 geometric fixtures had not revealed.  Callback-12 motion was modeled while
 its auxiliary non-collision state was omitted, and future frames shared a

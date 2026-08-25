@@ -97,6 +97,12 @@ The following remain outside the exactness claim:
 - Win32 x87/libm bit identity. The Linux C oracle is a source-level oracle;
   the shipped executable remains the physical numeric authority.
 
+The generic `0x5A`--`0x5E` enemy-constructor transition is now separately
+closed in Python/C, including parent guards, copied-template initialization,
+synchronous-bootstrap success, and post-bootstrap linked-child writes. It is
+deliberately not listed as complete-stage runtime coverage until the retained
+child VM and native manager-slot schedule consume that kernel.
+
 An offline collision is observational. The runtime does not invent a
 post-hit/no-death-patch bullet transition. `normalized_hits` groups collision
 frames by a configurable cooldown and is useful for deterministic comparisons
@@ -166,6 +172,8 @@ from both the Python model and the optimized planner and covers:
 - RNG U16/U32/F32;
 - direct-fire modes 0 through 8;
 - all 21 type-indexed state-2/3/4 spawn lifecycles;
+- all five generic enemy/linked-child constructor classes `0x5A`--`0x5E`,
+  with arbitrary post-bootstrap position and flag state;
 - callback 12;
 - inclusive bullet/player AABB;
 - the eight supported transform handlers.
@@ -211,6 +219,12 @@ all eight handlers.
    type from the copied normal ANM script; all 21 types and states 2/3/4 match
    C position/state/lethality from multiple preterminal roots. The long gate's
    outcome did not change, so this is not presented as a policy gain.
+10. The first child-constructor draft tested suppress bit 10 on the copied
+    manager template and assumed the synchronous child ECL left geometry
+    unchanged. Source instead tests the parent flag, then applies link writes
+    to the state returned by `RunEcl`; a failed bootstrap receives no writes.
+    The standalone Python/C constructor differential now locks that ordering
+    before the long-stage VM is allowed to consume it.
 
 These are source-backed semantic corrections. None is presented as a route
 hit improvement until it changes a complete future projection and passes a
@@ -248,9 +262,10 @@ program frame count.
 The fuzzer now provides the infrastructure needed to extend semantics without
 Wine. The next work should remain incremental and differential:
 
-1. preserve the completed retained-root importer and long-stage generic
-   lifecycle differential; lower reached child VMs and timeline births into
-   the same event stream;
+1. preserve the completed retained-root importer, long-stage lifecycle
+   differential, and generic constructor oracle; allocate and synchronously
+   execute reached child VMs through that contract, then retain native
+   manager-slot/same-frame scheduling in the same event stream;
 2. close lifecycle/callback/transform composition order, then callback 14;
 3. make future births action-conditioned where player aim or damage changes
    the producer root;

@@ -221,6 +221,119 @@ int32_t th08_oracle_spawn_lifecycle_sample(
     return 0;
 }
 
+/*
+ * EnemyTimeline.cpp::SpawnEnemy2, EclDependencies.cpp constructors, and
+ * EclRunLow/High.inl cases 90..94.  The bootstrap state is an input because
+ * SpawnEnemy2 executes arbitrary child ECL synchronously before cases 90..92
+ * perform their linked-child mutations.
+ */
+int32_t th08_oracle_enemy_spawn_sample(
+    const Th08OracleEnemySpawnInput *input,
+    Th08OracleEnemySpawnSample *sample) {
+    int32_t add_parent_world;
+    int32_t linked_child;
+    int32_t follow_parent_base;
+    int32_t requires_clear_suppress_death_effects;
+    float constructor_base_x;
+    float constructor_base_y;
+    float post_relative_x;
+    float post_relative_y;
+    uint32_t post_flags;
+
+    if (input == NULL || sample == NULL) {
+        return 1;
+    }
+    switch (input->opcode) {
+    case 0x5a:
+        add_parent_world = 0;
+        linked_child = 1;
+        follow_parent_base = 0;
+        requires_clear_suppress_death_effects = 1;
+        break;
+    case 0x5b:
+        add_parent_world = 1;
+        linked_child = 1;
+        follow_parent_base = 0;
+        requires_clear_suppress_death_effects = 1;
+        break;
+    case 0x5c:
+        add_parent_world = 0;
+        linked_child = 1;
+        follow_parent_base = 1;
+        requires_clear_suppress_death_effects = 1;
+        break;
+    case 0x5d:
+        add_parent_world = 0;
+        linked_child = 0;
+        follow_parent_base = 0;
+        requires_clear_suppress_death_effects = 0;
+        break;
+    case 0x5e:
+        add_parent_world = 1;
+        linked_child = 0;
+        follow_parent_base = 0;
+        requires_clear_suppress_death_effects = 0;
+        break;
+    default:
+        return 1;
+    }
+
+    constructor_base_x = input->operand_x;
+    constructor_base_y = input->operand_y;
+    if (add_parent_world) {
+        constructor_base_x = constructor_base_x + input->parent_world_x;
+        constructor_base_y = constructor_base_y + input->parent_world_y;
+    }
+    sample->constructor_admitted =
+        input->pool_available && input->parent_hitpoints > 0;
+    if (requires_clear_suppress_death_effects &&
+        (input->parent_flags & (UINT32_C(1) << 10))) {
+        sample->constructor_admitted = 0;
+    }
+    sample->spawned =
+        sample->constructor_admitted && input->bootstrap_succeeded;
+    sample->linked_child = sample->spawned && linked_child;
+    sample->follow_parent_base =
+        sample->spawned && linked_child && follow_parent_base;
+    sample->constructor_base_x = constructor_base_x;
+    sample->constructor_base_y = constructor_base_y;
+    sample->constructor_world_x =
+        constructor_base_x + input->template_relative_x;
+    sample->constructor_world_y =
+        constructor_base_y + input->template_relative_y;
+    sample->constructor_flags = input->template_flags;
+
+    sample->post_link_base_x = input->bootstrap_base_x;
+    sample->post_link_base_y = input->bootstrap_base_y;
+    post_relative_x = input->bootstrap_relative_x;
+    post_relative_y = input->bootstrap_relative_y;
+    sample->post_link_world_x = input->bootstrap_world_x;
+    sample->post_link_world_y = input->bootstrap_world_y;
+    post_flags = input->bootstrap_flags;
+    if (sample->spawned && linked_child) {
+        post_flags |= UINT32_C(1) << 8;
+        post_flags &= ~(UINT32_C(1) << 2);
+        if (input->player_is_youkais) {
+            post_flags |= UINT32_C(1) << 11;
+        } else {
+            post_flags &= ~(UINT32_C(1) << 11);
+        }
+        if (follow_parent_base) {
+            post_relative_x = input->parent_base_x;
+            post_relative_y = input->parent_base_y;
+            sample->post_link_world_x =
+                post_relative_x + input->bootstrap_base_x;
+            sample->post_link_world_y =
+                post_relative_y + input->bootstrap_base_y;
+            post_flags |= UINT32_C(1) << 9;
+        }
+    }
+    sample->post_link_relative_x = post_relative_x;
+    sample->post_link_relative_y = post_relative_y;
+    sample->post_link_flags = post_flags;
+    return 0;
+}
+
 int32_t th08_oracle_callback12(
     Th08OracleCallback12State *state,
     uint32_t bullet_tags,
