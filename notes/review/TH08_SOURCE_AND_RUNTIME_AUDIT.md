@@ -1273,6 +1273,119 @@ static producer contract to extend the same kernel to child VMs and callback
 a complete matching policy slab and changes a same-root global viability
 result.
 
+### AUD-050 — Callback-12 collision state was omitted and aliased across futures
+
+Status: **CONFIRMED MODEL BUG; FIXED AND DIFFERENTIALLY TESTED OFFLINE**
+
+The source callback-12 path changes both bullet phase/motion and an auxiliary
+collision gate. The existing future projection transported the motion change
+but kept every selected bullet lethal. Source `BulletManager::OnUpdate` does
+not enter the player AABB path while that auxiliary field is nonzero. This was
+a systematic false-hazard source for callback-tagged bullets, including the
+first currently blocked spell-103 birth family.
+
+The callback model now emits an explicit collision-state transition, and the
+live decoder, trace replay, local projection, and corridor projection retain
+and apply it. A second error appeared during the correction: projected frames
+stored references to one mutable NumPy auxiliary-state array. A later callback
+therefore retroactively changed earlier frames. Each frame now owns an
+immutable copy. Native piecewise geometry fails over to the exact Python path
+when a collision-state transition is present because the current native ABI
+has no channel for it; it does not silently drop the gate.
+
+### AUD-051 — Gameplay RNG F32 conversion used the wrong precision order
+
+Status: **CONFIRMED MODEL BUG; ALL 65,536 FIRST-SEED VALUES ENUMERATED; FIXED**
+
+Recovered `Rng::GetRandomF32` converts the generated U32 numerator to
+binary32 before division. `Th08Rng.next_unit()` previously performed the
+division in Python double precision and rounded only the result. Across every
+16-bit starting state, 62,784 of 65,536 first values differed, with maximum
+absolute error about $2.98\times10^{-8}$. This is small geometrically but
+causally important: random fire modes feed the value into speed and angle and
+then accumulate it over long stages.
+
+`next_unit`, `next_signed_unit`, and `next_scaled` now preserve the source
+binary32 operation order. A separately compiled C oracle in this repository
+checks U16/U32/F32 state and call counts. The oracle is source-level Linux C;
+the shipped Win32 executable remains the final x87/libm numeric authority.
+
+### AUD-052 — Pool exhaustion consumed RNG before allocation
+
+Status: **CONFIRMED UPDATE-ORDER BUG; FIXED WITH FULL-POOL CAUSAL TEST**
+
+The first complete-stage runtime evaluated mode-6/7/8 random parameters before
+searching for a free bullet slot. Source `BulletManager::FUN_0042f5f0` obtains
+the pool object first and stops the nested pattern loops at the first failed
+allocation. A saturated pool must therefore suppress the remaining scheduled
+tail without consuming its RNG. The wrong order would shift every later
+random producer after a pressure event.
+
+Allocation now precedes pattern sampling. The regression fills all 1,536
+slots, verifies the exact random-mode call count for allocated bullets, then
+submits another random pattern and proves that it changes neither RNG state
+nor call count. Metrics distinguish producer-requested births, actual
+allocation calls, allocated births, and the schedule tail suppressed by the
+pool.
+
+### AUD-053 — Snapshot fuzzing could not preserve legal long transitions
+
+Status: **CONFIRMED INFRASTRUCTURE LIMIT; SOURCE-STATEFUL REPLACEMENT IMPLEMENTED**
+
+The old stateful/snapshot generators could create dense local arrays but did
+not make the shared RNG, finite pools, callback selection, queued transforms,
+phase clears, laser lifecycle, sensing latency, and input latency one causal
+history. They could neither cover realistic long transitions nor distinguish
+an engine-model failure from an impossible mutated snapshot.
+
+`th08-source-stateful-stage-v1` replaces that path for source-supported
+stress testing. A canonical stage program covers contiguous phases from frame
+zero to completion and is content-addressed for exact replay. Seeded profiles
+span 480 to 12,000 frames and compose all nine direct-fire modes, parity,
+moving resolved origins, callback-12 events, eight transform handlers, lasers,
+clears, and real pool pressure. The closed loop drives the existing
+Sakuya/Remilia local planner with explicit sensing and issue delay and asserts
+hard no-Bomb. Periodic independent geometry comparison and complete-stage C
+lockstep make failures retainable and shrinkable.
+
+The extreme seed `0xce0132` completed all 12,000 frames, reached the real
+1,536-bullet capacity, spent 1,655 frames saturated, and executed more than
+156,000 transform activations. This establishes a workload denser than
+shipped Lunatic and exercises long state, but does not establish arbitrary ECL
+or shipped-stage equivalence. Exactness begins at resolved producer events;
+ANM states 2/3/4, arbitrary ECL/child/timeline execution, callback 14, and
+unsupported transforms remain explicit next work. The complete contract is
+tracked in `TH08_SOURCE_STATEFUL_STAGE_FUZZER.md`.
+
+### AUD-054 — Native source-oracle builds could be stale
+
+Status: **CONFIRMED TEST-INFRA BUG; FIXED**
+
+The first C oracle loader rebuilt only when the shared object did not exist.
+Changing the tracked C or header could therefore leave tests green against an
+old binary. The build helper now hashes the source, header, and compile flags
+and writes a sidecar stamp under ignored `native/build/`; the loader rebuilds
+on any mismatch. This does not enlarge semantic coverage, but it restores the
+independence required for meaningful Python/C differentials.
+
+### AUD-055 — The complete-stage oracle is source-closed only after producer resolution
+
+Status: **BOUNDARY EXPLICIT; GLOBAL FUTURE-BIRTH AUTHORITY REMAINS OPEN**
+
+The generated moving origins and schedules are resolved descriptor producers,
+not decoded ECL programs. Calling the whole generated workload
+source-authoritative without this boundary would repeat the previous hidden
+modeling error in a larger simulator. Stage execution after each resolved
+event is source-closed for the enumerated subset; producer reachability,
+locals/control flow, child VMs, timeline enemies, action-conditioned damage,
+and unsupported callback/ANM effects remain `UNKNOWN` until lowered.
+
+Accordingly this infrastructure can already falsify RNG, allocation,
+callback, transform, geometry, planner, and latency assumptions offline. It
+cannot yet authorize the live global planner for spell 190 or any other card.
+That promotion still requires a retained coherent VM/emitter root and complete
+versioned future coverage over the exact policy horizon.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
