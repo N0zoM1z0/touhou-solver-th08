@@ -609,6 +609,14 @@ source-exact but synthetic, not a retained physical capture. The model now
 stops on the first genuinely missing gameplay semantic, not spell metadata or
 RNG syntax.
 
+Source audit then found that the executor still applied ordinary-enemy rank
+speed/count interpolation during spells. Matching function
+`DispatchShotInstruction @ 0x00422720` gates all of those adjustments on an
+inactive spellcard. Future-source semantics v19 removes that invented spell
+uncertainty while retaining the conservative nonspell branch. This is a
+prerequisite for point-valued retained-root event import, not a global-policy
+promotion.
+
 The delivery side is also ready but remains unexercised physically. Spell
 captures may feed the shared corridor only when the captured spell ID exactly
 matches the current phase and the complete causal prefix spans the requested

@@ -59,7 +59,7 @@ from touhou_control.corridor import AabbHazard, AabbTrajectoryHazard
 
 
 ORDINARY_FUTURE_SOURCE_SEMANTICS_VERSION = (
-    "th08-ordinary-future-sources-v18-spell-prefix-random-angle"
+    "th08-ordinary-future-sources-v19-source-exact-spell-rank-gate"
 )
 _PROJECTION_SCHEMA = "th08-native-snapshot-collision-control-projection-v14"
 _DIRECT_FIRE_OPCODES = frozenset(range(0x60, 0x69))
@@ -1409,22 +1409,35 @@ def _direct_fire_events(
         vm=vm,
     )
     original_flags = int(instruction.arguments[7])
-    rank_count = source.emission.get("rank_count_interval")
-    rank_speed = source.emission.get("rank_speed_interval")
-    if (
-        not isinstance(rank_count, list)
-        or len(rank_count) != 4
-        or any(int(value) != 0 for value in rank_count)
-    ):
-        _fail("nonzero rank count interpolation requires exact count lowering")
-    if not isinstance(rank_speed, list) or len(rank_speed) != 2:
-        _fail("rank speed interpolation layout drifted")
-    rank_adjustment = FloatInterval(
-        min(float(rank_speed[0]), float(rank_speed[1])),
-        max(float(rank_speed[0]), float(rank_speed[1])),
-    )
-    speed1 = speed1.add(rank_adjustment)
-    speed2 = speed2.add(rank_adjustment)
+    compact_state = payload.get("compact_state")
+    if not isinstance(compact_state, dict):
+        _fail("compact root is absent for direct fire")
+    # DispatchShotInstruction @ 0x422720 applies every count/speed rank field
+    # only inside ``if (!g_Spellcard.IsActive())``.  Applying the ordinary
+    # rank envelope to a spell invents speed uncertainty and prevents a
+    # point-valued retained spell root from entering the resolved event
+    # stream.  Do not even inspect the rank fields on this source-unreached
+    # branch: malformed dormant values cannot affect a spell birth.
+    if compact_state.get("spell_id") is None:
+        rank_count = source.emission.get("rank_count_interval")
+        rank_speed = source.emission.get("rank_speed_interval")
+        if (
+            not isinstance(rank_count, list)
+            or len(rank_count) != 4
+            or any(int(value) != 0 for value in rank_count)
+        ):
+            _fail(
+                "nonzero rank count interpolation requires exact count "
+                "lowering"
+            )
+        if not isinstance(rank_speed, list) or len(rank_speed) != 2:
+            _fail("rank speed interpolation layout drifted")
+        rank_adjustment = FloatInterval(
+            min(float(rank_speed[0]), float(rank_speed[1])),
+            max(float(rank_speed[0]), float(rank_speed[1])),
+        )
+        speed1 = speed1.add(rank_adjustment)
+        speed2 = speed2.add(rank_adjustment)
     if speed1.lower < 0.0 or speed2.lower < 0.0:
         _fail("future direct-fire speed interval crosses negative")
     descriptor = source.emission.get("descriptor")
@@ -1470,9 +1483,6 @@ def _direct_fire_events(
     )
     mode = int(instruction.opcode) - 0x60
     if mode in AUTOMATIC_PLAYER_AIM_MODES:
-        compact_state = payload.get("compact_state")
-        if not isinstance(compact_state, dict):
-            _fail("compact root is absent for automatic direct-fire aim")
         root_player_x = compact_state.get("player_x")
         root_player_y = compact_state.get("player_y")
         if not isinstance(root_player_x, (int, float)) or not isinstance(

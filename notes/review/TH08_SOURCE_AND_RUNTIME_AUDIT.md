@@ -1,6 +1,6 @@
 # TH08 Source And Runtime Audit
 
-Last updated: 2026-08-24.
+Last updated: 2026-08-25.
 
 This ledger tracks discrepancies found while rebasing the live solver on the
 exact Japanese TH08 1.00d executable, using the independently reconstructed
@@ -1423,6 +1423,26 @@ geometry, retired state-5, and callback-aux changes. On the retained
 collision counts have zero mismatch; 566 positions exercise the callback-aux
 difference. This is a reminder that an oracle must have separate code, but it
 must also carry the same declared semantic version and coverage inventory.
+
+### AUD-058 — Spell direct fire incorrectly inherited ordinary rank uncertainty
+
+Status: **CONFIRMED SOURCE-MODEL BUG; FIXED OFFLINE**
+
+The future-source executor applied each enemy's captured rank count/speed
+interval to every direct-fire instruction, including active spells. The
+matching `DispatchShotInstruction @ 0x00422720` source puts all four count and
+both speed adjustments inside `if (!g_Spellcard.IsActive())`. An active spell
+does not read those fields at all.
+
+This was strategically significant even when the conservative interval still
+contained the native value: it converted otherwise point-valued spell speeds
+into sets, preventing a resolved retained spell birth from entering the exact
+event stream. Semantics version v19 now branches on the coherently captured
+spell ID, preserves the existing conservative ordinary-nonspell rank envelope,
+and does not validate dormant rank fields on the source-unreached spell path.
+Focused tests distinguish ordinary and spell speeds and prove that malformed
+dormant rank fields cannot fail a spell closure. No physical or arbitrary-ECL
+authority is claimed by this fix.
 
 ## Offline Verification Record
 

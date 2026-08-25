@@ -262,7 +262,9 @@ def _payload() -> dict[str, object]:
 
 
 class OrdinaryFutureSourceTests(unittest.TestCase):
-    def test_active_spell_metadata_uses_same_fail_closed_vm_kernel(self) -> None:
+    def test_active_spell_bypasses_source_unreached_rank_interpolation(
+        self,
+    ) -> None:
         ordinary_payload = deepcopy(_payload())
         spell_payload = deepcopy(ordinary_payload)
         spell_payload["compact_state"]["spell_id"] = 103
@@ -279,7 +281,34 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
         )
 
         self.assertTrue(ordinary.projection.source_closure_complete)
-        self.assertEqual(spell, ordinary)
+        self.assertTrue(spell.projection.source_closure_complete)
+        self.assertEqual(len(ordinary.direct_fire_events), 1)
+        self.assertEqual(len(spell.direct_fire_events), 1)
+        ordinary_event = ordinary.direct_fire_events[0]
+        spell_event = spell.direct_fire_events[0]
+        self.assertEqual(ordinary_event.speed1.lower, 0.85)
+        self.assertEqual(ordinary_event.speed1.upper, 2.15)
+        self.assertEqual(spell_event.speed1.lower, 1.0)
+        self.assertEqual(spell_event.speed1.upper, 2.0)
+        self.assertEqual(spell_event.speed2.upper, spell_event.speed2.lower)
+
+    def test_spell_does_not_read_dormant_rank_fields(self) -> None:
+        payload = deepcopy(_payload())
+        payload["compact_state"]["spell_id"] = 103
+        emission = payload["enemy_manager_template_source"][
+            "emission_state"
+        ]["rows"][0]
+        emission["rank_speed_interval"] = "source-unreached"
+        emission["rank_count_interval"] = "source-unreached"
+
+        closure = project_ordinary_future_sources(
+            payload,
+            ECL,
+            horizon_frames=1,
+        )
+
+        self.assertTrue(closure.projection.source_closure_complete)
+        self.assertEqual(len(closure.direct_fire_events), 1)
 
     def test_spell103_source_exact_root_closes_global_horizon(self) -> None:
         payload = deepcopy(_payload())
