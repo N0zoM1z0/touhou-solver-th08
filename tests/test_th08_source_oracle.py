@@ -20,6 +20,11 @@ from th08_future_birth_envelope import (
     lower_future_direct_fire_sectors,
     spawn_lifecycle_position_coefficient,
 )
+from th08_live.local_hazards import (
+    _build_bullet_frames,
+    _bullet_frame_without_retired_state,
+)
+from th08_live.models import Bullet
 from th08_rng import Th08Rng
 from th08_semantics.native_oracle import (
     NativeSourceOracle,
@@ -383,6 +388,79 @@ class Th08SourceOracleTests(unittest.TestCase):
         # source-order interval recurrence replaced it.
         self.assertGreater(legacy_guard_escape_samples, 0)
         self.assertGreater(maximum_legacy_axis_error, 2.0e-5)
+
+    def test_local_projector_matches_c_for_every_spawn_lifecycle(self) -> None:
+        origin_x = f32(173.25)
+        origin_y = f32(91.75)
+        velocity_x = f32(3.125)
+        velocity_y = f32(-2.375)
+        for bullet_type in range(21):
+            for original_flags in (0x02, 0x04, 0x08):
+                lifecycle = bullet_spawn_lifecycle(
+                    bullet_type,
+                    original_flags,
+                )
+                assert lifecycle is not None
+                for age in sorted(
+                    {
+                        1,
+                        max(1, lifecycle.terminal_age - 2),
+                        lifecycle.terminal_age - 1,
+                    }
+                ):
+                    current = self.oracle.spawn_lifecycle_sample(
+                        bullet_type=bullet_type,
+                        original_flags=original_flags,
+                        age=age,
+                        origin_x=origin_x,
+                        origin_y=origin_y,
+                        velocity_x=velocity_x,
+                        velocity_y=velocity_y,
+                    )
+                    self.assertEqual(current.state, lifecycle.state)
+                    frames = _build_bullet_frames(
+                        (
+                            Bullet(
+                                x=current.x,
+                                y=current.y,
+                                vx=velocity_x,
+                                vy=velocity_y,
+                                half_width=2.0,
+                                half_height=2.0,
+                                native_state=current.state,
+                                native_state_timer_elapsed=age,
+                                bullet_type=bullet_type,
+                            ),
+                        ),
+                        horizon=4,
+                        snapshot_lag=0,
+                    )
+                    for step, frame in enumerate(frames, 1):
+                        with self.subTest(
+                            bullet_type=bullet_type,
+                            state=lifecycle.state,
+                            age=age,
+                            step=step,
+                        ):
+                            authority = self.oracle.spawn_lifecycle_sample(
+                                bullet_type=bullet_type,
+                                original_flags=original_flags,
+                                age=age + step,
+                                origin_x=origin_x,
+                                origin_y=origin_y,
+                                velocity_x=velocity_x,
+                                velocity_y=velocity_y,
+                            )
+                            self.assertEqual(float(frame[0][0]), authority.x)
+                            self.assertEqual(float(frame[1][0]), authority.y)
+                            self.assertEqual(int(frame[5][0]), authority.state)
+                            lethal_count = (
+                                _bullet_frame_without_retired_state(frame)[0].size
+                            )
+                            self.assertEqual(
+                                lethal_count,
+                                int(authority.lethal_active),
+                            )
 
     def test_random_speed_angle_sector_contains_c_lifecycle_samples(self) -> None:
         origin_x = f32(192.0)

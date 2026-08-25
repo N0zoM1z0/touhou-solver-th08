@@ -45,6 +45,7 @@ def _bullets(count: int) -> PackedBulletSnapshot:
         original_transform_flags=zeros_u32.copy(),
         native_state=np.ones(count, dtype=np.uint16),
         native_state_timer_elapsed=np.zeros(count, dtype=np.int32),
+        bullet_type=np.zeros(count, dtype=np.int16),
     )
 
 

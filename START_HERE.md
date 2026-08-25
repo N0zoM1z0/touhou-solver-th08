@@ -37,11 +37,22 @@ ordered implementation plan are in
   completed the extreme 12,000-frame runtime, saturated all 1,536 bullet
   slots, and exercised 156,186 transforms. This is a source-closed stress
   result after resolved producer events, not arbitrary ECL or route-hit
-  authority. The retained 3,600-frame gate artifact
+  authority. Versioned stage schema v3 now carries all 21 native bullet types
+  and generic state-2/3/4 spawn lifecycle flags through long histories. A new
+  3,600-frame gate activated 18,665 lifecycles and matched 1,412,926 reached
+  lifecycle samples exactly against the tracked C oracle while making 120
+  local-planner calls. The live/local projector also replaced its fixed
+  state-2 shortcut: type is recovered from the copied normal ANM script in the
+  existing pool slab, and every type/state-2/3/4 path matches C without another
+  sensing call. The post-fix long gate had the same synthetic outcome, so no
+  hit gain is claimed. Lifecycle/callback/transform composition still fails
+  closed; child/timeline births and callback 14 are next. The retained v1
+  3,600-frame compatibility artifact
   `artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json` passes
   complete C lockstep, 180 NumPy/native geometry comparisons, 120 real local
-  planner calls, hard no-Bomb, and exact RNG/collision membership. The latest
-  repository suite passes 1,433 tests with 5 conditional skips. Read
+  planner calls, hard no-Bomb, and exact RNG/collision membership. Routine
+  successful raw reports remain temporary; only compact metrics/hashes or
+  minimized failures are tracked. Read
   `notes/review/TH08_SOURCE_STATEFUL_STAGE_FUZZER.md` before extending it.
 - **Current Lunatic physical checkpoint:**
   `lunatic_route2_fullrun_unattended_20260824_051944` completed Sakuya/Remilia

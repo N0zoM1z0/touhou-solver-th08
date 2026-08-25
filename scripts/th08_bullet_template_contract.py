@@ -193,6 +193,10 @@ BULLET_TEMPLATE_PROFILES = tuple(
 _PROFILE_BY_TYPE = {
     profile.bullet_type: profile for profile in BULLET_TEMPLATE_PROFILES
 }
+_TYPE_BY_NORMAL_SCRIPT = {
+    profile.normal_script: profile.bullet_type
+    for profile in BULLET_TEMPLATE_PROFILES
+}
 _SPAWN_LIFECYCLE_CLASSES = (
     (0x02, 2, "state2_script", "state2_terminal_age", 2.0),
     (0x04, 3, "state3_script", "state3_terminal_age", 2.5),
@@ -234,6 +238,39 @@ def bullet_spawn_lifecycle(
                 terminal_age=int(getattr(profile, terminal_field)),
             )
     return None
+
+
+def bullet_type_from_normal_script(normal_script: int) -> int:
+    """Recover the native template row from the copied normal ANM VM."""
+
+    if type(normal_script) is not int:
+        raise BulletTemplateContractError(
+            "normal bullet script index must be an integer"
+        )
+    try:
+        return _TYPE_BY_NORMAL_SCRIPT[normal_script]
+    except KeyError as error:
+        raise BulletTemplateContractError(
+            f"normal bullet script {normal_script} is outside the template table"
+        ) from error
+
+
+def bullet_spawn_lifecycle_for_state(
+    bullet_type: int,
+    native_state: int,
+) -> BulletSpawnLifecycle:
+    """Resolve an observed native state without depending on stale flags."""
+
+    if type(native_state) is not int or native_state not in (2, 3, 4):
+        raise BulletTemplateContractError(
+            f"native spawn state {native_state!r} is outside 2/3/4"
+        )
+    lifecycle = bullet_spawn_lifecycle(
+        bullet_type,
+        1 << (native_state - 1),
+    )
+    assert lifecycle is not None
+    return lifecycle
 
 
 def _checked_slice(data: bytes, offset: int, size: int, *, label: str) -> None:
@@ -524,7 +561,9 @@ __all__ = [
     "ETAMA_DECODED_SIZE",
     "SOURCE_AUTHORITY_COMMIT",
     "bullet_spawn_lifecycle",
+    "bullet_spawn_lifecycle_for_state",
     "bullet_template_profile",
+    "bullet_type_from_normal_script",
     "derive_decoded_etama_profiles",
     "fallback_geometry_from_observed_prefix",
     "pinned_contract_payload",

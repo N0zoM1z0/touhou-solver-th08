@@ -34,7 +34,7 @@ class LiveSourceAabbPromotionDifferentialTests(unittest.TestCase):
             0,
         )
         self.assertGreater(result["geometry_only_changed_positions"], 0)
-        self.assertGreater(result["retired_state5_changed_positions"], 0)
+        self.assertGreater(result["nonlethal_state_changed_positions"], 0)
         self.assertGreater(result["callback_aux_changed_positions"], 0)
         self.assertTrue(result["finite_outputs"])
 

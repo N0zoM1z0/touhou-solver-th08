@@ -30,8 +30,11 @@ class StageSourceDifferentialResult:
     passed: bool
     first_mismatch: str | None
     maximum_position_error: float
+    maximum_non_lifecycle_position_error: float
     maximum_velocity_error: float
     maximum_callback_velocity_error: float
+    lifecycle_samples_compared: int
+    maximum_lifecycle_position_error: float
     final_rng_state_equal: bool
     final_rng_calls_equal: bool
 
@@ -64,8 +67,11 @@ def compare_stage_with_c_source_oracle(
     )
     first_mismatch: str | None = None
     maximum_position_error = 0.0
+    maximum_non_lifecycle_position_error = 0.0
     maximum_velocity_error = 0.0
     maximum_callback_velocity_error = 0.0
+    lifecycle_samples_compared = 0
+    maximum_lifecycle_position_error = 0.0
     # Python uses double-libm sin/cos followed by a binary32 store; the C
     # source oracle calls the host sinf/cosf.  A one-ULP velocity difference
     # can cause the two binary32 position additions to round differently on
@@ -88,6 +94,8 @@ def compare_stage_with_c_source_oracle(
             != candidate_step.births_suppressed_by_pool
             or reference_step.callback_changes
             != candidate_step.callback_changes
+            or reference_step.spawn_lifecycle_activations
+            != candidate_step.spawn_lifecycle_activations
             or reference_step.transform_activations
             != candidate_step.transform_activations
             or reference_step.active_bullets
@@ -123,6 +131,10 @@ def compare_stage_with_c_source_oracle(
             if (
                 left.source != right.source
                 or left.tag_flags != right.tag_flags
+                or left.bullet_type != right.bullet_type
+                or left.spawn_flags != right.spawn_flags
+                or left.native_state != right.native_state
+                or left.native_state_age != right.native_state_age
                 or left.phase_state != right.phase_state
                 or left.collision_aux != right.collision_aux
                 or left.transform_cursor != right.transform_cursor
@@ -138,6 +150,42 @@ def compare_stage_with_c_source_oracle(
             ):
                 first_mismatch = f"frame={reference_step.frame}:slot={slot}:state"
                 break
+            if right.spawn_lifecycle is not None:
+                if right.bullet_type is None:
+                    first_mismatch = (
+                        f"frame={reference_step.frame}:slot={slot}:"
+                        "lifecycle_type"
+                    )
+                    break
+                authority = native.spawn_lifecycle_sample(
+                    bullet_type=right.bullet_type,
+                    original_flags=right.spawn_flags,
+                    age=right.age,
+                    origin_x=right.spawn_origin_x,
+                    origin_y=right.spawn_origin_y,
+                    velocity_x=right.initial_velocity_x,
+                    velocity_y=right.initial_velocity_y,
+                )
+                lifecycle_position_error = max(
+                    abs(right.x - authority.x),
+                    abs(right.y - authority.y),
+                )
+                lifecycle_samples_compared += 1
+                maximum_lifecycle_position_error = max(
+                    maximum_lifecycle_position_error,
+                    lifecycle_position_error,
+                )
+                if (
+                    right.native_state != authority.state
+                    or lifecycle_position_error > 1.0e-5
+                ):
+                    first_mismatch = (
+                        f"frame={reference_step.frame}:slot={slot}:"
+                        "lifecycle_oracle:"
+                        f"state={right.native_state}/{authority.state}:"
+                        f"position={lifecycle_position_error}"
+                    )
+                    break
             position_error = max(
                 abs(left.x - right.x),
                 abs(left.y - right.y),
@@ -156,6 +204,11 @@ def compare_stage_with_c_source_oracle(
                 maximum_position_error,
                 position_error,
             )
+            if left.spawn_lifecycle is None:
+                maximum_non_lifecycle_position_error = max(
+                    maximum_non_lifecycle_position_error,
+                    position_error,
+                )
             maximum_velocity_error = max(
                 maximum_velocity_error,
                 velocity_error,
@@ -210,8 +263,15 @@ def compare_stage_with_c_source_oracle(
         passed=first_mismatch is None and reference.complete and candidate.complete,
         first_mismatch=first_mismatch,
         maximum_position_error=maximum_position_error,
+        maximum_non_lifecycle_position_error=(
+            maximum_non_lifecycle_position_error
+        ),
         maximum_velocity_error=maximum_velocity_error,
         maximum_callback_velocity_error=maximum_callback_velocity_error,
+        lifecycle_samples_compared=lifecycle_samples_compared,
+        maximum_lifecycle_position_error=(
+            maximum_lifecycle_position_error
+        ),
         final_rng_state_equal=reference.rng.state == candidate.rng.state,
         final_rng_calls_equal=reference.rng.calls == candidate.rng.calls,
     )

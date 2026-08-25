@@ -21,11 +21,12 @@ from th08_live.movement import (
     PLAYER_LETHAL_HALF_HEIGHT,
     PLAYER_LETHAL_HALF_WIDTH,
 )
+from th08_collision_versions import LIVE_LOCAL_COLLISION_SEMANTICS_VERSION
 from th08_source_collision import TH08_SOURCE_COLLISION_SEMANTICS_VERSION
 from touhou_control import native_backend
 
 
-SCHEMA = "th08-live-source-aabb-promotion-differential-v1"
+SCHEMA = "th08-live-source-aabb-promotion-differential-v2-state1-lifecycle"
 DEFAULT_SEED = 0x44A23005
 DEFAULT_REPORT = Path(
     "artifacts/runtime_reports/"
@@ -235,9 +236,9 @@ def density_stress(
         bullet_count=bullet_count,
         seed=seed,
     )
-    state_retained = workload["native_state"] != 5
+    state_lethal = workload["native_state"] == 1
     callback_collision_enabled = workload["callback_aux"] == 0
-    collision_enabled = state_retained & callback_collision_enabled
+    collision_enabled = state_lethal & callback_collision_enabled
     oracle_started = time.perf_counter()
     oracle_counts = _collision_counts(
         oracle_overlap_mask(
@@ -312,14 +313,14 @@ def density_stress(
             hazard_half_height=workload["half_height"],
         )
     )
-    source_state_retained_counts = _collision_counts(
+    source_state1_counts = _collision_counts(
         oracle_overlap_mask(
             positions_x=workload["positions_x"],
             positions_y=workload["positions_y"],
-            hazard_x=workload["bullet_x"][state_retained],
-            hazard_y=workload["bullet_y"][state_retained],
-            hazard_half_width=workload["half_width"][state_retained],
-            hazard_half_height=workload["half_height"][state_retained],
+            hazard_x=workload["bullet_x"][state_lethal],
+            hazard_y=workload["bullet_y"][state_lethal],
+            hazard_half_width=workload["half_width"][state_lethal],
+            hazard_half_height=workload["half_height"][state_lethal],
         )
     )
     source_callback_enabled_counts = _collision_counts(
@@ -360,14 +361,14 @@ def density_stress(
         "position_count": position_count,
         "bullet_count": bullet_count,
         "retained_bullet_count": int(collision_enabled.sum()),
-        "state_retained_bullet_count": int(state_retained.sum()),
+        "state1_bullet_count": int(state_lethal.sum()),
         "callback_collision_enabled_bullet_count": int(
             callback_collision_enabled.sum()
         ),
         "callback_collision_disabled_bullet_count": int(
             (~callback_collision_enabled).sum()
         ),
-        "retired_state5_count": int((~state_retained).sum()),
+        "nonlethal_state_count": int((~state_lethal).sum()),
         "pair_count": position_count * bullet_count,
         "retained_pair_count": position_count * int(collision_enabled.sum()),
         "oracle_collision_total": int(oracle_counts.sum()),
@@ -392,11 +393,11 @@ def density_stress(
         "geometry_only_changed_positions": int(
             np.count_nonzero(legacy_retained_counts != oracle_counts)
         ),
-        "retired_state5_changed_positions": int(
+        "nonlethal_state_changed_positions": int(
             np.count_nonzero(source_callback_enabled_counts != oracle_counts)
         ),
         "callback_aux_changed_positions": int(
-            np.count_nonzero(source_state_retained_counts != oracle_counts)
+            np.count_nonzero(source_state1_counts != oracle_counts)
         ),
         "combined_historical_changed_positions": int(
             np.count_nonzero(legacy_all_counts != oracle_counts)
@@ -447,8 +448,8 @@ def build_report(
         "historical_geometry_difference_exercised": (
             stress["geometry_only_changed_positions"] > 0
         ),
-        "retired_state5_difference_exercised": (
-            stress["retired_state5_changed_positions"] > 0
+        "nonlethal_state_difference_exercised": (
+            stress["nonlethal_state_changed_positions"] > 0
         ),
         "callback_aux_difference_exercised": (
             stress["callback_aux_changed_positions"] > 0
@@ -459,13 +460,14 @@ def build_report(
         "schema": SCHEMA,
         "role": "offline_promotion_gate_no_action_authority",
         "source_collision_semantics": TH08_SOURCE_COLLISION_SEMANTICS_VERSION,
+        "live_local_collision_semantics": LIVE_LOCAL_COLLISION_SEMANTICS_VERSION,
         "live_player_lethal_half_extents": [
             PLAYER_LETHAL_HALF_WIDTH,
             PLAYER_LETHAL_HALF_HEIGHT,
         ],
         "lifecycle_policy": (
-            "filter_state5_and_nonzero_callback_aux_retain_states2_3_4_"
-            "conservatively_without_future_anm_authority"
+            "source_lethal_state1_and_callback_aux_zero_after_exact_"
+            "type_authoritative_spawn_projection"
         ),
         "native_available": native_available,
         "stress": stress,

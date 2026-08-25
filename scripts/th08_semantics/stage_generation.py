@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import math
 import random
 
+from th08_bullet_template_contract import bullet_template_profile
 from th08_semantics.stage import (
     BulletEmitter,
     Callback12Event,
@@ -57,6 +58,7 @@ STAGE_PROFILES = {
 }
 
 _TAGS = (0x100000, 0x200000, 0x400000, 0x800000)
+_SPAWN_LIFECYCLE_FLAGS = (0x02, 0x04, 0x08)
 _TRANSFORM_KINDS = (
     TRANSFORM_DECELERATE,
     TRANSFORM_VECTOR_ACCELERATION,
@@ -157,6 +159,7 @@ def generate_stage_program(*, seed: int, profile: str) -> StageProgram:
     generator = random.Random(_mixed_seed(seed) ^ 0xCE0132A5)
     phases: list[StagePhase] = []
     emitter_serial = 0
+    lifecycle_serial = 0
     for phase_index in range(limits.phase_count):
         start, end = _phase_bounds(
             limits.frame_count,
@@ -167,10 +170,29 @@ def generate_stage_program(*, seed: int, profile: str) -> StageProgram:
         emitters: list[BulletEmitter] = []
         phase_tags: set[int] = set()
         for local_index in range(limits.emitters_per_phase):
-            mode = emitter_serial % 9
+            emitter_ordinal = emitter_serial
+            mode = emitter_ordinal % 9
             emitter_serial += 1
-            tag = _TAGS[(phase_index + local_index) % len(_TAGS)]
-            phase_tags.add(tag)
+            has_spawn_lifecycle = emitter_ordinal % 3 == 0
+            if has_spawn_lifecycle:
+                bullet_type = lifecycle_serial % 21
+                spawn_flags = _SPAWN_LIFECYCLE_FLAGS[
+                    (lifecycle_serial + lifecycle_serial // 21)
+                    % len(_SPAWN_LIFECYCLE_FLAGS)
+                ]
+                lifecycle_serial += 1
+            else:
+                bullet_type = None
+                spawn_flags = 0
+            scheduled_callback_tag = _TAGS[
+                (phase_index + local_index) % len(_TAGS)
+            ]
+            phase_tags.add(scheduled_callback_tag)
+            tag = (
+                0
+                if has_spawn_lifecycle
+                else scheduled_callback_tag
+            )
             margin = max(2, phase_duration // 20)
             emitter_start = start + generator.randint(0, margin)
             emitter_end = end - generator.randint(0, margin)
@@ -190,6 +212,33 @@ def generate_stage_program(*, seed: int, profile: str) -> StageProgram:
             count2 = generator.randint(1, limits.count2_max)
             origin_x = generator.uniform(56.0, 328.0)
             origin_y = generator.uniform(24.0, 152.0)
+            origin_velocity_x = generator.uniform(-0.12, 0.12)
+            origin_velocity_y = generator.uniform(-0.04, 0.08)
+            origin_wave_x = generator.uniform(0.0, 72.0)
+            origin_wave_y = generator.uniform(0.0, 30.0)
+            origin_wave_step = generator.uniform(-0.22, 0.22)
+            speed1 = generator.uniform(1.0, 6.8)
+            speed2 = generator.uniform(0.25, 3.4)
+            angle = generator.uniform(-math.pi, math.pi)
+            angle_step = generator.uniform(-0.32, 0.32)
+            angle_per_emission = generator.uniform(-0.15, 0.15)
+            generated_half_width = generator.uniform(1.5, 7.0)
+            generated_half_height = generator.uniform(1.5, 7.0)
+            generated_transforms = _transform_queue(
+                generator,
+                probability=limits.transform_probability,
+                selector=phase_index * limits.emitters_per_phase
+                + local_index,
+            )
+            if bullet_type is not None:
+                template = bullet_template_profile(bullet_type)
+                half_width = template.half_width
+                half_height = template.half_height
+                transforms = ()
+            else:
+                half_width = generated_half_width
+                half_height = generated_half_height
+                transforms = generated_transforms
             emitters.append(
                 BulletEmitter(
                     emitter_id=f"p{phase_index:02d}-e{local_index:02d}-m{mode}",
@@ -198,28 +247,25 @@ def generate_stage_program(*, seed: int, profile: str) -> StageProgram:
                     interval=interval,
                     origin_x=origin_x,
                     origin_y=origin_y,
-                    origin_velocity_x=generator.uniform(-0.12, 0.12),
-                    origin_velocity_y=generator.uniform(-0.04, 0.08),
-                    origin_wave_x=generator.uniform(0.0, 72.0),
-                    origin_wave_y=generator.uniform(0.0, 30.0),
-                    origin_wave_step=generator.uniform(-0.22, 0.22),
+                    origin_velocity_x=origin_velocity_x,
+                    origin_velocity_y=origin_velocity_y,
+                    origin_wave_x=origin_wave_x,
+                    origin_wave_y=origin_wave_y,
+                    origin_wave_step=origin_wave_step,
                     mode=mode,
                     count1=count1,
                     count2=count2,
-                    speed1=generator.uniform(1.0, 6.8),
-                    speed2=generator.uniform(0.25, 3.4),
-                    angle=generator.uniform(-math.pi, math.pi),
-                    angle_step=generator.uniform(-0.32, 0.32),
-                    angle_per_emission=generator.uniform(-0.15, 0.15),
+                    speed1=speed1,
+                    speed2=speed2,
+                    angle=angle,
+                    angle_step=angle_step,
+                    angle_per_emission=angle_per_emission,
                     tag_flags=tag,
-                    half_width=generator.uniform(1.5, 7.0),
-                    half_height=generator.uniform(1.5, 7.0),
-                    transforms=_transform_queue(
-                        generator,
-                        probability=limits.transform_probability,
-                        selector=phase_index * limits.emitters_per_phase
-                        + local_index,
-                    ),
+                    half_width=half_width,
+                    half_height=half_height,
+                    transforms=transforms,
+                    bullet_type=bullet_type,
+                    spawn_flags=spawn_flags,
                 )
             )
 

@@ -20,7 +20,11 @@ if TYPE_CHECKING:
 
 
 ENEMY_MAX_OBSERVED_WORLD_SPEED = 32.0
-BULLET_LIFECYCLE_TRACE_SCHEMA = "th08-bullet-lifecycle-v1"
+BULLET_LIFECYCLE_TRACE_SCHEMA_V1 = "th08-bullet-lifecycle-v1"
+BULLET_LIFECYCLE_TRACE_SCHEMA = "th08-bullet-lifecycle-v2-template-type"
+BULLET_LIFECYCLE_TRACE_SCHEMAS = frozenset(
+    (BULLET_LIFECYCLE_TRACE_SCHEMA_V1, BULLET_LIFECYCLE_TRACE_SCHEMA)
+)
 
 
 @dataclass(frozen=True)
@@ -45,6 +49,7 @@ class Bullet:
     original_transform_flags: int = 0
     native_state: int = 1
     native_state_timer_elapsed: int = 0
+    bullet_type: int | None = None
 
 
 @dataclass(frozen=True)
@@ -66,6 +71,7 @@ class PackedBulletSnapshot:
     original_transform_flags: np.ndarray
     native_state: np.ndarray
     native_state_timer_elapsed: np.ndarray
+    bullet_type: np.ndarray
 
     def __len__(self) -> int:
         return len(self.x)
@@ -92,6 +98,11 @@ class PackedBulletSnapshot:
             native_state=int(self.native_state[index]),
             native_state_timer_elapsed=int(
                 self.native_state_timer_elapsed[index]
+            ),
+            bullet_type=(
+                int(self.bullet_type[index])
+                if int(self.bullet_type[index]) >= 0
+                else None
             ),
         )
 
@@ -138,11 +149,13 @@ def serialize_bullet_trace(bullet: Bullet) -> list[object]:
             bullet.native_state,
             bullet.native_state_timer_elapsed,
             bullet.callback_aux_state,
+            bullet.bullet_type,
         ]
         if (
             bullet.native_state != 1
             or bullet.native_state_timer_elapsed != 0
             or bullet.callback_aux_state != 0
+            or bullet.bullet_type is not None
         )
         else None
     )
@@ -399,6 +412,8 @@ class Item:
 
 __all__ = [
     "BULLET_LIFECYCLE_TRACE_SCHEMA",
+    "BULLET_LIFECYCLE_TRACE_SCHEMAS",
+    "BULLET_LIFECYCLE_TRACE_SCHEMA_V1",
     "Bullet",
     "ENEMY_MAX_OBSERVED_WORLD_SPEED",
     "EnemyBody",

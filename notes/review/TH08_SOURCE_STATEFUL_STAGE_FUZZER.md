@@ -43,9 +43,13 @@ seeded stage grammar
   -> delayed hard-no-Bomb input and collision observation
 ```
 
-Every capsule uses schema `th08-source-stateful-stage-v1`, records source
-authority commit `57ee34f`, and carries a canonical SHA-256 digest. Generator
-implementation changes cannot alter an already serialized replay.
+Every capsule records source authority commit `57ee34f` and carries a
+canonical SHA-256 digest. Schema v1 preserves the original resolved-descriptor
+programs, v2 adds an already-resolved aim, and v3 adds the native bullet
+type/lifecycle flags. Readers recompute the required schema from program
+features, so a v2/v3 payload cannot be relabeled as v1. The tracked v1 gate
+remains replayable with its original digest after the v3 implementation.
+Generator implementation changes cannot alter an already serialized replay.
 
 ## Modeled Source Contract
 
@@ -58,6 +62,12 @@ The runtime currently closes the following source-derived behavior:
   at the first failed allocation;
 - phase clears, moving resolved origins, periodic producer schedules, and
   source-order bullet scanning (`0`, then `1535..1`);
+- the type-indexed state-2/3/4 spawn lifecycle for all 21 initialized native
+  bullet templates, including native flag priority, divided pre-activation
+  motion, nonlethal gating, and same-update state-1 activation;
+- the same lifecycle inside the real local hazard projector. Live pool
+  decoding recovers type from the already-captured normal ANM `scriptIndex`;
+  the 21 source rows are one-to-one, so this adds no sensing call;
 - callback 12 selection, phase transition, velocity replacement, and its
   non-colliding auxiliary state;
 - sequential transform queues with the native wait-for-active-clear rule for
@@ -77,7 +87,8 @@ pretend that its schedules are reached ECL bytecode.
 The following remain outside the exactness claim:
 
 - arbitrary main/auxiliary/child ECL execution and enemy timeline births;
-- ANM-dependent bullet lifecycle states 2, 3, and 4;
+- general ANM VM execution, and composition of spawn lifecycle with callback
+  tags or transform programs; those compositions currently fail closed;
 - callback 14 and other callbacks beyond the modeled callback-12 subset;
 - derived child-pattern transform `0x1000000`, wrap transforms, and unsupported
   transform kinds;
@@ -95,8 +106,11 @@ on the same capsule, but it is not the native route hit counter.
 
 Seed space is effectively unbounded. Each profile includes all nine fire
 modes over its emitter sequence, odd/even fan counts, moving and oscillating
-origins, tagged callback transitions, transform queues, lasers, phase clears,
-and pool pressure.
+origins, all 21 native bullet types and all three spawn-state flag classes,
+tagged callback transitions, transform queues, lasers, phase clears, and pool
+pressure. Lifecycle emitters are isolated from callbacks/transforms until
+their source composition order is closed; the same generated stage still
+contains independent callback and transform histories.
 
 | Profile | Frames | Phases | Intended use |
 | --- | ---: | ---: | --- |
@@ -129,6 +143,20 @@ The campaign recorded 134 cooldown-normalized collision events. That number
 measures this deliberately hostile synthetic capsule and is not a route score
 or a claim that the current local planner solves beyond-Lunatic pressure.
 
+The v3 lifecycle gate used the same seed/profile and completed 3,600/3,600
+frames. It allocated 57,871 of 190,326 requested births, reached all 1,536
+slots, activated 18,665 native spawn lifecycles, executed 120 planner calls,
+and compared 1,412,926 reached lifecycle states/positions with the independent
+C oracle. Lifecycle state and position matched exactly; the maximum existing
+non-lifecycle libm drift was `0.0005874634 px`. Hard no-Bomb and every geometry
+gate passed. Planner median/p95 were 22.37/27.28 ms. Its 152 normalized
+collisions are a new, deliberately changed
+synthetic workload, not comparable route hits. To limit artifacts, the
+103,397-byte full report was kept only in `/tmp`, recorded by SHA-256
+`16176920feeee82024d81d0ee96acc99b533beaaf8119124d737ad7322c994de`,
+and removed after this summary; the older compact v1 gate stays tracked as the
+backward-compatibility fixture.
+
 ## Independent C Differential
 
 `native/th08_source_oracle/th08_source_oracle.c` is a deliberately small,
@@ -137,6 +165,7 @@ from both the Python model and the optimized planner and covers:
 
 - RNG U16/U32/F32;
 - direct-fire modes 0 through 8;
+- all 21 type-indexed state-2/3/4 spawn lifecycles;
 - callback 12;
 - inclusive bullet/player AABB;
 - the eight supported transform handlers.
@@ -171,6 +200,17 @@ all eight handlers.
 7. The older dense AABB oracle was stale after callback-aux promotion and
    encoded the old state-5-only filter. It now differentially isolates
    geometry, state-5, and callback-aux effects.
+8. The standalone future lowerer knew the generic spawn lifecycle, but the
+   long-stage IR/runtime rejected it, leaving an important transition family
+   outside stateful stress. Schema v3 now executes it and checks every reached
+   lifecycle bullet against C without conflating native state with callback-12
+   phase state.
+9. The real local projector still hardcoded the one observed state-2
+   completion timer, advanced states 3/4 at full speed, and treated every
+   preactivation state as immediately lethal. The decoder now derives template
+   type from the copied normal ANM script; all 21 types and states 2/3/4 match
+   C position/state/lethality from multiple preterminal roots. The long gate's
+   outcome did not change, so this is not presented as a policy gain.
 
 These are source-backed semantic corrections. None is presented as a route
 hit improvement until it changes a complete future projection and passes a
@@ -184,7 +224,8 @@ Build the tracked C oracle:
 PYTHONPATH=scripts .venv/bin/python scripts/build_th08_source_oracle.py
 ```
 
-Run a normal complete-stage gate and retain its replay capsule:
+Run a normal complete-stage gate. Write routine successes to temporary storage;
+retain only compact summaries or minimized counterexamples in the repository:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=scripts .venv/bin/python \
@@ -193,7 +234,7 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=scripts .venv/bin/python \
   --planner-stride 30 --planner-horizon 12 \
   --planner-threat-horizon 16 --planner-beam-width 8 \
   --geometry-oracle-stride 60 --geometry-oracle-horizon 3 \
-  --output artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json
+  --output /tmp/th08_source_stage_fuzzer_gate.json
 ```
 
 Replay an exact stored program by extracting its `program` object to a JSON
@@ -207,10 +248,10 @@ program frame count.
 The fuzzer now provides the infrastructure needed to extend semantics without
 Wine. The next work should remain incremental and differential:
 
-1. preserve the completed retained-root importer and generic future-envelope
-   lifecycle oracle; extend the StageProgram/emitter IR so the same type/flag
-   lifecycle can execute inside long generated histories;
-2. lower child VMs/timeline births and callback 14 into the same event stream;
+1. preserve the completed retained-root importer and long-stage generic
+   lifecycle differential; lower reached child VMs and timeline births into
+   the same event stream;
+2. close lifecycle/callback/transform composition order, then callback 14;
 3. make future births action-conditioned where player aim or damage changes
    the producer root;
 4. feed only a complete, version-matched horizon into the global viability
@@ -223,8 +264,8 @@ appropriate once their source dependencies are reached; handwritten policies
 remain a last resort for a measured residual.
 
 The importer prerequisite is now explicit. A default-off, spell-filtered
-Practice observer writes canonical content-addressed coherent root capsules;
-capture-only results cannot reach the planner. No legacy Stage-5 trace contains
-the required root, so the first real capsule still requires one isolated
-physical acquisition. Offline replay and event import begin only after its
-SHA-256 and exact runtime ECL identity are retained.
+Practice observer wrote canonical content-addressed coherent Stage-5 root
+capsules; capture-only results cannot reach the planner. Offline replay checks
+each capsule's SHA-256 and exact runtime ECL identity. The retained roots still
+reach child/callback boundaries before a complete hostile-birth horizon, so
+they remain shadow evidence rather than action authority.

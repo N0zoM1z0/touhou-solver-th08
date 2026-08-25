@@ -66,6 +66,7 @@ def _player_geometry_record(root: Any) -> dict[str, object]:
 def _bullet_lifecycle_record(bullets: Sequence[Any]) -> dict[str, object]:
     packed_states = getattr(bullets, "native_state", None)
     packed_timers = getattr(bullets, "native_state_timer_elapsed", None)
+    packed_types = getattr(bullets, "bullet_type", None)
     packed_aux = getattr(bullets, "callback_aux", None)
     if (
         packed_states is not None
@@ -89,10 +90,21 @@ def _bullet_lifecycle_record(bullets: Sequence[Any]) -> dict[str, object]:
         callback_suppressed = int(
             np.count_nonzero((states == 1) & (auxiliary != 0))
         )
+        template_types = (
+            np.asarray(packed_types)
+            if packed_types is not None
+            else np.full(states.shape, -1, dtype=np.int16)
+        )
+        type_known = (template_types >= 0) & (template_types < 21)
+        spawn_state = (states >= 2) & (states <= 4)
+        lifecycle_type_complete = bool(np.all(~spawn_state | type_known))
+        type_known_count = int(np.count_nonzero(type_known))
     else:
         counts_counter: Counter[int] = Counter()
         lethal_eligible = 0
         callback_suppressed = 0
+        lifecycle_type_complete = True
+        type_known_count = 0
         complete = True
         for bullet in bullets:
             if not all(
@@ -106,9 +118,16 @@ def _bullet_lifecycle_record(bullets: Sequence[Any]) -> dict[str, object]:
                 complete = False
             state = int(getattr(bullet, "native_state", 1))
             auxiliary = int(getattr(bullet, "callback_aux_state", 0))
+            bullet_type = getattr(bullet, "bullet_type", None)
+            type_known = (
+                type(bullet_type) is int and 0 <= bullet_type < 21
+            )
             counts_counter[state] += 1
             lethal_eligible += state == 1 and auxiliary == 0
             callback_suppressed += state == 1 and auxiliary != 0
+            type_known_count += type_known
+            if 2 <= state <= 4 and not type_known:
+                lifecycle_type_complete = False
         counts = {
             str(state): count
             for state, count in sorted(counts_counter.items())
@@ -121,10 +140,16 @@ def _bullet_lifecycle_record(bullets: Sequence[Any]) -> dict[str, object]:
         "source_lethal_eligible_count": lethal_eligible,
         "source_nonlethal_lifecycle_count": total - lethal_eligible,
         "callback_suppressed_state1_count": callback_suppressed,
+        "native_template_type_known_count": type_known_count,
+        "spawn_lifecycle_projection_coverage": (
+            "complete"
+            if lifecycle_type_complete
+            else "unknown_missing_template_type"
+        ),
         "legacy_collision_candidate_count": total,
         "legacy_only_candidate_count": total - lethal_eligible,
         "exception_trace_schema": BULLET_LIFECYCLE_TRACE_SCHEMA,
-        "default_trace_state": [1, 0, 0],
+        "default_trace_state": [1, 0, 0, None],
     }
 
 

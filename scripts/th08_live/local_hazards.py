@@ -6,6 +6,7 @@ import math
 
 import numpy as np
 
+from th08_bullet_template_contract import BULLET_TEMPLATE_PROFILES
 from th08_collision_versions import LIVE_LOCAL_COLLISION_SEMANTICS_VERSION
 from th08_laser_runtime import (
     Laser,
@@ -20,13 +21,16 @@ from th08_live.movement import (
 from touhou_control import native_backend
 
 
-# Observed in the retained native root2129 H=8 lifecycle differential:
-# state 2 remains in its spawn ANM through timer 9.  Each non-completing
-# update adds velocity/2.  The timer-9 completion update first stores that
-# half-step, transitions to state 1, then stores the ordinary full step in the
-# same bullet-manager call.
-_STATE2_COMPLETION_TIMER = 9
-_RETIRED_BULLET_STATE = 5
+_SPAWN_STATES = (2, 3, 4)
+_SPAWN_MOTION_DIVISORS = np.asarray((2.0, 2.5, 3.0), dtype=np.float32)
+_SPAWN_TERMINAL_AGES = np.asarray(
+    (
+        tuple(profile.state2_terminal_age for profile in BULLET_TEMPLATE_PROFILES),
+        tuple(profile.state3_terminal_age for profile in BULLET_TEMPLATE_PROFILES),
+        tuple(profile.state4_terminal_age for profile in BULLET_TEMPLATE_PROFILES),
+    ),
+    dtype=np.int32,
+)
 
 
 def _source_aabb_overlap_mask(
@@ -109,12 +113,12 @@ def _align_clearance_sign(
 def _bullet_frame_without_retired_state(
     bullet_frame: tuple[np.ndarray, ...],
 ) -> tuple[np.ndarray, ...]:
-    """Remove native-retired and callback-disabled collision states."""
+    """Keep only native state-1 and callback-enabled lethal bullets."""
 
     if len(bullet_frame) < 6:
         return bullet_frame
     native_state = np.asarray(bullet_frame[5])
-    retained = native_state != _RETIRED_BULLET_STATE
+    retained = native_state == 1
     if len(bullet_frame) >= 7:
         callback_aux = np.asarray(bullet_frame[6])
         retained &= callback_aux == 0
@@ -237,6 +241,7 @@ def _build_bullet_frames(
         transformed = np.not_equal(bullets.transform_flags, 0)
         native_state = bullets.native_state
         native_state_timer_elapsed = bullets.native_state_timer_elapsed
+        bullet_type = bullets.bullet_type
         callback_aux = bullets.callback_aux
     else:
         base_x = np.fromiter(
@@ -291,6 +296,15 @@ def _build_bullet_frames(
             (bullet.native_state_timer_elapsed for bullet in bullets),
             dtype=np.int32,
         )
+        bullet_type = np.fromiter(
+            (
+                bullet.bullet_type
+                if bullet.bullet_type is not None
+                else -1
+                for bullet in bullets
+            ),
+            dtype=np.int16,
+        )
         callback_aux = np.fromiter(
             (bullet.callback_aux_state for bullet in bullets),
             dtype=np.uint8,
@@ -335,6 +349,35 @@ def _build_bullet_frames(
     current_velocity_y = velocity_y.copy()
     projected_native_state = native_state.copy()
     projected_state_timer_elapsed = native_state_timer_elapsed.copy()
+    spawn_state = (
+        (projected_native_state >= _SPAWN_STATES[0])
+        & (projected_native_state <= _SPAWN_STATES[-1])
+    )
+    valid_type = (
+        (bullet_type >= 0)
+        & (bullet_type < len(BULLET_TEMPLATE_PROFILES))
+    )
+    if np.any(spawn_state & ~valid_type):
+        raise ValueError(
+            "native spawn lifecycle requires a source template type"
+        )
+    lifecycle_terminal_age = np.zeros(len(native_state), dtype=np.int32)
+    if np.any(spawn_state):
+        lifecycle_terminal_age[spawn_state] = _SPAWN_TERMINAL_AGES[
+            projected_native_state[spawn_state] - _SPAWN_STATES[0],
+            bullet_type[spawn_state],
+        ]
+        invalid_timer = spawn_state & (
+            (projected_state_timer_elapsed < 0)
+            | (
+                projected_state_timer_elapsed
+                >= lifecycle_terminal_age
+            )
+        )
+        if np.any(invalid_timer):
+            raise ValueError(
+                "native spawn lifecycle timer exceeds its source script"
+            )
     callback_aux = callback_aux.copy()
     projected_elapsed = 0
     for step in range(1, horizon + 1):
@@ -367,11 +410,14 @@ def _build_bullet_frames(
                         1,
                     )
                 # Native bullet motion stores binary32 after every update.
-                # State 2 is a distinct spawn-animation recurrence: a
-                # non-completing update takes one half-step, while completion
-                # takes a separately rounded half-step and full step.
-                state2 = projected_native_state == 2
-                ordinary = ~state2
+                # States 2/3/4 use type-selected ANM terminal ages and
+                # divisors. Completion takes the divided step and then the
+                # ordinary full step in the same manager call.
+                preactivation = (
+                    (projected_native_state >= _SPAWN_STATES[0])
+                    & (projected_native_state <= _SPAWN_STATES[-1])
+                )
+                ordinary = projected_native_state == 1
                 if np.any(ordinary):
                     projected_x[ordinary] = (
                         projected_x[ordinary]
@@ -381,24 +427,30 @@ def _build_bullet_frames(
                         projected_y[ordinary]
                         + current_velocity_y[ordinary]
                     )
-                if np.any(state2):
-                    half_velocity_x = (
-                        current_velocity_x[state2] * np.float32(0.5)
+                    projected_state_timer_elapsed[ordinary] += 1
+                if np.any(preactivation):
+                    state_indices = (
+                        projected_native_state[preactivation]
+                        - _SPAWN_STATES[0]
                     )
-                    half_velocity_y = (
-                        current_velocity_y[state2] * np.float32(0.5)
+                    divisor = _SPAWN_MOTION_DIVISORS[state_indices]
+                    divided_velocity_x = (
+                        current_velocity_x[preactivation] / divisor
                     )
-                    projected_x[state2] = (
-                        projected_x[state2] + half_velocity_x
+                    divided_velocity_y = (
+                        current_velocity_y[preactivation] / divisor
                     )
-                    projected_y[state2] = (
-                        projected_y[state2] + half_velocity_y
+                    projected_x[preactivation] = (
+                        projected_x[preactivation] + divided_velocity_x
+                    )
+                    projected_y[preactivation] = (
+                        projected_y[preactivation] + divided_velocity_y
                     )
                     completing = (
-                        state2
+                        preactivation
                         & (
                             projected_state_timer_elapsed
-                            >= _STATE2_COMPLETION_TIMER
+                            >= lifecycle_terminal_age - 1
                         )
                     )
                     if np.any(completing):
@@ -412,7 +464,7 @@ def _build_bullet_frames(
                         )
                         projected_native_state[completing] = 1
                         projected_state_timer_elapsed[completing] = 1
-                    continuing = state2 & ~completing
+                    continuing = preactivation & ~completing
                     projected_state_timer_elapsed[continuing] += 1
             frame_x = projected_x.copy()
             frame_y = projected_y.copy()

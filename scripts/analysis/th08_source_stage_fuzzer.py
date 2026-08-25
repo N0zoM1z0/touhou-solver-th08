@@ -33,7 +33,7 @@ from th08_semantics.stage_generation import (
 from th08_semantics.stage_shrink import shrink_stage_program
 
 
-REPORT_SCHEMA = "th08-source-stateful-stage-fuzzer-report-v1"
+REPORT_SCHEMA = "th08-source-stateful-stage-fuzzer-report-v2-spawn-lifecycle"
 
 
 def _load_program(path: Path) -> StageProgram:
@@ -88,6 +88,11 @@ def _run_one(
 def _summary(cases: list[dict[str, object]]) -> dict[str, object]:
     campaigns = [case["campaign"] for case in cases]
     assert all(isinstance(value, dict) for value in campaigns)
+    source_differentials = [
+        value
+        for case in cases
+        if isinstance((value := case["source_differential"]), dict)
+    ]
     solve_p95 = [
         float(value["planner_solve_ms_p95"])
         for value in campaigns
@@ -121,6 +126,21 @@ def _summary(cases: list[dict[str, object]]) -> dict[str, object]:
         "pool_saturation_frames": sum(
             int(value["runtime_metrics"]["pool_saturation_frames"])
             for value in campaigns
+        ),
+        "spawn_lifecycle_activations": sum(
+            int(value["runtime_metrics"]["spawn_lifecycle_activations"])
+            for value in campaigns
+        ),
+        "source_lifecycle_samples_compared": sum(
+            int(value["lifecycle_samples_compared"])
+            for value in source_differentials
+        ),
+        "maximum_source_lifecycle_position_error": max(
+            (
+                float(value["maximum_lifecycle_position_error"])
+                for value in source_differentials
+            ),
+            default=None,
         ),
         "normalized_hits": sum(
             int(value["normalized_hits"]) for value in campaigns

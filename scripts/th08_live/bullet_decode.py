@@ -8,6 +8,10 @@ from dataclasses import replace
 
 import numpy as np
 
+from th08_bullet_template_contract import (
+    BulletTemplateContractError,
+    bullet_type_from_normal_script,
+)
 from th08_bullet_transform_model import (
     BulletTransformRuntime,
     parse_next_transform_record,
@@ -24,6 +28,7 @@ from .sensor import BULLET_POOL_SIZE, BULLET_STRIDE
 
 
 BULLET_GEOMETRY_OFFSET = 0x0D34
+BULLET_NORMAL_SCRIPT_INDEX_OFFSET = 0x021A
 BULLET_CALLBACK_PHASE_STATE_OFFSET = 0x01FC
 BULLET_POSITION_OFFSET = 0x0D44
 BULLET_VELOCITY_OFFSET = 0x0D50
@@ -59,6 +64,18 @@ def native_bullet_half_extents(
     """Preserve the dimensions passed to native bullet collision."""
 
     return abs(width) * 0.5, abs(height) * 0.5
+
+
+def _native_bullet_type(normal_script_index: int) -> int | None:
+    try:
+        return bullet_type_from_normal_script(normal_script_index)
+    except BulletTemplateContractError:
+        return None
+
+
+def _native_bullet_type_index(normal_script_index: int) -> int:
+    bullet_type = _native_bullet_type(normal_script_index)
+    return bullet_type if bullet_type is not None else -1
 
 
 def planning_bullet_active_slots(
@@ -186,6 +203,13 @@ def decode_planning_bullets(
                         blob,
                         base + BULLET_STATE_TIMER_ELAPSED_OFFSET,
                     )[0],
+                    bullet_type=_native_bullet_type(
+                        struct.unpack_from(
+                            "<h",
+                            blob,
+                            base + BULLET_NORMAL_SCRIPT_INDEX_OFFSET,
+                        )[0]
+                    ),
                 )
             )
         return tuple(bullets)
@@ -223,6 +247,18 @@ def decode_planning_bullets(
         BULLET_STATE_TIMER_ELAPSED_OFFSET,
         "<i4",
     )[slots]
+    normal_script_index = scalar_field(
+        BULLET_NORMAL_SCRIPT_INDEX_OFFSET,
+        "<i2",
+    )[slots]
+    bullet_type = np.fromiter(
+        (
+            _native_bullet_type_index(int(script))
+            for script in normal_script_index
+        ),
+        dtype=np.int16,
+        count=len(slots),
+    )
     half_size = np.abs(geometry) * 0.5
     return tuple(
         Bullet(
@@ -249,6 +285,7 @@ def decode_planning_bullets(
             original_transform_flags=int(tag_flags),
             native_state=int(state),
             native_state_timer_elapsed=int(state_timer_elapsed),
+            bullet_type=(int(type_index) if type_index >= 0 else None),
         )
         for (
             slot,
@@ -263,6 +300,7 @@ def decode_planning_bullets(
             auxiliary,
             state,
             state_timer_elapsed,
+            type_index,
         ) in zip(
             slots,
             position,
@@ -276,6 +314,7 @@ def decode_planning_bullets(
             callback_aux,
             native_state,
             native_state_timer_elapsed,
+            bullet_type,
         )
     )
 
@@ -318,6 +357,21 @@ def decode_packed_bullets(
         offset=BULLET_STATE_TIMER_ELAPSED_OFFSET,
         strides=(BULLET_STRIDE,),
     )[decoded.slots].copy()
+    normal_script_index = np.ndarray(
+        (BULLET_POOL_SIZE,),
+        dtype="<i2",
+        buffer=blob,
+        offset=BULLET_NORMAL_SCRIPT_INDEX_OFFSET,
+        strides=(BULLET_STRIDE,),
+    )[decoded.slots]
+    bullet_type = np.fromiter(
+        (
+            _native_bullet_type_index(int(script))
+            for script in normal_script_index
+        ),
+        dtype=np.int16,
+        count=len(decoded.slots),
+    )
     return PackedBulletSnapshot(
         x=decoded.x,
         y=decoded.y,
@@ -334,6 +388,7 @@ def decode_packed_bullets(
         original_transform_flags=decoded.original_transform_flags,
         native_state=native_state,
         native_state_timer_elapsed=native_state_timer_elapsed,
+        bullet_type=bullet_type,
     )
 
 
@@ -503,6 +558,13 @@ def decode_bullets(
                     blob,
                     base + BULLET_STATE_TIMER_ELAPSED_OFFSET,
                 )[0],
+                bullet_type=_native_bullet_type(
+                    struct.unpack_from(
+                        "<h",
+                        blob,
+                        base + BULLET_NORMAL_SCRIPT_INDEX_OFFSET,
+                    )[0]
+                ),
             )
         )
     return tuple(bullets)
@@ -575,6 +637,7 @@ __all__ = [
     "BULLET_CALLBACK_AUX_STATE_OFFSET",
     "BULLET_CALLBACK_PHASE_STATE_OFFSET",
     "BULLET_GEOMETRY_OFFSET",
+    "BULLET_NORMAL_SCRIPT_INDEX_OFFSET",
     "BULLET_ORIGINAL_TRANSFORM_FLAGS_OFFSET",
     "BULLET_POSITION_OFFSET",
     "BULLET_SPEED_OFFSET",

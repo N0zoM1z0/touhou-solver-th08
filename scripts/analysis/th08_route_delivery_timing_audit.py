@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 from analysis.th08_trial_report import STAGE_ROUTE_LABELS
-from th08_live.models import BULLET_LIFECYCLE_TRACE_SCHEMA
+from th08_live.models import BULLET_LIFECYCLE_TRACE_SCHEMAS
 from th08_live.movement import (
     PLAYFIELD_BOTTOM,
     PLAYFIELD_LEFT,
@@ -134,7 +134,7 @@ def _bullet_lifecycle(record: list[object]) -> tuple[int, int]:
         if (
             isinstance(candidate, list)
             and len(candidate) >= 4
-            and candidate[0] == BULLET_LIFECYCLE_TRACE_SCHEMA
+            and candidate[0] in BULLET_LIFECYCLE_TRACE_SCHEMAS
         ):
             return int(candidate[1]), int(candidate[3])
     return 1, 0

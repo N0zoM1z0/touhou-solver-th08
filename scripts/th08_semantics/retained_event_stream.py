@@ -31,6 +31,7 @@ from th08_semantics.stage import (
 
 
 RETAINED_EVENT_STREAM_SCHEMA = "th08-retained-producer-event-stream-v1"
+_SPAWN_LIFECYCLE_FLAG_MASK = 0x0E
 
 
 class RetainedEventStreamError(ValueError):
@@ -94,10 +95,12 @@ def _event_emitters(
     *,
     ordinal: int,
 ) -> tuple[BulletEmitter, ...]:
-    if event.original_flags != 0:
+    spawn_flags = event.original_flags & _SPAWN_LIFECYCLE_FLAG_MASK
+    remaining_flags = event.original_flags & ~_SPAWN_LIFECYCLE_FLAG_MASK
+    if remaining_flags:
         raise RetainedEventStreamError(
-            "direct-fire ANM/lifecycle/transform/callback flags require "
-            f"separate lowering: 0x{event.original_flags:x}"
+            "direct-fire flags outside generic spawn lifecycle require "
+            f"separate lowering: 0x{remaining_flags:x}"
         )
     if not event.transform_program_zero or any(event.transform_program):
         raise RetainedEventStreamError(
@@ -137,6 +140,8 @@ def _event_emitters(
             half_width=event.half_width,
             half_height=event.half_height,
             resolved_aim_override=aim_angle,
+            bullet_type=(event.bullet_type if spawn_flags else None),
+            spawn_flags=spawn_flags,
         )
         for frame in event.activation_frames
     )

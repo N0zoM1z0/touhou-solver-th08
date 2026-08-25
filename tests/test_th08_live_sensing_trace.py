@@ -36,6 +36,7 @@ class SensingTraceTests(unittest.TestCase):
                 dtype=np.int32,
             )
             callback_aux = np.asarray([0, 3, 0, 0], dtype=np.uint8)
+            bullet_type = np.asarray([0, 1, 7, 10], dtype=np.int16)
 
             def __len__(self) -> int:
                 return len(self.native_state)
@@ -50,6 +51,11 @@ class SensingTraceTests(unittest.TestCase):
         self.assertEqual(record["source_lethal_eligible_count"], 1)
         self.assertEqual(record["legacy_only_candidate_count"], 3)
         self.assertEqual(record["callback_suppressed_state1_count"], 1)
+        self.assertEqual(record["native_template_type_known_count"], 4)
+        self.assertEqual(
+            record["spawn_lifecycle_projection_coverage"],
+            "complete",
+        )
 
     def test_fields_preserve_captured_and_issue_guard_state(self) -> None:
         active_body = SimpleNamespace(pointer=1, contact=True)

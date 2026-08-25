@@ -11,6 +11,7 @@ import unittest
 import numpy as np
 
 from numeric_model import binary32_store
+from th08_bullet_template_contract import BULLET_TEMPLATE_PROFILES
 from th08_bullet_transform_model import (
     BulletTransformRuntime,
     TransformKind,
@@ -26,6 +27,7 @@ from th08_live_dodge_agent import (
     BULLET_CALLBACK_AUX_STATE_OFFSET,
     BULLET_CALLBACK_PHASE_STATE_OFFSET,
     BULLET_GEOMETRY_OFFSET,
+    BULLET_NORMAL_SCRIPT_INDEX_OFFSET,
     BULLET_ORIGINAL_TRANSFORM_FLAGS_OFFSET,
     BULLET_POOL_SIZE,
     BULLET_POSITION_OFFSET,
@@ -53,7 +55,10 @@ from th08_live_dodge_agent import (
     serialize_bullet_trace,
 )
 from th08_live.local_hazards import _bullet_frame_without_retired_state
-from th08_live.models import BULLET_LIFECYCLE_TRACE_SCHEMA
+from th08_live.models import (
+    BULLET_LIFECYCLE_TRACE_SCHEMA,
+    BULLET_LIFECYCLE_TRACE_SCHEMA_V1,
+)
 from th08_trace_replay import bullet_from_trace
 from touhou_control.trajectory import CollisionStateChange, VelocityChange
 
@@ -679,18 +684,37 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
             callback_aux_state=4,
             native_state=2,
             native_state_timer_elapsed=8,
+            bullet_type=0,
         )
 
         values = serialize_bullet_trace(bullet)
 
         self.assertEqual(
             values[-1],
-            [BULLET_LIFECYCLE_TRACE_SCHEMA, 2, 8, 4],
+            [BULLET_LIFECYCLE_TRACE_SCHEMA, 2, 8, 4, 0],
         )
         replayed = bullet_from_trace(values)
         self.assertEqual(replayed.native_state, 2)
         self.assertEqual(replayed.native_state_timer_elapsed, 8)
         self.assertEqual(replayed.callback_aux_state, 4)
+        self.assertEqual(replayed.bullet_type, 0)
+
+        legacy = bullet_from_trace(
+            [
+                7,
+                10.0,
+                20.0,
+                1.0,
+                -1.0,
+                2.0,
+                3.0,
+                0,
+                None,
+                [BULLET_LIFECYCLE_TRACE_SCHEMA_V1, 2, 8, 4],
+            ]
+        )
+        self.assertEqual(legacy.native_state, 2)
+        self.assertIsNone(legacy.bullet_type)
 
         timed_state1 = bullet_from_trace(
             serialize_bullet_trace(
@@ -817,6 +841,7 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
             3.0,
             native_state=2,
             native_state_timer_elapsed=8,
+            bullet_type=0,
         )
 
         frames = _build_bullet_frames(
@@ -835,6 +860,21 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
             [float(frame[1][0]) for frame in frames],
             [9.5, 8.0, 7.0, 6.0],
         )
+
+    def test_spawn_lifecycle_without_source_type_fails_closed(self) -> None:
+        bullet = Bullet(
+            0.0,
+            10.0,
+            2.0,
+            -1.0,
+            2.0,
+            3.0,
+            native_state=3,
+            native_state_timer_elapsed=4,
+        )
+
+        with self.assertRaisesRegex(ValueError, "source template type"):
+            _build_bullet_frames((bullet,), horizon=4, snapshot_lag=0)
 
     def test_python_and_packed_decoders_retain_native_lifecycle_state(
         self,
@@ -887,6 +927,51 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
             packed.native_state_timer_elapsed,
             np.asarray([2 + slot % 4 for slot in range(20)]),
         )
+        self.assertEqual(
+            [bullet.bullet_type for bullet in objects],
+            [0] * 20,
+        )
+        np.testing.assert_array_equal(packed.bullet_type, np.zeros(20))
+
+    def test_decoders_recover_all_types_from_copied_normal_anm_vm(self) -> None:
+        blob = bytearray(BULLET_POOL_SIZE * BULLET_STRIDE)
+        for slot, profile in enumerate(BULLET_TEMPLATE_PROFILES):
+            base = slot * BULLET_STRIDE
+            struct.pack_into("<H", blob, base + BULLET_STATE_OFFSET, 1)
+            struct.pack_into(
+                "<h",
+                blob,
+                base + BULLET_NORMAL_SCRIPT_INDEX_OFFSET,
+                profile.normal_script,
+            )
+            struct.pack_into(
+                "<ff",
+                blob,
+                base + BULLET_GEOMETRY_OFFSET,
+                profile.half_width * 2.0,
+                profile.half_height * 2.0,
+            )
+            struct.pack_into(
+                "<ff",
+                blob,
+                base + BULLET_POSITION_OFFSET,
+                float(slot),
+                20.0,
+            )
+            struct.pack_into(
+                "<ff",
+                blob,
+                base + BULLET_VELOCITY_OFFSET,
+                1.0,
+                0.0,
+            )
+
+        objects = decode_bullets(blob, retain_transform_runtime=False)
+        packed = decode_packed_bullets(blob)
+        expected = list(range(len(BULLET_TEMPLATE_PROFILES)))
+
+        self.assertEqual([bullet.bullet_type for bullet in objects], expected)
+        np.testing.assert_array_equal(packed.bullet_type, expected)
 
     def test_velocity_event_replaces_float32_value_without_delta_rounding(
         self,

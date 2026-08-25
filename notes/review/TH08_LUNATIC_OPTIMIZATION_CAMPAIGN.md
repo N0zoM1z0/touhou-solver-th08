@@ -94,7 +94,7 @@ selection.
 
 ## FUZZ-001 — Source-Stateful Offline Laboratory
 
-Status: **COMPLETE FOR RESOLVED PRODUCERS; RETAINED ECL/CHILD INTEGRATION OPEN**
+Status: **COMPLETE FOR RESOLVED PRODUCERS/LIFECYCLE; ECL/CHILD INTEGRATION OPEN**
 
 The prior fuzzer could stress arrays but not a legal shared history. The new
 stage capsule retains phase schedule, gameplay RNG, finite pools, callbacks,
@@ -105,10 +105,12 @@ An independently compiled reduced C oracle checks RNG, pattern construction,
 callback 12, collision, and eight transform handlers; NumPy/native geometry is
 also checked during the real local-solver loop.
 
-The same C oracle now also closes the generic 21-type state-2/3/4 lifecycle
-for the future-envelope path. The complete-stage `BulletEmitter` IR still
-rejects those flags, so long-history lifecycle composition remains the next
-fuzzer integration step rather than an implied capability.
+The same C oracle closes the generic 21-type state-2/3/4 lifecycle in both the
+future-envelope path and the complete-stage `BulletEmitter` runtime. Native
+lifecycle state is kept separate from callback-12 phase/auxiliary state, and
+every reached lifecycle bullet is checked against C through terminal
+same-update activation. Lifecycle composition with callback tags or transforms
+still fails closed pending a source-order audit.
 
 The first pressure gate completed 12,000 frames, reached all 1,536 bullet
 slots, and executed 156,186 transform activations. More importantly, source
@@ -116,8 +118,9 @@ differentials found wrong callback collision gating, mutable future-frame
 aliasing, wrong RNG float conversion order, wrong pool-allocation/RNG order,
 and stale-oracle build reuse. These corrections are retained, but this row has
 no physical hit claim. Generated producer schedules are already-resolved
-descriptors. Arbitrary ECL, child/timeline births, ANM-dependent lifecycle,
-and callback 14 remain explicit unknowns and block global action authority.
+descriptors. Arbitrary ECL, child/timeline births, general ANM/lifecycle
+composition, and callback 14 remain explicit unknowns and block global action
+authority.
 The complete contract and commands are in
 `TH08_SOURCE_STATEFUL_STAGE_FUZZER.md`.
 
@@ -129,6 +132,23 @@ hard no-Bomb. The first attempt exposed an invalid empirical float-drift
 tolerance; a per-slot forward binary32 error budget replaced it without
 weakening discrete or collision equality. The complete suite then exposed and
 fixed a stale dense AABB oracle that omitted the callback-aux collision gate.
+
+A second 3,600-frame v3 gate exercised all 21 template types and all three
+spawn-state flag classes. It reached pool capacity, activated 18,665 spawn
+lifecycles, made 120 planner calls, and compared 1,412,926 reached lifecycle
+samples with zero C state/position error. The routine full report was not
+tracked; its SHA-256 and compact metrics are recorded in the fuzzer contract.
+Its 152 normalized synthetic collisions are not a route-hit comparison.
+
+Stateful execution then exposed a duplicate lifecycle shortcut in the real
+local hazard projector: one fixed state-2 timer, full-speed state-3/4 motion,
+and a filter that made every preactivation state immediately lethal. Existing
+pool bytes already contain a unique normal ANM script for each of the 21
+template rows, so both decoder paths now recover exact type without another
+RPM call. Local collision semantics v3 uses the shared type/state contract and
+matches C position, state, and lethal membership across every type/state
+class. The post-fix long gate retained the same final position and normalized
+collision count; this is a correctness repair, not measured policy benefit.
 
 ## OPT-001 — Persistent Local Enemy-Prefix Destination
 
@@ -687,8 +707,10 @@ may publish only the preceding proven prefix. On the physical corpus this
 correctly rejects the two phase-3 samples and the singleton-callback root, and
 executes an empty 86-frame prefix before the type-16 geometry boundary. This is
 an integration checkpoint, not a planner gain: the corpus has not yet supplied
-one resolved hostile birth. GLOBAL-001C therefore proceeds to generic ANM
-lifecycle/template geometry, then child/timeline births and callback 14.
+one resolved hostile birth. Generic template geometry and isolated spawn
+lifecycle are now closed through the long-stage runtime. GLOBAL-001C therefore
+proceeds to child/timeline births, lifecycle/callback/transform composition,
+and callback 14.
 
 ## Boundary And Focus Contract
 

@@ -131,12 +131,14 @@ under a hard no-bomb assertion.
 
 This laboratory uses a deliberately narrow exactness boundary.  A resolved
 descriptor is treated as the output of an ECL or timeline producer; the
-runtime is exact only from that point through the supported state-1 pool,
-RNG, callback, transform, lifecycle, and geometry paths.  A separate
-future-birth lowerer now has a bounded exact subset for the 21 source-selected
-state-2/3/4 spawn rows; importing those states into the complete-stage runtime
-remains open.  Arbitrary ECL control flow, child VMs, general ANM execution,
-and unsupported callbacks remain \unknown{}.  Hence unbounded seeded
+runtime is exact only from that point through the supported pool, RNG,
+callback, transform, isolated spawn-lifecycle, and geometry paths.  The
+future-birth lowerer and complete-stage runtime share the type/flag contract
+for all 21 source-selected state-2/3/4 spawn rows.  Native spawn state is kept
+separate from callback phase state.  Composition of spawn lifecycle with
+callbacks/transforms still fails closed, while arbitrary ECL control flow,
+child VMs, general ANM execution, and unsupported callbacks remain
+\unknown{}.  Hence unbounded seeded
 composition gives broad transition and
 pressure coverage without claiming that a generated stage is a particular
 shipped spell.
@@ -146,10 +148,11 @@ the Python model and optimized planner.  It transcribes bounded recovered
 kernels for RNG, all nine direct-fire modes, the generic state-2/3/4 spawn
 lifecycle, callback~12, inclusive AABB, and eight transform handlers.
 Complete-stage lockstep requires exact discrete
-state and RNG agreement; only bounded \code{sinf}/\code{cosf} versus Python
-libm drift is admitted.  Capsules are canonical JSON with a source revision
-and SHA-256 identity, so a failing long history can be replayed and
-delta-debugged after the generator changes.
+state and RNG agreement; every reached spawn-lifecycle bullet is also replayed
+by the C kernel from its original root.  Only bounded
+\code{sinf}/\code{cosf} versus Python libm drift is admitted.  Capsules are
+canonical JSON with a source revision and SHA-256 identity, so a failing long
+history can be replayed and delta-debugged after the generator changes.
 
 \section{Generic First, Specialization by Evidence}
 
@@ -334,6 +337,30 @@ lifecycle facts remain shadow-only because the
 retained root still reaches callback~14 before any birth.  Child/timeline
 producers and callback~14 are the next generic closure steps.
 
+We then carried that contract into the complete-stage runtime rather than
+leaving it as an isolated future-envelope result.  A versioned schema retains
+the native type and spawn flags without changing earlier capsule identities;
+malformed operands and unaudited lifecycle/callback/transform compositions
+fail closed.  A 3,600-frame gate reached pool capacity, activated 18,665 spawn
+lifecycles, and made 120 calls to the real local planner.  Across 1,412,926
+reached lifecycle samples, the independent C state and position matched
+exactly.  The observed 152 cooldown-normalized collisions describe the newly
+generated hostile capsule and are not a native hit metric.  Only compact
+metrics and the report hash were retained, preventing routine successful
+trajectories from becoming a growing artifact corpus.
+
+Integration also falsified a second implementation: the real local hazard
+projector recognized only state~2 with one observed completion timer, advanced
+states~3/4 at full speed, and treated all preactivation states as immediately
+lethal.  The copied normal ANM VM already present in each pool record exposes
+its script index; the 21 source template rows use distinct normal scripts, so
+type recovery adds no sensing call.  Local collision semantics now use the
+shared type/state table and admit only state~1 with callback auxiliary state
+zero.  Starting every type and state~2/3/4 class at multiple preterminal ages,
+four-step position, state, and lethal membership match C exactly.  The
+3,600-frame outcome remained 152 normalized collisions and the same final
+position, so this repair is not counted as a policy improvement.
+
 The complete-stage laboratory then exposed several errors that short
 geometric fixtures had not revealed.  Callback-12 motion was modeled while
 its auxiliary non-collision state was omitted, and future frames shared a
@@ -346,15 +373,16 @@ consumes no RNG for the suppressed tail of a full pool.  These corrections
 matter because each error shifts a long future globally, even when its
 single-frame geometric displacement is small.
 
-An extreme generated program completed 12,000 frames, repeatedly filled all
+An earlier extreme generated program completed 12,000 frames, repeatedly filled all
 1,536 bullet slots, and exercised more than $10^5$ transform transitions.
 This is evidence that the harness can apply pressure beyond a normal Lunatic
 stage while retaining finite-pool semantics.  It is not survival evidence:
 the current normalized collision count is an offline same-capsule metric, and
-the generator begins after producer resolution.  The next causal experiment
-imports retained resolved producer roots, closes child/timeline/callback
-dependencies, and asks whether a complete future changes a same-root global
-winning set before any physical route is launched.
+the generator begins after producer resolution.  The retained-root importer is
+now connected through isolated lifecycle execution.  The next causal
+experiment closes child/timeline births and callback/lifecycle composition,
+then asks whether a complete future changes a same-root global winning set
+before any physical route is launched.
 
 A route-work audit also exposed avoidable serial work inside the fresh issue
 layer.  Almost all changed-prefix transactions ultimately preserved the

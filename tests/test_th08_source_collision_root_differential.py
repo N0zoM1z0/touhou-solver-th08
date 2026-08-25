@@ -39,6 +39,10 @@ class SourceCollisionRootDifferentialTests(unittest.TestCase):
         self.assertEqual(actions["coverage"]["excluded_native_births"], 7)
         self.assertEqual(actions["coverage"]["unapplied_native_removals"], 4)
         self.assertEqual(
+            actions["coverage"]["spawn_lifecycle_projection"],
+            "historical_current-state-lower-bound-no-template-type",
+        )
+        self.assertEqual(
             actions["legacy_safe_actions"],
             actions["source_geometry_lifecycle_safe_actions"],
         )

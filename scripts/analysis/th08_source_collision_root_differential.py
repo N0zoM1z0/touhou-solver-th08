@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from dataclasses import replace
 from functools import partial
 import hashlib
 import json
@@ -268,6 +269,19 @@ def analyze_root_report(
         grid_step=grid_step,
     )
 
+    # This compact 2026-07-30 capsule predates template-type retention. Keep
+    # its historical one-step comparison reproducible without inventing a
+    # lifecycle type: the legacy/geometry lanes deliberately treat every
+    # retained record as ordinary, while the source lower-bound lane removes
+    # non-state-1 records before the shared projector. Neither lane claims an
+    # exact future transition for those old records.
+    historical_all_state_bullets = tuple(
+        replace(bullet, native_state=1, native_state_timer_elapsed=0)
+        for bullet in bullets
+    )
+    historical_source_lower_bound_bullets = tuple(
+        bullet for bullet in bullets if bullet.native_state == 1
+    )
     certificate_arguments = {
         "player_x": player_x,
         "player_y": player_y,
@@ -275,7 +289,6 @@ def analyze_root_report(
         "actions": LOCAL_PIPELINE_STATE_ACTIONS,
         "delay_frames": (0,),
         "action_hold_frames": 1,
-        "bullets": bullets,
         "lasers": (),
         "enemy_bodies": (),
         "snapshot_lag": 0,
@@ -284,6 +297,7 @@ def analyze_root_report(
     }
     legacy_certificates = legacy_robust_action_certificates(
         hazards_for_positions=_historical_radius2_hazards_for_positions,
+        bullets=historical_all_state_bullets,
         **certificate_arguments,
     )
     geometry_certificates = legacy_robust_action_certificates(
@@ -293,6 +307,7 @@ def analyze_root_report(
             player_half_height=player_half_height,
             filter_bullet_lifecycle=False,
         ),
+        bullets=historical_all_state_bullets,
         **certificate_arguments,
     )
     source_certificates = legacy_robust_action_certificates(
@@ -302,6 +317,7 @@ def analyze_root_report(
             player_half_height=player_half_height,
             filter_bullet_lifecycle=True,
         ),
+        bullets=historical_source_lower_bound_bullets,
         **certificate_arguments,
     )
     legacy_safe = _safe_actions(legacy_certificates)
@@ -369,6 +385,9 @@ def analyze_root_report(
                 ),
                 "excluded_native_births": int(document["result"]["birth_count"]),
                 "complete_hazard_inventory": False,
+                "spawn_lifecycle_projection": (
+                    "historical_current-state-lower-bound-no-template-type"
+                ),
             },
             "horizon_frames": 1,
             "delay_frames": [0],

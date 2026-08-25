@@ -10,7 +10,10 @@ from th08_bullet_template_contract import (
     BULLET_TEMPLATE_PROFILES,
     BULLET_TEMPLATE_STRIDE,
     ETAMA_DECODED_SHA256,
+    BulletTemplateContractError,
+    bullet_spawn_lifecycle_for_state,
     bullet_template_profile,
+    bullet_type_from_normal_script,
     fallback_geometry_from_observed_prefix,
     pinned_contract_payload,
     verify_decoded_etama,
@@ -67,6 +70,27 @@ class BulletTemplateContractTests(unittest.TestCase):
         self.assertEqual(bullet_template_profile(10).state2_terminal_age, 24)
         self.assertEqual(bullet_template_profile(1).state3_terminal_age, 15)
         self.assertEqual(bullet_template_profile(0).state4_terminal_age, 30)
+
+    def test_copied_normal_script_recovers_type_and_observed_lifecycle(self) -> None:
+        for profile in BULLET_TEMPLATE_PROFILES:
+            self.assertEqual(
+                bullet_type_from_normal_script(profile.normal_script),
+                profile.bullet_type,
+            )
+            for state, expected_age in (
+                (2, profile.state2_terminal_age),
+                (3, profile.state3_terminal_age),
+                (4, profile.state4_terminal_age),
+            ):
+                lifecycle = bullet_spawn_lifecycle_for_state(
+                    profile.bullet_type,
+                    state,
+                )
+                self.assertEqual(lifecycle.state, state)
+                self.assertEqual(lifecycle.terminal_age, expected_age)
+
+        with self.assertRaises(BulletTemplateContractError):
+            bullet_type_from_normal_script(-1)
 
     def test_compact_payload_retains_source_and_asset_provenance(self) -> None:
         payload = pinned_contract_payload()

@@ -10,7 +10,11 @@ from th08_live_dodge_agent import (
     Laser,
     _local_pipeline_action_from_mask,
 )
-from th08_live.models import BULLET_LIFECYCLE_TRACE_SCHEMA
+from th08_live.models import (
+    BULLET_LIFECYCLE_TRACE_SCHEMA,
+    BULLET_LIFECYCLE_TRACE_SCHEMAS,
+    BULLET_LIFECYCLE_TRACE_SCHEMA_V1,
+)
 from touhou_control.local_pipeline_oracle import LocalPipelineRoot
 from th08_update_order import (
     TH08_INPUT_PUBLICATION_TO_MOTION_LAG_FRAMES,
@@ -83,8 +87,17 @@ def bullet_from_trace(values: list[object]) -> Bullet:
             for candidate in reversed(values[9:])
             if (
                 isinstance(candidate, list)
-                and len(candidate) == 4
-                and candidate[0] == BULLET_LIFECYCLE_TRACE_SCHEMA
+                and candidate[0] in BULLET_LIFECYCLE_TRACE_SCHEMAS
+                and (
+                    (
+                        candidate[0] == BULLET_LIFECYCLE_TRACE_SCHEMA_V1
+                        and len(candidate) == 4
+                    )
+                    or (
+                        candidate[0] == BULLET_LIFECYCLE_TRACE_SCHEMA
+                        and len(candidate) == 5
+                    )
+                )
             )
         ),
         None,
@@ -156,6 +169,15 @@ def bullet_from_trace(values: list[object]) -> Bullet:
         native_state=(int(lifecycle[1]) if lifecycle is not None else 1),
         native_state_timer_elapsed=(
             int(lifecycle[2]) if lifecycle is not None else 0
+        ),
+        bullet_type=(
+            int(lifecycle[4])
+            if (
+                lifecycle is not None
+                and len(lifecycle) > 4
+                and lifecycle[4] is not None
+            )
+            else None
         ),
     )
 

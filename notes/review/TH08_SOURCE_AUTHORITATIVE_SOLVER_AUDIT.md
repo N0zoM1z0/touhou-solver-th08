@@ -249,11 +249,15 @@ corridor width per axis and bias viable sets.
 ### Bullet lifecycle
 
 `planning_bullet_active_slots()` selects all records whose native state is
-nonzero. The decoder retains `native_state`, state timer, and callback aux;
-`_build_bullet_frames()` projects the observed state-2 recurrence and the live
-kernel now removes only irreversible state 5. States 2/3/4 and callback-aux
-records remain conservative hazards because their reached future ANM/callback
-transitions are not yet stepped exactly.
+nonzero. The decoder retains `native_state`, state timer, callback aux, and now
+the copied normal-ANM `scriptIndex` at bullet offset `+0x21a`. The 21 source
+template rows have 21 distinct normal scripts, so this field recovers the
+native template type generically from the already-captured pool blob; it adds
+no RPM call. `_build_bullet_frames()` uses that type and the observed state to
+select the exact state-2/3/4 divisor and asset terminal age. The local collision
+kernel keeps only state 1 with callback aux zero. An active spawn state whose
+type or timer violates the contract fails closed instead of receiving a guessed
+delay.
 
 In `BulletManager::OnUpdate`, only case 1 reaches the lethal
 `Player::FUN_0044a230` block, and the entire collision block is skipped while
@@ -272,23 +276,22 @@ suppression.  This establishes material Stage-5-specific false-hazard
 pressure, but nearby geometry is retained only within 160 pixels and the
 shadow had no action authority, so it cannot assign hit-count causality.
 
-Current-frame eligibility is exact, but future eligibility is not a uniform
-state timer.  States 2/3/4 leave their spawn animations when the associated
-ANM VM script completes.  In addition, the 100%-matching
+Future spawn eligibility is no longer represented by a uniform timer: all 21
+type/state combinations match the independent C recurrence at divided,
+terminal, and post-terminal updates. In addition, the 100%-matching
 `ReisenFreezeBullets` and `FUN_00424c40` paths set and clear callback aux
 `+0x10B4` based on ECL special-instruction/filter state.  A multi-frame exact
-lifecycle projection must therefore retain and step the reached ANM VM and
-callback controller; holding current aux or assigning a guessed fixed delay
-would be false authority.
+callback projection must still retain and step the reached callback controller;
+holding current aux or inventing a release delay would be false authority.
 
 ### Bullet motion and transforms
 
-The width/height division is correct, and the retained state-2 recurrence is
-consistent with the source's half-speed spawn motion. Active transformed
-bullets are still projected mostly from current velocity plus heuristic
-uncertainty. The exact 2,075-byte `Bullet::FUN_0042ffc0` and its flag handlers
-are available, so current-bullet motion should become a canonical float32
-stepper instead of accumulating pattern-specific uncertainty.
+The width/height division and all three spawn-state recurrences are now exact
+for type-authoritative records. Active transformed bullets are still projected
+mostly from current velocity plus heuristic uncertainty. The exact 2,075-byte
+`Bullet::FUN_0042ffc0` and its flag handlers are available, so current-bullet
+transform motion should become a canonical float32 stepper instead of
+accumulating pattern-specific uncertainty.
 
 ### Laser shape
 
@@ -560,6 +563,16 @@ continuous speed/angle parameters remain correlated; 256 random C roots also
 stay contained. This does not close current-pool callback state or complete
 Stage-5 producer coverage. The next generic family is child/timeline birth
 execution, followed by callback 14.
+
+The same lifecycle is now part of the versioned complete-stage IR/runtime,
+not only a bounded envelope helper. A 3,600-frame stateful gate exercised all
+21 types, all three spawn-state flags, finite-pool saturation, delayed sensing,
+and 120 real local-planner calls. An independent C sample was checked for every
+reached lifecycle bullet/frame (1,412,926 comparisons) with exact state and
+position agreement. Native spawn state and callback phase state are distinct;
+their unaudited composition, as well as transform composition, fails closed.
+This remains generic offline evidence and grants neither a card policy nor
+global action authority.
 
 ### F. Promote global viability authority
 

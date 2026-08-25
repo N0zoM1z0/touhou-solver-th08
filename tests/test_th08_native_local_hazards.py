@@ -230,7 +230,7 @@ class NativeLocalHazardParityTests(unittest.TestCase):
                 )
                 self.assertLessEqual(float(minimum[0]), 0.0)
 
-    def test_only_irreversibly_retired_state_five_is_filtered(self) -> None:
+    def test_only_native_state_one_is_lethal(self) -> None:
         bullet_count = 5
         frame = (
             np.full(bullet_count, 100.0, dtype=np.float32),
@@ -254,11 +254,12 @@ class NativeLocalHazardParityTests(unittest.TestCase):
                     lasers=_empty_lasers(),
                     enemy_bodies=(),
                 )
-                # States 2/3/4 can still activate after their ANM completes;
-                # only state 5 is guaranteed never to return to state 1.
+                # This frame is already after exact lifecycle projection.
+                # Native collision executes only for state 1; states 2/3/4
+                # are preactivation and state 5 is retired.
                 np.testing.assert_array_equal(
                     collisions,
-                    np.asarray([4], dtype=np.int32),
+                    np.asarray([1], dtype=np.int32),
                 )
 
     def test_randomized_valid_frames_match_independent_numpy_oracle(

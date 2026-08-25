@@ -1679,10 +1679,89 @@ different digests and `VersionIdentity` values. A second case applies state-2
 and proves their lethal terminal frames diverge. This is an identity/integrity
 repair only; action authority remains withheld.
 
+### AUD-067 — Long-stage stateful execution omitted native spawn lifecycle
+
+Status: **CONFIRMED COVERAGE/IR GAP; FIXED AND DIFFERENTIALED OFFLINE**
+
+The source-authoritative lifecycle and C oracle introduced by AUD-064 existed
+only in the bounded future-envelope path. `StageProgram` could not retain the
+native bullet type or spawn flags, and its full-stage runtime consequently
+exercised only immediately active state-1 births. Long transition histories
+therefore could not expose lifecycle interactions, pool pressure around
+activation, or a same-update collision at the state-1 boundary.
+
+Schema v3 adds the exact `[bullet_type, spawn_flags]` pair while preserving the
+canonical v1/v2 readers and digests. The payload boundary accepts only a
+two-integer canonical pair; flags outside the source lifecycle mask fail
+closed. The retained-root adapter now admits the generic lifecycle-only bits
+`0x02/0x04/0x08` and continues to reject any unresolved flag. Allocation uses
+the source's four-velocity spawn offset; updates apply the type-selected
+divided motion, suppress culling/collision before activation, and continue
+through the ordinary state-1 move and collision in the terminal manager call.
+Native lifecycle state/timer are separate runtime fields from callback-12
+phase/auxiliary state. This prevents the two unrelated source fields from
+silently aliasing.
+
+Lifecycle composition with a callback tag or transform queue is deliberately
+rejected until its source update order is closed. The generator nevertheless
+covers all 21 types and all three lifecycle flag classes while independently
+retaining callback and transform histories. There is no stage/spell switch or
+handwritten trajectory in the implementation.
+
+A 3,600-frame gate (`gate:0000000000ce0132:eca88861c592de79`) completed with
+57,871 allocations, 132,455 finite-pool suppressions, 85 saturated frames,
+18,665 lifecycle activations, and 120 real local-planner calls. Every one of
+1,412,926 reached lifecycle samples matched the independent C state and
+position exactly; RNG state/call count, collision membership, hard no-Bomb,
+and periodic geometry checks also passed. The report SHA-256 was
+`16176920feeee82024d81d0ee96acc99b533beaaf8119124d737ad7322c994de`.
+Only its compact metrics and hash are retained; the 103,397-byte temporary
+report was removed. The synthetic normalized-collision count is not a native
+route hit count. Child/timeline births, lifecycle composition, and callback 14
+still block a complete Stage-5 future and global action authority.
+
+### AUD-068 — Local hazard projection retained a one-type lifecycle shortcut
+
+Status: **CONFIRMED SOURCE MODEL BUG; FIXED AND C-DIFFERENTIALED OFFLINE**
+
+Connecting lifecycle bullets to the real local planner exposed a second,
+independent implementation. `_build_bullet_frames()` recognized only state 2,
+used one fixed completion timer 9 (the observed type-0/type-1-class witness),
+and treated every other native state as ordinary full-speed motion. Its hazard
+filter removed only state 5, so states 2/3/4 became immediate false lethal
+walls; state 3/4 never activated in the projection, and type-7/type-10 state-2
+positions used the wrong 10-update schedule. This was conservative in lethal
+membership but geometrically false and could collapse the local action set.
+
+No new Wine read is required. Every bullet already contains the copied normal
+ANM VM, whose `scriptIndex` is at bullet offset `+0x21a`. The source's 21
+initialized rows use 21 distinct normal scripts, giving a generic one-to-one
+type recovery. Both sparse Python and packed native decoders now retain that
+type. The local projector selects the source/asset terminal age and divisor by
+observed type plus native state, performs divided motion and same-update
+activation in binary32 order, and exposes a collision hazard only in state 1
+with callback aux zero. Missing type or an impossible preactivation timer fails
+closed. Collision semantics version v3 includes this change, preventing a
+cached older solution from aliasing it.
+
+The lifecycle trace schema is v2 and retains the type. Existing v1 rows remain
+readable, but a v1 preactivation row cannot receive exact future authority
+because it lacks the discriminating operand. A raw-pool regression recovers all
+21 types through both decoder paths. A separate oracle gate starts before the
+terminal boundary for every type and each state 2/3/4 class, then compares four
+future frames: position, native state, and lethal membership match C exactly.
+
+Rerunning the complete 3,600-frame closed loop after this correction passed
+all gates and retained the same final player position and 152 synthetic
+normalized collisions as the pre-correction run. Planner p95 was 27.28 ms
+versus 27.49 ms, but one timing sample is not a performance claim. Thus this is
+a source-correctness and false-wall repair with no same-seed policy gain yet;
+it does not justify Wine or a route-hit claim.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,463 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,474 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

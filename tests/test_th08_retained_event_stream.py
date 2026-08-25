@@ -15,6 +15,7 @@ from th08_semantics.retained_event_stream import (
 )
 from th08_semantics.source_primitives import f32
 from th08_semantics.stage import (
+    LIFECYCLE_STAGE_SCHEMA,
     RESOLVED_AIM_STAGE_SCHEMA,
     STAGE_SCHEMA,
     StageProgram,
@@ -109,7 +110,10 @@ class RetainedEventStreamTests(unittest.TestCase):
         downgraded = program.to_payload()
         downgraded.pop("sha256")
         downgraded["schema"] = STAGE_SCHEMA
-        with self.assertRaisesRegex(ValueError, "resolved-aim features"):
+        with self.assertRaisesRegex(
+            ValueError,
+            "resolved-aim/lifecycle features",
+        ):
             StageProgram.from_payload(downgraded)
 
     def test_interval_operand_is_rejected_without_midpoint(self) -> None:
@@ -129,18 +133,40 @@ class RetainedEventStreamTests(unittest.TestCase):
                 root_sha256="b" * 64,
             )
 
-    def test_unlowered_lifecycle_flags_fail_closed(self) -> None:
-        event = replace(_event(), original_flags=0x02)
+    def test_generic_lifecycle_flags_round_trip_into_stage_runtime(self) -> None:
+        event = replace(
+            _event(),
+            original_flags=0x02,
+            half_height=2.0,
+        )
+        program = resolved_direct_fire_stage_program(
+            (event,),
+            horizon_frames=12,
+            gameplay_rng_seed=0,
+            root_sha256="c" * 64,
+        )
+
+        self.assertEqual(program.schema, LIFECYCLE_STAGE_SCHEMA)
+        replay = StageProgram.from_payload(program.to_payload())
+        runtime = StageRuntime(replay)
+        steps = [runtime.step() for _frame in range(replay.frame_count)]
+        self.assertEqual(
+            sum(step.spawn_lifecycle_activations for step in steps),
+            2,
+        )
+
+    def test_non_lifecycle_flag_remains_typed_unknown(self) -> None:
+        event = replace(_event(), original_flags=0x200)
 
         with self.assertRaisesRegex(
             RetainedEventStreamError,
-            "ANM/lifecycle/transform/callback flags",
+            "outside generic spawn lifecycle",
         ):
             resolved_direct_fire_stage_program(
                 (event,),
                 horizon_frames=4,
                 gameplay_rng_seed=0,
-                root_sha256="c" * 64,
+                root_sha256="d" * 64,
             )
 
     def test_physical_roots_obey_generic_eligibility_and_prefix_gate(

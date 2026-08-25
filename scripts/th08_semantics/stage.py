@@ -17,6 +17,11 @@ import math
 from typing import Callable
 
 import th08_live_dodge_agent as live
+from th08_bullet_template_contract import (
+    BulletSpawnLifecycle,
+    bullet_spawn_lifecycle,
+    bullet_template_profile,
+)
 from th08_laser_model import (
     LaserCollisionCheck,
     LaserState,
@@ -38,6 +43,7 @@ from th08_semantics.source_primitives import (
 
 STAGE_SCHEMA = "th08-source-stateful-stage-v1"
 RESOLVED_AIM_STAGE_SCHEMA = "th08-source-stateful-stage-v2"
+LIFECYCLE_STAGE_SCHEMA = "th08-source-stateful-stage-v3-spawn-lifecycle"
 SOURCE_AUTHORITY_COMMIT = "57ee34f"
 BULLET_POOL_SIZE = 0x600
 LASER_POOL_SIZE = 0x100
@@ -158,6 +164,8 @@ class BulletEmitter:
     half_height: float
     transforms: tuple[TransformSpec, ...] = ()
     resolved_aim_override: float | None = None
+    bullet_type: int | None = None
+    spawn_flags: int = 0
 
     def __post_init__(self) -> None:
         if not self.emitter_id:
@@ -177,6 +185,39 @@ class BulletEmitter:
             self.resolved_aim_override
         ):
             raise ValueError("resolved emitter aim override must be finite")
+        if type(self.spawn_flags) is not int or self.spawn_flags < 0:
+            raise ValueError("spawn lifecycle flags must be a nonnegative integer")
+        if self.spawn_flags & ~0x0E:
+            raise ValueError("spawn lifecycle emitter has unsupported flags")
+        if self.spawn_flags:
+            if type(self.bullet_type) is not int:
+                raise ValueError("spawn lifecycle emitter requires bullet type")
+            try:
+                lifecycle = bullet_spawn_lifecycle(
+                    self.bullet_type,
+                    self.spawn_flags,
+                )
+            except ValueError as error:
+                raise ValueError(
+                    "spawn lifecycle emitter bullet type is invalid"
+                ) from error
+            if lifecycle is None:
+                raise ValueError("spawn lifecycle flags select no native state")
+            if self.tag_flags or self.transforms:
+                raise ValueError(
+                    "spawn lifecycle composition with callbacks/transforms "
+                    "is not yet source-closed"
+                )
+            profile = bullet_template_profile(self.bullet_type)
+            if (
+                f32(self.half_width) != f32(profile.half_width)
+                or f32(self.half_height) != f32(profile.half_height)
+            ):
+                raise ValueError(
+                    "spawn lifecycle geometry disagrees with bullet template"
+                )
+        elif self.bullet_type is not None:
+            raise ValueError("bullet type without spawn lifecycle is ambiguous")
         if len({transform.kind for transform in self.transforms}) != len(
             self.transforms
         ):
@@ -281,6 +322,12 @@ class BulletEmitter:
         # synthetic emitters continue to derive aim from the supplied player.
         if self.resolved_aim_override is not None:
             payload["resolved_aim_override"] = self.resolved_aim_override
+        if self.spawn_flags:
+            assert self.bullet_type is not None
+            payload["spawn_lifecycle"] = [
+                self.bullet_type,
+                self.spawn_flags,
+            ]
         return payload
 
     @classmethod
@@ -289,10 +336,20 @@ class BulletEmitter:
         origin = payload["origin"]
         pattern = payload["pattern"]
         geometry = payload["geometry"]
+        spawn_lifecycle = payload.get("spawn_lifecycle")
         assert isinstance(schedule, list)
         assert isinstance(origin, list)
         assert isinstance(pattern, list)
         assert isinstance(geometry, list)
+        if spawn_lifecycle is not None and (
+            type(spawn_lifecycle) is not list
+            or len(spawn_lifecycle) != 2
+            or type(spawn_lifecycle[0]) is not int
+            or type(spawn_lifecycle[1]) is not int
+        ):
+            raise ValueError(
+                "spawn_lifecycle must be [bullet_type, spawn_flags] integers"
+            )
         return cls(
             emitter_id=str(payload["id"]),
             start_frame=int(schedule[0]),
@@ -324,6 +381,16 @@ class BulletEmitter:
                 float(payload["resolved_aim_override"])
                 if payload.get("resolved_aim_override") is not None
                 else None
+            ),
+            bullet_type=(
+                spawn_lifecycle[0]
+                if spawn_lifecycle is not None
+                else None
+            ),
+            spawn_flags=(
+                spawn_lifecycle[1]
+                if spawn_lifecycle is not None
+                else 0
             ),
         )
 
@@ -531,6 +598,12 @@ class StageProgram:
     @property
     def schema(self) -> str:
         if any(
+            emitter.spawn_flags
+            for phase in self.phases
+            for emitter in phase.emitters
+        ):
+            return LIFECYCLE_STAGE_SCHEMA
+        if any(
             emitter.resolved_aim_override is not None
             for phase in self.phases
             for emitter in phase.emitters
@@ -568,7 +641,11 @@ class StageProgram:
     @classmethod
     def from_payload(cls, payload: dict[str, object]) -> "StageProgram":
         schema = payload.get("schema")
-        if schema not in (STAGE_SCHEMA, RESOLVED_AIM_STAGE_SCHEMA):
+        if schema not in (
+            STAGE_SCHEMA,
+            RESOLVED_AIM_STAGE_SCHEMA,
+            LIFECYCLE_STAGE_SCHEMA,
+        ):
             raise ValueError("unsupported source-stage schema")
         unsigned = dict(payload)
         digest = unsigned.pop("sha256", None)
@@ -595,7 +672,8 @@ class StageProgram:
         )
         if program.schema != schema:
             raise ValueError(
-                "source-stage schema does not cover resolved-aim features"
+                "source-stage schema does not cover resolved-aim/lifecycle "
+                "features"
             )
         return program
 
@@ -624,6 +702,15 @@ class RuntimeBullet:
     base_angle: float
     tag_flags: int
     transforms: tuple[TransformSpec, ...]
+    bullet_type: int | None = None
+    spawn_flags: int = 0
+    spawn_lifecycle: BulletSpawnLifecycle | None = None
+    spawn_origin_x: float = 0.0
+    spawn_origin_y: float = 0.0
+    initial_velocity_x: float = 0.0
+    initial_velocity_y: float = 0.0
+    native_state: int = 1
+    native_state_age: int = 0
     transform_cursor: int = 0
     active_transforms: dict[int, _TransformRuntime] = field(default_factory=dict)
     phase_state: int = 0
@@ -656,8 +743,12 @@ class RuntimeBullet:
             callback_aux_state=self.collision_aux,
             original_transform_flags=(
                 self.tag_flags
+                | self.spawn_flags
                 | sum((transform.kind for transform in self.transforms), 0)
             ),
+            native_state=self.native_state,
+            native_state_timer_elapsed=self.native_state_age,
+            bullet_type=self.bullet_type,
         )
 
 
@@ -690,6 +781,7 @@ class StageStep:
     births_allocated: int
     births_suppressed_by_pool: int
     callback_changes: int
+    spawn_lifecycle_activations: int
     transform_activations: int
     laser_spawns: int
     bullet_collision_slots: tuple[int, ...]
@@ -706,6 +798,7 @@ class StageMetrics:
     births_allocated: int = 0
     births_suppressed_by_pool: int = 0
     callback_changes: int = 0
+    spawn_lifecycle_activations: int = 0
     transform_activations: int = 0
     laser_spawns: int = 0
     laser_spawns_dropped: int = 0
@@ -867,11 +960,32 @@ class StageRuntime:
                     ring_index,
                     self.rng,
                 )
+                spawn_origin_x = f32(origin_x)
+                spawn_origin_y = f32(origin_y)
+                lifecycle = (
+                    bullet_spawn_lifecycle(
+                        emitter.bullet_type,
+                        emitter.spawn_flags,
+                    )
+                    if emitter.spawn_flags
+                    else None
+                )
+                bullet_x = spawn_origin_x
+                bullet_y = spawn_origin_y
+                if lifecycle is not None:
+                    bullet_x = _sub(
+                        bullet_x,
+                        _mul(sample.velocity_x, 4.0),
+                    )
+                    bullet_y = _sub(
+                        bullet_y,
+                        _mul(sample.velocity_y, 4.0),
+                    )
                 bullet = RuntimeBullet(
                     slot=slot,
                     source=emitter.emitter_id,
-                    x=f32(origin_x),
-                    y=f32(origin_y),
+                    x=bullet_x,
+                    y=bullet_y,
                     velocity_x=sample.velocity_x,
                     velocity_y=sample.velocity_y,
                     half_width=f32(emitter.half_width),
@@ -880,11 +994,22 @@ class StageRuntime:
                     base_angle=sample.angle,
                     tag_flags=emitter.tag_flags,
                     transforms=emitter.transforms,
+                    bullet_type=emitter.bullet_type,
+                    spawn_flags=emitter.spawn_flags,
+                    spawn_lifecycle=lifecycle,
+                    spawn_origin_x=spawn_origin_x,
+                    spawn_origin_y=spawn_origin_y,
+                    initial_velocity_x=sample.velocity_x,
+                    initial_velocity_y=sample.velocity_y,
+                    native_state=(
+                        lifecycle.state if lifecycle is not None else 1
+                    ),
                 )
                 self.bullets[slot] = bullet
                 self.bullet_cursor = (slot + 1) % BULLET_POOL_SIZE
                 allocated += 1
-                activations += self._activate_next_transform(bullet)
+                if lifecycle is None:
+                    activations += self._activate_next_transform(bullet)
         return requested, allocation_calls, allocated, activations
 
     def _apply_callbacks(self) -> int:
@@ -1063,15 +1188,42 @@ class StageRuntime:
         player_y: float,
         player_half_width: float,
         player_half_height: float,
-    ) -> tuple[int, tuple[int, ...]]:
-        activations = 0
+    ) -> tuple[int, int, tuple[int, ...]]:
+        transform_activations = 0
+        lifecycle_activations = 0
         collisions: list[int] = []
         # Manager physical scan is slot 0 followed by descending 1535..1.
         for slot in (0, *range(BULLET_POOL_SIZE - 1, 0, -1)):
             bullet = self.bullets[slot]
             if bullet is None:
                 continue
-            activations += self._activate_next_transform(bullet)
+            lifecycle = bullet.spawn_lifecycle
+            lifecycle_activated_now = False
+            if lifecycle is not None and bullet.native_state != 1:
+                if bullet.native_state != lifecycle.state:
+                    raise ValueError(
+                        "spawn lifecycle state changed outside modeled path"
+                    )
+                next_age = bullet.age + 1
+                if next_age > lifecycle.terminal_age:
+                    raise ValueError("spawn lifecycle exceeded terminal age")
+                bullet.x = _add(
+                    bullet.x,
+                    _div(bullet.velocity_x, lifecycle.motion_divisor),
+                )
+                bullet.y = _add(
+                    bullet.y,
+                    _div(bullet.velocity_y, lifecycle.motion_divisor),
+                )
+                if next_age < lifecycle.terminal_age:
+                    bullet.age = next_age
+                    bullet.native_state_age = next_age
+                    continue
+                bullet.native_state = 1
+                bullet.native_state_age = 0
+                lifecycle_activated_now = True
+                lifecycle_activations += 1
+            transform_activations += self._activate_next_transform(bullet)
             self._apply_transform_handlers(
                 bullet,
                 player_x=player_x,
@@ -1094,7 +1246,7 @@ class StageRuntime:
                     bullet.offscreen_counter -= 1
             else:
                 bullet.offscreen_counter = 0
-            if bullet.collision_aux == 0 and (
+            if bullet.native_state == 1 and bullet.collision_aux == 0 and (
                 f32(player_x - player_half_width)
                 <= f32(bullet.x + bullet.half_width)
                 and f32(player_x + player_half_width)
@@ -1106,7 +1258,13 @@ class StageRuntime:
             ):
                 collisions.append(slot)
             bullet.age += 1
-        return activations, tuple(collisions)
+            if not lifecycle_activated_now:
+                bullet.native_state_age += 1
+        return (
+            transform_activations,
+            lifecycle_activations,
+            tuple(collisions),
+        )
 
     def _spawn_lasers(self) -> int:
         spawned = 0
@@ -1213,7 +1371,11 @@ class StageRuntime:
             activations += emitter_activations
 
         laser_spawns = self._spawn_lasers()
-        update_activations, bullet_collisions = self._update_bullets(
+        (
+            update_activations,
+            lifecycle_activations,
+            bullet_collisions,
+        ) = self._update_bullets(
             player_x=player_x,
             player_y=player_y,
             player_half_width=player_half_width,
@@ -1236,6 +1398,7 @@ class StageRuntime:
             births_allocated=allocated,
             births_suppressed_by_pool=suppressed,
             callback_changes=callback_changes,
+            spawn_lifecycle_activations=lifecycle_activations,
             transform_activations=activations,
             laser_spawns=laser_spawns,
             bullet_collision_slots=bullet_collisions,
@@ -1249,6 +1412,7 @@ class StageRuntime:
         self.metrics.births_allocated += allocated
         self.metrics.births_suppressed_by_pool += suppressed
         self.metrics.callback_changes += callback_changes
+        self.metrics.spawn_lifecycle_activations += lifecycle_activations
         self.metrics.transform_activations += activations
         self.metrics.laser_spawns += laser_spawns
         self.metrics.max_active_bullets = max(
@@ -1301,6 +1465,11 @@ class StageRuntime:
                     float_bits(bullet.velocity_y),
                     float_bits(bullet.base_speed),
                     float_bits(bullet.base_angle),
+                    bullet.bullet_type,
+                    bullet.spawn_flags,
+                    bullet.native_state,
+                    bullet.native_state_age,
+                    bullet.age,
                     bullet.tag_flags,
                     bullet.phase_state,
                     bullet.collision_aux,
@@ -1357,6 +1526,7 @@ __all__ = [
     "BulletEmitter",
     "Callback12Event",
     "LASER_POOL_SIZE",
+    "LIFECYCLE_STAGE_SCHEMA",
     "LaserSpawnEvent",
     "RuntimeBullet",
     "RESOLVED_AIM_STAGE_SCHEMA",
