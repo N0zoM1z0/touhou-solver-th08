@@ -8,13 +8,29 @@ from th08_semantics.model import (
     SemanticCase,
 )
 from th08_semantics.shrink import shrink_case
+from th08_semantics.stage import (
+    STAGE_SCHEMA,
+    StageProgram,
+    StageRuntime,
+    run_stage,
+)
+from th08_semantics.stage_generation import (
+    STAGE_PROFILES,
+    generate_stage_program,
+)
 
 __all__ = [
     "DIFFICULTIES",
     "FAMILIES",
     "SCHEMA",
     "SemanticCase",
+    "STAGE_PROFILES",
+    "STAGE_SCHEMA",
+    "StageProgram",
+    "StageRuntime",
     "generate_case",
     "generate_cases",
+    "generate_stage_program",
+    "run_stage",
     "shrink_case",
 ]
