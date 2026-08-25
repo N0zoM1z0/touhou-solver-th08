@@ -6,7 +6,11 @@ import unittest
 from dataclasses import replace
 import math
 
-from th08_future_birth_envelope import FloatInterval, FutureDirectFire
+from th08_future_birth_envelope import (
+    FloatInterval,
+    FutureDirectFire,
+    FutureTaggedBulletCallback,
+)
 from th08_future_hazard_projection import (
     condition_future_hazard_projection_on_player_paths,
     complete_future_hazard_projection,
@@ -222,6 +226,60 @@ class FutureHazardProjectionTests(unittest.TestCase):
             causal.angle2,
             FloatInterval.point(0.0),
         )
+
+    def test_tagged_callback_is_in_identity_and_rebases_causally(self) -> None:
+        callback = FutureTaggedBulletCallback(
+            source="enemy:7:main:callback14",
+            frame=7,
+            callback_index=14,
+            tag_mask=0x100000,
+            callback_angle=None,
+            callback_speed=FloatInterval.point(2.5),
+        )
+        event = replace(
+            _event(),
+            activation_frames=(5,),
+            original_flags=0x100000,
+            angle1_player_aim_coefficient=0.0,
+            angle1_player_aim_residual=FloatInterval.point(0.0),
+            angle2_player_aim_coefficient=0.0,
+            angle2_player_aim_residual=FloatInterval.point(0.0),
+            tagged_callbacks=(callback,),
+        )
+        projection = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=10,
+            events=(event,),
+            tagged_callbacks=(callback,),
+            source_semantics_version="test-source-callback-v1",
+        )
+        without_callback = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=10,
+            events=(replace(event, tagged_callbacks=()),),
+            source_semantics_version="test-source-callback-v1",
+        )
+
+        self.assertNotEqual(projection.digest, without_callback.digest)
+        self.assertEqual(projection.record()["tagged_callback_count"], 1)
+        self.assertFalse(
+            projection.current_pool_callback_composition_complete
+        )
+        conditioned = condition_future_hazard_projection_on_player_paths(
+            projection,
+            source_frame=103,
+            horizon_frames=7,
+            player_positions_by_step=tuple(
+                ((192.0, 400.0),) for _ in range(8)
+            ),
+        )
+        causal = conditioned.direct_fire_events[0]
+        self.assertEqual(causal.activation_frames, (2,))
+        self.assertEqual(len(causal.tagged_callbacks), 1)
+        self.assertEqual(causal.tagged_callbacks[0].frame, 4)
+        self.assertEqual(causal.tagged_callbacks[0].callback_index, 14)
+        self.assertEqual(len(conditioned.tagged_callbacks), 1)
+        self.assertEqual(conditioned.tagged_callbacks[0].frame, 4)
 
     def test_causal_path_recomputes_automatic_mode_aim(self) -> None:
         event = replace(

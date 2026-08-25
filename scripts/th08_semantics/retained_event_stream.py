@@ -3,10 +3,12 @@
 This adapter deliberately remains narrower than the source executor.  It
 replays a content-addressed root against its exact decoded ECL image and emits
 one-shot ``BulletEmitter`` records only when every descriptor operand is a
-point value and no unresolved lifecycle, transform, or callback flag remains.
-Unknown semantics reject the complete stream; interval midpoints are never
-used.  The returned ``StageProgram`` covers only the proven causal prefix and
-does not claim enemy-body, laser, arbitrary-ECL, or action authority.
+point value and no reached callback or unresolved transform remains.  A source-
+known sound flag and unconsumed callback tags are erased because they have no
+geometry effect inside that proven prefix.  Unknown semantics reject the
+complete stream; interval midpoints are never used.  The returned
+``StageProgram`` covers only the proven causal prefix and does not claim enemy-
+body, laser, arbitrary-ECL, or action authority.
 """
 
 from __future__ import annotations
@@ -15,7 +17,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from th08_ecl_tool.core import parse_ecl
-from th08_future_birth_envelope import FloatInterval, FutureDirectFire
+from th08_future_birth_envelope import (
+    FloatInterval,
+    FutureDirectFire,
+    FutureTaggedBulletCallback,
+    KNOWN_DIRECT_FIRE_NONPROGRAM_FLAGS,
+    KNOWN_TAGGED_CALLBACK_FLAGS,
+)
 from th08_ordinary_future_sources import (
     OrdinaryFutureSourceClosure,
     project_ordinary_future_sources,
@@ -95,8 +103,18 @@ def _event_emitters(
     *,
     ordinal: int,
 ) -> tuple[BulletEmitter, ...]:
+    if event.tagged_callbacks:
+        raise RetainedEventStreamError(
+            "tagged bullet callbacks require separate stage-runtime lowering"
+        )
     spawn_flags = event.original_flags & _SPAWN_LIFECYCLE_FLAG_MASK
-    remaining_flags = event.original_flags & ~_SPAWN_LIFECYCLE_FLAG_MASK
+    # Within a proven prefix, a high callback tag with no reached matching
+    # callback is observationally inert.  Likewise 0x200 is sound-only in
+    # BulletManager::FUN_00430e10.  Preserve fail-closed behavior for every
+    # other flag instead of teaching the stage runtime imaginary semantics.
+    remaining_flags = event.original_flags & ~(
+        KNOWN_DIRECT_FIRE_NONPROGRAM_FLAGS | KNOWN_TAGGED_CALLBACK_FLAGS
+    )
     if remaining_flags:
         raise RetainedEventStreamError(
             "direct-fire flags outside generic spawn lifecycle require "
@@ -150,6 +168,7 @@ def _event_emitters(
 def resolved_direct_fire_stage_program(
     events: tuple[FutureDirectFire, ...],
     *,
+    tagged_callbacks: tuple[FutureTaggedBulletCallback, ...] = (),
     horizon_frames: int,
     gameplay_rng_seed: int,
     root_sha256: str,
@@ -160,6 +179,11 @@ def resolved_direct_fire_stage_program(
         raise RetainedEventStreamError("event-stream horizon is negative")
     if len(root_sha256) != 64:
         raise RetainedEventStreamError("event-stream root digest is malformed")
+    if tagged_callbacks:
+        raise RetainedEventStreamError(
+            "tagged bullet callbacks require current-pool stage-runtime "
+            "composition"
+        )
     emitters = tuple(
         emitter
         for ordinal, event in enumerate(events)
@@ -324,6 +348,7 @@ def import_retained_future_event_stream(
     try:
         program = resolved_direct_fire_stage_program(
             closure.direct_fire_events,
+            tagged_callbacks=closure.tagged_callbacks,
             horizon_frames=projection.horizon_frames,
             gameplay_rng_seed=int(compact["rng_state"]),
             root_sha256=root_sha256,

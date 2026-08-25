@@ -1878,6 +1878,55 @@ boundaries.  This checkpoint therefore closes birth scheduling, not callback
 14, arbitrary ECL, global-planner authority, or physical route hits.  No Wine
 run is claimed.
 
+### AUD-072 — Callback tags were rejected as motion before their ordered consumer
+
+Status: **CONFIRMED SOURCE/IR/IDENTITY BUGS; FIXED WITH A CONSERVATIVE OFFLINE CALLBACK CLOSURE**
+
+The first native child producer emitted descriptor flags `0x100202`, and the
+old future-birth validator rejected `0x100000` as an unsupported movement flag.
+That classification is false. `BulletManager::FUN_0042f5f0` copies the
+descriptor word into bullet `+0xDB0`; `FUN_00430e10` uses `0x200` only to play
+the spawn sound. The zero-based `g_EclExInsn` table maps immediate ECL opcode
+`0x88` index 12 to `ReisenFreezeBullets`, index 13 to a background-tint-only
+function, and index 14 to `FUN_00424c40`. Callbacks 12 and 14 scan all 1,536
+active bullet slots and act only when `bullet.flags & vm.integer_locals[0]` is
+nonzero. Thus a tag has no motion or collision effect until a later reached
+callback consumes it.
+
+Future execution now emits a single ordered action stream for direct-fire
+allocation and callbacks 12/14. Reverse causal composition attaches only
+matching callbacks that occur after each allocation, including native
+same-frame enemy-slot order; a callback before a birth cannot mutate that
+birth. Callback 13 is erased only after source proof that it changes the
+background tint. Unknown callback indices still fail closed, and no
+stage/spell selector participates.
+
+The first geometry consumer deliberately uses a conservative composition
+rather than an invented exact phase history. Any matched callback widens the
+birth to a full-direction disc whose speed bound is the maximum absolute base
+or callback speed. Spawn-ANM nonlethal time is preserved, while all later
+callback states are treated as lethal even when the native auxiliary byte
+temporarily disables collision. This is a safe superset for future births but
+can be broad. Callback angle, speed, mask, frame, and source are part of the
+versioned causal identity and survive player-path rebasing.
+
+A second identity bug was found during review: a callback with no future birth
+was being discarded after attachment, even though it can mutate bullets
+already present in the retained root pool. The projection now retains the
+complete standalone callback action stream and explicitly reports that
+current-pool callback composition is incomplete whenever it is nonempty. The
+narrow complete-stage bridge rejects such a stream instead of silently
+dropping it. Therefore this checkpoint does not authorize the global planner
+until the sensed live pool is stepped through these actions.
+
+On the physical spell-115 root, source closure now admits the real type-16
+tagged birth at future frame 87 and advances from the former 86-frame boundary
+to a 136-frame causal prefix. It next stops at genuinely unsupported auxiliary
+opcode `0x0B`. The resolved-stage bridge still rejects the birth because its
+angle is an interval, not because of its tag; no midpoint is substituted. The
+complete Linux suite passes 1,491 tests with five conditional skips. No Wine
+run, global action authority, or hit-count improvement is claimed.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository

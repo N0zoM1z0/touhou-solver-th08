@@ -10,6 +10,7 @@ from th08_bullet_template_contract import bullet_spawn_lifecycle
 from th08_future_birth_envelope import (
     FloatInterval,
     FutureDirectFire,
+    FutureTaggedBulletCallback,
     _pattern_speed_angle,
     lower_future_direct_fire,
     lower_future_direct_fire_sectors,
@@ -309,6 +310,33 @@ class FutureBirthEnvelopeTests(unittest.TestCase):
         self.assertIsNotNone(sample)
         assert sample is not None
         self.assertGreaterEqual(sample.half_width, event.half_width + expected)
+
+    def test_matching_tagged_callback_uses_callback_speed_disc_bound(self) -> None:
+        event = _h1_event(
+            original_flags=0x100000,
+            tagged_callbacks=(
+                FutureTaggedBulletCallback(
+                    source="enemy:7:main:callback12",
+                    frame=5,
+                    callback_index=12,
+                    tag_mask=0x100000,
+                    callback_angle=FloatInterval.point(0.75),
+                    callback_speed=FloatInterval.point(3.0),
+                ),
+            ),
+        )
+
+        sector = lower_future_direct_fire_sectors(
+            event,
+            horizon_frames=10,
+        )[0].trajectory
+
+        self.assertEqual(
+            (sector.minimum_angle, sector.maximum_angle),
+            (-math.pi, math.pi),
+        )
+        self.assertEqual(sector.minimum_radii[10], 0.0)
+        self.assertEqual(sector.maximum_radii[10], 30.0)
 
     def test_unknown_native_flag_fails_closed(self) -> None:
         with self.assertRaisesRegex(ValueError, "unsupported future bullet flags"):

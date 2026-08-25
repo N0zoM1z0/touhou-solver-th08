@@ -7,7 +7,11 @@ import json
 from pathlib import Path
 import unittest
 
-from th08_future_birth_envelope import FloatInterval, FutureDirectFire
+from th08_future_birth_envelope import (
+    FloatInterval,
+    FutureDirectFire,
+    FutureTaggedBulletCallback,
+)
 from th08_semantics.retained_event_stream import (
     RetainedEventStreamError,
     import_retained_future_event_stream,
@@ -155,18 +159,61 @@ class RetainedEventStreamTests(unittest.TestCase):
             2,
         )
 
-    def test_non_lifecycle_flag_remains_typed_unknown(self) -> None:
-        event = replace(_event(), original_flags=0x200)
+    def test_source_known_nongeometry_flags_are_erased(self) -> None:
+        event = replace(_event(), original_flags=0x100200)
+
+        program = resolved_direct_fire_stage_program(
+            (event,),
+            horizon_frames=4,
+            gameplay_rng_seed=0,
+            root_sha256="d" * 64,
+        )
+
+        self.assertTrue(program.phases[0].emitters)
+        self.assertTrue(
+            all(
+                emitter.spawn_flags == 0
+                and emitter.tag_flags == 0
+                for emitter in program.phases[0].emitters
+            )
+        )
+
+    def test_reached_tagged_callback_remains_typed_unknown(self) -> None:
+        callback = FutureTaggedBulletCallback(
+            source="fixture:main:callback12",
+            frame=2,
+            callback_index=12,
+            tag_mask=0x100000,
+            callback_angle=FloatInterval.point(0.0),
+            callback_speed=FloatInterval.point(2.0),
+        )
+        event = replace(
+            _event(),
+            original_flags=0x100000,
+            tagged_callbacks=(callback,),
+        )
 
         with self.assertRaisesRegex(
             RetainedEventStreamError,
-            "outside generic spawn lifecycle",
+            "callbacks require separate stage-runtime lowering",
         ):
             resolved_direct_fire_stage_program(
                 (event,),
                 horizon_frames=4,
                 gameplay_rng_seed=0,
-                root_sha256="d" * 64,
+                root_sha256="e" * 64,
+            )
+
+        with self.assertRaisesRegex(
+            RetainedEventStreamError,
+            "current-pool stage-runtime composition",
+        ):
+            resolved_direct_fire_stage_program(
+                (_event(),),
+                tagged_callbacks=(callback,),
+                horizon_frames=4,
+                gameplay_rng_seed=0,
+                root_sha256="f" * 64,
             )
 
     def test_physical_roots_obey_generic_eligibility_and_prefix_gate(
@@ -198,21 +245,23 @@ class RetainedEventStreamTests(unittest.TestCase):
         callback_tag_boundary = import_retained_future_event_stream(
             capsules[115], ECL
         )
-        self.assertTrue(callback_tag_boundary.accepted_prefix)
-        self.assertIsNone(callback_tag_boundary.rejection_reason)
+        self.assertFalse(callback_tag_boundary.accepted_prefix)
+        self.assertIn(
+            "angle1 is not point-valued",
+            callback_tag_boundary.rejection_reason,
+        )
         self.assertFalse(callback_tag_boundary.full_horizon_complete)
-        self.assertEqual(callback_tag_boundary.proven_horizon_frames, 86)
-        self.assertEqual(callback_tag_boundary.producer_event_count, 0)
+        self.assertEqual(callback_tag_boundary.proven_horizon_frames, 136)
+        self.assertEqual(callback_tag_boundary.producer_event_count, 1)
         self.assertEqual(callback_tag_boundary.emitter_count, 0)
         self.assertIn(
-            "unsupported future bullet flags 0x100000",
+            "unsupported opcode 0xb",
             callback_tag_boundary.causal_prefix_reason,
         )
-        assert callback_tag_boundary.program is not None
-        runtime = StageRuntime(callback_tag_boundary.program)
-        while not runtime.complete:
-            runtime.step(player_x=192.0, player_y=400.0)
-        self.assertEqual(runtime.metrics.births_allocated, 0)
+        assert callback_tag_boundary.closure is not None
+        event = callback_tag_boundary.closure.direct_fire_events[0]
+        self.assertEqual(event.original_flags, 0x100200)
+        self.assertEqual(event.activation_frames, (87,))
 
 
 if __name__ == "__main__":

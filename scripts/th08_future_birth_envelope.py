@@ -26,10 +26,10 @@ from touhou_control.corridor import (
 
 
 FUTURE_BIRTH_ENVELOPE_SEMANTICS_VERSION = (
-    "th08-future-birth-envelope-v5-source-anm-lifecycle"
+    "th08-future-birth-envelope-v6-tagged-callback-bound"
 )
 FUTURE_BIRTH_SECTOR_SEMANTICS_VERSION = (
-    "th08-future-birth-sector-v5-source-anm-lifecycle"
+    "th08-future-birth-sector-v6-tagged-callback-bound"
 )
 _TWO_PI = 2.0 * math.pi
 _ZUN_PI = struct.unpack("<f", struct.pack("<f", math.pi))[0]
@@ -40,7 +40,13 @@ _FLOAT32_MIN_SUBNORMAL = math.ldexp(1.0, -149)
 # C oracle and is propagated through every later source update.
 _INITIAL_VELOCITY_COMPONENT_RELATIVE_GUARD = math.ldexp(1.0, -20)
 AUTOMATIC_PLAYER_AIM_MODES = frozenset((0, 2, 4))
-_KNOWN_NONPROGRAM_FLAGS = 0x020F
+# Source-authoritative descriptor flags that do not select a transform-record
+# program by themselves.  The low lifecycle bits are interpreted separately;
+# 0x200 requests only a spawn sound in BulletManager::FUN_00430e10.
+KNOWN_DIRECT_FIRE_NONPROGRAM_FLAGS = 0x020F
+# The shipped ECL uses the high tag nibble as pool-wide callback selectors.
+# A tag is inert until a reached callback consumes it.
+KNOWN_TAGGED_CALLBACK_FLAGS = 0xF00000
 _TRANSFORM_PROGRAM_LENGTH = 18
 _TRANSFORM_RECORD_SIZE = 24
 _VECTOR_ACCELERATION = 0x0000010
@@ -153,6 +159,30 @@ class FloatInterval:
 
 
 @dataclass(frozen=True)
+class FutureTaggedBulletCallback:
+    """One ordered pool-wide callback reached after a future bullet birth."""
+
+    source: str
+    frame: int
+    callback_index: int
+    tag_mask: int
+    callback_angle: FloatInterval | None
+    callback_speed: FloatInterval
+
+    def __post_init__(self) -> None:
+        if not self.source:
+            raise ValueError("future tagged callback source must not be empty")
+        if self.frame <= 0:
+            raise ValueError("future tagged callback frame must be positive")
+        if self.callback_index not in (12, 14):
+            raise ValueError("future tagged callback must be callback 12 or 14")
+        if not 0 < self.tag_mask <= 0xFFFFFFFF:
+            raise ValueError("future tagged callback mask must be nonzero u32")
+        if (self.callback_index == 12) != (self.callback_angle is not None):
+            raise ValueError("only callback 12 carries a callback angle")
+
+
+@dataclass(frozen=True)
 class FutureDirectFire:
     """One exhaustively reached ECL direct-fire event.
 
@@ -189,6 +219,7 @@ class FutureDirectFire:
     angle1_player_aim_residual: FloatInterval | None = None
     angle2_player_aim_coefficient: float | None = None
     angle2_player_aim_residual: FloatInterval | None = None
+    tagged_callbacks: tuple[FutureTaggedBulletCallback, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.source:
@@ -239,6 +270,14 @@ class FutureDirectFire:
             or self.half_height < 0.0
         ):
             raise ValueError("future bullet geometry must be finite")
+        if any(
+            later.frame < earlier.frame
+            for earlier, later in zip(
+                self.tagged_callbacks,
+                self.tagged_callbacks[1:],
+            )
+        ):
+            raise ValueError("future tagged callbacks must be frame-ordered")
         if self.transform_program_zero:
             if self.transform_program and any(self.transform_program):
                 raise ValueError("future transform zero marker is inconsistent")
@@ -273,7 +312,9 @@ class FutureDirectFire:
         for record in active_transforms:
             active_kind_mask |= record.kind
         unsupported_flags = self.original_flags & ~(
-            _KNOWN_NONPROGRAM_FLAGS | active_kind_mask
+            KNOWN_DIRECT_FIRE_NONPROGRAM_FLAGS
+            | KNOWN_TAGGED_CALLBACK_FLAGS
+            | active_kind_mask
         )
         if unsupported_flags:
             raise ValueError(
@@ -314,7 +355,12 @@ def _transform_path_profile(
             _REFLECT_SIDES_AND_TOP,
         )
     )
-    if not records:
+    callbacks = tuple(
+        callback
+        for callback in event.tagged_callbacks
+        if callback.tag_mask & event.original_flags
+    )
+    if not records and not callbacks:
         return None
     maximum_speed = max(
         abs(event.speed1.lower),
@@ -323,6 +369,12 @@ def _transform_path_profile(
         abs(event.speed2.upper),
     )
     acceleration = 0.0
+    for callback in callbacks:
+        maximum_speed = max(
+            maximum_speed,
+            abs(callback.callback_speed.lower),
+            abs(callback.callback_speed.upper),
+        )
     for record in records:
         if record.kind in (_VECTOR_ACCELERATION, _ANGULAR_VELOCITY):
             acceleration += abs(record.float_0)
@@ -984,6 +1036,9 @@ __all__ = [
     "FutureBirthEnvelope",
     "FutureBirthSectorEnvelope",
     "FutureDirectFire",
+    "FutureTaggedBulletCallback",
+    "KNOWN_DIRECT_FIRE_NONPROGRAM_FLAGS",
+    "KNOWN_TAGGED_CALLBACK_FLAGS",
     "lower_complete_future_births",
     "lower_complete_future_birth_sectors",
     "lower_future_direct_fire",

@@ -13,12 +13,17 @@ from th08_enemy_spawn_model import (
     ENEMY_FLAG_CONTACT,
     ENEMY_FLAG_LINKED_CHILD,
 )
-from th08_future_birth_envelope import FloatInterval
+from th08_future_birth_envelope import (
+    FloatInterval,
+    FutureDirectFire,
+    FutureTaggedBulletCallback,
+)
 from th08_ordinary_future_sources import (
     FutureSourceClosureError,
     _NativeEnemyPool,
     _VmState,
     _advance_motion,
+    _attach_later_tagged_callbacks,
     _define_bullet_transform,
     _direct_fire_count,
     _direct_fire_type_color,
@@ -32,6 +37,7 @@ from th08_ordinary_future_sources import (
     _motion_state,
     _source_initialized_spawn,
     _spawn_vm,
+    _tagged_callback_action,
     project_ordinary_future_sources,
 )
 
@@ -304,6 +310,60 @@ def _payload() -> dict[str, object]:
 
 
 class OrdinaryFutureSourceTests(unittest.TestCase):
+    def test_callback_12_and_14_lower_from_vm_filter_state(self) -> None:
+        vm = _VmState(
+            instruction_offset=0,
+            timer_elapsed=0,
+            integer_locals=[0x100000] + [0] * 7,
+            float_locals=[
+                FloatInterval.point(0.75),
+                FloatInterval.point(2.5),
+            ]
+            + [FloatInterval.point(0.0)] * 6,
+            scratch_integers=[0] * 4,
+        )
+        source = SimpleNamespace(identity="synthetic-callback-source")
+
+        def instruction(index: int) -> SubInstruction:
+            return SubInstruction(
+                offset=0x4240,
+                time=0,
+                opcode=0x88,
+                size=20,
+                byte_08=0,
+                difficulty_mask=0xFF,
+                parameter_mask=0,
+                arguments=(index, 0),
+            )
+
+        freeze = _tagged_callback_action(
+            source=source,
+            vm=vm,
+            instruction=instruction(12),
+            frame=7,
+        )
+        visual = _tagged_callback_action(
+            source=source,
+            vm=vm,
+            instruction=instruction(13),
+            frame=7,
+        )
+        phase = _tagged_callback_action(
+            source=source,
+            vm=vm,
+            instruction=instruction(14),
+            frame=7,
+        )
+
+        self.assertIsInstance(freeze, FutureTaggedBulletCallback)
+        assert freeze is not None
+        self.assertEqual(freeze.callback_angle, FloatInterval.point(0.75))
+        self.assertEqual(freeze.callback_speed, FloatInterval.point(2.5))
+        self.assertIsNone(visual)
+        self.assertIsInstance(phase, FutureTaggedBulletCallback)
+        assert phase is not None
+        self.assertIsNone(phase.callback_angle)
+
     def test_complete_copied_vm_block_is_accepted_without_narrowing(self) -> None:
         payload = deepcopy(_payload())
         row = payload["enemy_manager_template_source"][
@@ -1259,7 +1319,7 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
         self.assertEqual(lower_child.motion.velocity_x, 2.0)
         self.assertEqual(lower_child.main.timer_elapsed, 1)
 
-    def test_real_stage5_child_reaches_callback14_boundary(self) -> None:
+    def test_real_stage5_child_emits_source_tagged_future_birth(self) -> None:
         payload = _payload()
         payload["compact_state"]["spell_id"] = 111
         payload["bullet_template_geometry"]["rows"] = [
@@ -1316,25 +1376,54 @@ class OrdinaryFutureSourceTests(unittest.TestCase):
         self.assertEqual(child.main.spawn_float_parameters[1].lower, 368.0)
         instructions = _instruction_map(ECL)
 
-        with self.assertRaisesRegex(
-            (FutureSourceClosureError, ValueError),
-            "unsupported future bullet flags 0x100000",
-        ):
-            for frame in range(1, 80):
-                pool.begin_frame(frame=frame, remaining_horizon=268 - frame)
-                _execute_source_update(
-                    source=child,
-                    frame=frame,
-                    root_player_x=192.0,
-                    root_player_y=400.0,
-                    instructions=instructions,
-                    difficulty_mask=8,
-                    payload=payload,
-                    ecl=ECL,
-                    remaining_horizon=268 - frame,
-                    spawn_executor=pool.spawn_from_instruction,
-                )
-                _integrate_motion(child, parent=parent)
+        actions = []
+        for frame in range(1, 80):
+            pool.begin_frame(frame=frame, remaining_horizon=268 - frame)
+            source_actions, _descendants = _execute_source_update(
+                source=child,
+                frame=frame,
+                root_player_x=192.0,
+                root_player_y=400.0,
+                instructions=instructions,
+                difficulty_mask=8,
+                payload=payload,
+                ecl=ECL,
+                remaining_horizon=268 - frame,
+                spawn_executor=pool.spawn_from_instruction,
+            )
+            actions.extend(source_actions)
+            _integrate_motion(child, parent=parent)
+
+        tagged_births = [
+            action
+            for action in actions
+            if isinstance(action, FutureDirectFire)
+            and action.original_flags & 0x100000
+        ]
+        self.assertTrue(tagged_births)
+        tagged_birth = tagged_births[0]
+        self.assertEqual(tagged_birth.original_flags, 0x100202)
+        self.assertEqual(tagged_birth.tagged_callbacks, ())
+
+        same_frame_callback = FutureTaggedBulletCallback(
+            source="later-pool-slot:callback12",
+            frame=tagged_birth.activation_frames[0],
+            callback_index=12,
+            tag_mask=0x100000,
+            callback_angle=FloatInterval.point(0.25),
+            callback_speed=FloatInterval.point(2.0),
+        )
+        before_birth = _attach_later_tagged_callbacks(
+            (same_frame_callback, tagged_birth)
+        )[0]
+        after_birth = _attach_later_tagged_callbacks(
+            (tagged_birth, same_frame_callback)
+        )[0]
+        self.assertEqual(before_birth.tagged_callbacks, ())
+        self.assertEqual(
+            after_birth.tagged_callbacks,
+            (same_frame_callback,),
+        )
 
     def test_active_auxiliary_remains_closed_from_captured_state2(self) -> None:
         payload = deepcopy(_payload())

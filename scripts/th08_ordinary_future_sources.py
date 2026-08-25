@@ -56,6 +56,7 @@ from th08_future_birth_envelope import (
     AUTOMATIC_PLAYER_AIM_MODES,
     FloatInterval,
     FutureDirectFire,
+    FutureTaggedBulletCallback,
 )
 from th08_future_hazard_projection import (
     OrdinaryFutureHazardProjection,
@@ -76,7 +77,7 @@ from touhou_control.corridor import AabbHazard, AabbTrajectoryHazard
 
 
 ORDINARY_FUTURE_SOURCE_SEMANTICS_VERSION = (
-    "th08-ordinary-future-sources-v22-native-enemy-pool"
+    "th08-ordinary-future-sources-v24-tagged-callback-action-stream"
 )
 _PROJECTION_SCHEMA = "th08-native-snapshot-collision-control-projection-v14"
 _DIRECT_FIRE_OPCODES = frozenset(range(0x60, 0x69))
@@ -254,9 +255,12 @@ class _SourceState:
     follow_own_uncertainty_y: float | None = None
 
 
+_FutureSourceAction = FutureDirectFire | FutureTaggedBulletCallback
+
+
 _SpawnExecutor = Callable[
     [_SourceState, SubInstruction, FloatInterval],
-    tuple[tuple[FutureDirectFire, ...], int],
+    tuple[tuple[_FutureSourceAction, ...], int],
 ]
 
 
@@ -264,6 +268,7 @@ _SpawnExecutor = Callable[
 class OrdinaryFutureSourceClosure:
     projection: OrdinaryFutureHazardProjection
     direct_fire_events: tuple[FutureDirectFire, ...]
+    tagged_callbacks: tuple[FutureTaggedBulletCallback, ...]
     source_count: int
     auxiliary_count: int
     silent_child_count: int
@@ -1898,6 +1903,45 @@ def _direct_fire_events(
     )
 
 
+def _tagged_callback_action(
+    *,
+    source: _SourceState,
+    vm: _VmState,
+    instruction: SubInstruction,
+    frame: int,
+) -> FutureTaggedBulletCallback | None:
+    """Lower reached pool-wide callbacks without treating their tag as inert."""
+
+    if len(instruction.arguments) != 2:
+        _fail("immediate callback argument layout drifted")
+    callback_index = _eval_integer_operand(
+        int(instruction.arguments[0]),
+        dynamic=bool(instruction.parameter_mask & 1),
+        vm=vm,
+    )
+    if callback_index == 13:
+        # FUN_00424e00 changes only the background tint.
+        return None
+    if callback_index not in (12, 14):
+        _fail(
+            f"{source.identity} reaches unsupported immediate callback "
+            f"{callback_index} at {instruction.offset:#x}"
+        )
+    tag_mask = vm.integer_locals[0] & 0xFFFFFFFF
+    if tag_mask == 0:
+        return None
+    return FutureTaggedBulletCallback(
+        source=(
+            f"{source.identity}:pc={instruction.offset:#x}:frame={frame}"
+        ),
+        frame=frame,
+        callback_index=callback_index,
+        tag_mask=tag_mask,
+        callback_angle=(vm.float_locals[0] if callback_index == 12 else None),
+        callback_speed=vm.float_locals[1],
+    )
+
+
 def _execute_auxiliary(
     *,
     source: _SourceState,
@@ -1907,8 +1951,8 @@ def _execute_auxiliary(
     frame: int,
     aim_angle: FloatInterval,
     payload: dict[str, object],
-) -> tuple[FutureDirectFire, ...]:
-    events: list[FutureDirectFire] = []
+) -> tuple[_FutureSourceAction, ...]:
+    events: list[_FutureSourceAction] = []
     if vm.stopped:
         return ()
     if vm.delay_remaining > 0:
@@ -2207,6 +2251,15 @@ def _execute_auxiliary(
                 instruction=instruction,
                 aim_angle=aim_angle,
             )
+        elif opcode == 0x88:
+            callback = _tagged_callback_action(
+                source=source,
+                vm=vm,
+                instruction=instruction,
+                frame=frame,
+            )
+            if callback is not None:
+                events.append(callback)
         elif opcode in _DIRECT_FIRE_OPCODES:
             events.extend(
                 _direct_fire_events(
@@ -2660,11 +2713,11 @@ def _execute_main(
     ecl: EclFile,
     remaining_horizon: int,
     spawn_executor: _SpawnExecutor | None = None,
-) -> tuple[tuple[FutureDirectFire, ...], int]:
+) -> tuple[tuple[_FutureSourceAction, ...], int]:
     vm = source.main
     if vm.stopped:
         return (), 0
-    events: list[FutureDirectFire] = []
+    events: list[_FutureSourceAction] = []
     silent_children = 0
     visited: set[tuple[int, int]] = set()
     for _ in range(_MAX_INSTRUCTIONS_PER_UPDATE):
@@ -2962,6 +3015,15 @@ def _execute_main(
                 instruction=instruction,
                 ecl=ecl,
             )
+        elif opcode == 0x88:
+            callback = _tagged_callback_action(
+                source=source,
+                vm=vm,
+                instruction=instruction,
+                frame=frame,
+            )
+            if callback is not None:
+                events.append(callback)
         elif opcode == 0x8B:
             if len(instruction.arguments) != 3:
                 _fail("spawn effect argument layout drifted")
@@ -3411,7 +3473,7 @@ def _execute_source_update(
     ecl: EclFile,
     remaining_horizon: int,
     spawn_executor: _SpawnExecutor | None = None,
-) -> tuple[tuple[FutureDirectFire, ...], int]:
+) -> tuple[tuple[_FutureSourceAction, ...], int]:
     if source.precompose_origin_x is not None:
         aim_angle = FloatInterval(-math.pi, math.pi)
     else:
@@ -3546,7 +3608,7 @@ class _NativeEnemyPool:
     def _bootstrap(
         self,
         source: _SourceState,
-    ) -> tuple[tuple[FutureDirectFire, ...], int]:
+    ) -> tuple[tuple[_FutureSourceAction, ...], int]:
         events, descendants = _execute_source_update(
             source=source,
             frame=self._frame,
@@ -3596,7 +3658,7 @@ class _NativeEnemyPool:
         parent: _SourceState,
         instruction: SubInstruction,
         aim_angle: FloatInterval,
-    ) -> tuple[tuple[FutureDirectFire, ...], int]:
+    ) -> tuple[tuple[_FutureSourceAction, ...], int]:
         """Lower generic RunEcl opcodes 0x5A..0x5E."""
 
         profile = enemy_spawn_profile(int(instruction.opcode))
@@ -3698,7 +3760,7 @@ class _NativeEnemyPool:
     def spawn_from_timeline(
         self,
         spawn: TimelineSpawnRequest,
-    ) -> tuple[tuple[FutureDirectFire, ...], int]:
+    ) -> tuple[tuple[_FutureSourceAction, ...], int]:
         minimum_x = spawn.x if spawn.minimum_x is None else spawn.minimum_x
         maximum_x = spawn.x if spawn.maximum_x is None else spawn.maximum_x
         child = self._new_source(
@@ -3724,6 +3786,31 @@ class _NativeEnemyPool:
         self._release_if_current(source)
 
 
+def _attach_later_tagged_callbacks(
+    actions: tuple[_FutureSourceAction, ...],
+) -> tuple[FutureDirectFire, ...]:
+    """Attach only callbacks ordered after each immediate bullet allocation."""
+
+    later_callbacks: list[FutureTaggedBulletCallback] = []
+    reversed_events: list[FutureDirectFire] = []
+    for action in reversed(actions):
+        if isinstance(action, FutureTaggedBulletCallback):
+            later_callbacks.append(action)
+            continue
+        relevant = tuple(
+            callback
+            for callback in reversed(later_callbacks)
+            if callback.tag_mask & action.original_flags
+        )
+        reversed_events.append(
+            replace(
+                action,
+                tagged_callbacks=action.tagged_callbacks + relevant,
+            )
+        )
+    return tuple(reversed(reversed_events))
+
+
 def _analyze(
     payload: dict[str, object],
     ecl: EclFile,
@@ -3731,6 +3818,7 @@ def _analyze(
     horizon_frames: int,
 ) -> tuple[
     tuple[FutureDirectFire, ...],
+    tuple[FutureTaggedBulletCallback, ...],
     tuple[AabbTrajectoryHazard, ...],
     int,
     int,
@@ -3790,7 +3878,7 @@ def _analyze(
         projected_horizon_frames = timeline_steps
         causal_prefix_reason = timeline_prefix_reason
     instructions = _instruction_map(ecl)
-    events: list[FutureDirectFire] = []
+    actions: list[_FutureSourceAction] = []
     future_body_samples: dict[str, list[AabbHazard | None]] = {
         source.identity: [
             _source_contact_body_sample(source),
@@ -3819,7 +3907,7 @@ def _analyze(
     silent_children = 0
     timeline_spawn_count = 0
     for frame in range(1, projected_horizon_frames + 1):
-        event_count_before = len(events)
+        action_count_before = len(actions)
         source_count_before = len(pool.all_sources)
         timeline_spawn_count_before = timeline_spawn_count
         silent_children_before = silent_children
@@ -3833,7 +3921,7 @@ def _analyze(
                 bootstrap_events, child_count = pool.spawn_from_timeline(
                     spawn
                 )
-                events.extend(bootstrap_events)
+                actions.extend(bootstrap_events)
                 silent_children += child_count
             # EnemyManager::OnUpdate scans the fixed array in ascending slot
             # order.  The slot lookup is intentionally dynamic: a child born
@@ -3855,7 +3943,7 @@ def _analyze(
                     remaining_horizon=projected_horizon_frames - frame,
                     spawn_executor=pool.spawn_from_instruction,
                 )
-                events.extend(source_events)
+                actions.extend(source_events)
                 silent_children += child_count
                 if not source.active:
                     pool.release(source)
@@ -3873,7 +3961,7 @@ def _analyze(
             TypeError,
             ValueError,
         ) as error:
-            del events[event_count_before:]
+            del actions[action_count_before:]
             del pool.all_sources[source_count_before:]
             timeline_spawn_count = timeline_spawn_count_before
             silent_children = silent_children_before
@@ -3897,8 +3985,14 @@ def _analyze(
         for source in pool.all_sources
         for auxiliary in source.auxiliaries
     )
+    action_stream = tuple(actions)
     return (
-        tuple(events),
+        _attach_later_tagged_callbacks(action_stream),
+        tuple(
+            action
+            for action in action_stream
+            if isinstance(action, FutureTaggedBulletCallback)
+        ),
         body_trajectories,
         len(pool.all_sources),
         auxiliary_count,
@@ -3929,6 +4023,7 @@ def project_ordinary_future_sources(
     try:
         (
             events,
+            tagged_callbacks,
             aabb_trajectories,
             source_count,
             auxiliary_count,
@@ -3952,6 +4047,7 @@ def project_ordinary_future_sources(
         return OrdinaryFutureSourceClosure(
             projection=projection,
             direct_fire_events=(),
+            tagged_callbacks=(),
             source_count=0,
             auxiliary_count=0,
             silent_child_count=0,
@@ -3966,11 +4062,13 @@ def project_ordinary_future_sources(
         horizon_frames=projected_horizon_frames,
         events=events,
         aabb_trajectories=aabb_trajectories,
+        tagged_callbacks=tagged_callbacks,
         source_semantics_version=ORDINARY_FUTURE_SOURCE_SEMANTICS_VERSION,
     )
     return OrdinaryFutureSourceClosure(
         projection=projection,
         direct_fire_events=events,
+        tagged_callbacks=tagged_callbacks,
         source_count=source_count,
         auxiliary_count=auxiliary_count,
         silent_child_count=silent_child_count,

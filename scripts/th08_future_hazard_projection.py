@@ -5,13 +5,14 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from th08_future_birth_envelope import (
     AUTOMATIC_PLAYER_AIM_MODES,
     FUTURE_BIRTH_SECTOR_SEMANTICS_VERSION,
     FloatInterval,
     FutureDirectFire,
+    FutureTaggedBulletCallback,
     lower_complete_future_birth_sectors,
 )
 from touhou_control.corridor import (
@@ -30,7 +31,7 @@ from touhou_control.pipeline_identity import VersionIdentity
 
 
 ORDINARY_FUTURE_HAZARD_PROJECTION_SCHEMA = (
-    "th08-ordinary-future-hazard-projection-v6-source-lifecycle-identity"
+    "th08-ordinary-future-hazard-projection-v8-callback-action-stream"
 )
 
 _TWO_PI = 2.0 * math.pi
@@ -76,6 +77,23 @@ def _interval_record(interval: FloatInterval) -> list[float]:
     return [float(interval.lower), float(interval.upper)]
 
 
+def _tagged_callback_record(
+    callback: FutureTaggedBulletCallback,
+) -> dict[str, object]:
+    return {
+        "source": callback.source,
+        "frame": callback.frame,
+        "callback_index": callback.callback_index,
+        "tag_mask": callback.tag_mask,
+        "callback_angle": (
+            None
+            if callback.callback_angle is None
+            else _interval_record(callback.callback_angle)
+        ),
+        "callback_speed": _interval_record(callback.callback_speed),
+    }
+
+
 def _causal_event_record(event: FutureDirectFire) -> dict[str, object]:
     return {
         "source": event.source,
@@ -115,6 +133,10 @@ def _causal_event_record(event: FutureDirectFire) -> dict[str, object]:
             if event.angle2_player_aim_residual is None
             else _interval_record(event.angle2_player_aim_residual)
         ),
+        "tagged_callbacks": [
+            _tagged_callback_record(callback)
+            for callback in event.tagged_callbacks
+        ],
     }
 
 
@@ -127,6 +149,7 @@ class OrdinaryFutureHazardProjection:
     trajectories: tuple[AnnularSectorTrajectoryHazard, ...]
     aabb_trajectories: tuple[AabbTrajectoryHazard, ...]
     direct_fire_events: tuple[FutureDirectFire, ...]
+    tagged_callbacks: tuple[FutureTaggedBulletCallback, ...]
     source_closure_complete: bool
     source_closure_reason: str | None
     source_semantics_version: str
@@ -152,6 +175,19 @@ class OrdinaryFutureHazardProjection:
             raise ValueError("source semantics version must not be empty")
         if self.producer_count < 0:
             raise ValueError("producer count cannot be negative")
+        if any(
+            callback.frame > self.horizon_frames
+            for callback in self.tagged_callbacks
+        ):
+            raise ValueError("tagged callback escapes future-hazard horizon")
+        if any(
+            later.frame < earlier.frame
+            for earlier, later in zip(
+                self.tagged_callbacks,
+                self.tagged_callbacks[1:],
+            )
+        ):
+            raise ValueError("future-hazard callbacks must be frame-ordered")
         if len(self.digest) != 64:
             raise ValueError("future-hazard digest must be SHA-256")
         if self.coverage.root_frame != self.root_frame:
@@ -199,6 +235,12 @@ class OrdinaryFutureHazardProjection:
     @property
     def packed_annular_sector_frames(self) -> PackedAnnularSectorFrames:
         return self._packed_annular_sector_frames
+
+    @property
+    def current_pool_callback_composition_complete(self) -> bool:
+        """Whether future callbacks can leave the sensed live pool unchanged."""
+
+        return not self.tagged_callbacks
 
     def aabb_samples(self, frame: int) -> tuple[AabbHazard, ...]:
         if frame < 0 or frame >= len(self._aabb_samples_by_frame):
@@ -265,6 +307,10 @@ class OrdinaryFutureHazardProjection:
             "trajectory_count": len(self.trajectories),
             "aabb_trajectory_count": len(self.aabb_trajectories),
             "direct_fire_event_count": len(self.direct_fire_events),
+            "tagged_callback_count": len(self.tagged_callbacks),
+            "current_pool_callback_composition_complete": (
+                self.current_pool_callback_composition_complete
+            ),
             "causal_player_aim_event_count": sum(
                 event.angle1_player_aim_coefficient is not None
                 and event.angle2_player_aim_coefficient is not None
@@ -283,6 +329,7 @@ def _build_projection(
     trajectories: tuple[AnnularSectorTrajectoryHazard, ...],
     aabb_trajectories: tuple[AabbTrajectoryHazard, ...],
     direct_fire_events: tuple[FutureDirectFire, ...],
+    tagged_callbacks: tuple[FutureTaggedBulletCallback, ...],
     source_closure_complete: bool,
     source_closure_reason: str | None,
     source_semantics_version: str,
@@ -310,6 +357,10 @@ def _build_projection(
         "direct_fire_events": [
             _causal_event_record(event) for event in direct_fire_events
         ],
+        "tagged_callbacks": [
+            _tagged_callback_record(callback)
+            for callback in tagged_callbacks
+        ],
     }
     digest = hashlib.sha256(
         json.dumps(
@@ -320,7 +371,7 @@ def _build_projection(
         ).encode("utf-8")
     ).hexdigest()
     version = VersionIdentity.from_mapping(
-        "th08-ordinary-future-hazard-projection-v6",
+        "th08-ordinary-future-hazard-projection-v8",
         {
             "root_frame": root_frame,
             "horizon_frames": horizon_frames,
@@ -362,6 +413,7 @@ def _build_projection(
         trajectories=trajectories,
         aabb_trajectories=aabb_trajectories,
         direct_fire_events=direct_fire_events,
+        tagged_callbacks=tagged_callbacks,
         source_closure_complete=source_closure_complete,
         source_closure_reason=source_closure_reason,
         source_semantics_version=source_semantics_version,
@@ -378,6 +430,7 @@ def complete_future_hazard_projection(
     horizon_frames: int,
     events: tuple[FutureDirectFire, ...],
     aabb_trajectories: tuple[AabbTrajectoryHazard, ...] = (),
+    tagged_callbacks: tuple[FutureTaggedBulletCallback, ...] = (),
     source_semantics_version: str,
 ) -> OrdinaryFutureHazardProjection:
     envelopes = lower_complete_future_birth_sectors(
@@ -392,10 +445,13 @@ def complete_future_hazard_projection(
         ),
         aabb_trajectories=aabb_trajectories,
         direct_fire_events=events,
+        tagged_callbacks=tagged_callbacks,
         source_closure_complete=True,
         source_closure_reason=None,
         source_semantics_version=source_semantics_version,
-        producer_count=len(events) + len(aabb_trajectories),
+        producer_count=(
+            len(events) + len(aabb_trajectories) + len(tagged_callbacks)
+        ),
     )
 
 
@@ -414,6 +470,7 @@ def unknown_future_hazard_projection(
         trajectories=(),
         aabb_trajectories=(),
         direct_fire_events=(),
+        tagged_callbacks=(),
         source_closure_complete=False,
         source_closure_reason=reason,
         source_semantics_version=source_semantics_version,
@@ -507,6 +564,13 @@ def condition_future_hazard_projection_on_player_paths(
     if len(player_positions_by_step) < horizon_frames + 1:
         raise ValueError("causal player paths do not cover the horizon")
 
+    conditioned_callbacks = tuple(
+        replace(callback, frame=callback.frame - source_offset)
+        for callback in projection.tagged_callbacks
+        if source_offset < callback.frame <= (
+            source_offset + horizon_frames
+        )
+    )
     conditioned_events: list[FutureDirectFire] = []
     for event in projection.direct_fire_events:
         if (
@@ -576,6 +640,16 @@ def condition_future_hazard_projection_on_player_paths(
                     angle2_player_aim_residual=(
                         event.angle2_player_aim_residual
                     ),
+                    tagged_callbacks=tuple(
+                        replace(
+                            callback,
+                            frame=callback.frame - source_offset,
+                        )
+                        for callback in event.tagged_callbacks
+                        if source_offset < callback.frame <= (
+                            source_offset + horizon_frames
+                        )
+                    ),
                 )
             )
 
@@ -587,6 +661,7 @@ def condition_future_hazard_projection_on_player_paths(
             source_frame=source_frame,
             horizon_frames=horizon_frames,
         ),
+        tagged_callbacks=conditioned_callbacks,
         source_semantics_version=(
             f"{projection.source_semantics_version}+causal-player-path-v1"
         ),

@@ -561,8 +561,9 @@ fixed `2e-5` guard failed on 392/420 lethal oracle samples. AABB uses outward
 source-order intervals, while sector error is propagated analytically so
 continuous speed/angle parameters remain correlated; 256 random C roots also
 stay contained. This does not close current-pool callback state or complete
-Stage-5 producer coverage. The next generic family is child/timeline birth
-execution, followed by callback 14.
+Stage-5 producer coverage. Child/timeline execution and a conservative
+ordered callback-12/14 birth envelope are recorded below; exact live-pool
+callback composition remains open.
 
 The same lifecycle is now part of the versioned complete-stage IR/runtime,
 not only a bounded envelope helper. A 3,600-frame stateful gate exercised all
@@ -574,15 +575,28 @@ their unaudited composition, as well as transform composition, fails closed.
 This remains generic offline evidence and grants neither a card policy nor
 global action authority.
 
-The first child-birth subgate is now source-locked before integration. One
-generic constructor table covers ECL `0x5A`--`0x5E`; it distinguishes parent
-guards and copied-template initialization from the arbitrary state returned
-by the synchronous child `RunEcl`. Only a successful bootstrap receives the
-later linked/contact/youkai/follow writes. An independent C product test
-covers all five opcode families and their HP, suppress-bit, pool, bootstrap,
-and player-type branches. This removes two plausible but false shortcuts
-(testing template bit 10 and assuming inert bootstrap geometry), but it does
-not yet execute retained child roots or alter future coverage.
+The child-birth subgate is now integrated. One generic constructor table
+covers ECL `0x5A`--`0x5E`; it distinguishes parent guards and source-initialized
+template state from the arbitrary state returned by synchronous child
+`RunEcl`. Only a successful bootstrap receives the later
+linked/contact/youkai/follow writes. An independent C product test covers all
+five opcode families and their HP, suppress-bit, pool, bootstrap, and
+player-type branches. The live executor adds the exact 480-slot first-free
+pool, recursive installation-before-bootstrap, and ascending manager scan.
+The copied VM projection was extended from `0x68` to the source's complete
+`0x90` bytes after a real child used omitted spawn/call parameters.
+
+The next callback subgate is closed conservatively for future births. ECL
+immediate callback 12/14 actions and direct-fire allocations share one ordered
+IR, and only later matching tag filters compose with a birth. A tag alone is
+inert; callback 13 is source-proven visual-only. Matched callbacks widen the
+trajectory to a full-direction maximum-speed disc while retaining exact spawn
+ANM activation. This is safe but intentionally broader than exact callback
+phase evolution. Standalone callbacks are retained separately because they
+can mutate the root's already-live bullet pool; that composition remains an
+explicit global-authority blocker. The physical spell-115 root consequently
+advances from 86 to 136 proven future frames and includes its first tagged
+birth, then stops at unrelated unsupported opcode `0x0B`.
 
 ### F. Promote global viability authority
 
