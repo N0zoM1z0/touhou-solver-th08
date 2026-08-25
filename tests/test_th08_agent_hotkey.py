@@ -46,6 +46,8 @@ class AgentHotkeyTests(unittest.TestCase):
         self.assertFalse(parsed.ordinary_preexhaustion_authority)
         self.assertFalse(parsed.authority_only_corridor)
         self.assertFalse(parsed.enable_finalb_scale_source_authority)
+        self.assertIsNone(parsed.future_source_retain_dir)
+        self.assertEqual(parsed.future_source_retain_spell, [])
 
     def test_active_diagnostics_are_explicit(self) -> None:
         parsed = build_parser().parse_args(
@@ -68,6 +70,25 @@ class AgentHotkeyTests(unittest.TestCase):
         self.assertTrue(parsed.ordinary_preexhaustion_authority)
         self.assertTrue(parsed.authority_only_corridor)
         self.assertTrue(parsed.diagnostic_continue_root_only_scale)
+
+    def test_retained_root_contract_reaches_live_parser(self) -> None:
+        root_dir = Path("artifacts/runtime_reports/stage5.root")
+        parsed = build_parser().parse_args(
+            _arguments(
+                expected_stage=5,
+                runtime_ecl_static_image=Path(
+                    "artifacts/decoded/ecldata5.ecl"
+                ),
+                runtime_ecl_static_sha256="2" * 64,
+                future_source_retain_dir=root_dir,
+                future_source_retain_spells=(103, 115),
+                future_source_retain_max_per_spell=2,
+            )
+        )
+
+        self.assertEqual(parsed.future_source_retain_dir, root_dir)
+        self.assertEqual(parsed.future_source_retain_spell, [103, 115])
+        self.assertEqual(parsed.future_source_retain_max_per_spell, 2)
 
     def test_finalb_scale_authority_is_exact_and_stage_bound(self) -> None:
         image = Path("artifacts/decoded/ecldata7.ecl")

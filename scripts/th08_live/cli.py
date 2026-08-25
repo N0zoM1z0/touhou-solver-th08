@@ -131,6 +131,33 @@ def build_live_parser(
         ),
     )
     parser.add_argument(
+        "--future-source-retain-dir",
+        type=Path,
+        help=(
+            "write content-addressed coherent future-source roots for "
+            "offline replay; capture and I/O are shadow-only and never "
+            "grant action authority"
+        ),
+    )
+    parser.add_argument(
+        "--future-source-retain-spell",
+        action="append",
+        type=int,
+        default=[],
+        metavar="ID",
+        help=(
+            "active spell ID eligible for shadow root retention; repeat for "
+            "multiple cards"
+        ),
+    )
+    parser.add_argument(
+        "--future-source-retain-max-per-spell",
+        type=int,
+        default=1,
+        metavar="N",
+        help="maximum successfully retained coherent roots per selected spell",
+    )
+    parser.add_argument(
         "--input-clock-boundary-shadow",
         action="store_true",
         help=(

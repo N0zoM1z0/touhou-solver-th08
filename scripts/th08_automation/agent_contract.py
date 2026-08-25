@@ -58,6 +58,9 @@ def build_long_run_arguments(
     trace_enemy_lifecycle_events: bool = False,
     kill_before_saturation: bool = False,
     ordinary_preexhaustion_authority: bool = False,
+    future_source_retain_dir: Path | None = None,
+    future_source_retain_spells: tuple[int, ...] = (),
+    future_source_retain_max_per_spell: int = 1,
     authority_only_corridor: bool = False,
     diagnostic_continue_root_only_scale: bool = False,
     runtime_ecl_static_image: Path | None = None,
@@ -89,6 +92,26 @@ def build_long_run_arguments(
         raise ValueError("unknown local beam reducer")
     if bullet_decode_backend not in {"python", "native"}:
         raise ValueError("unknown bullet decode backend")
+    if (future_source_retain_dir is None) != (
+        not future_source_retain_spells
+    ):
+        raise ValueError(
+            "future-source retention requires both a directory and selected "
+            "spells"
+        )
+    if future_source_retain_max_per_spell <= 0:
+        raise ValueError(
+            "future-source retention maximum per spell must be positive"
+        )
+    if len(set(future_source_retain_spells)) != len(
+        future_source_retain_spells
+    ):
+        raise ValueError("future-source retained spell IDs must be unique")
+    if any(
+        not 0 <= spell_id <= 255
+        for spell_id in future_source_retain_spells
+    ):
+        raise ValueError("future-source retained spell ID is out of range")
     if (runtime_ecl_static_image is None) != (
         runtime_ecl_static_sha256 is None
     ):
@@ -162,6 +185,20 @@ def build_long_run_arguments(
         arguments.append("--kill-before-saturation")
     if ordinary_preexhaustion_authority:
         arguments.append("--ordinary-preexhaustion-authority")
+    if future_source_retain_dir is not None:
+        arguments.extend(
+            ("--future-source-retain-dir", str(future_source_retain_dir))
+        )
+        for spell_id in future_source_retain_spells:
+            arguments.extend(
+                ("--future-source-retain-spell", str(spell_id))
+            )
+        arguments.extend(
+            (
+                "--future-source-retain-max-per-spell",
+                str(future_source_retain_max_per_spell),
+            )
+        )
     if authority_only_corridor:
         arguments.append("--authority-only-corridor")
     if diagnostic_continue_root_only_scale:

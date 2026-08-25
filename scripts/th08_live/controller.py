@@ -2741,6 +2741,37 @@ def _prepare_live_run(args: argparse.Namespace) -> None:
         "runtime_ecl_static_sha256",
         None,
     )
+    future_source_retain_dir = getattr(
+        args,
+        "future_source_retain_dir",
+        None,
+    )
+    future_source_retain_spells = tuple(
+        getattr(args, "future_source_retain_spell", ())
+    )
+    future_source_retain_max = int(
+        getattr(args, "future_source_retain_max_per_spell", 1)
+    )
+    if (future_source_retain_dir is None) != (
+        not future_source_retain_spells
+    ):
+        raise ValueError(
+            "future-source retention requires both a directory and at least "
+            "one selected spell"
+        )
+    if future_source_retain_max <= 0:
+        raise ValueError(
+            "future-source retention maximum per spell must be positive"
+        )
+    if len(set(future_source_retain_spells)) != len(
+        future_source_retain_spells
+    ):
+        raise ValueError("future-source retained spell IDs must be unique")
+    if any(
+        not 0 <= int(spell_id) <= 255
+        for spell_id in future_source_retain_spells
+    ):
+        raise ValueError("future-source retained spell ID is out of range")
     if (runtime_ecl_static_image is None) != (
         runtime_ecl_static_sha256 is None
     ):
@@ -2753,6 +2784,13 @@ def _prepare_live_run(args: argparse.Namespace) -> None:
     ):
         raise ValueError(
             "runtime ECL identity requires an explicit expected stage"
+        )
+    if (
+        future_source_retain_dir is not None
+        and runtime_ecl_static_image is None
+    ):
+        raise ValueError(
+            "future-source retention requires exact runtime ECL identity"
         )
     enable_finalb_scale_source_authority = bool(
         getattr(args, "enable_finalb_scale_source_authority", False)
@@ -2841,6 +2879,7 @@ def _run_live_session(
         OrdinaryFutureSourceCaptureResult | None
     ) = None
     ordinary_future_source_last_submit = CORRIDOR_INITIAL_SUBMIT_FRAME
+    future_source_retained_counts: dict[int, int] = {}
     ordinary_causal_delayed_last_scan: (
         tuple[tuple[int, int], int] | None
     ) = None
@@ -2920,6 +2959,22 @@ def _run_live_session(
     ordinary_preexhaustion_authority = bool(
         getattr(args, "ordinary_preexhaustion_authority", False)
     )
+    future_source_retain_dir: Path | None = getattr(
+        args,
+        "future_source_retain_dir",
+        None,
+    )
+    future_source_retain_spells = frozenset(
+        int(spell_id)
+        for spell_id in getattr(args, "future_source_retain_spell", ())
+    )
+    future_source_retain_max_per_spell = int(
+        getattr(args, "future_source_retain_max_per_spell", 1)
+    )
+    future_source_capture_enabled = bool(
+        ordinary_preexhaustion_authority
+        or future_source_retain_dir is not None
+    )
     ordinary_safety_value_horizon = (
         0
         if ordinary_preexhaustion_authority
@@ -2972,7 +3027,7 @@ def _run_live_session(
             expected_stage_route_index=args.expected_stage,
         )
         runtime_ecl = parse_ecl(runtime_ecl_static_path)
-        if ordinary_preexhaustion_authority:
+        if future_source_capture_enabled:
             ordinary_future_ecl = runtime_ecl
         if args.expected_stage in NO_SCALE_WRITER_STAGE_ROUTE_INDICES:
             no_scale_writer_schedule_authority = (
@@ -3008,6 +3063,7 @@ def _run_live_session(
     service_resources = LiveServiceResources(
         local_only=args.local_only,
         viability_audit_enabled=args.viability_audit_dir is not None,
+        future_source_enabled=future_source_capture_enabled,
     )
     corridor_executor = service_resources.corridor_executor
     audit_executor = service_resources.audit_executor
@@ -3219,6 +3275,25 @@ def _run_live_session(
                         ),
                         "fresh_collision_certificate_is_final_gate": True,
                         "shadow_future_promoted": False,
+                    },
+                    "future_source_retention": {
+                        "enabled": future_source_retain_dir is not None,
+                        "directory": (
+                            str(future_source_retain_dir)
+                            if future_source_retain_dir is not None
+                            else None
+                        ),
+                        "spell_ids": sorted(future_source_retain_spells),
+                        "maximum_per_spell": (
+                            future_source_retain_max_per_spell
+                        ),
+                        "capture_worker_enabled": (
+                            future_source_executor is not None
+                        ),
+                        "role": (
+                            "shadow_capture_only_no_action_authority"
+                        ),
+                        "can_feed_corridor": False,
                     },
                     "kill_before_saturation": {
                         "enabled": kill_before_saturation,
@@ -4826,12 +4901,12 @@ def _run_live_session(
                 and ordinary_future_source_future.done()
             ):
                 try:
-                    ordinary_future_source_result = (
+                    completed_future_source_result = (
                         ordinary_future_source_future.result()
                     )
-                    closure = ordinary_future_source_result.closure
+                    closure = completed_future_source_result.closure
                     capture_compact = (
-                        ordinary_future_source_result.snapshot.payload.get(
+                        completed_future_source_result.snapshot.payload.get(
                             "compact_state"
                         )
                     )
@@ -4861,16 +4936,16 @@ def _run_live_session(
                                 closure.causal_prefix_reason
                             ),
                             "stable_capture": (
-                                ordinary_future_source_result.snapshot.stable
+                                completed_future_source_result.snapshot.stable
                             ),
                             "capture_read_ms": (
-                                ordinary_future_source_result.snapshot.read_ms
+                                completed_future_source_result.snapshot.read_ms
                             ),
                             "capture_attempts": (
-                                ordinary_future_source_result.snapshot.attempts
+                                completed_future_source_result.snapshot.attempts
                             ),
                             "capture_frscreen_update_serial": (
-                                ordinary_future_source_result.snapshot
+                                completed_future_source_result.snapshot
                                 .update_serial_after
                             ),
                             "captured_spell_id": capture_compact.get(
@@ -4903,8 +4978,36 @@ def _run_live_session(
                                 closure.projection.trajectories
                             ),
                             "digest": closure.projection.digest,
+                            "retained_root": (
+                                completed_future_source_result.retained_root
+                                .record()
+                                if completed_future_source_result.retained_root
+                                is not None
+                                else None
+                            ),
                             "changes_input": False,
                         }
+                    )
+                    retained_root = (
+                        completed_future_source_result.retained_root
+                    )
+                    if (
+                        retained_root is not None
+                        and retained_root.spell_id is not None
+                    ):
+                        future_source_retained_counts[
+                            retained_root.spell_id
+                        ] = (
+                            future_source_retained_counts.get(
+                                retained_root.spell_id,
+                                0,
+                            )
+                            + 1
+                        )
+                    ordinary_future_source_result = (
+                        completed_future_source_result
+                        if ordinary_preexhaustion_authority
+                        else None
                     )
                 except (OSError, RuntimeError, TypeError, ValueError) as error:
                     ordinary_future_source_result = None
@@ -4918,8 +5021,17 @@ def _run_live_session(
                         }
                     )
                 ordinary_future_source_future = None
+            retain_current_spell = bool(
+                observed_spell_id is not None
+                and observed_spell_id in future_source_retain_spells
+                and future_source_retained_counts.get(
+                    observed_spell_id,
+                    0,
+                )
+                < future_source_retain_max_per_spell
+            )
             ordinary_future_source_due = (
-                ordinary_preexhaustion_authority
+                future_source_capture_enabled
                 and int(player["phase"]) not in (1, 2)
                 and ordinary_future_ecl is not None
                 and future_source_executor is not None
@@ -4934,8 +5046,17 @@ def _run_live_session(
                     - ordinary_future_source_last_submit
                     >= ORDINARY_FUTURE_SOURCE_CAPTURE_INTERVAL_FRAMES
                 )
+                and (
+                    ordinary_preexhaustion_authority
+                    or retain_current_spell
+                )
             )
             if ordinary_future_source_due:
+                retain_dir_for_submission = (
+                    future_source_retain_dir
+                    if retain_current_spell
+                    else None
+                )
                 ordinary_future_source_future = (
                     future_source_executor.submit(
                         capture_and_project_ordinary_future_sources,
@@ -4944,6 +5065,7 @@ def _run_live_session(
                         horizon_frames=(
                             ORDINARY_FUTURE_SOURCE_HORIZON_FRAMES
                         ),
+                        retain_dir=retain_dir_for_submission,
                     )
                 )
                 ordinary_future_source_last_submit = counter_after_read

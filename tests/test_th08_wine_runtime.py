@@ -252,6 +252,8 @@ class Th08WineRunnerTests(unittest.TestCase):
                 trace_items=False,
                 practice_stage="4b",
                 diagnostic_continue_root_only_scale=True,
+                future_source_retain_spells=(103, 115),
+                future_source_retain_max_per_spell=2,
             )
         self.assertIn("th08_practice_supervisor.py", command[1])
         self.assertIn("--armed", command)
@@ -261,6 +263,20 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertIn("--unlock-requested-stage", command)
         self.assertIn("--ordinary-preexhaustion-authority", command)
         self.assertIn("--diagnostic-continue-root-only-scale", command)
+        self.assertEqual(
+            [
+                command[index + 1]
+                for index, value in enumerate(command)
+                if value == "--future-source-retain-spell"
+            ],
+            ["103", "115"],
+        )
+        self.assertEqual(
+            command[
+                command.index("--future-source-retain-max-per-spell") + 1
+            ],
+            "2",
+        )
         self.assertEqual(
             command[command.index("--agent-duration") + 1],
             "86400.0",

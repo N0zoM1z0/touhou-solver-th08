@@ -1444,10 +1444,37 @@ Focused tests distinguish ordinary and spell speeds and prove that malformed
 dormant rank fields cannot fail a spell closure. No physical or arbitrary-ECL
 authority is claimed by this fix.
 
+### AUD-059 — No real retained Stage-5 producer root existed
+
+Status: **CONFIRMED EVIDENCE GAP; SHADOW-ONLY RETENTION IMPLEMENTED; PHYSICAL ROOT PENDING**
+
+The source-exact spell-103 fixture was synthetic. The retained 2026-08-24
+Stage-5 trace predates full future-source capture and contains neither a
+coherent enemy/VM slab nor RNG/emitter/timeline roots; older native-root
+directories referenced by Stage-4 gates are not present in this workspace.
+Treating any of those summaries as a resolved physical producer would be an
+evidence fabrication.
+
+The controller now has an explicit spell-filtered retention lane. It requires
+exact runtime ECL identity, captures on the existing dedicated worker, writes
+canonical deterministic-gzip capsules named by the SHA-256 of their
+uncompressed content, deduplicates identical roots, and records the capsule
+locator in the trace. Observer timing is excluded from root identity. The
+Practice supervisor assigns each run an ignored `*.root/` sink, and the
+prefix-scoped Wine runner forwards only explicitly selected spell IDs and a
+positive per-spell limit.
+
+Most importantly, capture-only completion never populates the controller's
+future-source action result. It cannot enter a corridor submission, prefix
+certificate, or input filter; its only effects are diagnostic read/CPU/I/O
+load and trace metadata. The complete offline suite passes 1,443 tests with 5
+platform skips. One isolated Stage-5 Practice capture remains necessary to
+turn this infrastructure into real retained-root evidence.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,433 tests run, 5 conditionally skipped, zero
+suite passed on this VPS: 1,443 tests run, 5 conditionally skipped, zero
 failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

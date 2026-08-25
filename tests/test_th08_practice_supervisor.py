@@ -334,6 +334,29 @@ class PracticeSupervisorTests(unittest.TestCase):
             enabled_args.ordinary_preexhaustion_authority
         )
 
+    def test_future_source_retention_is_shadow_only_opt_in(self) -> None:
+        default_args = build_parser().parse_args([])
+        enabled_args = build_parser().parse_args(
+            [
+                "--future-source-retain-spell",
+                "103",
+                "--future-source-retain-spell",
+                "115",
+                "--future-source-retain-max-per-spell",
+                "2",
+            ]
+        )
+
+        self.assertEqual(default_args.future_source_retain_spell, [])
+        self.assertEqual(
+            enabled_args.future_source_retain_spell,
+            [103, 115],
+        )
+        self.assertEqual(
+            enabled_args.future_source_retain_max_per_spell,
+            2,
+        )
+
     def test_enemy_mode_scale_continuation_is_explicit(self) -> None:
         enabled_args = build_parser().parse_args(
             [

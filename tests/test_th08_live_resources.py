@@ -95,6 +95,20 @@ class LiveServiceResourcesTests(unittest.TestCase):
         self.assertIsNone(resources.audit_executor)
         resources.close()
 
+    def test_capture_only_future_source_worker_survives_local_only(self) -> None:
+        events: list[object] = []
+        resources = LiveServiceResources(
+            local_only=True,
+            viability_audit_enabled=False,
+            future_source_enabled=True,
+            executor_factory=lambda **kwargs: _FakeExecutor(events, **kwargs),
+        )
+
+        self.assertIsNone(resources.corridor_executor)
+        self.assertIsNotNone(resources.future_source_executor)
+        resources.close()
+        self.assertIn(("open", "th08-future-source", 1), events)
+
 
 if __name__ == "__main__":
     unittest.main()

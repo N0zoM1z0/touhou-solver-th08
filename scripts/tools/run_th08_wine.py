@@ -213,6 +213,8 @@ def build_windows_controller_command(
     trace_items: bool,
     practice_stage: str = "5",
     diagnostic_continue_root_only_scale: bool = False,
+    future_source_retain_spells: tuple[int, ...] = (),
+    future_source_retain_max_per_spell: int = 1,
 ) -> list[str]:
     launcher = ROOT / "scripts" / "tools" / "run_th08_wine_launch.bat"
     if mode == "smoke":
@@ -259,7 +261,22 @@ def build_windows_controller_command(
             command.append("--ordinary-preexhaustion-authority")
         if diagnostic_continue_root_only_scale:
             command.append("--diagnostic-continue-root-only-scale")
+        for spell_id in future_source_retain_spells:
+            command.extend(
+                ("--future-source-retain-spell", str(spell_id))
+            )
+        if future_source_retain_spells:
+            command.extend(
+                (
+                    "--future-source-retain-max-per-spell",
+                    str(future_source_retain_max_per_spell),
+                )
+            )
         return command
+    if future_source_retain_spells:
+        raise ValueError(
+            "future-source root retention is currently a Practice-only gate"
+        )
     command = [
         windows_path(python),
         windows_path(ROOT / "scripts" / "th08_full_route_supervisor.py"),
@@ -355,6 +372,23 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--kill-before-saturation", action="store_true")
     parser.add_argument("--ordinary-preexhaustion-authority", action="store_true")
     parser.add_argument(
+        "--future-source-retain-spell",
+        action="append",
+        type=int,
+        default=[],
+        metavar="ID",
+        help=(
+            "Practice-only shadow root spell selector; repeat for multiple "
+            "cards"
+        ),
+    )
+    parser.add_argument(
+        "--future-source-retain-max-per-spell",
+        type=int,
+        default=1,
+        metavar="N",
+    )
+    parser.add_argument(
         "--authority-only-corridor",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -395,6 +429,12 @@ def run(args: argparse.Namespace) -> int:
         "diagnostic_continue_root_only_scale": (
             args.diagnostic_continue_root_only_scale
         ),
+        "future_source_retain_spells": list(
+            args.future_source_retain_spell
+        ),
+        "future_source_retain_max_per_spell": (
+            args.future_source_retain_max_per_spell
+        ),
         "wine_prefix": str(args.wine_prefix.resolve()),
         "status": "failed",
         "controller_returncode": None,
@@ -431,6 +471,26 @@ def run(args: argparse.Namespace) -> int:
             raise ValueError(
                 "root-only scale continuation is a Practice-only diagnostic"
             )
+        if (
+            args.future_source_retain_spell
+            and args.mode != "practice"
+        ):
+            raise ValueError(
+                "future-source retention is a Practice-only diagnostic"
+            )
+        if args.future_source_retain_max_per_spell <= 0:
+            raise ValueError(
+                "future-source retention maximum per spell must be positive"
+            )
+        if len(set(args.future_source_retain_spell)) != len(
+            args.future_source_retain_spell
+        ):
+            raise ValueError("future-source retained spell IDs must be unique")
+        if any(
+            not 0 <= spell_id <= 255
+            for spell_id in args.future_source_retain_spell
+        ):
+            raise ValueError("future-source retained spell ID is out of range")
         if not repository_clean():
             raise RuntimeError("Wine evidence run requires a clean worktree")
         required = (
@@ -647,6 +707,12 @@ def run(args: argparse.Namespace) -> int:
             practice_stage=args.practice_stage,
             diagnostic_continue_root_only_scale=(
                 args.diagnostic_continue_root_only_scale
+            ),
+            future_source_retain_spells=tuple(
+                args.future_source_retain_spell
+            ),
+            future_source_retain_max_per_spell=(
+                args.future_source_retain_max_per_spell
             ),
         )
         wine_command = [

@@ -617,6 +617,15 @@ uncertainty while retaining the conservative nonspell branch. This is a
 prerequisite for point-valued retained-root event import, not a global-policy
 promotion.
 
+Audit also confirmed that no physical Stage-5 future-source root was actually
+retained: the 2026-08-24 trace contains projection summaries only, and the
+spell-103 fixture is synthetic. A new spell-filtered capture-only lane now
+writes content-addressed coherent capsules on the dedicated worker. Exact ECL
+identity is mandatory, capsule counts are bounded, and capture-only results
+are discarded before every action-authority consumer. The next physical step
+is therefore one isolated Stage-5 Practice used to acquire roots, not a hit
+comparison or policy gate.
+
 The delivery side is also ready but remains unexercised physically. Spell
 captures may feed the shared corridor only when the captured spell ID exactly
 matches the current phase and the complete causal prefix spans the requested

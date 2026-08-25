@@ -8,6 +8,7 @@ import struct
 import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from th08_ecl_tool.core import EclFile
@@ -40,6 +41,10 @@ from th08_runtime.route2_sht_provenance import (
 from th08_ordinary_future_sources import (
     OrdinaryFutureSourceClosure,
     project_ordinary_future_sources,
+)
+from th08_runtime.future_source_retention import (
+    RetainedFutureSourceRoot,
+    write_retained_future_source_root,
 )
 
 
@@ -75,6 +80,7 @@ class OrdinaryFutureSourceSnapshot:
 class OrdinaryFutureSourceCaptureResult:
     snapshot: OrdinaryFutureSourceSnapshot
     closure: OrdinaryFutureSourceClosure
+    retained_root: RetainedFutureSourceRoot | None = None
 
 
 _CAPTURE_BUFFERS = threading.local()
@@ -366,6 +372,8 @@ def _compact_state(state: dict[str, object]) -> dict[str, object]:
         "player_phase": int(player["phase"]),
         "predeath_counter": int(player["predeath_counter"]),
         "route_id": int(state["route_id"]),
+        "difficulty_index": int(state["difficulty_index"]),
+        "stage_route_index": int(state["stage_route_index"]),
         "input_raw": int(state["input_raw"]),
         "input_current": int(state["input_current"]),
         "input_previous": int(state["input_previous"]),
@@ -492,6 +500,7 @@ def capture_and_project_ordinary_future_sources(
     *,
     horizon_frames: int,
     maximum_attempts: int = 2,
+    retain_dir: Path | None = None,
 ) -> OrdinaryFutureSourceCaptureResult:
     snapshot = capture_ordinary_future_source_snapshot(
         reader,
@@ -509,9 +518,21 @@ def capture_and_project_ordinary_future_sources(
         ecl,
         horizon_frames=horizon_frames,
     )
+    retained_root = (
+        write_retained_future_source_root(
+            snapshot,
+            closure,
+            retain_dir,
+            snapshot_schema=ORDINARY_FUTURE_SOURCE_SNAPSHOT_SCHEMA,
+            requested_horizon_frames=horizon_frames,
+        )
+        if retain_dir is not None
+        else None
+    )
     return OrdinaryFutureSourceCaptureResult(
         snapshot=snapshot,
         closure=closure,
+        retained_root=retained_root,
     )
 
 

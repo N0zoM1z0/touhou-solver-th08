@@ -13,6 +13,7 @@ class LiveServiceResources:
         *,
         local_only: bool,
         viability_audit_enabled: bool,
+        future_source_enabled: bool | None = None,
         executor_factory: Callable[..., Any] = ThreadPoolExecutor,
     ) -> None:
         self.corridor_executor: Any | None = None
@@ -35,7 +36,11 @@ class LiveServiceResources:
                 max_workers=1,
                 thread_name_prefix="th08-enemy-sensor",
             )
-            if not local_only:
+            if (
+                not local_only
+                if future_source_enabled is None
+                else future_source_enabled
+            ):
                 self.future_source_executor = executor_factory(
                     max_workers=1,
                     thread_name_prefix="th08-future-source",

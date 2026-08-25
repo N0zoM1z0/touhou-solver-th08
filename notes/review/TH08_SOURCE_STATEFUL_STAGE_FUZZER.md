@@ -221,3 +221,10 @@ Wine. The next work should remain incremental and differential:
 This keeps the core general. Per-stage/spell compiled programs and caches are
 appropriate once their source dependencies are reached; handwritten policies
 remain a last resort for a measured residual.
+
+The importer prerequisite is now explicit. A default-off, spell-filtered
+Practice observer writes canonical content-addressed coherent root capsules;
+capture-only results cannot reach the planner. No legacy Stage-5 trace contains
+the required root, so the first real capsule still requires one isolated
+physical acquisition. Offline replay and event import begin only after its
+SHA-256 and exact runtime ECL identity are retained.

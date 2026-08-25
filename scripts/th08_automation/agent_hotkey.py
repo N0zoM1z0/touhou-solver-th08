@@ -67,6 +67,9 @@ class AgentHotkey:
         trace_enemy_lifecycle_events: bool = False,
         kill_before_saturation: bool = False,
         ordinary_preexhaustion_authority: bool = False,
+        future_source_retain_dir: Path | None = None,
+        future_source_retain_spells: tuple[int, ...] = (),
+        future_source_retain_max_per_spell: int = 1,
         authority_only_corridor: bool = False,
         diagnostic_continue_root_only_scale: bool = False,
         runtime_ecl_static_image: Path | None = None,
@@ -162,6 +165,11 @@ class AgentHotkey:
         self.kill_before_saturation = kill_before_saturation
         self.ordinary_preexhaustion_authority = (
             ordinary_preexhaustion_authority
+        )
+        self.future_source_retain_dir = future_source_retain_dir
+        self.future_source_retain_spells = future_source_retain_spells
+        self.future_source_retain_max_per_spell = (
+            future_source_retain_max_per_spell
         )
         self.authority_only_corridor = authority_only_corridor
         self.diagnostic_continue_root_only_scale = (
@@ -322,6 +330,15 @@ class AgentHotkey:
                 kill_before_saturation=self.kill_before_saturation,
                 ordinary_preexhaustion_authority=(
                     self.ordinary_preexhaustion_authority
+                ),
+                future_source_retain_dir=(
+                    self.future_source_retain_dir
+                ),
+                future_source_retain_spells=(
+                    self.future_source_retain_spells
+                ),
+                future_source_retain_max_per_spell=(
+                    self.future_source_retain_max_per_spell
                 ),
                 authority_only_corridor=self.authority_only_corridor,
                 diagnostic_continue_root_only_scale=(

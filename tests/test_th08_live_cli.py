@@ -38,6 +38,9 @@ class Th08LiveCliTests(unittest.TestCase):
         self.assertFalse(arguments.trace_enemy_lifecycle_events)
         self.assertFalse(arguments.kill_before_saturation)
         self.assertFalse(arguments.ordinary_preexhaustion_authority)
+        self.assertIsNone(arguments.future_source_retain_dir)
+        self.assertEqual(arguments.future_source_retain_spell, [])
+        self.assertEqual(arguments.future_source_retain_max_per_spell, 1)
         self.assertTrue(arguments.losing_control_reserve)
 
     def test_controller_wrapper_resolves_current_values(self) -> None:
@@ -81,6 +84,48 @@ class Th08LiveCliTests(unittest.TestCase):
             ]
         )
         self.assertTrue(arguments.ordinary_preexhaustion_authority)
+
+    def test_future_source_retention_is_explicit_and_bounded(self) -> None:
+        arguments = controller.build_parser().parse_args(
+            [
+                "trace.jsonl",
+                "--future-source-retain-dir",
+                "roots",
+                "--future-source-retain-spell",
+                "103",
+                "--future-source-retain-spell",
+                "115",
+                "--future-source-retain-max-per-spell",
+                "2",
+            ]
+        )
+
+        self.assertEqual(arguments.future_source_retain_dir, Path("roots"))
+        self.assertEqual(arguments.future_source_retain_spell, [103, 115])
+        self.assertEqual(arguments.future_source_retain_max_per_spell, 2)
+
+    def test_future_source_retention_requires_both_sink_and_spell(self) -> None:
+        missing_spell = controller.build_parser().parse_args(
+            [
+                "trace.jsonl",
+                "--armed",
+                "--future-source-retain-dir",
+                "roots",
+            ]
+        )
+        with self.assertRaisesRegex(ValueError, "both a directory"):
+            controller._prepare_live_run(missing_spell)
+
+        missing_sink = controller.build_parser().parse_args(
+            [
+                "trace.jsonl",
+                "--armed",
+                "--future-source-retain-spell",
+                "103",
+            ]
+        )
+        with self.assertRaisesRegex(ValueError, "both a directory"):
+            controller._prepare_live_run(missing_sink)
 
     def test_unsafe_lifecycle_cleanup_terminates_verified_target(self) -> None:
         records: list[dict[str, object]] = []

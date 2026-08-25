@@ -232,6 +232,11 @@ def run_trial(
     trace = RUNTIME_REPORT_DIR / f"{run_id}.jsonl"
     session_json = RUNTIME_REPORT_DIR / f"{run_id}.session.json"
     launch_log = RUNTIME_REPORT_DIR / f"{run_id}.launch.log"
+    future_source_retain_dir = (
+        RUNTIME_REPORT_DIR / f"{run_id}.root"
+        if args.future_source_retain_spell
+        else None
+    )
     menu_plan = build_practice_menu_plan(
         stage,
         tap_gap_ms=args.tap_gap_ms,
@@ -260,6 +265,18 @@ def run_trial(
         "ordinary_preexhaustion_authority": (
             args.ordinary_preexhaustion_authority
         ),
+        "future_source_retention": {
+            "directory": (
+                str(future_source_retain_dir)
+                if future_source_retain_dir is not None
+                else None
+            ),
+            "spell_ids": list(args.future_source_retain_spell),
+            "maximum_per_spell": (
+                args.future_source_retain_max_per_spell
+            ),
+            "role": "shadow_capture_only_no_action_authority",
+        },
         "diagnostic_continue_root_only_scale": (
             args.diagnostic_continue_root_only_scale
         ),
@@ -315,6 +332,13 @@ def run_trial(
             kill_before_saturation=args.kill_before_saturation,
             ordinary_preexhaustion_authority=(
                 args.ordinary_preexhaustion_authority
+            ),
+            future_source_retain_dir=future_source_retain_dir,
+            future_source_retain_spells=tuple(
+                args.future_source_retain_spell
+            ),
+            future_source_retain_max_per_spell=(
+                args.future_source_retain_max_per_spell
             ),
             diagnostic_continue_root_only_scale=(
                 args.diagnostic_continue_root_only_scale
@@ -704,6 +728,24 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--future-source-retain-spell",
+        action="append",
+        type=int,
+        default=[],
+        metavar="ID",
+        help=(
+            "retain a coherent shadow-only future-source root while this "
+            "spell is active; repeat for multiple cards"
+        ),
+    )
+    parser.add_argument(
+        "--future-source-retain-max-per-spell",
+        type=int,
+        default=1,
+        metavar="N",
+        help="maximum coherent roots retained for each selected spell",
+    )
+    parser.add_argument(
         "--diagnostic-continue-root-only-scale",
         action="store_true",
         help=(
@@ -856,6 +898,26 @@ def main(argv: list[str] | None = None) -> int:
     if args.local_pipeline_root_shadow_every < 0:
         raise ValueError(
             "--local-pipeline-root-shadow-every cannot be negative"
+        )
+    if args.future_source_retain_max_per_spell <= 0:
+        raise ValueError(
+            "--future-source-retain-max-per-spell must be positive"
+        )
+    if len(set(args.future_source_retain_spell)) != len(
+        args.future_source_retain_spell
+    ):
+        raise ValueError("future-source retained spell IDs must be unique")
+    if any(
+        not 0 <= spell_id <= 255
+        for spell_id in args.future_source_retain_spell
+    ):
+        raise ValueError("future-source retained spell ID is out of range")
+    if (
+        args.future_source_retain_spell
+        and args.runtime_ecl_static_image is None
+    ):
+        raise ValueError(
+            "future-source retention requires exact runtime ECL identity"
         )
     if (args.runtime_ecl_static_image is None) != (
         args.runtime_ecl_static_sha256 is None
