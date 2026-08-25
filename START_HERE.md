@@ -39,17 +39,23 @@ ordered implementation plan are in
   schedules only under a point-aligned three-clock certificate. Global
   lowering now shares the 21-type state-2/3/4 spawn lifecycle instead of
   treating preactivation bullets as ordinary lethal motion. `CorridorSolution`
-  carries the callback-join version and runtime handle, global geometry v3
-  binds it, and the controller can submit the composed pool under exact unit
-  scale. Composition is deferred until a global worker slot is due and free,
-  so non-submission decisions do not scan all 1,536 slots. A worker-root
-  certificate is deliberately not reused by later local prefixes over newly
-  sensed bullets. Import smoke and all 1,511 Linux tests
-  pass with five conditional skips. This is offline integration, not arbitrary
-  ECL, complete Stage-5 producer closure, a same-root policy win, or physical
-  hit authority. Transform composition and the first remaining reached source
-  boundary stay `UNKNOWN`. The retained compact 3,600-frame compatibility
-  artifact remains
+  carries the callback-join version and runtime handle, and the controller can
+  submit the composed pool under exact unit scale. New v2 retained roots also
+  capture canonical active bullet/laser planner slots inside that same clock;
+  a 319-bullet/two-laser stateful root round-trips to an identical H16 policy.
+  The four existing physical Stage-5 roots are v1 and omit current hazards, so
+  they cannot support the intended same-root solve. The same laboratory
+  falsified the active-transform growth heuristic in 1,037/1,937 samples,
+  worst 97.060802px error against a 31px bound. Global geometry v4 now makes
+  every such current pool shadow-only. Composition is deferred until a global
+  worker slot is due and free, and a worker-root certificate is not reused by
+  later local prefixes. This is offline integration, not arbitrary ECL, exact
+  current transforms, a same-root policy win, or physical hit authority. The
+  next ordered work is full 18-record source-exact transform execution, then a
+  fresh physical v2 Stage-5 root and offline global replay. Import smoke, 37
+  focused tests, and all 1,522 Linux tests pass with five conditional skips;
+  the paper builds to eight pages. The retained compact 3,600-frame
+  compatibility artifact remains
   `artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json`; routine
   successful raw reports are not retained.
 - **Current Lunatic physical checkpoint:**

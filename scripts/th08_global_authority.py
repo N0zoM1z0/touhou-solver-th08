@@ -44,7 +44,7 @@ from touhou_control.policy_authority import PolicyAuthorityVersion
 
 TH08_GLOBAL_AUTHORITY_ROOT_SCHEMA = "th08-global-policy-root-v1"
 TH08_GLOBAL_GEOMETRY_AUTHORITY_SEMANTICS_VERSION = (
-    "th08-global-geometry-v3-current-pool-callback-join"
+    "th08-global-geometry-v4-active-transform-completeness"
 )
 TH08_GLOBAL_POLICY_AUTHORITY_SEMANTICS_VERSION = (
     "th08-global-corridor-policy-v1-robust-delay-unit-scale"
@@ -179,7 +179,10 @@ def time_scale_version_identity(
     )
 
 
-def th08_global_geometry_identity() -> VersionIdentity:
+def th08_global_geometry_identity(
+    *,
+    current_bullet_transforms_complete: bool = True,
+) -> VersionIdentity:
     return VersionIdentity.from_mapping(
         TH08_GLOBAL_GEOMETRY_AUTHORITY_SEMANTICS_VERSION,
         {
@@ -193,7 +196,32 @@ def th08_global_geometry_identity() -> VersionIdentity:
             "movement": TH08_ROUTE2_MOVEMENT_SCALE_SEMANTICS_VERSION,
             "player_bounds": TH08_PLAYER_CENTER_BOUNDS_SEMANTICS_VERSION,
             "source_collision": TH08_SOURCE_COLLISION_SEMANTICS_VERSION,
+            "current_bullet_transforms_complete": (
+                current_bullet_transforms_complete
+            ),
         },
+    )
+
+
+def _current_bullet_transforms_complete(bullets: object) -> bool:
+    """Return whether the current global model sees no active transform.
+
+    The corridor's historical 3px + 0.35px/frame growth is a shadow heuristic,
+    not a source-derived enclosure.  Packed snapshots expose their arrays
+    directly so this authority gate does not materialize every active slot.
+    """
+
+    transform_flags = getattr(bullets, "transform_flags", None)
+    native_states = getattr(bullets, "native_state", None)
+    if isinstance(transform_flags, np.ndarray):
+        active = transform_flags != 0
+        if isinstance(native_states, np.ndarray):
+            active = np.logical_and(active, native_states != 5)
+        return not bool(np.any(active))
+    return not any(
+        int(getattr(bullet, "native_state", 1)) != 5
+        and int(getattr(bullet, "transform_flags", 0)) != 0
+        for bullet in bullets  # type: ignore[union-attr]
     )
 
 
@@ -338,7 +366,11 @@ def build_th08_global_authority_version(
             if future_hazard_projection is not None
             else None
         ),
-        geometry=th08_global_geometry_identity(),
+        geometry=th08_global_geometry_identity(
+            current_bullet_transforms_complete=(
+                _current_bullet_transforms_complete(bullets)
+            )
+        ),
         policy=th08_global_policy_identity(corridor_config),
     )
 
@@ -457,7 +489,18 @@ def assess_th08_global_action_authority(
 
     expected_geometry = th08_global_geometry_identity()
     if version.geometry != expected_geometry:
-        reasons.append("geometry_version_mismatch")
+        geometry_components = dict(version.geometry.components)
+        if (
+            version.geometry.namespace
+            == TH08_GLOBAL_GEOMETRY_AUTHORITY_SEMANTICS_VERSION
+            and geometry_components.get(
+                "current_bullet_transforms_complete"
+            )
+            is False
+        ):
+            reasons.append("current_bullet_transform_geometry_incomplete")
+        else:
+            reasons.append("geometry_version_mismatch")
     expected_policy = th08_global_policy_identity(corridor_config)
     if version.policy != expected_policy:
         reasons.append("policy_version_mismatch")

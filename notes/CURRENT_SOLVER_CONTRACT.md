@@ -65,12 +65,33 @@ join version is part of the artifact/root identity; its concrete runtime
 handle is rechecked by the action assessor. A bullet-pool capture spanning an
 update, a matching set-valued
 operand, transform interaction, conflicting schedule, nonunit scale, or clock
-mismatch fails closed. Global geometry v3 consumes the 21-type native spawn
-lifecycle and callback schedule together. This mechanism is wired only inside
+mismatch fails closed. Global geometry v4 consumes the 21-type native spawn
+lifecycle and callback schedule together and records current-transform
+completeness. This mechanism is wired only inside
 the existing default-off ordinary exact lane and has no physical promotion.
 The bounded pool composition may run only when the global submission is due,
 the worker is free, and no publication is pending; other decisions retain only
 the cheap projection candidate and an explicit not-ready reason.
+
+The v4 transform component is necessary because the historical
+constant-velocity plus `3px + 0.35px/frame` transform envelope is demonstrably
+not conservative: a generic source-stateful H80 regression has 1,037 escapes
+among 1,937 identity-preserving samples, with a 97.060802px center error
+against a 31px bound. Any contact-relevant current bullet with nonzero active
+transform flags therefore makes the global artifact shadow-only and yields
+`current_bullet_transform_geometry_incomplete`. This gate is not an exact
+stepper. Queued programs whose active flags are still zero remain an explicit
+coverage gap until the complete 18-record program is captured and executed in
+source order.
+
+Explicit retained future-source captures use v2 to join producer state and
+canonical active bullet/laser planner slots inside one manager-frame/update-
+serial bracket. Capture-before/after, compact-state, future-projection,
+root-identity, and current-hazard clocks must be exactly equal; update serials
+must also agree. Existing Stage-5 v1 capsules remain readable but contain no
+current pool and cannot support same-root policy authority. The v2 root
+round-trips current runtime/next-transform state for deterministic planner
+replay, not the full native queued transform program or arbitrary game state.
 
 The certificate belongs to the worker's historical bullet snapshot. A later
 local prefix or delayed issue computation over newly sensed bullets may not

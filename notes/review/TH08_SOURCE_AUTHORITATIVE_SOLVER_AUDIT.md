@@ -298,6 +298,17 @@ mostly from current velocity plus heuristic uncertainty. The exact 2,075-byte
 transform motion should become a canonical float32 stepper instead of
 accumulating pattern-specific uncertainty.
 
+The source-stateful laboratory now proves that this is an authority blocker,
+not just a precision improvement. At generic quick-stage seed `0xCE0132`, 28
+active-transform bullets rooted at frame 20 produce 1,937 identity-preserving
+survivor samples through H80; 1,037 leave the old 3px + 0.35px/frame envelope.
+The worst angular-velocity survivor is 97.060802px from the constant-velocity
+x forecast against a 31px claimed bound. Global geometry v4 therefore marks
+any active current transform incomplete and keeps that solution shadow-only.
+The next exact step must retain and execute the full ordered 18-record program;
+the compact planner root currently preserves only runtime state and its next
+record.
+
 ### Laser shape
 
 The standalone `th08_laser_model.py` lifecycle geometry follows the source
@@ -315,27 +326,29 @@ path was exact is retracted.
 
 ## Current Future-Birth Reality
 
-The repository contains substantial future-source work, but none of it gives
-active-spell action authority in the current route:
+Future birth is now a connected generic offline path, but not yet complete
+physical action authority:
 
-| Component | Actual scope | Live status |
+| Component | Actual scope | Authority boundary |
 | --- | --- | --- |
-| `th08_ecl_birth.py` | Classifies one literal main-VM path; does not forecast geometry; stops on timer resets, common control flow, child topology, emission mutation, callbacks, or unknown opcodes | Trace-only; referenced only by its tests |
-| `ECL_BIRTH_LOOKAHEAD_FRAMES=80` | Declared controller constant | No consumer; dead integration point |
-| `th08_ecl_shadow/interpreter.py` | Narrow offline VM-local prefix | Stops on unsupported dependencies; no live authority |
-| `th08_ordinary_future_sources.py` | Large fail-closed ordinary producer closure | Disabled in this route and rejects active spells/non-unit scale |
-| `th08_future_birth_envelope.py` | Selected ordinary direct-fire envelopes/transforms | Partial helper, not route-wide spell births |
-| Global corridor | Current bullets/lasers/bodies unless optional ordinary projection is active | Zero submitted jobs; spell future coverage absent |
+| Retained producer executor | Runtime ECL/timeline roots, 480-slot enemy pool, `0x5A`--`0x5E` children, synchronous bootstrap, direct fires, ordered callbacks 12/14, and the reached fail-closed VM subset | Works on retained active-spell roots; arbitrary ECL/ANM remains `UNKNOWN` |
+| Future geometry | Type-authoritative spawn lifecycle, annular sectors/AABBs, conservative matched birth callbacks | Consumed by global shadow solve; set-valued callback/transform composition still fails closed |
+| Current-pool callback composer | Exact point-valued callback 12/14 velocity/collision schedules under projection/bullet/policy clock and binary32-scale join | May enter a versioned global artifact; cannot be reused by a later local prefix |
+| Retained root v2 | Same-clock producer state plus canonical active bullet/laser planner slots | New captures only; the four physical Stage-5 v1 roots lack current pools |
+| Global corridor | Current hazards, native spawn lifecycle, future births, callback join, robust delay | Geometry v4 rejects active current transforms; lane remains default-off/no physical promotion |
 
-The retained current-bullet ECL callback lookahead is also not a birth model.
-Depending on stage, only 0–5,462 decisions reached its complete horizon; the
-rest were missing a tag or stopped on control flow/timer resets. Those tags
-can improve already-spawned bullet velocity prediction, but cannot warn about
-the wave that has not been emitted.
+The old callback lookahead remains neither a producer model nor authority by
+itself. Its useful semantics have instead been transcribed into the ordered
+retained event stream and current-pool composer. Conversely, the existing
+physical Stage-5 capsules cannot finish the intended same-root experiment:
+their raw trace was cleaned and v1 omitted the bullet/laser pools. A fresh v2
+capture is mandatory rather than pairing their future with another clock.
 
-The current complexity came from solving isolated pieces before there was a
-source-complete execution kernel. The authoritative source now lets us replace
-many overlapping special-case authorities with one common simulation path.
+This progression validates the simpler direction: one source-stateful event
+kernel and one versioned viability consumer are replacing overlapping
+lookaheads. The remaining hard work is now localized to exact current
+transform programs, unsupported reached producer semantics, and physical
+capture/delivery—not an unbounded rewrite of every old subsystem.
 
 ### Confirmed direct-fire semantic defects
 
@@ -529,6 +542,15 @@ Replace heuristic transformed-bullet propagation with the source-exact
 transform/lifecycle stepper. Shadow old/new trajectories first, promote only
 the covered exact subset, commit, and run the same complete-route gate.
 
+Status: **FIRST UNSOUNDNESS PROVED AND FAIL-CLOSED; EXACT TRANSFORM EXECUTION
+OPEN.** The fixed-seed stateful regression above falsifies the old growth
+envelope, and global geometry v4 now prevents it from gaining authority. The
+next implementation is deliberately narrower than a new planner: capture all
+18 native transform records for each active slot, execute the reached
+`Bullet::FUN_0042ffc0` handlers in binary32/source order, and differential the
+complete per-frame state against the tracked C transcription. Queued programs
+with zero current active flags must be covered as well.
+
 ### D. Global delivery in shadow mode
 
 Build a source proof/capture for the time-scale schedule in every route stage,
@@ -540,8 +562,10 @@ The consumer-side gate is now closed offline. Every solution carries one
 content-addressed join over root, runtime ECL, scale, future hazards, geometry,
 and policy; active spells without complete future coverage remain shadow-only.
 Stage-5 exact identity and unit scale also pass offline. The remaining work in
-this section is producer coverage plus retained-root submission/completion and
-freshness measurement, not another authority bypass.
+this section is a fresh v2 physical root, exact current transforms, producer
+coverage, and retained-root submission/completion/freshness measurement, not
+another authority bypass. Existing v1 roots lack their same-clock current
+hazards and cannot honestly close this gate.
 
 ### E. Generic future births, producer family by producer family
 
@@ -654,6 +678,17 @@ root consequently
 advances from 86 to 136 proven future frames and includes its first tagged
 birth, then stops at unrelated unsupported opcode `0x0B`.
 
+That old physical root is useful only for its future half. Its H136 projection
+contains 144 sectors, one hostile body, and one direct fire; against an empty
+current pool it changes H80 viable states from 11,016 to 10,615. Because all
+17 root actions remain safe and v1 retained no current bullets/lasers, this is
+neither a same-root winning-set change nor an action result. Explicit captures
+now write v2 compact current-hazard roots under the same manager/update bracket.
+A 120-frame generated stage round-trips 319 bullets, two lasers, and 92 active
+transform runtimes with identical H16 viability tensors. This establishes the
+offline replay seam while also exposing that only the next transform record,
+not the full queued program, is currently available to the planner.
+
 ### F. Promote global viability authority
 
 Only after scale, root, future-birth, geometry, and delay-prefix certificates
@@ -664,8 +699,14 @@ refinement finally produce work that can run on its cores.
 
 The version join, current-pool callback certificate, and fail-closed consumer
 now enforce the first sentence for the covered generic semantics. They do not
-establish complete Stage-5 producer coverage or a useful global winning-set
-change. No Wine or hit claim follows from this checkpoint.
+establish exact current-transform geometry, complete Stage-5 producer
+coverage, or a useful same-root winning-set change. The immediate order is:
+source-exact current transforms; a fresh physical v2 Stage-5 capture; offline
+same-root solve and deadline benchmark; only then a focused Wine falsifier.
+Measured geometry-worker scaling saturates around 16 on the current retained
+workload, so additional VPS cores should parallelize independent roots rather
+than enlarge one solve blindly. No Wine or hit claim follows from this
+checkpoint.
 
 ## Success Metrics And Nonclaims
 

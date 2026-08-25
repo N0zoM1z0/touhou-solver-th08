@@ -2186,10 +2186,55 @@ No Wine process was started. The next physical artifact must be a fresh v2
 Stage-5 root; only then can current hazards and future births be solved at one
 real clock.
 
+### AUD-079 — Active bullet transforms escape the global growth heuristic
+
+Status: **CONFIRMED UNSOUND GLOBAL-GEOMETRY HEURISTIC; ACTION AUTHORITY
+REVOKED, EXACT STEPPER OPEN**
+
+The global corridor historically represented a current bullet with any
+nonzero transform flag as constant root velocity plus 3 px of base uncertainty
+and 0.35 px of additional uncertainty per future frame. No authoritative
+source argument established that enclosure. The new source-stateful stage
+laboratory provides a direct generic falsifier without any stage/spell branch:
+quick profile seed `0xCE0132`, root frame 20, and H80.
+
+At that root, 28 bullets have active transforms. Tracking the same runtime
+objects rather than merely matching reused pool slots yields 1,937 survivor
+samples. Of those, 1,037 leave the old per-axis envelope, beginning by frame
+30. The worst survivor is slot 13 with active angular velocity (`0x20`) at
+H80: its x center is 97.060802 px away from the constant-velocity forecast,
+while the claimed bound is 31 px, a 3.13099-fold escape. This is now an exact
+automated regression, not a retained exploratory number.
+
+Global geometry semantics are therefore v4. Its immutable identity records
+whether current-bullet transform geometry is complete. Packed and tuple
+snapshots are inspected without materializing the 1,536-slot pool; any
+contact-relevant current bullet with nonzero active transform flags marks the
+solution incomplete. The shadow solve may still run for performance and
+diagnostics, but the independent assessor returns
+`current_bullet_transform_geometry_incomplete` and cannot grant action
+authority. Native lifecycle state 5 remains correctly nonlethal and is
+excluded from this gate.
+
+This is a safety repair, not the desired geometry implementation. The compact
+v2 planner root preserves the current transform runtime and next record, but
+the fast live snapshot and global recurrence do not yet carry and execute the
+full ordered native program. A queued transform whose active flags are still
+zero is therefore an additional explicit coverage gap. The next general task
+is to retain the active slot's complete 18-record program and implement a
+source/C-differential current-transform stepper. Only that exact path may set
+the completeness component true for transformed current bullets.
+
+The focused global authority suite passes nine tests, including the full
+stateful falsifier. Complete Linux discovery passes 1,522 tests with five
+conditional skips, and the updated paper builds to eight pages. No input
+behavior, Wine run, route result, or hit-count claim follows from fail-closing
+this previously unsound authority.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,511 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,522 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

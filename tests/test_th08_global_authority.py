@@ -17,7 +17,10 @@ from th08_live.current_pool_callbacks import (
     CurrentPoolProjectionCallbackJoin,
     join_projection_callbacks_to_current_pool,
 )
+from th08_live.models import Bullet
 from th08_live.runtime_ecl_identity import RuntimeEclAcceptedVersion
+from th08_semantics.stage import StageRuntime
+from th08_semantics.stage_generation import generate_stage_program
 from th08_time_scale import TH08_UNIT_TIME_SCALE_BITS, Th08TimeScaleSchedule
 from touhou_control.pipeline_identity import VersionIdentity
 
@@ -150,6 +153,86 @@ class Th08GlobalAuthorityTests(unittest.TestCase):
             "future_hazard_projection_unavailable",
             assessment.reasons,
         )
+
+    def test_active_transform_heuristic_is_never_action_authority(self) -> None:
+        transformed = Bullet(
+            x=192.0,
+            y=120.0,
+            vx=0.0,
+            vy=1.0,
+            half_width=2.0,
+            half_height=2.0,
+            transform_flags=0x20,
+            slot=7,
+        )
+        solution = _solve(bullets=(transformed,))
+
+        assessment = _assess(solution)
+
+        self.assertFalse(assessment.allowed)
+        self.assertIn(
+            "current_bullet_transform_geometry_incomplete",
+            assessment.reasons,
+        )
+        assert solution.authority_version is not None
+        self.assertFalse(
+            dict(solution.authority_version.geometry.components)[
+                "current_bullet_transforms_complete"
+            ]
+        )
+
+    def test_source_stateful_transform_escapes_old_growth_envelope(self) -> None:
+        runtime = StageRuntime(
+            generate_stage_program(seed=0xCE0132, profile="quick")
+        )
+        for _ in range(20):
+            runtime.step(player_x=192.0, player_y=400.0)
+        root_frame = runtime.frame
+        roots = tuple(
+            (
+                bullet,
+                bullet.slot,
+                bullet.x,
+                bullet.y,
+                bullet.velocity_x,
+                bullet.velocity_y,
+            )
+            for bullet in runtime.bullets
+            if bullet is not None and bullet.active_transform_flags
+        )
+        self.assertEqual(len(roots), 28)
+
+        survivor_samples = 0
+        violations = 0
+        worst: tuple[float, int, int, float, float] | None = None
+        for _ in range(80):
+            runtime.step(player_x=192.0, player_y=400.0)
+            horizon = runtime.frame - root_frame
+            old_bound = 3.0 + 0.35 * horizon
+            for root, slot, x, y, velocity_x, velocity_y in roots:
+                bullet = runtime.bullets[slot]
+                # Slot reuse must not alias a later birth to the root bullet.
+                if bullet is not root:
+                    continue
+                survivor_samples += 1
+                error_x = abs(bullet.x - (x + velocity_x * horizon))
+                error_y = abs(bullet.y - (y + velocity_y * horizon))
+                error = max(error_x, error_y)
+                if error <= old_bound:
+                    continue
+                violations += 1
+                ratio = error / old_bound
+                if worst is None or ratio > worst[0]:
+                    worst = (ratio, horizon, slot, error_x, old_bound)
+
+        self.assertEqual(survivor_samples, 1_937)
+        self.assertEqual(violations, 1_037)
+        assert worst is not None
+        ratio, horizon, slot, error_x, old_bound = worst
+        self.assertEqual((horizon, slot), (80, 13))
+        self.assertAlmostEqual(error_x, 97.06080222129822)
+        self.assertEqual(old_bound, 31.0)
+        self.assertGreater(ratio, 3.13)
 
     def test_uncomposed_current_pool_callbacks_are_shadow_only(self) -> None:
         callback = FutureTaggedBulletCallback(

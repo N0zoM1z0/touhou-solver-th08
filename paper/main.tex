@@ -116,6 +116,13 @@ Throughput, queue age, coverage, and publication compatibility are recorded
 separately so that ``many CPU cycles'' cannot be confused with useful action
 authority.
 
+A controlled future-only Stage~5 solve confirms both the benefit and the
+limit.  Geometry time falls substantially from one through sixteen workers,
+but rises again at twenty-four and thirty-two while the viability tensor stays
+identical.  The experimental thirty-two-worker limit was therefore reverted.
+Surplus cores are better spent on independent retained roots and differentials;
+the latency-sensitive controller retains its smaller worker allocation.
+
 \section{Source-Stateful Offline Laboratory}
 
 The previous synthetic tests mutated snapshots.  Such a frame can look
@@ -479,6 +486,27 @@ pool.  The next causal experiment asks whether this future changes a same-root
 global winning set; if conservative birth discs or an unresolved transform
 destroy viability, only that first reached boundary is tightened before any
 physical route is launched.
+
+Attempting that experiment exposed an observational-contract error before a
+planner result: the existing physical Stage~5 capsules retained producer state
+but not their same-clock current bullet and laser pools.  Their future-only
+geometry changes the number of viable states, but cannot be paired honestly
+with another sensed pool.  Explicit retention now stores canonical active
+hazard slots inside the same manager/update bracket and requires every root
+clock to agree.  A long generated-stage root round-trips hundreds of bullets,
+lasers, lifecycle state, and active transform runtime to the identical global
+viability tensor.  This makes a fresh physical capsule sufficient for offline
+planner replay without retaining multi-megabyte raw slabs.
+
+The same experiment found a more important model falsifier.  The old global
+adapter treated every active transform as constant velocity plus a linearly
+growing uncertainty margin.  In a fixed generic stage, more than half of the
+identity-preserving transform samples leave that margin; the worst H80 center
+error is over three times its claimed bound.  Geometry version~4 therefore
+records transform completeness and forbids action authority for such a pool.
+This fail-closed change is not the solution: the next kernel must capture and
+execute the complete ordered native transform program and pass the independent
+C differential before transformed current bullets regain authority.
 
 A route-work audit also exposed avoidable serial work inside the fresh issue
 layer.  Almost all changed-prefix transactions ultimately preserved the

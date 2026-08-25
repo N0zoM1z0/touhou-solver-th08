@@ -679,11 +679,20 @@ it.
    rotated Stage-4A trace must show the guard blocking unsafe scans and no
    shadow-only widening.
 7. Preserve the now-connected generic child/timeline/callback current-pool
-   join and run one retained Stage-5 global solve offline. Require a same-root
-   losing-to-viable change and bounded solve/publication cost. If it fails,
-   fix only the first explicit producer/transform or conservative-geometry
-   boundary. Evaluate local micro ranking only after this exact global future
-   is useful; repeat a physical winner before a full route.
+   join. The existing four physical Stage-5 v1 capsules cannot supply the
+   requested same-root solve because they omitted current bullets/lasers and
+   their raw trace was cleaned. New explicit captures retain compact current
+   hazards under the same clock in v2, but do not capture every queued native
+   transform record. The generic quick-stage regression also proves the old
+   transform envelope unsound: 1,037/1,937 survivor samples escape it, worst
+   97.060802px versus 31px. Global geometry v4 must therefore remain
+   shadow-only whenever a current transform is active. Next retain and execute
+   the full 18-record transform program with source/C differential, then take
+   one fresh v2 Stage-5 root and require a same-root losing-to-viable change
+   plus bounded solve/publication cost. Evaluate local micro ranking only after
+   this exact global future is useful; repeat a physical winner before a full
+   route. Use surplus VPS cores for parallel independent roots: controlled
+   per-root scaling improves through 16 workers and regresses at 24/32.
 
 Optional warm-service work and learned/MCTS candidate ordering stay behind
 this backlog unless branch latency becomes the measured bottleneck.

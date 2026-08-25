@@ -484,18 +484,27 @@ The 2026-08-25 offline successor closes the next generic callback integration
 boundary without promoting L3. Retained child/timeline births and ordered
 callbacks 12/14 now reach a source-derived current-pool composer. A versioned
 certificate binds projection root, point-valued bullet snapshot, policy epoch,
-complete horizon, and the actual composed pool; global geometry v3 shares the
-21-type spawn lifecycle and callback schedule. `CorridorSolution` carries that
-join through solve and an independent action-authority check. The controller
-attempts it only under exact unit scale and zero bullet-capture span, and an
-expensive pool composition starts only when a submission is due and its worker
-slot is free; an incomplete join consumes no worker slot. A worker-root
-certificate cannot authorize a later local prefix over newly sensed bullets.
-Import smoke and
-1,511 Linux tests pass, but no retained-root viable-set improvement, deadline
-result, Wine action, or hit reduction exists. Therefore this remains offline/
-default-off infrastructure inside L3; the next gate is a same-root global
-policy change, not physical sampling.
+complete horizon, and the actual composed pool; global geometry v4 shares the
+21-type spawn lifecycle/callback schedule and carries a current-transform
+completeness bit. `CorridorSolution` carries that join through solve and an
+independent action-authority check. The controller attempts it only under
+exact unit scale and zero bullet-capture span, and an expensive pool
+composition starts only when a submission is due and its worker slot is free;
+an incomplete join consumes no worker slot. A worker-root certificate cannot
+authorize a later local prefix over newly sensed bullets.
+
+The first intended physical same-root experiment found two sharper boundaries.
+All four Stage-5 capsules are v1 producer roots without current bullets/lasers,
+so they cannot be completed by pairing another pool. New explicit retention
+uses a clock-joined v2 compact current-hazard root and passes a 319-bullet,
+two-laser stateful replay. Separately, the generic fuzzer proves the historical
+active-transform growth heuristic unsound: 1,037/1,937 samples escape, worst
+97.060802px versus 31px. Such roots are now shadow-only. Therefore this remains
+offline/default-off infrastructure inside L3; the next gate is full-program
+source-exact current transforms followed by a fresh v2 Stage-5 same-root global
+policy change, not physical sampling. No deadline, Wine action, or hit
+reduction exists. Complete Linux discovery passes 1,522 tests with five
+conditional skips, and the paper builds to eight pages.
 
 ### L4 — Continuous-position coarse-cell lower bound
 
