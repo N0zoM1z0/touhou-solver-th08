@@ -13,6 +13,10 @@ from th08_future_birth_envelope import (
 )
 from th08_future_hazard_projection import complete_future_hazard_projection
 from th08_global_authority import assess_th08_global_action_authority
+from th08_live.current_pool_callbacks import (
+    CurrentPoolProjectionCallbackJoin,
+    join_projection_callbacks_to_current_pool,
+)
 from th08_live.runtime_ecl_identity import RuntimeEclAcceptedVersion
 from th08_time_scale import TH08_UNIT_TIME_SCALE_BITS, Th08TimeScaleSchedule
 from touhou_control.pipeline_identity import VersionIdentity
@@ -65,6 +69,9 @@ def _solve(
     *,
     include_future: bool = True,
     tagged_callbacks: tuple[FutureTaggedBulletCallback, ...] = (),
+    projection=None,
+    callback_join: CurrentPoolProjectionCallbackJoin | None = None,
+    bullets=(),
 ) -> CorridorSolution:
     return solve_corridor(
         source_frame=100,
@@ -72,14 +79,17 @@ def _solve(
         forecast_lead_frames=10,
         player_x=192.0,
         player_y=400.0,
-        bullets=(),
+        bullets=bullets,
         lasers=(),
         enemy_bodies=(),
         future_hazard_projection=(
-            _projection(tagged_callbacks=tagged_callbacks)
+            projection
+            if projection is not None
+            else _projection(tagged_callbacks=tagged_callbacks)
             if include_future
             else None
         ),
+        current_pool_callback_join=callback_join,
         runtime_ecl_version=_runtime_ecl_version(),
         snapshot_lag=0,
         control_delay_candidates=(0, 1, 2),
@@ -150,12 +160,91 @@ class Th08GlobalAuthorityTests(unittest.TestCase):
             callback_angle=None,
             callback_speed=FloatInterval.point(2.0),
         )
-        assessment = _assess(_solve(tagged_callbacks=(callback,)))
+        projection = _projection(tagged_callbacks=(callback,))
+        spoofed = CorridorSolution(
+            artifact=replace(
+                self.solution.artifact,
+                future_hazard_version=projection.version,
+                future_hazard_coverage=projection.coverage,
+            ),
+            publication=self.solution.publication,
+            handles=replace(
+                self.solution.handles,
+                future_hazard_projection=projection,
+            ),
+        )
+        assessment = _assess(spoofed)
 
         self.assertFalse(assessment.allowed)
         self.assertIn(
-            "future_hazard_current_pool_callbacks_uncomposed",
+            "future_hazard_current_pool_callback_join_unavailable",
             assessment.reasons,
+        )
+
+    def test_solution_bound_callback_join_can_acquire_authority(self) -> None:
+        callback = FutureTaggedBulletCallback(
+            source="test",
+            frame=4,
+            callback_index=14,
+            tag_mask=0x100000,
+            callback_angle=None,
+            callback_speed=FloatInterval.point(2.0),
+        )
+        projection = _projection(tagged_callbacks=(callback,))
+        with self.assertRaisesRegex(
+            ValueError,
+            "current-pool callback join",
+        ):
+            _solve(projection=projection)
+        with self.assertRaisesRegex(
+            ValueError,
+            "does not satisfy its contract",
+        ):
+            _solve(projection=projection, callback_join=object())
+        half_scale_join = join_projection_callbacks_to_current_pool(
+            (),
+            projection=projection,
+            bullet_root_frame=90,
+            policy_source_frame=100,
+            policy_horizon_frames=TH08_CORRIDOR_CONFIG.horizon_frames,
+            time_scale=0.5,
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "exact unit time scale",
+        ):
+            _solve(
+                projection=projection,
+                callback_join=half_scale_join,
+                bullets=half_scale_join.bullets,
+            )
+        join = join_projection_callbacks_to_current_pool(
+            (),
+            projection=projection,
+            bullet_root_frame=90,
+            policy_source_frame=100,
+            policy_horizon_frames=TH08_CORRIDOR_CONFIG.horizon_frames,
+            time_scale=1.0,
+        )
+        solution = _solve(
+            projection=projection,
+            callback_join=join,
+            bullets=join.bullets,
+        )
+
+        assessment = _assess(solution)
+        self.assertTrue(assessment.allowed, assessment.reasons)
+        self.assertEqual(
+            solution.current_pool_callback_join_version,
+            join.version,
+        )
+        self.assertIs(solution.current_pool_callback_join, join)
+        wrong_scale = solution.with_handles(
+            current_pool_callback_join=half_scale_join,
+        )
+        self.assertIn(
+            "future_hazard_current_pool_callback_scale_mismatch",
+            _assess(wrong_scale).reasons,
         )
 
     def test_legacy_solution_without_join_is_shadow_only(self) -> None:

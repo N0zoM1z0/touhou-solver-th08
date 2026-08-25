@@ -7,6 +7,7 @@ from unittest.mock import patch
 from th08_live.controller import (
     _ordinary_authority_target,
     _ordinary_delayed_computation_guard,
+    _ordinary_local_projection_from_solution,
     _ordinary_nonspell_preexhaustion_filter,
     _ordinary_prefix_candidate_actions,
     _ordinary_submission_projection,
@@ -15,12 +16,65 @@ from th08_live.controller import (
     _ordinary_target_query_frame,
     _select_delayed_issue_action,
 )
+from th08_future_birth_envelope import (
+    FloatInterval,
+    FutureTaggedBulletCallback,
+)
+from th08_future_hazard_projection import (
+    complete_future_hazard_projection,
+)
 from th08_local_planner import RobustActionCertificate
 from th08_time_scale import TH08_UNIT_TIME_SCALE_BITS
 from touhou_control.local_pipeline_oracle import LocalPipelineRoot
 
 
 class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
+    def test_global_callback_join_does_not_leak_into_local_prefix(self) -> None:
+        plain = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=100,
+            events=(),
+            source_semantics_version="test-source-v1",
+        )
+        plain_solution = SimpleNamespace(
+            future_hazard_projection=plain,
+            future_hazard_version=plain.version,
+        )
+        self.assertEqual(
+            _ordinary_local_projection_from_solution(
+                plain_solution,
+                current_frame=110,
+            ),
+            (plain, 10),
+        )
+
+        callback = FutureTaggedBulletCallback(
+            source="test",
+            frame=20,
+            callback_index=14,
+            tag_mask=0x100000,
+            callback_angle=None,
+            callback_speed=FloatInterval.point(2.0),
+        )
+        joined_global = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=100,
+            events=(),
+            tagged_callbacks=(callback,),
+            source_semantics_version="test-source-v1",
+        )
+        joined_solution = SimpleNamespace(
+            future_hazard_projection=joined_global,
+            future_hazard_version=joined_global.version,
+        )
+        self.assertEqual(
+            _ordinary_local_projection_from_solution(
+                joined_solution,
+                current_frame=110,
+            ),
+            (None, -1),
+        )
+
     def test_delayed_issue_selection_uses_only_the_observed_age_row(
         self,
     ) -> None:
@@ -415,4 +469,21 @@ class OrdinaryNonspellPreexhaustionTests(unittest.TestCase):
                 policy_horizon_frames=80,
                 expected_spell_id=103,
             )
+        )
+        join = SimpleNamespace(
+            complete=True,
+            policy_source_frame=180,
+            policy_horizon_frames=80,
+            time_scale_bits=TH08_UNIT_TIME_SCALE_BITS,
+            matches_projection=lambda candidate: candidate is projection,
+        )
+        self.assertIs(
+            _ordinary_submission_projection(
+                result,
+                policy_source_frame=180,
+                policy_horizon_frames=80,
+                expected_spell_id=103,
+                current_pool_callback_join=join,
+            ),
+            projection,
         )

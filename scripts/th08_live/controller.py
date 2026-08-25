@@ -19,6 +19,7 @@ from collections import deque
 from concurrent.futures import Future
 from dataclasses import replace
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -153,6 +154,11 @@ from th08_live.bullet_decode import (  # noqa: F401
     native_bullet_half_extents as _native_bullet_half_extents,
     planning_bullet_active_slots as _planning_bullet_active_slots,
 )
+
+if TYPE_CHECKING:
+    from th08_live.current_pool_callbacks import (
+        CurrentPoolProjectionCallbackJoin,
+    )
 from th08_live.corridor_trace import build_corridor_trace_record
 from th08_live.cli import LiveParserDefaults, build_live_parser
 from th08_live.decision_control_trace import (
@@ -921,7 +927,7 @@ def _ordinary_authority_target(
     return solution, publication_frame - solution.source_frame
 
 
-def _ordinary_submission_projection(
+def _ordinary_submission_projection_candidate(
     result: OrdinaryFutureSourceCaptureResult | None,
     *,
     policy_source_frame: int,
@@ -950,13 +956,77 @@ def _ordinary_submission_projection(
     if (
         projection is None
         or not projection.source_closure_complete
-        or not projection.current_pool_callback_composition_complete
         or projection.root_frame > policy_source_frame
         or projection.horizon_frame
         < policy_source_frame + policy_horizon_frames
     ):
         return None
     return projection
+
+
+def _ordinary_submission_projection(
+    result: OrdinaryFutureSourceCaptureResult | None,
+    *,
+    policy_source_frame: int,
+    policy_horizon_frames: int,
+    expected_spell_id: int | None,
+    current_pool_callback_join: (
+        CurrentPoolProjectionCallbackJoin | None
+    ) = None,
+) -> OrdinaryFutureHazardProjection | None:
+    """Return a complete source slab with proved current-pool composition."""
+
+    projection = _ordinary_submission_projection_candidate(
+        result,
+        policy_source_frame=policy_source_frame,
+        policy_horizon_frames=policy_horizon_frames,
+        expected_spell_id=expected_spell_id,
+    )
+    if projection is None:
+        return None
+    if projection.current_pool_callback_composition_complete:
+        return projection
+    if (
+        current_pool_callback_join is None
+        or not current_pool_callback_join.complete
+        or not current_pool_callback_join.matches_projection(projection)
+        or current_pool_callback_join.policy_source_frame
+        != policy_source_frame
+        or current_pool_callback_join.policy_horizon_frames
+        != policy_horizon_frames
+        or current_pool_callback_join.time_scale_bits
+        != TH08_UNIT_TIME_SCALE_BITS
+    ):
+        return None
+    return projection
+
+
+def _ordinary_local_projection_from_solution(
+    solution: CorridorSolution | None,
+    *,
+    current_frame: int,
+) -> tuple[OrdinaryFutureHazardProjection | None, int]:
+    """Expose a global future only when the live pool needs no fresh join.
+
+    A callback join stored on a global solution is rooted at the worker's old
+    bullet snapshot.  It certifies that global artifact, not a later local
+    prefix built from newly sensed bullets.  Local use therefore remains
+    fail-closed until it performs its own current-frame composition.
+    """
+
+    if solution is None:
+        return None, -1
+    projection = solution.future_hazard_projection
+    if (
+        not isinstance(projection, OrdinaryFutureHazardProjection)
+        or not projection.current_pool_callback_composition_complete
+        or projection.version != corridor_hazard_version(solution)
+    ):
+        return None, -1
+    offset = current_frame - projection.root_frame
+    if offset < 0:
+        return None, -1
+    return projection, offset
 
 
 def _ordinary_nonspell_preexhaustion_filter(
@@ -4532,7 +4602,7 @@ def _run_live_session(
                 )
             decode_started = time.perf_counter()
             bullet_decode_started = decode_started
-            bullets = (
+            decoded_bullets = (
                 decode_bullets(
                     bullet_blob,
                     retain_transform_runtime=True,
@@ -4543,6 +4613,7 @@ def _run_live_session(
                     backend=args.bullet_decode_backend,
                 )
             )
+            bullets = decoded_bullets
             bullet_decode_ms = (
                 time.perf_counter() - bullet_decode_started
             ) * 1000.0
@@ -5194,21 +5265,7 @@ def _run_live_session(
             future_source_submission = bool(
                 ordinary_preexhaustion_authority
             )
-            ordinary_future_projection: (
-                OrdinaryFutureHazardProjection | None
-            ) = None
-            if future_source_submission:
-                ordinary_future_projection = (
-                    _ordinary_submission_projection(
-                        ordinary_future_source_result,
-                        policy_source_frame=policy_source_frame,
-                        policy_horizon_frames=(
-                            TH08_CORRIDOR_CONFIG.horizon_frames
-                        ),
-                        expected_spell_id=observed_spell_id,
-                    )
-                )
-            if (
+            corridor_submission_base_ready = bool(
                 corridor_executor is not None
                 and corridor_future is None
                 and corridor_pending_solution is None
@@ -5224,6 +5281,95 @@ def _run_live_session(
                         corridor_time_scale_hard_authority
                     ),
                 )
+            )
+            ordinary_future_projection: (
+                OrdinaryFutureHazardProjection | None
+            ) = None
+            ordinary_current_pool_callback_join: (
+                CurrentPoolProjectionCallbackJoin | None
+            ) = None
+            ordinary_submission_bullets = bullets
+            ordinary_projection_candidate = None
+            ordinary_callback_join_block_reason: str | None = None
+            if future_source_submission:
+                ordinary_projection_candidate = (
+                    _ordinary_submission_projection_candidate(
+                        ordinary_future_source_result,
+                        policy_source_frame=policy_source_frame,
+                        policy_horizon_frames=(
+                            TH08_CORRIDOR_CONFIG.horizon_frames
+                        ),
+                        expected_spell_id=observed_spell_id,
+                    )
+                )
+                if ordinary_projection_candidate is not None:
+                    if (
+                        ordinary_projection_candidate
+                        .current_pool_callback_composition_complete
+                    ):
+                        ordinary_future_projection = (
+                            ordinary_projection_candidate
+                        )
+                    elif (
+                        corridor_submission_base_ready
+                        and corridor_time_scale_hard_authority
+                    ):
+                        from th08_live.current_pool_callbacks import (
+                            join_projection_callbacks_to_current_pool,
+                        )
+
+                        ordinary_current_pool_callback_join = (
+                            join_projection_callbacks_to_current_pool(
+                                decoded_bullets,
+                                projection=ordinary_projection_candidate,
+                                bullet_root_frame=(
+                                    captured_iteration
+                                    .hazard_alignment
+                                    .hazard_window
+                                    .after
+                                ),
+                                policy_source_frame=policy_source_frame,
+                                policy_horizon_frames=(
+                                    TH08_CORRIDOR_CONFIG.horizon_frames
+                                ),
+                                time_scale=float32_from_bits(
+                                    TH08_UNIT_TIME_SCALE_BITS
+                                ),
+                                bullet_frame_uncertainty=(
+                                    captured_iteration
+                                    .hazard_alignment
+                                    .hazard_window
+                                    .span
+                                ),
+                            )
+                        )
+                        ordinary_future_projection = (
+                            _ordinary_submission_projection(
+                                ordinary_future_source_result,
+                                policy_source_frame=policy_source_frame,
+                                policy_horizon_frames=(
+                                    TH08_CORRIDOR_CONFIG.horizon_frames
+                                ),
+                                expected_spell_id=observed_spell_id,
+                                current_pool_callback_join=(
+                                    ordinary_current_pool_callback_join
+                                ),
+                            )
+                        )
+                        if ordinary_future_projection is not None:
+                            ordinary_submission_bullets = (
+                                ordinary_current_pool_callback_join.bullets
+                            )
+                    else:
+                        ordinary_callback_join_block_reason = (
+                            "corridor_submission_not_ready"
+                            if not corridor_submission_base_ready
+                            else (
+                                "exact_unit_time_scale_authority_unavailable"
+                            )
+                        )
+            if (
+                corridor_submission_base_ready
                 and (
                     not future_source_submission
                     or ordinary_future_projection is not None
@@ -5265,7 +5411,11 @@ def _run_live_session(
                     forecast_lead_frames=forecast_lead_frames,
                     player_x=forecast_player_x,
                     player_y=forecast_player_y,
-                    bullets=bullets,
+                    bullets=(
+                        ordinary_submission_bullets
+                        if future_source_submission
+                        else bullets
+                    ),
                     lasers=lasers,
                     enemy_bodies=(
                         exact_contact_enemy_bodies
@@ -5274,6 +5424,9 @@ def _run_live_session(
                     ),
                     future_hazard_projection=(
                         ordinary_future_projection
+                    ),
+                    current_pool_callback_join=(
+                        ordinary_current_pool_callback_join
                     ),
                     runtime_ecl_version=(
                         runtime_ecl_identity_service.accepted_version
@@ -5539,29 +5692,18 @@ def _run_live_session(
                         ordinary_prefix_hold_frames
                         + max(ordinary_prefix_delay_frames)
                     )
-                    published_future_projection = (
-                        ordinary_authority_solution.future_hazard_projection
-                    )
-                    future_projection_offset = (
-                        captured_iteration.snapshot_frame
-                        - published_future_projection.root_frame
-                        if isinstance(
-                            published_future_projection,
-                            OrdinaryFutureHazardProjection,
-                        )
-                        else -1
+                    (
+                        published_future_projection,
+                        future_projection_offset,
+                    ) = _ordinary_local_projection_from_solution(
+                        ordinary_authority_solution,
+                        current_frame=(
+                            captured_iteration.snapshot_frame
+                        ),
                     )
                     prefix_projection_usable = bool(
-                        isinstance(
-                            published_future_projection,
-                            OrdinaryFutureHazardProjection,
-                        )
-                        and published_future_projection.version
-                        == corridor_hazard_version(
-                            ordinary_authority_solution
-                        )
+                        published_future_projection is not None
                         and published_future_projection.coverage.complete
-                        and future_projection_offset >= 0
                         and (
                             future_projection_offset
                             + candidate_prefix_certified_frames
@@ -8184,6 +8326,57 @@ def _run_live_session(
                         and corridor_submission_due
                         and ordinary_future_projection is None
                     ),
+                    "ordinary_callback_join": {
+                        "required": bool(
+                            ordinary_projection_candidate is not None
+                            and ordinary_projection_candidate.tagged_callbacks
+                        ),
+                        "attempted": (
+                            ordinary_current_pool_callback_join is not None
+                        ),
+                        "complete": (
+                            ordinary_current_pool_callback_join.complete
+                            if ordinary_current_pool_callback_join is not None
+                            else None
+                        ),
+                        "reason": (
+                            ordinary_current_pool_callback_join.reason
+                            if ordinary_current_pool_callback_join is not None
+                            else ordinary_callback_join_block_reason
+                        ),
+                        "version_digest": (
+                            ordinary_current_pool_callback_join.version_digest
+                            if ordinary_current_pool_callback_join is not None
+                            else None
+                        ),
+                        "time_scale_bits": (
+                            ordinary_current_pool_callback_join.time_scale_bits
+                            if ordinary_current_pool_callback_join is not None
+                            else None
+                        ),
+                        "callback_count": (
+                            ordinary_current_pool_callback_join.composition
+                            .callback_count
+                            if ordinary_current_pool_callback_join is not None
+                            and ordinary_current_pool_callback_join.composition
+                            is not None
+                            else None
+                        ),
+                        "affected_bullet_count": (
+                            ordinary_current_pool_callback_join.composition
+                            .affected_bullet_count
+                            if ordinary_current_pool_callback_join is not None
+                            and ordinary_current_pool_callback_join.composition
+                            is not None
+                            else None
+                        ),
+                        "composed_pool_selected": bool(
+                            ordinary_current_pool_callback_join is not None
+                            and ordinary_future_projection is not None
+                            and ordinary_submission_bullets
+                            is ordinary_current_pool_callback_join.bullets
+                        ),
+                    },
                     "required_scale_horizon": (
                         corridor_required_scale_horizon
                     ),

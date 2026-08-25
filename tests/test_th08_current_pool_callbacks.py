@@ -16,6 +16,7 @@ from th08_live.current_pool_callbacks import (
 )
 from th08_live.local_hazards import _build_bullet_frames
 from th08_live.models import Bullet, PackedBulletSnapshot
+from th08_time_scale import TH08_UNIT_TIME_SCALE_BITS
 from touhou_control.trajectory import VelocityChange
 
 
@@ -124,6 +125,13 @@ class Th08CurrentPoolCallbackTests(unittest.TestCase):
         self.assertTrue(join.complete, join.reason)
         self.assertTrue(join.matches_projection(projection))
         self.assertEqual(join.required_bullet_horizon_frames, 12)
+        self.assertEqual(join.version.namespace, join.semantics_version)
+        self.assertEqual(len(join.version_digest), 64)
+        self.assertEqual(join.time_scale_bits, TH08_UNIT_TIME_SCALE_BITS)
+        self.assertEqual(
+            join.composition.time_scale_bits,
+            TH08_UNIT_TIME_SCALE_BITS,
+        )
         self.assertEqual(join.composition.source_offset, 2)
         composed = tuple(join.bullets)[0]
         self.assertEqual(composed.velocity_changes[0].frame, 3)
@@ -137,6 +145,29 @@ class Th08CurrentPoolCallbackTests(unittest.TestCase):
             source_semantics_version="test-source-v2",
         )
         self.assertFalse(join.matches_projection(other_projection))
+        other_join = join_projection_callbacks_to_current_pool(
+            (_bullet(),),
+            projection=other_projection,
+            bullet_root_frame=102,
+            policy_source_frame=104,
+            policy_horizon_frames=10,
+            time_scale=1.0,
+        )
+        self.assertNotEqual(join.version, other_join.version)
+        self.assertNotEqual(join.version_digest, other_join.version_digest)
+        half_scale_join = join_projection_callbacks_to_current_pool(
+            (_bullet(),),
+            projection=projection,
+            bullet_root_frame=102,
+            policy_source_frame=104,
+            policy_horizon_frames=10,
+            time_scale=0.5,
+        )
+        self.assertNotEqual(join.version, half_scale_join.version)
+        self.assertNotEqual(
+            join.version_digest,
+            half_scale_join.version_digest,
+        )
 
     def test_projection_join_rejects_unproved_clock_boundaries(self) -> None:
         projection = complete_future_hazard_projection(

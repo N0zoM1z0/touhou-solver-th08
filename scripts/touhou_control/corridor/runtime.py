@@ -31,6 +31,7 @@ class CorridorPolicyArtifact:
     time_scale_identity: tuple[object, ...] | None = None
     future_hazard_version: VersionIdentity | None = None
     future_hazard_coverage: HazardCoverageAssessment | None = None
+    current_pool_callback_join_version: VersionIdentity | None = None
     authority_version: PolicyAuthorityVersion | None = None
 
 
@@ -51,6 +52,7 @@ class CorridorRuntimeHandles:
     audit_future: Future[tuple[float, str | None]] | None = None
     pipeline_survival_workspace: PipelineSurvivalWorkspace | None = None
     future_hazard_projection: object | None = None
+    current_pool_callback_join: object | None = None
 
 
 @dataclass(frozen=True, init=False)
@@ -87,6 +89,8 @@ class CorridorSolution:
         time_scale_identity: tuple[object, ...] | None = None,
         future_hazard_version: VersionIdentity | None = None,
         future_hazard_coverage: HazardCoverageAssessment | None = None,
+        current_pool_callback_join_version: VersionIdentity | None = None,
+        current_pool_callback_join: object | None = None,
         authority_version: PolicyAuthorityVersion | None = None,
         *,
         artifact: CorridorPolicyArtifact | None = None,
@@ -120,6 +124,9 @@ class CorridorSolution:
                 time_scale_identity=time_scale_identity,
                 future_hazard_version=future_hazard_version,
                 future_hazard_coverage=future_hazard_coverage,
+                current_pool_callback_join_version=(
+                    current_pool_callback_join_version
+                ),
                 authority_version=authority_version,
             )
             publication = CorridorPublication(
@@ -136,6 +143,7 @@ class CorridorSolution:
                     pipeline_survival_workspace
                 ),
                 future_hazard_projection=future_hazard_projection,
+                current_pool_callback_join=current_pool_callback_join,
             )
         else:
             if source_frame is not None or plan is not None or solve_ms is not None:
@@ -195,8 +203,16 @@ class CorridorSolution:
         return self.artifact.authority_version
 
     @property
+    def current_pool_callback_join_version(self) -> VersionIdentity | None:
+        return self.artifact.current_pool_callback_join_version
+
+    @property
     def future_hazard_projection(self) -> object | None:
         return self.handles.future_hazard_projection
+
+    @property
+    def current_pool_callback_join(self) -> object | None:
+        return self.handles.current_pool_callback_join
 
     @property
     def forecast_lead_frames(self) -> int:

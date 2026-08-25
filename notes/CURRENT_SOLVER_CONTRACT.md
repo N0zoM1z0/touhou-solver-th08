@@ -1,6 +1,6 @@
 # Current TH08 Solver Contract
 
-Last updated: 2026-08-23.
+Last updated: 2026-08-25.
 
 This is the compact authority boundary for the active solver. Historical
 derivations are recoverable from tag `pre-workspace-prune-20260731`.
@@ -57,6 +57,27 @@ geometry/policy identities. Missing future births make active-spell policies
 shadow-only; they may still run to measure producer and delivery coverage.
 Legacy or partially versioned artifacts are never uplifted.
 
+Callback-bearing future projections have an additional exact join. The
+projection digest/version/root, point-valued sensed bullet root, exact
+binary32 scale, policy source and horizon, callback-composition semantics, and
+composed bullet pool must agree before the global worker runs. The immutable
+join version is part of the artifact/root identity; its concrete runtime
+handle is rechecked by the action assessor. A bullet-pool capture spanning an
+update, a matching set-valued
+operand, transform interaction, conflicting schedule, nonunit scale, or clock
+mismatch fails closed. Global geometry v3 consumes the 21-type native spawn
+lifecycle and callback schedule together. This mechanism is wired only inside
+the existing default-off ordinary exact lane and has no physical promotion.
+The bounded pool composition may run only when the global submission is due,
+the worker is free, and no publication is pending; other decisions retain only
+the cheap projection candidate and an explicit not-ready reason.
+
+The certificate belongs to the worker's historical bullet snapshot. A later
+local prefix or delayed issue computation over newly sensed bullets may not
+reuse it; that layer requires its own current-frame composition. Until then,
+callback-bearing projections can support their exact global artifact but are
+excluded from local-prefix authority.
+
 Every authority labelled exact corridor, ordinary predecessor, constant-hold,
 delayed issue, or continuation lease is non-relaxable by the coarse terminal-
 threat fallback. `184903` exposed 57 such relaxations; `191508` retained zero.
@@ -99,9 +120,12 @@ installed callback gates, emission/template state, phase/motion state, and
 timeline runtime. A fail-closed source executor advances every reachable
 producer for 268 frames. Possible bullets become continuous annular-sector
 trajectories; possible contact bodies become time-indexed AABBs. Random,
-aimed, and player-dependent values remain bounded sets. Unsupported opcode,
-callback, timeline gate, motion, content identity, spell state, or nonunit
-scale makes the slab `UNKNOWN`.
+aimed, and player-dependent values remain bounded sets. Unsupported opcode or
+callback index, transform interaction, timeline gate, motion, content
+identity, spell state, or nonunit scale makes the slab `UNKNOWN`. Ordered
+callbacks 12/14 and visual-only callback 13 are covered inside their declared
+point-valued/current-pool boundary; this does not imply arbitrary callback or
+producer closure.
 
 The exact projection object used by the asynchronous corridor solve is
 retained with that policy. At a later observation, its physical clock is

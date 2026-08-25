@@ -1,8 +1,9 @@
 # TH08 Source-Authoritative Solver Audit
 
-Last updated: 2026-08-24.
+Last updated: 2026-08-25.
 
-Status: **AUDIT ACTIVE; SOURCE AABB PROMOTED, TIMING/GLOBAL ROOTS OPEN**
+Status: **AUDIT ACTIVE; RETAINED BIRTH/CALLBACK GLOBAL JOIN CLOSED OFFLINE,
+PRODUCER COVERAGE AND SAME-ROOT POLICY EFFECT OPEN**
 
 ## Scope And Verdict
 
@@ -27,10 +28,13 @@ The central verdict is:
    realized action delay escaped the model in dense phases. Capture-epoch
    uncertainty, activatable lifecycle states, and finite laser geometry remain
    incomplete rather than being hidden inside an inflated player radius.
-4. The current future-birth work is not connected to spell planning. The only
-   generic ECL birth analyzer is trace-only, stops before most interesting VM
-   behavior, and has no controller caller. The large ordinary-source model is
-   disabled and intentionally rejects active spells.
+4. At the audited 60-hit route, future-birth work was not connected to spell
+   planning. Follow-up offline work now executes retained child/timeline
+   producers, models ordered callbacks 12/14, composes them with the sensed
+   pool, and carries the resulting clock certificate through the global
+   worker. It has not yet produced a retained-root losing-to-viable policy or
+   physical hit evidence, and unsupported producer/transform cases remain
+   `UNKNOWN`.
 5. The matching source makes a much simpler end state feasible: one exact
    runtime-root capture, one generic ECL/timeline/emitter forward kernel, one
    exact hazard geometry kernel, one time-expanded viability planner, and the
@@ -38,11 +42,12 @@ The central verdict is:
    be compiled from that kernel, not implemented as independent handwritten
    simulators.
 
-The immediate sequence is now to retain the correct physical predicate while
-bounding local/issue latency, then establish route-wide ECL/scale identities
-and submit global work in shadow. Simply enabling global action authority is
-unsafe because active-spell requests omit future births while the old gate
-checks only time-scale provenance.
+The immediate sequence is now to use the connected retained event stream in a
+same-root offline global solve, measure whether its complete future changes a
+losing kernel, and close only the first reached producer/transform boundary
+that prevents that experiment. Physical Wine validation follows only after a
+useful policy and bounded delivery exist. Time-scale provenance alone remains
+insufficient authority.
 
 ## Evidence Base
 
@@ -561,9 +566,9 @@ fixed `2e-5` guard failed on 392/420 lethal oracle samples. AABB uses outward
 source-order intervals, while sector error is propagated analytically so
 continuous speed/angle parameters remain correlated; 256 random C roots also
 stay contained. This does not close current-pool callback state or complete
-Stage-5 producer coverage. Child/timeline execution and a conservative
-ordered callback-12/14 birth envelope are recorded below; exact live-pool
-callback composition remains open.
+Stage-5 producer coverage. Child/timeline execution, a conservative ordered
+callback-12/14 birth envelope, and the later exact live-pool composition are
+recorded below.
 
 Callback 14 now also has a source-order scalar primitive checked against an
 independently compiled C transcription. The implementation retains its
@@ -578,8 +583,9 @@ snapshot and emits the velocity/collision events already consumed by the local
 hazard recurrence. Equal-frame transitions are composed before movement, and
 spawn-ANM divided motion sees the replaced velocity on that same update.
 Set-valued operands, uncertain frame alignment, transforms, and conflicting
-existing schedules fail closed. Live authority remains disabled until the
-controller supplies and validates the temporal join rather than assuming it.
+existing schedules fail closed. The controller now supplies and validates the
+temporal join as described below; those unresolved cases remain unavailable
+rather than being approximated.
 
 Reviewing that join exposed an independent global-geometry defect: the
 corridor adapter omitted native bullet state, state timer, and template type,
@@ -591,13 +597,28 @@ divided-plus-full update, and the auxiliary collision gate. Exhaustive type/
 state cases plus 256 seeded transition histories agree with the C-locked local
 recurrence. Geometry identity v2 invalidates the old lifecycle-free policies.
 
-Callback composition now also has an explicit three-clock certificate. It
-binds the future projection digest/version/root, a point-valued bullet root,
-the complete policy interval, and the actual composed pool. This prevents a
-correct transition from being reused under a different projection or shorter
-horizon. A pool capture spanning any update is incomplete in the presence of
-callbacks. Global action assessment independently retains a hard rejection
-until the solution artifact itself carries this certificate.
+Callback composition also has an explicit three-clock-and-scale certificate.
+It binds the future projection digest/version/root, a point-valued bullet root,
+the exact binary32 scale, the complete policy interval, and the actual
+composed pool. This prevents a correct transition from being reused under a
+different projection or shorter horizon. A pool capture spanning any update
+is incomplete in the presence of
+callbacks. The solution artifact now carries its immutable version while a
+separate runtime handle carries the live certificate. The worker checks the
+same composed pool, scale, and all three clocks; geometry v3 and the
+independent global assessor recheck the artifact/root join. The controller
+uses the raw decoded pool under exact unit scale and zero capture span. This
+composition is deferred until a submission is due and the worker slot is free,
+so non-submission decisions do not pay the 1,536-slot scan. This enables the
+offline/global path under its existing default-off lane, not route-wide live
+promotion.
+
+A global join belongs to the worker's historical bullet root. It cannot be
+reused by a later local-prefix or delayed certificate over newly sensed
+bullets. Those paths remain fail-closed until they build a fresh local join;
+an explicit regression prevents global-to-local certificate leakage. Compact
+per-decision trace fields retain the join digest, result, reason, and affected
+count without duplicating the full pool.
 
 The same lifecycle is now part of the versioned complete-stage IR/runtime,
 not only a bounded envelope helper. A 3,600-frame stateful gate exercised all
@@ -627,8 +648,9 @@ inert; callback 13 is source-proven visual-only. Matched callbacks widen the
 trajectory to a full-direction maximum-speed disc while retaining exact spawn
 ANM activation. This is safe but intentionally broader than exact callback
 phase evolution. Standalone callbacks are retained separately because they
-can mutate the root's already-live bullet pool; that composition remains an
-explicit global-authority blocker. The physical spell-115 root consequently
+can mutate the root's already-live bullet pool; the three-clock join now
+composes that pool exactly inside its proven boundary. The physical spell-115
+root consequently
 advances from 86 to 136 proven future frames and includes its first tagged
 birth, then stops at unrelated unsupported opcode `0x0B`.
 
@@ -640,9 +662,10 @@ Run focused Stage-4A/Stage-5/Final-B practices, then a complete route. VPS CPU
 is expected to matter here: multiple exact candidate branches and adaptive
 refinement finally produce work that can run on its cores.
 
-The version join and fail-closed consumer now enforce the first sentence, but
-do not satisfy it: Stage-5 spell producer coverage is still absent. No Wine or
-hit claim follows from this checkpoint.
+The version join, current-pool callback certificate, and fail-closed consumer
+now enforce the first sentence for the covered generic semantics. They do not
+establish complete Stage-5 producer coverage or a useful global winning-set
+change. No Wine or hit claim follows from this checkpoint.
 
 ## Success Metrics And Nonclaims
 

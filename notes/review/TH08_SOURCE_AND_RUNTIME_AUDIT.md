@@ -2022,7 +2022,7 @@ conditional skips, and the seven-page paper builds. No Wine run was performed.
 ### AUD-075 — Callback composition had no projection/bullet/policy clock certificate
 
 Status: **CONFIRMED AUTHORITY-JOIN GAP; VERSIONED OFFLINE CERTIFICATE ADDED,
-ACTION AUTHORITY STILL DISABLED**
+SOLUTION BINDING CLOSED BY AUD-076**
 
 An exact callback transition and even an exact bullet schedule are
 insufficient unless they are bound to the projection that produced the
@@ -2045,17 +2045,94 @@ The final global authority assessment also now independently rejects any
 projection with nonempty current-pool callbacks. This closes a defense-in-depth
 gap: controller submission and prefix gates already rejected them, but a
 manually constructed or future alternate solution path could otherwise reach
-the authority assessor. The rejection will remain until `CorridorSolution`
-stores and validates the new join identity. Thus the certificate is tested
-offline but does not yet enable a worker submission, global action, Wine run,
-or hit-count claim. The complete Linux suite passes 1,509 tests with five
-conditional skips, and the seven-page paper builds.
+the authority assessor. At this checkpoint the rejection remained until
+`CorridorSolution` stored and validated the new join identity. AUD-076 closes
+that successor integration; this entry by itself made no worker, Wine, or
+hit-count claim. The complete Linux suite passed 1,509 tests with five
+conditional skips, and the seven-page paper built.
+
+### AUD-076 — The callback clock certificate was not carried by the solved policy
+
+Status: **CONFIRMED ARTIFACT/INTEGRATION GAP; FIXED OFFLINE AND WIRED
+DEFAULT-FAIL-CLOSED, PHYSICAL EFFECT UNTESTED**
+
+AUD-075 produced the required clock join, but the corridor worker accepted no
+such input and `CorridorSolution` retained neither its immutable identity nor
+the live certificate. The global assessor therefore could only reject every
+callback-bearing projection. Clearing that rejection without changing the
+artifact would have allowed a policy computed from one bullet pool to be
+reported under a different projection or policy epoch.
+
+The generic corridor artifact now stores the join `VersionIdentity`, while a
+separate runtime handle stores the concrete certificate. The TH08 root hashes
+that identity alongside the actual composed bullet pool. Before solve, the
+runtime requires the projection identity, the same composed pool object, the
+exact bullet root `snapshot_frame - snapshot_lag`, the binary32 unit scale,
+the policy source, and the complete configured horizon to agree. Geometry
+authority is v3 and includes both callback-composition and join semantics. The
+independent action assessor then rechecks completeness, projection identity,
+policy clock, artifact
+version, and root digest before accepting a callback-bearing future.
+
+The controller performs this join only from the raw decoded 1,536-slot pool,
+not the older main-VM callback-12-only schedule. It requires an exact unit
+time-scale schedule and a zero-span bullet capture, passes the composed pool
+to the worker, and records only a compact identity digest, counts, and failure
+reason per decision. The 1,536-slot composition is deferred until the worker
+slot is free, no publication is pending, and submission is actually due; a
+non-submission decision records `corridor_submission_not_ready` without
+scanning the pool. Incomplete joins consume no worker slot. The production
+mechanism has no stage or spell branch and remains behind the existing
+default-off ordinary exact-authority lane.
+
+Integration exposed two further structural defects. First, importing the
+live composer from global infrastructure formed a semantic-package/live-
+controller cycle; the shared dependency is now a value-only top-level
+protocol, and the controller loads the concrete live implementation only at
+the use site. Second, a solved global callback join is rooted at the worker's
+older bullet snapshot and cannot certify a later local-prefix query over newly
+sensed bullets. Local prefix and delayed certificates therefore continue to
+reject such projections until they perform a fresh current-frame join. A
+regression proves that the global certificate cannot leak across this layer
+boundary.
+
+Import smoke and the complete Linux discovery pass 1,511 tests with five
+conditional skips. This proves that a callback-bearing projection can be
+submitted, solved, and granted action authority offline only under its exact
+certificate. It does not prove retained Stage-5 producer closure, a
+losing-to-viable global-policy change, deadline delivery under Wine, or any
+hit-count improvement. No Wine process was started.
+
+### AUD-077 — Callback join identity omitted the scale used to build velocity
+
+Status: **CONFIRMED AUTHORITY-IDENTITY BUG; FIXED BEFORE PHYSICAL USE**
+
+The callback primitives multiply their reconstructed velocity by
+`time_scale`, but the first callback-composition result and join version did
+not retain that input. The live controller happened to pass exactly 1.0, yet
+the public join API accepted any positive scale. An alternate caller could
+therefore compose at 0.5, submit under a complete unit-scale corridor
+schedule, and receive an otherwise valid projection/bullet/policy clock
+certificate for the wrong velocity.
+
+Composition and join semantics are now v2. The input is first rounded to the
+native binary32 representation, stored as `time_scale_bits` in both values,
+included in the join `VersionIdentity` and compact trace digest, and checked
+for equality between the composition and its join. The TH08 corridor runtime
+requires exact unit bits before solve; the independent action assessor repeats
+that check. A regression proves that identical projection and clocks at 0.5
+and 1.0 have different join identities and that the nonunit result cannot enter
+the unit-scale worker.
+
+The focused callback/global/runtime suite passes 61 tests. This repairs an
+offline authority hole and changes no physical result; the full 1,511-test
+checkpoint and no-Wine nonclaim remain unchanged.
 
 ## Offline Verification Record
 
-After the Linux native build and fixes above, the latest complete repository
-suite passed on this VPS: 1,487 tests run, 5 conditionally skipped, zero
-failures or errors. The Win32 planner build separately produced a PE32 i386 DLL with all
+After the fixes above, the latest complete repository suite passed on this
+VPS: 1,511 tests run, 5 conditionally skipped, zero failures or errors. The
+Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.
 

@@ -1,6 +1,6 @@
 # Touhou Solver Strategy Ledger
 
-Last updated: 2026-08-23.
+Last updated: 2026-08-25.
 
 This file records current action authority, not chronology. Evidence belongs
 in compact reports, run dossiers, and counterexamples.
@@ -479,6 +479,23 @@ captures the four health successors plus the phase timer and proves only a
 timeout with `elapsed + H < deadline` unreachable. Armed health and reachable
 timeouts continue to fail closed. Retained exact sets are unchanged; physical
 revalidation precedes Stage 5.
+
+The 2026-08-25 offline successor closes the next generic callback integration
+boundary without promoting L3. Retained child/timeline births and ordered
+callbacks 12/14 now reach a source-derived current-pool composer. A versioned
+certificate binds projection root, point-valued bullet snapshot, policy epoch,
+complete horizon, and the actual composed pool; global geometry v3 shares the
+21-type spawn lifecycle and callback schedule. `CorridorSolution` carries that
+join through solve and an independent action-authority check. The controller
+attempts it only under exact unit scale and zero bullet-capture span, and an
+expensive pool composition starts only when a submission is due and its worker
+slot is free; an incomplete join consumes no worker slot. A worker-root
+certificate cannot authorize a later local prefix over newly sensed bullets.
+Import smoke and
+1,511 Linux tests pass, but no retained-root viable-set improvement, deadline
+result, Wine action, or hit reduction exists. Therefore this remains offline/
+default-off infrastructure inside L3; the next gate is a same-root global
+policy change, not physical sampling.
 
 ### L4 — Continuous-position coarse-cell lower bound
 

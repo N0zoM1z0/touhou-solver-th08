@@ -10,8 +10,14 @@ point for a set-valued operand.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+import hashlib
+import json
 import math
 
+from th08_callback_join_contract import (
+    CURRENT_POOL_CALLBACK_COMPOSITION_SEMANTICS_VERSION,
+    CURRENT_POOL_CALLBACK_JOIN_SEMANTICS_VERSION,
+)
 from th08_future_birth_envelope import FutureTaggedBulletCallback
 from th08_future_hazard_projection import OrdinaryFutureHazardProjection
 from th08_live.models import Bullet, PackedBulletSnapshot
@@ -20,18 +26,41 @@ from th08_semantics.source_primitives import (
     apply_callback12,
     apply_callback14,
 )
+from th08_time_scale import (
+    canonical_time_scale_bits,
+    validate_time_scale_bits,
+)
 from touhou_control.pipeline_identity import VersionIdentity
 from touhou_control.trajectory import CollisionStateChange, VelocityChange
 
 
-CURRENT_POOL_CALLBACK_COMPOSITION_SEMANTICS_VERSION = (
-    "th08-current-pool-callback-composition-v1-source-callback12-14"
-)
-CURRENT_POOL_CALLBACK_JOIN_SEMANTICS_VERSION = (
-    "th08-current-pool-callback-join-v1-projection-bullet-policy-clocks"
-)
-
 BulletPoolSnapshot = tuple[Bullet, ...] | PackedBulletSnapshot
+
+
+def _record_sha256(record: dict[str, object]) -> str:
+    return hashlib.sha256(
+        json.dumps(
+            record,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        ).encode("ascii")
+    ).hexdigest()
+
+
+def _canonical_positive_time_scale(value: float) -> tuple[int, float]:
+    if not math.isfinite(value) or value <= 0.0:
+        raise ValueError("callback time scale must be finite and positive")
+    try:
+        bits = canonical_time_scale_bits(value)
+    except ValueError as error:
+        raise ValueError(
+            "callback time scale must fit finite binary32"
+        ) from error
+    stored = validate_time_scale_bits(bits, field="callback time scale")
+    if stored <= 0.0:
+        raise ValueError("callback time scale must round above zero")
+    return bits, stored
 
 
 @dataclass(frozen=True)
@@ -45,6 +74,7 @@ class CurrentPoolCallbackComposition:
     covered_through_frame: int
     callback_count: int
     affected_bullet_count: int
+    time_scale_bits: int
 
     def __post_init__(self) -> None:
         if self.complete != (self.reason is None):
@@ -55,6 +85,12 @@ class CurrentPoolCallbackComposition:
             raise ValueError("callback composition frames cannot be negative")
         if self.callback_count < 0 or self.affected_bullet_count < 0:
             raise ValueError("callback composition counts cannot be negative")
+        scale = validate_time_scale_bits(
+            self.time_scale_bits,
+            field="callback composition time scale",
+        )
+        if scale <= 0.0:
+            raise ValueError("callback composition time scale must be positive")
 
     @property
     def semantics_version(self) -> str:
@@ -73,6 +109,7 @@ class CurrentPoolProjectionCallbackJoin:
     policy_source_frame: int
     policy_horizon_frames: int
     required_bullet_horizon_frames: int
+    time_scale_bits: int
     complete: bool
     reason: str | None
     composition: CurrentPoolCallbackComposition | None
@@ -90,6 +127,12 @@ class CurrentPoolProjectionCallbackJoin:
             raise ValueError("callback join frames cannot be negative")
         if self.complete != (self.reason is None):
             raise ValueError("complete callback join must have no reason")
+        scale = validate_time_scale_bits(
+            self.time_scale_bits,
+            field="callback join time scale",
+        )
+        if scale <= 0.0:
+            raise ValueError("callback join time scale must be positive")
         if self.complete and (
             self.composition is None or not self.composition.complete
         ):
@@ -107,10 +150,55 @@ class CurrentPoolProjectionCallbackJoin:
                 raise ValueError("callback join composition horizon disagrees")
             if self.composition.bullets is not self.bullets:
                 raise ValueError("callback join bullets are not composed output")
+            if self.composition.time_scale_bits != self.time_scale_bits:
+                raise ValueError("callback join composition scale disagrees")
 
     @property
     def semantics_version(self) -> str:
         return CURRENT_POOL_CALLBACK_JOIN_SEMANTICS_VERSION
+
+    @property
+    def version(self) -> VersionIdentity:
+        projection_version_sha256 = _record_sha256(
+            self.projection_version.record()
+        )
+        return VersionIdentity.from_mapping(
+            self.semantics_version,
+            {
+                "affected_bullet_count": (
+                    self.composition.affected_bullet_count
+                    if self.composition is not None
+                    else None
+                ),
+                "bullet_root_frame": self.bullet_root_frame,
+                "callback_count": (
+                    self.composition.callback_count
+                    if self.composition is not None
+                    else None
+                ),
+                "complete": self.complete,
+                "composition_semantics": (
+                    self.composition.semantics_version
+                    if self.composition is not None
+                    else None
+                ),
+                "policy_horizon_frames": self.policy_horizon_frames,
+                "policy_source_frame": self.policy_source_frame,
+                "projection_digest": self.projection_digest,
+                "projection_root_frame": self.projection_root_frame,
+                "projection_version_sha256": projection_version_sha256,
+                "required_bullet_horizon_frames": (
+                    self.required_bullet_horizon_frames
+                ),
+                "time_scale_bits": self.time_scale_bits,
+            },
+        )
+
+    @property
+    def version_digest(self) -> str:
+        """Compact content address suitable for per-decision traces."""
+
+        return _record_sha256(self.version.record())
 
     def matches_projection(
         self,
@@ -125,6 +213,7 @@ class CurrentPoolProjectionCallbackJoin:
     def record(self) -> dict[str, object]:
         return {
             "semantics_version": self.semantics_version,
+            "version": self.version.record(),
             "composition_semantics_version": (
                 self.composition.semantics_version
                 if self.composition is not None
@@ -139,6 +228,7 @@ class CurrentPoolProjectionCallbackJoin:
             "required_bullet_horizon_frames": (
                 self.required_bullet_horizon_frames
             ),
+            "time_scale_bits": self.time_scale_bits,
             "complete": self.complete,
             "reason": self.reason,
             "callback_count": (
@@ -162,6 +252,7 @@ def _result(
     source_offset: int,
     horizon_frames: int,
     callback_count: int,
+    time_scale_bits: int,
     affected_bullet_count: int = 0,
 ) -> CurrentPoolCallbackComposition:
     return CurrentPoolCallbackComposition(
@@ -172,6 +263,7 @@ def _result(
         covered_through_frame=horizon_frames,
         callback_count=callback_count,
         affected_bullet_count=affected_bullet_count,
+        time_scale_bits=time_scale_bits,
     )
 
 
@@ -231,8 +323,7 @@ def compose_current_pool_callbacks(
         raise ValueError("callback composition frames cannot be negative")
     if event_frame_uncertainty < 0:
         raise ValueError("callback event-frame uncertainty cannot be negative")
-    if not math.isfinite(time_scale) or time_scale <= 0.0:
-        raise ValueError("callback time scale must be finite and positive")
+    time_scale_bits, time_scale = _canonical_positive_time_scale(time_scale)
     if any(
         later.frame < earlier.frame
         for earlier, later in zip(callbacks, callbacks[1:])
@@ -253,6 +344,7 @@ def compose_current_pool_callbacks(
             source_offset=source_offset,
             horizon_frames=horizon_frames,
             callback_count=0,
+            time_scale_bits=time_scale_bits,
         )
     if event_frame_uncertainty:
         return _result(
@@ -262,6 +354,7 @@ def compose_current_pool_callbacks(
             source_offset=source_offset,
             horizon_frames=horizon_frames,
             callback_count=len(relevant),
+            time_scale_bits=time_scale_bits,
         )
 
     materialized = tuple(bullets)
@@ -276,6 +369,7 @@ def compose_current_pool_callbacks(
                 source_offset=source_offset,
                 horizon_frames=horizon_frames,
                 callback_count=len(relevant),
+                time_scale_bits=time_scale_bits,
             )
         tag_flags.append(flags)
 
@@ -295,6 +389,7 @@ def compose_current_pool_callbacks(
             source_offset=source_offset,
             horizon_frames=horizon_frames,
             callback_count=len(relevant),
+            time_scale_bits=time_scale_bits,
         )
 
     resolved: list[tuple[FutureTaggedBulletCallback, float | None, float]] = []
@@ -308,6 +403,7 @@ def compose_current_pool_callbacks(
                 source_offset=source_offset,
                 horizon_frames=horizon_frames,
                 callback_count=len(relevant),
+                time_scale_bits=time_scale_bits,
             )
         angle: float | None = None
         if callback.callback_index == 12:
@@ -320,6 +416,7 @@ def compose_current_pool_callbacks(
                     source_offset=source_offset,
                     horizon_frames=horizon_frames,
                     callback_count=len(relevant),
+                    time_scale_bits=time_scale_bits,
                 )
         resolved.append((callback, angle, speed))
 
@@ -345,6 +442,7 @@ def compose_current_pool_callbacks(
                 source_offset=source_offset,
                 horizon_frames=horizon_frames,
                 callback_count=len(relevant),
+                time_scale_bits=time_scale_bits,
             )
         if bullet.velocity_changes or bullet.collision_state_changes:
             return _result(
@@ -357,6 +455,7 @@ def compose_current_pool_callbacks(
                 source_offset=source_offset,
                 horizon_frames=horizon_frames,
                 callback_count=len(relevant),
+                time_scale_bits=time_scale_bits,
             )
         if (
             bullet.speed is None
@@ -378,6 +477,7 @@ def compose_current_pool_callbacks(
                 source_offset=source_offset,
                 horizon_frames=horizon_frames,
                 callback_count=len(relevant),
+                time_scale_bits=time_scale_bits,
             )
 
         state = Callback12State(
@@ -454,6 +554,7 @@ def compose_current_pool_callbacks(
         source_offset=source_offset,
         horizon_frames=horizon_frames,
         callback_count=len(relevant),
+        time_scale_bits=time_scale_bits,
         affected_bullet_count=affected_bullet_count,
     )
 
@@ -477,6 +578,7 @@ def join_projection_callbacks_to_current_pool(
         bullet_frame_uncertainty,
     ) < 0:
         raise ValueError("callback join frames cannot be negative")
+    time_scale_bits, time_scale = _canonical_positive_time_scale(time_scale)
     policy_horizon_frame = policy_source_frame + policy_horizon_frames
     required_bullet_horizon = max(
         0,
@@ -493,6 +595,7 @@ def join_projection_callbacks_to_current_pool(
             policy_source_frame=policy_source_frame,
             policy_horizon_frames=policy_horizon_frames,
             required_bullet_horizon_frames=required_bullet_horizon,
+            time_scale_bits=time_scale_bits,
             complete=False,
             reason=reason,
             composition=None,
@@ -526,6 +629,7 @@ def join_projection_callbacks_to_current_pool(
         policy_source_frame=policy_source_frame,
         policy_horizon_frames=policy_horizon_frames,
         required_bullet_horizon_frames=required_bullet_horizon,
+        time_scale_bits=time_scale_bits,
         complete=composition.complete,
         reason=composition.reason,
         composition=composition,

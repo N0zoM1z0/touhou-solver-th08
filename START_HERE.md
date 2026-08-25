@@ -28,36 +28,30 @@ ordered implementation plan are in
 ## Checkpoint
 
 - Branch: `codex/th08-lunatic-source-audit`.
-- **Current offline source-stateful checkpoint:** the solver repo now contains
-  a replayable complete-stage IR/runtime/generator, closed-loop hard-no-Bomb
-  campaign, source/C lockstep, geometry differential, and failure shrinker.
-  The independent reduced C is tracked under `native/th08_source_oracle/`;
-  the reference repo remains unmodified and was current at `57ee34f` after
-  `git pull --ff-only`. Profiles span 480 to 12,000 frames. Seed `0xce0132`
-  completed the extreme 12,000-frame runtime, saturated all 1,536 bullet
-  slots, and exercised 156,186 transforms. This is a source-closed stress
-  result after resolved producer events, not arbitrary ECL or route-hit
-  authority. Versioned stage schema v3 now carries all 21 native bullet types
-  and generic state-2/3/4 spawn lifecycle flags through long histories. A new
-  3,600-frame gate activated 18,665 lifecycles and matched 1,412,926 reached
-  lifecycle samples exactly against the tracked C oracle while making 120
-  local-planner calls. The live/local projector also replaced its fixed
-  state-2 shortcut: type is recovered from the copied normal ANM script in the
-  existing pool slab, and every type/state-2/3/4 path matches C without another
-  sensing call. The post-fix long gate had the same synthetic outcome, so no
-  hit gain is claimed. The pure generic `0x5A`--`0x5E` enemy-constructor
-  transition now also matches a separate C transcription across parent,
-  template, synchronous-bootstrap, pool, and post-link branches. It is not yet
-  wired into retained child VM execution. Lifecycle/callback/transform
-  composition still fails closed; child/timeline births and callback 14 are
-  next. The retained v1
-  3,600-frame compatibility artifact
-  `artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json` passes
-  complete C lockstep, 180 NumPy/native geometry comparisons, 120 real local
-  planner calls, hard no-Bomb, and exact RNG/collision membership. Routine
-  successful raw reports remain temporary; only compact metrics/hashes or
-  minimized failures are tracked. Read
-  `notes/review/TH08_SOURCE_STATEFUL_STAGE_FUZZER.md` before extending it.
+- **Current offline source-stateful checkpoint:** the replayable complete-stage
+  laboratory still covers 480--12,000-frame programs, finite 1,536-bullet and
+  480-enemy pools, hard no-Bomb campaigns, source/C lockstep, geometry
+  differential, and shrinking. The generic retained-root executor now also
+  instantiates timeline and ECL `0x5A`--`0x5E` child births through synchronous
+  bootstrap and ascending native pool order. Direct fires and callbacks 12/14
+  share one ordered stream; callback 14 has an independent C transcription.
+  Existing live-pool bullets receive exact bounded callback velocity/collision
+  schedules only under a point-aligned three-clock certificate. Global
+  lowering now shares the 21-type state-2/3/4 spawn lifecycle instead of
+  treating preactivation bullets as ordinary lethal motion. `CorridorSolution`
+  carries the callback-join version and runtime handle, global geometry v3
+  binds it, and the controller can submit the composed pool under exact unit
+  scale. Composition is deferred until a global worker slot is due and free,
+  so non-submission decisions do not scan all 1,536 slots. A worker-root
+  certificate is deliberately not reused by later local prefixes over newly
+  sensed bullets. Import smoke and all 1,511 Linux tests
+  pass with five conditional skips. This is offline integration, not arbitrary
+  ECL, complete Stage-5 producer closure, a same-root policy win, or physical
+  hit authority. Transform composition and the first remaining reached source
+  boundary stay `UNKNOWN`. The retained compact 3,600-frame compatibility
+  artifact remains
+  `artifacts/benchmarks/th08_source_stage_fuzzer_gate_20260825.json`; routine
+  successful raw reports are not retained.
 - **Current Lunatic physical checkpoint:**
   `lunatic_route2_fullrun_unattended_20260824_051944` completed Sakuya/Remilia
   Route 2 through Final-B at frame 230561 with 60 native hit edges, stage
@@ -715,10 +709,12 @@ do not run another route merely to sample a different RNG root:
 1. preserve the completed generic 21-type ANM lifecycle and source-order
    binary32 geometry differentials; do not replace them with a global age or
    fixed numeric guard;
-2. lower child VM/timeline births and callback 14 incrementally, retaining an
-   explicit `UNKNOWN` at every unsupported reached dependency;
-3. join a complete action-conditioned future to the already-closed Stage-5
-   scale/root/geometry/policy version and submit global work in offline shadow;
+2. preserve the completed child/timeline birth, callback-14, current-pool
+   composition, and projection/bullet/policy clock join; never reuse a worker-
+   root join for a later local bullet snapshot;
+3. run the retained Stage-5 future through the global worker offline and close
+   only the first reached producer/transform boundary that prevents useful
+   coverage or makes the conservative future destroy every viable state;
 4. require a same-capsule losing-to-viable global-policy change, zero oracle
    disagreement, and bounded latency before one focused Practice gate. Run a
    full route only after that integrated gain.

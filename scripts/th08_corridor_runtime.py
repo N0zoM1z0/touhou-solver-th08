@@ -25,6 +25,9 @@ from th08_global_authority import (
     RuntimeEclVersion,
     build_th08_global_authority_version,
 )
+from th08_callback_join_contract import (
+    CurrentPoolProjectionCallbackJoinContract,
+)
 from th08_corridor_audit import submit_corridor_audit
 from th08_time_scale import (
     TH08_UNIT_TIME_SCALE_BITS,
@@ -138,6 +141,9 @@ def solve_corridor(
     enemy_bodies: tuple[PointerHazard, ...],
     future_aabb_trajectories: tuple[AabbTrajectoryHazard, ...] = (),
     future_hazard_projection: OrdinaryFutureHazardProjection | None = None,
+    current_pool_callback_join: (
+        CurrentPoolProjectionCallbackJoinContract | None
+    ) = None,
     runtime_ecl_version: RuntimeEclVersion | None = None,
     snapshot_lag: int,
     control_delay_candidates: tuple[int, ...],
@@ -160,6 +166,47 @@ def solve_corridor(
         and not 1 <= native_viability_worker_limit <= 16
     ):
         raise ValueError("native viability worker limit must be 1..16")
+    if current_pool_callback_join is not None:
+        if not isinstance(
+            current_pool_callback_join,
+            CurrentPoolProjectionCallbackJoinContract,
+        ):
+            raise ValueError("callback join does not satisfy its contract")
+        if future_hazard_projection is None:
+            raise ValueError(
+                "callback join requires a future-hazard projection"
+            )
+        if not current_pool_callback_join.complete:
+            raise ValueError("callback join must be complete")
+        if (
+            current_pool_callback_join.time_scale_bits
+            != TH08_UNIT_TIME_SCALE_BITS
+        ):
+            raise ValueError("callback join must use exact unit time scale")
+        if not current_pool_callback_join.matches_projection(
+            future_hazard_projection
+        ):
+            raise ValueError("callback join projection identity disagrees")
+        if current_pool_callback_join.bullets is not bullets:
+            raise ValueError("corridor bullets are not callback-join output")
+        if current_pool_callback_join.policy_source_frame != source_frame:
+            raise ValueError("callback join policy source disagrees")
+        if (
+            current_pool_callback_join.policy_horizon_frames
+            != corridor_config.horizon_frames
+        ):
+            raise ValueError("callback join policy horizon disagrees")
+        expected_bullet_root = snapshot_frame - max(0, snapshot_lag)
+        if current_pool_callback_join.bullet_root_frame != expected_bullet_root:
+            raise ValueError("callback join bullet root disagrees")
+    if (
+        future_hazard_projection is not None
+        and future_hazard_projection.tagged_callbacks
+        and current_pool_callback_join is None
+    ):
+        raise ValueError(
+            "future callbacks require a current-pool callback join"
+        )
     scale_horizon = (
         max(0, snapshot_lag)
         + max(0, forecast_lead_frames)
@@ -200,6 +247,11 @@ def solve_corridor(
         runtime_ecl_version=runtime_ecl_version,
         time_scale_schedule=time_scale_schedule,
         future_hazard_projection=future_hazard_projection,
+        current_pool_callback_join_version=(
+            current_pool_callback_join.version
+            if current_pool_callback_join is not None
+            else None
+        ),
         corridor_config=corridor_config,
     )
     background_priority_lowered = (
@@ -331,6 +383,11 @@ def solve_corridor(
                 if future_hazard_projection is not None
                 else None
             ),
+            current_pool_callback_join_version=(
+                current_pool_callback_join.version
+                if current_pool_callback_join is not None
+                else None
+            ),
             authority_version=authority_version,
         ),
         publication=CorridorPublication(
@@ -341,6 +398,7 @@ def solve_corridor(
         handles=CorridorRuntimeHandles(
             audit_future=audit.future,
             future_hazard_projection=future_hazard_projection,
+            current_pool_callback_join=current_pool_callback_join,
         ),
     )
 

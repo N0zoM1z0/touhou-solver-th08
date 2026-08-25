@@ -1,6 +1,6 @@
 # TH08 Sakuya/Remilia Lunatic NMNB Research Taskbook
 
-Last updated: 2026-08-23.
+Last updated: 2026-08-25.
 
 > Active scope override (2026-08-23): the user restored Lunatic Sakuya/Remilia
 > Route-2 Final-B NMNB as the current target and resumed implementation on the
@@ -361,6 +361,22 @@ or horizon-reachable successor transitions remain fail closed. Re-run Stage
 4A and require effective directional pressure-window authority before Stage
 5.
 
+The current offline branch has now crossed the generic callback/global
+integration boundary that this workstream previously lacked. Child/timeline
+births, callback 14, exact bounded composition against the sensed pool, the
+21-type global spawn lifecycle, and a projection/bullet/policy clock
+certificate are connected through `CorridorSolution`. The controller only
+submits a callback-bearing future under exact unit scale and a zero-span pool
+capture, and performs the pool composition only after a due/free submission
+slot exists. The join is rooted at that worker snapshot and is deliberately not
+reused by later local-prefix certificates. Complete Linux discovery passes
+1,511 tests with five skips. This is not progress by the taskbook's outcome
+rule yet: no same-root losing kernel became viable and no Wine action was
+issued. The smallest next experiment is a retained Stage-5 offline global
+solve; close only its first reached producer/transform or overconservative-
+geometry blocker, and pay a physical gate only after a useful policy arrives
+within deadline.
+
 ### WS-D — Combat, Focus, and Power
 
 This is the highest-priority experiment after cleanup.
@@ -662,9 +678,12 @@ it.
    `down_left/up_left/down`; 33/33 focused Linux and Windows tests pass. The
    rotated Stage-4A trace must show the guard blocking unsafe scans and no
    shadow-only widening.
-7. Evaluate remaining hostile-birth uncertainty and only then local micro
-   ranking after lease authority is physically effective; repeat a winner
-   before a full route.
+7. Preserve the now-connected generic child/timeline/callback current-pool
+   join and run one retained Stage-5 global solve offline. Require a same-root
+   losing-to-viable change and bounded solve/publication cost. If it fails,
+   fix only the first explicit producer/transform or conservative-geometry
+   boundary. Evaluate local micro ranking only after this exact global future
+   is useful; repeat a physical winner before a full route.
 
 Optional warm-service work and learned/MCTS candidate ordering stay behind
 this backlog unless branch latency becomes the measured bottleneck.

@@ -21,6 +21,11 @@ from th08_collision_versions import (
 )
 from th08_future_hazard_projection import OrdinaryFutureHazardProjection
 from th08_laser_model import TH08_LASER_SCALE_SEMANTICS_VERSION
+from th08_callback_join_contract import (
+    CURRENT_POOL_CALLBACK_COMPOSITION_SEMANTICS_VERSION,
+    CURRENT_POOL_CALLBACK_JOIN_SEMANTICS_VERSION,
+    CurrentPoolProjectionCallbackJoinContract,
+)
 from th08_movement_model import (
     TH08_PLAYER_CENTER_BOUNDS_SEMANTICS_VERSION,
     TH08_ROUTE2_MOVEMENT_SCALE_SEMANTICS_VERSION,
@@ -39,7 +44,7 @@ from touhou_control.policy_authority import PolicyAuthorityVersion
 
 TH08_GLOBAL_AUTHORITY_ROOT_SCHEMA = "th08-global-policy-root-v1"
 TH08_GLOBAL_GEOMETRY_AUTHORITY_SEMANTICS_VERSION = (
-    "th08-global-geometry-v2-native-bullet-lifecycle"
+    "th08-global-geometry-v3-current-pool-callback-join"
 )
 TH08_GLOBAL_POLICY_AUTHORITY_SEMANTICS_VERSION = (
     "th08-global-corridor-policy-v1-robust-delay-unit-scale"
@@ -55,6 +60,8 @@ class _GlobalSolution(Protocol):
     future_hazard_version: VersionIdentity | None
     future_hazard_coverage: HazardCoverageAssessment | None
     future_hazard_projection: object | None
+    current_pool_callback_join_version: VersionIdentity | None
+    current_pool_callback_join: object | None
     authority_version: PolicyAuthorityVersion | None
 
 
@@ -177,6 +184,10 @@ def th08_global_geometry_identity() -> VersionIdentity:
         TH08_GLOBAL_GEOMETRY_AUTHORITY_SEMANTICS_VERSION,
         {
             "bullet": TH08_CORRIDOR_BULLET_SEMANTICS_VERSION,
+            "callback_composition": (
+                CURRENT_POOL_CALLBACK_COMPOSITION_SEMANTICS_VERSION
+            ),
+            "callback_join": CURRENT_POOL_CALLBACK_JOIN_SEMANTICS_VERSION,
             "laser": TH08_LASER_SCALE_SEMANTICS_VERSION,
             "live_local": LIVE_LOCAL_COLLISION_SEMANTICS_VERSION,
             "movement": TH08_ROUTE2_MOVEMENT_SCALE_SEMANTICS_VERSION,
@@ -227,6 +238,7 @@ def th08_global_root_identity(
     active_action: str,
     required_gate_lane: str | None,
     context_key: tuple[int, int, int | None] | None,
+    current_pool_callback_join_version: VersionIdentity | None = None,
 ) -> VersionIdentity:
     payload = {
         "schema": TH08_GLOBAL_AUTHORITY_ROOT_SCHEMA,
@@ -243,6 +255,9 @@ def th08_global_root_identity(
         "active_action": active_action,
         "required_gate_lane": required_gate_lane,
         "context_key": context_key,
+        "current_pool_callback_join_version": (
+            current_pool_callback_join_version
+        ),
     }
     return VersionIdentity.from_mapping(
         TH08_GLOBAL_AUTHORITY_ROOT_SCHEMA,
@@ -259,6 +274,11 @@ def th08_global_root_identity(
             "digest": _payload_digest(payload),
             "snapshot_frame": snapshot_frame,
             "source_frame": source_frame,
+            "current_pool_callback_join": (
+                _payload_digest(current_pool_callback_join_version)
+                if current_pool_callback_join_version is not None
+                else None
+            ),
         },
     )
 
@@ -282,6 +302,7 @@ def build_th08_global_authority_version(
     runtime_ecl_version: RuntimeEclVersion | None,
     time_scale_schedule: Th08TimeScaleSchedule,
     future_hazard_projection: OrdinaryFutureHazardProjection | None,
+    current_pool_callback_join_version: VersionIdentity | None = None,
     corridor_config: CorridorConfig,
 ) -> PolicyAuthorityVersion:
     return PolicyAuthorityVersion(
@@ -300,6 +321,9 @@ def build_th08_global_authority_version(
             active_action=active_action,
             required_gate_lane=required_gate_lane,
             context_key=context_key,
+            current_pool_callback_join_version=(
+                current_pool_callback_join_version
+            ),
         ),
         runtime_content=(
             runtime_ecl_version_identity(runtime_ecl_version)
@@ -483,13 +507,56 @@ def assess_th08_global_action_authority(
 
     projection = solution.future_hazard_projection
     coverage = solution.future_hazard_coverage
+    callback_join = solution.current_pool_callback_join
+    callback_join_version = solution.current_pool_callback_join_version
     if not isinstance(projection, OrdinaryFutureHazardProjection):
         reasons.append("future_hazard_projection_unavailable")
     else:
         if not projection.source_closure_complete:
             reasons.append("future_hazard_source_incomplete")
         if not projection.current_pool_callback_composition_complete:
-            reasons.append("future_hazard_current_pool_callbacks_uncomposed")
+            if not isinstance(
+                callback_join,
+                CurrentPoolProjectionCallbackJoinContract,
+            ):
+                reasons.append(
+                    "future_hazard_current_pool_callback_join_unavailable"
+                )
+            else:
+                if not callback_join.complete:
+                    reasons.append(
+                        "future_hazard_current_pool_callback_join_incomplete"
+                    )
+                if not callback_join.matches_projection(projection):
+                    reasons.append(
+                        "future_hazard_current_pool_callback_join_mismatch"
+                    )
+                if callback_join.policy_source_frame != solution.source_frame:
+                    reasons.append(
+                        "future_hazard_current_pool_callback_policy_root_mismatch"
+                    )
+                if (
+                    callback_join.policy_horizon_frames
+                    != corridor_config.horizon_frames
+                ):
+                    reasons.append(
+                        "future_hazard_current_pool_callback_horizon_mismatch"
+                    )
+                if callback_join.time_scale_bits != TH08_UNIT_TIME_SCALE_BITS:
+                    reasons.append(
+                        "future_hazard_current_pool_callback_scale_mismatch"
+                    )
+                if callback_join_version != callback_join.version:
+                    reasons.append(
+                        "future_hazard_current_pool_callback_version_mismatch"
+                    )
+                stored_join_digest = root_components.get(
+                    "current_pool_callback_join"
+                )
+                if stored_join_digest != _payload_digest(callback_join.version):
+                    reasons.append(
+                        "future_hazard_current_pool_callback_root_mismatch"
+                    )
         if version.future_hazard != projection.version:
             reasons.append("future_hazard_authority_version_mismatch")
         if solution.future_hazard_version != projection.version:
