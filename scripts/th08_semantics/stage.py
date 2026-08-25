@@ -646,9 +646,10 @@ class RuntimeLaser:
 @dataclass(frozen=True)
 class StageStep:
     frame: int
-    births_attempted: int
+    births_requested: int
+    birth_allocation_calls: int
     births_allocated: int
-    births_dropped: int
+    births_suppressed_by_pool: int
     callback_changes: int
     transform_activations: int
     laser_spawns: int
@@ -661,9 +662,10 @@ class StageStep:
 @dataclass
 class StageMetrics:
     frames: int = 0
-    births_attempted: int = 0
+    births_requested: int = 0
+    birth_allocation_calls: int = 0
     births_allocated: int = 0
-    births_dropped: int = 0
+    births_suppressed_by_pool: int = 0
     callback_changes: int = 0
     transform_activations: int = 0
     laser_spawns: int = 0
@@ -681,6 +683,7 @@ PatternSampler = Callable[
     [SourcePattern, int, int, Th08Rng],
     SourcePatternSample,
 ]
+Callback12Applier = Callable[..., tuple[Callback12State, bool]]
 
 
 def _python_pattern_sampler(
@@ -705,6 +708,7 @@ class StageRuntime:
         program: StageProgram,
         *,
         pattern_sampler: PatternSampler = _python_pattern_sampler,
+        callback12_applier: Callback12Applier = apply_callback12,
     ) -> None:
         if not program.source_closed:
             raise ValueError(
@@ -712,6 +716,7 @@ class StageRuntime:
             )
         self.program = program
         self.pattern_sampler = pattern_sampler
+        self.callback12_applier = callback12_applier
         self.rng = Th08Rng(program.gameplay_rng_seed)
         self.frame = 0
         self.bullets: list[RuntimeBullet | None] = [None] * BULLET_POOL_SIZE
@@ -798,25 +803,25 @@ class StageRuntime:
         *,
         player_x: float,
         player_y: float,
-    ) -> tuple[int, int, int]:
+    ) -> tuple[int, int, int, int]:
         origin_x, origin_y, pattern = emitter.resolved_descriptor(
             self.frame,
             player_x=player_x,
             player_y=player_y,
         )
-        attempted = 0
+        requested = pattern.count1 * pattern.count2
+        allocation_calls = 0
         allocated = 0
         activations = 0
         for ring_index in range(pattern.count2):
             for bullet_index in range(pattern.count1):
-                attempted += 1
+                allocation_calls += 1
                 slot = self._next_bullet_slot()
                 if slot is None:
                     # FUN_0042F5F0 searches the pool before any random-mode
                     # operands are evaluated. Pool exhaustion therefore must
                     # not consume gameplay RNG for the rejected sample.
-                    remaining = pattern.count1 * pattern.count2 - attempted
-                    return attempted + remaining, allocated, activations
+                    return requested, allocation_calls, allocated, activations
                 sample = self.pattern_sampler(
                     pattern,
                     bullet_index,
@@ -841,7 +846,7 @@ class StageRuntime:
                 self.bullet_cursor = (slot + 1) % BULLET_POOL_SIZE
                 allocated += 1
                 activations += self._activate_next_transform(bullet)
-        return attempted, allocated, activations
+        return requested, allocation_calls, allocated, activations
 
     def _apply_callbacks(self) -> int:
         changed = 0
@@ -849,7 +854,7 @@ class StageRuntime:
             for bullet in self.bullets:
                 if bullet is None:
                     continue
-                state, applied = apply_callback12(
+                state, applied = self.callback12_applier(
                     Callback12State(
                         phase_state=bullet.phase_state,
                         collision_aux=bullet.collision_aux,
@@ -1146,20 +1151,25 @@ class StageRuntime:
             self.metrics.clear_events += 1
 
         callback_changes = self._apply_callbacks()
-        attempted = 0
+        requested = 0
+        allocation_calls = 0
         allocated = 0
         activations = 0
         for emitter in self._emitters_by_frame:
             if not emitter.due(self.frame):
                 continue
-            emitter_attempted, emitter_allocated, emitter_activations = (
-                self._spawn_emitter(
-                    emitter,
-                    player_x=player_x,
-                    player_y=player_y,
-                )
+            (
+                emitter_requested,
+                emitter_allocation_calls,
+                emitter_allocated,
+                emitter_activations,
+            ) = self._spawn_emitter(
+                emitter,
+                player_x=player_x,
+                player_y=player_y,
             )
-            attempted += emitter_attempted
+            requested += emitter_requested
+            allocation_calls += emitter_allocation_calls
             allocated += emitter_allocated
             activations += emitter_activations
 
@@ -1179,12 +1189,13 @@ class StageRuntime:
         )
         active_bullets = sum(bullet is not None for bullet in self.bullets)
         active_lasers = sum(laser is not None for laser in self.lasers)
-        dropped = attempted - allocated
+        suppressed = requested - allocated
         result = StageStep(
             frame=self.frame,
-            births_attempted=attempted,
+            births_requested=requested,
+            birth_allocation_calls=allocation_calls,
             births_allocated=allocated,
-            births_dropped=dropped,
+            births_suppressed_by_pool=suppressed,
             callback_changes=callback_changes,
             transform_activations=activations,
             laser_spawns=laser_spawns,
@@ -1194,9 +1205,10 @@ class StageRuntime:
             active_lasers=active_lasers,
         )
         self.metrics.frames += 1
-        self.metrics.births_attempted += attempted
+        self.metrics.births_requested += requested
+        self.metrics.birth_allocation_calls += allocation_calls
         self.metrics.births_allocated += allocated
-        self.metrics.births_dropped += dropped
+        self.metrics.births_suppressed_by_pool += suppressed
         self.metrics.callback_changes += callback_changes
         self.metrics.transform_activations += activations
         self.metrics.laser_spawns += laser_spawns

@@ -15,6 +15,10 @@ from th08_semantics.stage import (
     StageRuntime,
 )
 from th08_semantics.stage_generation import generate_stage_program
+from th08_semantics.stage_differential import (
+    compare_stage_with_c_source_oracle,
+)
+from th08_semantics.stage_shrink import shrink_stage_program
 
 
 def _emitter(
@@ -125,7 +129,11 @@ class SourceStatefulStageTests(unittest.TestCase):
         # Mode 8 consumes two U32 / four U16 values per accepted bullet.
         self.assertEqual(runtime.rng.calls, BULLET_POOL_SIZE * 4)
         self.assertEqual(step.births_allocated, BULLET_POOL_SIZE)
-        self.assertEqual(step.births_dropped, 64)
+        self.assertEqual(step.births_suppressed_by_pool, 64)
+        self.assertEqual(
+            step.birth_allocation_calls,
+            BULLET_POOL_SIZE + 1,
+        )
 
     def test_generated_stage_replay_is_canonical_and_seeded(self) -> None:
         first = generate_stage_program(seed=0xCE0132, profile="quick")
@@ -156,13 +164,26 @@ class SourceStatefulStageTests(unittest.TestCase):
 
         self.assertEqual(first.frame, program.frame_count)
         self.assertEqual(first.state_digest(), second.state_digest())
-        self.assertGreater(first.metrics.births_attempted, 4000)
+        self.assertGreater(first.metrics.births_requested, 4000)
         self.assertGreater(first.metrics.max_active_bullets, 1200)
         self.assertGreater(first.metrics.callback_changes, 1000)
         self.assertGreater(first.metrics.transform_activations, 500)
         self.assertGreater(first.metrics.laser_spawns, 0)
         self.assertEqual(first.metrics.clear_events, len(program.phases))
         self.assertGreater(first.metrics.raw_bullet_collisions, 0)
+
+    def test_complete_history_matches_tracked_c_spawn_and_callback_oracle(
+        self,
+    ) -> None:
+        result = compare_stage_with_c_source_oracle(
+            generate_stage_program(seed=0xCE0132, profile="quick")
+        )
+
+        self.assertTrue(result.passed, result.first_mismatch)
+        self.assertEqual(result.frames_compared, 480)
+        self.assertTrue(result.final_rng_state_equal)
+        self.assertTrue(result.final_rng_calls_equal)
+        self.assertLess(result.maximum_position_error, 1.0e-4)
 
     def test_runtime_refuses_unknown_source_semantics(self) -> None:
         program = generate_stage_program(seed=9, profile="quick")
@@ -176,6 +197,33 @@ class SourceStatefulStageTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "UNKNOWN"):
             StageRuntime(unknown)
+
+    def test_stage_shrinker_removes_unrelated_complete_history(self) -> None:
+        program = generate_stage_program(seed=0xDDF00D, profile="quick")
+        witness = program.phases[2].emitters[1].emitter_id
+
+        def fails(candidate: StageProgram) -> bool:
+            return any(
+                emitter.emitter_id == witness
+                for phase in candidate.phases
+                for emitter in phase.emitters
+            )
+
+        reduced, attempts = shrink_stage_program(
+            program,
+            fails=fails,
+            maximum_attempts=256,
+        )
+
+        self.assertGreater(attempts, 0)
+        self.assertTrue(fails(reduced))
+        self.assertLess(
+            sum(len(phase.emitters) for phase in reduced.phases),
+            sum(len(phase.emitters) for phase in program.phases),
+        )
+        # The reducer never breaks complete-stage or source-closure contracts.
+        self.assertEqual(reduced.frame_count, program.frame_count)
+        self.assertTrue(reduced.source_closed)
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ from th08_semantics.stage_generation import (
     STAGE_PROFILES,
     generate_stage_program,
 )
+from th08_semantics.stage_shrink import shrink_stage_program
 
 __all__ = [
     "DIFFICULTIES",
@@ -33,4 +34,5 @@ __all__ = [
     "generate_stage_program",
     "run_stage",
     "shrink_case",
+    "shrink_stage_program",
 ]
