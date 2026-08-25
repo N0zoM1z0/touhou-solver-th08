@@ -581,6 +581,16 @@ Set-valued operands, uncertain frame alignment, transforms, and conflicting
 existing schedules fail closed. Live authority remains disabled until the
 controller supplies and validates the temporal join rather than assuming it.
 
+Reviewing that join exposed an independent global-geometry defect: the
+corridor adapter omitted native bullet state, state timer, and template type,
+although the local projector already used all three. Global policies therefore
+saw states 2/3/4 as immediately lethal ordinary motion and composed callbacks
+without the spawn divisor. The global adapter now constructs a sparse shared
+lifecycle/callback trajectory with type-selected activation, the terminal
+divided-plus-full update, and the auxiliary collision gate. Exhaustive type/
+state cases plus 256 seeded transition histories agree with the C-locked local
+recurrence. Geometry identity v2 invalidates the old lifecycle-free policies.
+
 The same lifecycle is now part of the versioned complete-stage IR/runtime,
 not only a bounded envelope helper. A 3,600-frame stateful gate exercised all
 21 types, all three spawn-state flags, finite-pool saturation, delayed sensing,

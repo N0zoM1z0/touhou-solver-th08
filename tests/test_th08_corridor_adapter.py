@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import math
+import random
 import unittest
 from dataclasses import replace
 
 import numpy as np
 
+from th08_bullet_template_contract import BULLET_TEMPLATE_PROFILES
 from th08_corridor_adapter import (
     TH08_CORRIDOR_CELL_RADIUS,
     TH08_CORRIDOR_CONFIG,
@@ -20,6 +22,7 @@ from th08_corridor_adapter import (
     lower_lasers_packed,
     lower_th08_corridor_hazards,
 )
+from th08_live.local_hazards import _build_bullet_frames
 from th08_live_dodge_agent import Bullet, EnemyBody, Laser
 from th08_laser_model import LaserPhase, spawn_laser_state
 from touhou_control.corridor import AabbHazard, AabbTrajectoryHazard
@@ -204,6 +207,268 @@ class Th08CorridorAdapterTests(unittest.TestCase):
             ),
             (),
         )
+
+    def test_spawn_lifecycle_is_not_lowered_as_ordinary_motion(self) -> None:
+        terminal_age = BULLET_TEMPLATE_PROFILES[0].state2_terminal_age
+        bullet = Bullet(
+            0.0,
+            0.0,
+            2.0,
+            0.0,
+            1.0,
+            1.0,
+            native_state=2,
+            native_state_timer_elapsed=0,
+            bullet_type=0,
+        )
+        self.assertEqual(lower_bullets((bullet,), snapshot_lag=0), ())
+        trajectory = lower_bullet_trajectories(
+            (bullet,),
+            snapshot_lag=0,
+            horizon_frames=terminal_age + 1,
+        )[0]
+        self.assertIsNone(trajectory.sample(terminal_age - 1))
+        terminal = trajectory.sample(terminal_age)
+        self.assertIsNotNone(terminal)
+        assert terminal is not None
+        self.assertAlmostEqual(terminal.x, terminal_age + 2.0)
+        after = trajectory.sample(terminal_age + 1)
+        self.assertIsNotNone(after)
+        assert after is not None
+        self.assertAlmostEqual(after.x, terminal_age + 4.0)
+
+    def test_all_spawn_lifecycle_classes_contain_local_source_recurrence(
+        self,
+    ) -> None:
+        for bullet_type, profile in enumerate(BULLET_TEMPLATE_PROFILES):
+            for state, terminal_age in (
+                (2, profile.state2_terminal_age),
+                (3, profile.state3_terminal_age),
+                (4, profile.state4_terminal_age),
+            ):
+                with self.subTest(bullet_type=bullet_type, state=state):
+                    bullet = Bullet(
+                        13.25,
+                        -7.5,
+                        3.125,
+                        -1.75,
+                        1.0,
+                        1.5,
+                        native_state=state,
+                        native_state_timer_elapsed=terminal_age - 3,
+                        bullet_type=bullet_type,
+                    )
+                    local_frames = _build_bullet_frames(
+                        (bullet,),
+                        horizon=5,
+                        snapshot_lag=0,
+                    )
+                    trajectory = lower_bullet_trajectories(
+                        (bullet,),
+                        snapshot_lag=0,
+                        horizon_frames=5,
+                    )[0]
+                    for frame, local in enumerate(local_frames, start=1):
+                        lethal = (
+                            int(local[5][0]) == 1
+                            and int(local[6][0]) == 0
+                        )
+                        sample = trajectory.sample(frame)
+                        self.assertEqual(sample is not None, lethal)
+                        if sample is None:
+                            continue
+                        uncertainty = (
+                            sample.base_uncertainty
+                            + sample.uncertainty_per_frame * frame
+                        )
+                        self.assertLessEqual(
+                            abs(sample.x - float(local[0][0])),
+                            uncertainty,
+                        )
+                        self.assertLessEqual(
+                            abs(sample.y - float(local[1][0])),
+                            uncertainty,
+                        )
+
+    def test_lifecycle_and_callback_schedules_share_native_order(self) -> None:
+        terminal_age = BULLET_TEMPLATE_PROFILES[0].state2_terminal_age
+        bullet = Bullet(
+            0.0,
+            0.0,
+            2.0,
+            0.0,
+            1.0,
+            1.0,
+            native_state=2,
+            native_state_timer_elapsed=terminal_age - 3,
+            bullet_type=0,
+            velocity_changes=(
+                VelocityChange(2, 4.0, 0.0),
+                VelocityChange(4, -1.0, 0.0),
+            ),
+            collision_state_changes=(
+                CollisionStateChange(2, False),
+                CollisionStateChange(4, True),
+            ),
+        )
+        local_frames = _build_bullet_frames(
+            (bullet,),
+            horizon=5,
+            snapshot_lag=0,
+        )
+        trajectory = lower_bullet_trajectories(
+            (bullet,),
+            snapshot_lag=0,
+            horizon_frames=5,
+        )[0]
+        self.assertIsNone(trajectory.sample(3))
+        self.assertIsNotNone(trajectory.sample(4))
+        for frame, local in enumerate(local_frames, start=1):
+            sample = trajectory.sample(frame)
+            lethal = int(local[5][0]) == 1 and int(local[6][0]) == 0
+            self.assertEqual(sample is not None, lethal)
+            if sample is not None:
+                self.assertLessEqual(
+                    abs(sample.x - float(local[0][0])),
+                    sample.base_uncertainty
+                    + sample.uncertainty_per_frame * frame,
+                )
+
+    def test_future_policy_rebase_consumes_lifecycle_activation(self) -> None:
+        terminal_age = BULLET_TEMPLATE_PROFILES[0].state2_terminal_age
+        bullet = Bullet(
+            5.0,
+            9.0,
+            2.0,
+            -1.0,
+            1.0,
+            1.0,
+            native_state=2,
+            native_state_timer_elapsed=terminal_age - 3,
+            bullet_type=0,
+        )
+        source_frames = _build_bullet_frames(
+            (bullet,),
+            horizon=5,
+            snapshot_lag=0,
+        )
+        trajectory = lower_bullet_trajectories(
+            (bullet,),
+            snapshot_lag=0,
+            forecast_frames=3,
+            horizon_frames=2,
+        )[0]
+        root = trajectory.sample(0)
+        self.assertIsNotNone(root)
+        assert root is not None
+        self.assertLessEqual(
+            abs(root.x - float(source_frames[2][0][0])),
+            root.base_uncertainty,
+        )
+        self.assertLessEqual(
+            abs(root.y - float(source_frames[2][1][0])),
+            root.base_uncertainty,
+        )
+
+    def test_random_lifecycle_callback_composition_contains_local_oracle(
+        self,
+    ) -> None:
+        generator = random.Random(0x430E10)
+        for case in range(256):
+            bullet_type = generator.randrange(len(BULLET_TEMPLATE_PROFILES))
+            profile = BULLET_TEMPLATE_PROFILES[bullet_type]
+            state = generator.choice((2, 3, 4))
+            terminal_age = {
+                2: profile.state2_terminal_age,
+                3: profile.state3_terminal_age,
+                4: profile.state4_terminal_age,
+            }[state]
+            timer = generator.randrange(terminal_age)
+            event_frames = tuple(
+                sorted(generator.sample(range(1, 21), generator.randrange(5)))
+            )
+            velocity_changes = tuple(
+                VelocityChange(
+                    frame,
+                    generator.uniform(-8.0, 8.0),
+                    generator.uniform(-8.0, 8.0),
+                )
+                for frame in event_frames
+            )
+            collision_changes = tuple(
+                CollisionStateChange(frame, bool(generator.randrange(2)))
+                for frame in event_frames
+            )
+            bullet = Bullet(
+                generator.uniform(-64.0, 448.0),
+                generator.uniform(-64.0, 512.0),
+                generator.uniform(-8.0, 8.0),
+                generator.uniform(-8.0, 8.0),
+                1.0,
+                1.0,
+                callback_aux_state=generator.randrange(2),
+                velocity_changes=velocity_changes,
+                collision_state_changes=collision_changes,
+                native_state=state,
+                native_state_timer_elapsed=timer,
+                bullet_type=bullet_type,
+            )
+            with self.subTest(case=case, state=state, bullet_type=bullet_type):
+                local_frames = _build_bullet_frames(
+                    (bullet,),
+                    horizon=20,
+                    snapshot_lag=0,
+                )
+                trajectories = lower_bullet_trajectories(
+                    (bullet,),
+                    snapshot_lag=0,
+                    horizon_frames=20,
+                )
+                trajectory = trajectories[0] if trajectories else None
+                for frame, local in enumerate(local_frames, start=1):
+                    lethal = (
+                        int(local[5][0]) == 1
+                        and int(local[6][0]) == 0
+                    )
+                    sample = (
+                        trajectory.sample(frame)
+                        if trajectory is not None
+                        else None
+                    )
+                    self.assertEqual(sample is not None, lethal)
+                    if sample is None:
+                        continue
+                    uncertainty = (
+                        sample.base_uncertainty
+                        + sample.uncertainty_per_frame * frame
+                    )
+                    self.assertLessEqual(
+                        abs(sample.x - float(local[0][0])),
+                        uncertainty,
+                    )
+                    self.assertLessEqual(
+                        abs(sample.y - float(local[1][0])),
+                        uncertainty,
+                    )
+
+    def test_spawn_lifecycle_without_type_fails_closed(self) -> None:
+        bullet = Bullet(
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            1.0,
+            1.0,
+            native_state=2,
+            native_state_timer_elapsed=0,
+            bullet_type=None,
+        )
+        with self.assertRaisesRegex(ValueError, "source template type"):
+            lower_bullet_trajectories(
+                (bullet,),
+                snapshot_lag=0,
+                horizon_frames=4,
+            )
 
     def test_laser_uncertainty_accounts_for_snapshot_age(self) -> None:
         trajectory = lower_lasers(

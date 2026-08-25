@@ -11,7 +11,10 @@ from typing import Mapping, Protocol
 
 import numpy as np
 
-from th08_corridor_adapter import TH08_VIABILITY_ACTIONS
+from th08_corridor_adapter import (
+    TH08_CORRIDOR_BULLET_SEMANTICS_VERSION,
+    TH08_VIABILITY_ACTIONS,
+)
 from th08_collision_versions import (
     LIVE_LOCAL_COLLISION_SEMANTICS_VERSION,
     TH08_SOURCE_COLLISION_SEMANTICS_VERSION,
@@ -36,7 +39,7 @@ from touhou_control.policy_authority import PolicyAuthorityVersion
 
 TH08_GLOBAL_AUTHORITY_ROOT_SCHEMA = "th08-global-policy-root-v1"
 TH08_GLOBAL_GEOMETRY_AUTHORITY_SEMANTICS_VERSION = (
-    "th08-global-geometry-v1-source-aabb-laser-segment-corridor-cell"
+    "th08-global-geometry-v2-native-bullet-lifecycle"
 )
 TH08_GLOBAL_POLICY_AUTHORITY_SEMANTICS_VERSION = (
     "th08-global-corridor-policy-v1-robust-delay-unit-scale"
@@ -173,6 +176,7 @@ def th08_global_geometry_identity() -> VersionIdentity:
     return VersionIdentity.from_mapping(
         TH08_GLOBAL_GEOMETRY_AUTHORITY_SEMANTICS_VERSION,
         {
+            "bullet": TH08_CORRIDOR_BULLET_SEMANTICS_VERSION,
             "laser": TH08_LASER_SCALE_SEMANTICS_VERSION,
             "live_local": LIVE_LOCAL_COLLISION_SEMANTICS_VERSION,
             "movement": TH08_ROUTE2_MOVEMENT_SCALE_SEMANTICS_VERSION,

@@ -1978,6 +1978,47 @@ Wine run or hit-count claim follows. A full 1,536-slot pool with sixteen
 ordered callbacks also composes without partial output. The complete Linux
 suite passes 1,500 tests with five conditional skips.
 
+### AUD-074 — Global corridor lowering ignored native bullet spawn lifecycle
+
+Status: **CONFIRMED GLOBAL GEOMETRY BUG; FIXED WITH SPARSE SOURCE-LIFECYCLE
+COMPOSITION**
+
+The local hazard projector already modeled bullet states 2/3/4, but the global
+corridor adapter's `BulletSnapshot` protocol did not even carry native state,
+state timer, or source template type. Every unscheduled preactivation bullet
+therefore entered `lower_bullets` as an immediately lethal, ordinary
+constant-velocity AABB. A callback-scheduled preactivation bullet instead
+entered the piecewise path, which still applied callback velocity as full
+ordinary motion and ignored ANM activation. Neither center trajectory is a
+conservative enclosure of the native divided-motion path, so the former
+global authority identity could certify the wrong geometry.
+
+Global lowering now selects the 21-row source/asset terminal age for each
+observed state and type, applies divisors 2, 2.5, or 3, and represents the
+terminal manager call as a one-update divided-plus-full displacement followed
+by ordinary motion. Callback velocity replacements are merged before the
+same update's lifecycle multiplier. Collision remains disabled until native
+state 1 and also respects the callback auxiliary schedule. The resulting
+trajectory is sparse: it adds boundaries only at callback changes,
+activation, and the post-activation restoration rather than materializing a
+bullet object per frame.
+
+All 21 types and all three lifecycle states were compared at preterminal,
+terminal, and post-terminal updates against the local recurrence already
+differentially locked to the independent C oracle. A further 256 seeded cases
+randomized type, state, timer, position, velocity, and up to four paired
+velocity/collision changes over twenty updates. Lethal membership matched and
+the source binary32 centers stayed inside the explicit corridor uncertainty.
+Forecast rebasing consumes activation and prior callbacks before policy frame
+zero. Missing type, impossible timer, and unknown native state fail closed.
+
+The global geometry authority version is now v2 and includes the corridor
+bullet semantics identity, invalidating policies built under the old
+lifecycle-free geometry. Transform dynamics remain a separate audited
+boundary; this repair neither enables the callback clock join nor claims a
+route-hit improvement. The complete Linux suite passes 1,506 tests with five
+conditional skips, and the seven-page paper builds. No Wine run was performed.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository
