@@ -488,6 +488,8 @@ def assess_th08_global_action_authority(
     else:
         if not projection.source_closure_complete:
             reasons.append("future_hazard_source_incomplete")
+        if not projection.current_pool_callback_composition_complete:
+            reasons.append("future_hazard_current_pool_callbacks_uncomposed")
         if version.future_hazard != projection.version:
             reasons.append("future_hazard_authority_version_mismatch")
         if solution.future_hazard_version != projection.version:

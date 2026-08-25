@@ -9,7 +9,11 @@ from th08_future_birth_envelope import (
     FloatInterval,
     FutureTaggedBulletCallback,
 )
-from th08_live.current_pool_callbacks import compose_current_pool_callbacks
+from th08_future_hazard_projection import complete_future_hazard_projection
+from th08_live.current_pool_callbacks import (
+    compose_current_pool_callbacks,
+    join_projection_callbacks_to_current_pool,
+)
 from th08_live.local_hazards import _build_bullet_frames
 from th08_live.models import Bullet, PackedBulletSnapshot
 from touhou_control.trajectory import VelocityChange
@@ -96,6 +100,101 @@ def _packed(bullet: Bullet) -> PackedBulletSnapshot:
 
 
 class Th08CurrentPoolCallbackTests(unittest.TestCase):
+    def test_projection_join_binds_source_bullet_and_policy_clocks(self) -> None:
+        callback = _callback(
+            5,
+            14,
+            speed=FloatInterval.point(0.75),
+        )
+        projection = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=20,
+            events=(),
+            tagged_callbacks=(callback,),
+            source_semantics_version="test-source-v1",
+        )
+        join = join_projection_callbacks_to_current_pool(
+            (_bullet(),),
+            projection=projection,
+            bullet_root_frame=102,
+            policy_source_frame=104,
+            policy_horizon_frames=10,
+            time_scale=1.0,
+        )
+        self.assertTrue(join.complete, join.reason)
+        self.assertTrue(join.matches_projection(projection))
+        self.assertEqual(join.required_bullet_horizon_frames, 12)
+        self.assertEqual(join.composition.source_offset, 2)
+        composed = tuple(join.bullets)[0]
+        self.assertEqual(composed.velocity_changes[0].frame, 3)
+        self.assertEqual(join.record()["callback_count"], 1)
+
+        other_projection = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=20,
+            events=(),
+            tagged_callbacks=(callback,),
+            source_semantics_version="test-source-v2",
+        )
+        self.assertFalse(join.matches_projection(other_projection))
+
+    def test_projection_join_rejects_unproved_clock_boundaries(self) -> None:
+        projection = complete_future_hazard_projection(
+            root_frame=100,
+            horizon_frames=20,
+            events=(),
+            tagged_callbacks=(_callback(5, 14),),
+            source_semantics_version="test-source-v1",
+        )
+        cases = (
+            (
+                dict(
+                    bullet_root_frame=99,
+                    policy_source_frame=104,
+                    policy_horizon_frames=10,
+                ),
+                "predates future source",
+            ),
+            (
+                dict(
+                    bullet_root_frame=102,
+                    policy_source_frame=101,
+                    policy_horizon_frames=10,
+                ),
+                "policy source predates",
+            ),
+            (
+                dict(
+                    bullet_root_frame=102,
+                    policy_source_frame=115,
+                    policy_horizon_frames=10,
+                ),
+                "misses policy horizon",
+            ),
+        )
+        for values, reason in cases:
+            with self.subTest(reason=reason):
+                join = join_projection_callbacks_to_current_pool(
+                    (_bullet(),),
+                    projection=projection,
+                    time_scale=1.0,
+                    **values,
+                )
+                self.assertFalse(join.complete)
+                self.assertIn(reason, join.reason or "")
+
+        uncertain = join_projection_callbacks_to_current_pool(
+            (_bullet(),),
+            projection=projection,
+            bullet_root_frame=102,
+            policy_source_frame=104,
+            policy_horizon_frames=10,
+            time_scale=1.0,
+            bullet_frame_uncertainty=1,
+        )
+        self.assertFalse(uncertain.complete)
+        self.assertIn("point-aligned", uncertain.reason or "")
+
     def test_rebases_and_composes_ordered_callback12_and_14(self) -> None:
         callbacks = (
             _callback(1, 14),

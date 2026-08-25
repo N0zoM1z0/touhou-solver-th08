@@ -591,6 +591,14 @@ divided-plus-full update, and the auxiliary collision gate. Exhaustive type/
 state cases plus 256 seeded transition histories agree with the C-locked local
 recurrence. Geometry identity v2 invalidates the old lifecycle-free policies.
 
+Callback composition now also has an explicit three-clock certificate. It
+binds the future projection digest/version/root, a point-valued bullet root,
+the complete policy interval, and the actual composed pool. This prevents a
+correct transition from being reused under a different projection or shorter
+horizon. A pool capture spanning any update is incomplete in the presence of
+callbacks. Global action assessment independently retains a hard rejection
+until the solution artifact itself carries this certificate.
+
 The same lifecycle is now part of the versioned complete-stage IR/runtime,
 not only a bounded envelope helper. A 3,600-frame stateful gate exercised all
 21 types, all three spawn-state flags, finite-pool saturation, delayed sensing,

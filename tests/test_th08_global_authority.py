@@ -7,6 +7,10 @@ import unittest
 
 from th08_corridor_adapter import TH08_CORRIDOR_CONFIG
 from th08_corridor_runtime import CorridorSolution, solve_corridor
+from th08_future_birth_envelope import (
+    FloatInterval,
+    FutureTaggedBulletCallback,
+)
 from th08_future_hazard_projection import complete_future_hazard_projection
 from th08_global_authority import assess_th08_global_action_authority
 from th08_live.runtime_ecl_identity import RuntimeEclAcceptedVersion
@@ -43,16 +47,25 @@ def _unit_schedule(*, source_frame: int) -> Th08TimeScaleSchedule:
     )
 
 
-def _projection(*, source_semantics: str = "test-source-v1"):
+def _projection(
+    *,
+    source_semantics: str = "test-source-v1",
+    tagged_callbacks: tuple[FutureTaggedBulletCallback, ...] = (),
+):
     return complete_future_hazard_projection(
         root_frame=90,
         horizon_frames=100,
         events=(),
+        tagged_callbacks=tagged_callbacks,
         source_semantics_version=source_semantics,
     )
 
 
-def _solve(*, include_future: bool = True) -> CorridorSolution:
+def _solve(
+    *,
+    include_future: bool = True,
+    tagged_callbacks: tuple[FutureTaggedBulletCallback, ...] = (),
+) -> CorridorSolution:
     return solve_corridor(
         source_frame=100,
         snapshot_frame=90,
@@ -63,7 +76,9 @@ def _solve(*, include_future: bool = True) -> CorridorSolution:
         lasers=(),
         enemy_bodies=(),
         future_hazard_projection=(
-            _projection() if include_future else None
+            _projection(tagged_callbacks=tagged_callbacks)
+            if include_future
+            else None
         ),
         runtime_ecl_version=_runtime_ecl_version(),
         snapshot_lag=0,
@@ -123,6 +138,23 @@ class Th08GlobalAuthorityTests(unittest.TestCase):
         self.assertIn("authority_version_incomplete", assessment.reasons)
         self.assertIn(
             "future_hazard_projection_unavailable",
+            assessment.reasons,
+        )
+
+    def test_uncomposed_current_pool_callbacks_are_shadow_only(self) -> None:
+        callback = FutureTaggedBulletCallback(
+            source="test",
+            frame=4,
+            callback_index=14,
+            tag_mask=0x100000,
+            callback_angle=None,
+            callback_speed=FloatInterval.point(2.0),
+        )
+        assessment = _assess(_solve(tagged_callbacks=(callback,)))
+
+        self.assertFalse(assessment.allowed)
+        self.assertIn(
+            "future_hazard_current_pool_callbacks_uncomposed",
             assessment.reasons,
         )
 

@@ -2019,6 +2019,38 @@ boundary; this repair neither enables the callback clock join nor claims a
 route-hit improvement. The complete Linux suite passes 1,506 tests with five
 conditional skips, and the seven-page paper builds. No Wine run was performed.
 
+### AUD-075 — Callback composition had no projection/bullet/policy clock certificate
+
+Status: **CONFIRMED AUTHORITY-JOIN GAP; VERSIONED OFFLINE CERTIFICATE ADDED,
+ACTION AUTHORITY STILL DISABLED**
+
+An exact callback transition and even an exact bullet schedule are
+insufficient unless they are bound to the projection that produced the
+callbacks, the bullet snapshot that receives them, and the policy interval
+that consumes them. The earlier APIs carried these values independently. A
+caller could therefore reuse a schedule with a different projection digest or
+compute the right schedule over a horizon shorter than the global policy.
+
+The new join binds the complete projection digest and version, projection
+root, point-valued bullet root, policy source, policy horizon, required
+bullet-relative horizon, and the actual composed bullet output. It requires
+`projection_root <= bullet_root <= policy_source` and complete projection
+coverage through the policy horizon. A nonzero bullet capture span is
+incomplete whenever the projection contains a callback, including when the
+callback lies at the apparent past boundary: the code may not assume every
+pool slot observed the same side of that transition. Reconstructed or changed
+projection identity does not match the certificate.
+
+The final global authority assessment also now independently rejects any
+projection with nonempty current-pool callbacks. This closes a defense-in-depth
+gap: controller submission and prefix gates already rejected them, but a
+manually constructed or future alternate solution path could otherwise reach
+the authority assessor. The rejection will remain until `CorridorSolution`
+stores and validates the new join identity. Thus the certificate is tested
+offline but does not yet enable a worker submission, global action, Wine run,
+or hit-count claim. The complete Linux suite passes 1,509 tests with five
+conditional skips, and the seven-page paper builds.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository

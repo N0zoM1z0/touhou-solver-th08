@@ -13,17 +13,22 @@ from dataclasses import dataclass, replace
 import math
 
 from th08_future_birth_envelope import FutureTaggedBulletCallback
+from th08_future_hazard_projection import OrdinaryFutureHazardProjection
 from th08_live.models import Bullet, PackedBulletSnapshot
 from th08_semantics.source_primitives import (
     Callback12State,
     apply_callback12,
     apply_callback14,
 )
+from touhou_control.pipeline_identity import VersionIdentity
 from touhou_control.trajectory import CollisionStateChange, VelocityChange
 
 
 CURRENT_POOL_CALLBACK_COMPOSITION_SEMANTICS_VERSION = (
     "th08-current-pool-callback-composition-v1-source-callback12-14"
+)
+CURRENT_POOL_CALLBACK_JOIN_SEMANTICS_VERSION = (
+    "th08-current-pool-callback-join-v1-projection-bullet-policy-clocks"
 )
 
 BulletPoolSnapshot = tuple[Bullet, ...] | PackedBulletSnapshot
@@ -54,6 +59,99 @@ class CurrentPoolCallbackComposition:
     @property
     def semantics_version(self) -> str:
         return CURRENT_POOL_CALLBACK_COMPOSITION_SEMANTICS_VERSION
+
+
+@dataclass(frozen=True)
+class CurrentPoolProjectionCallbackJoin:
+    """Bind one callback composition to its projection and policy clocks."""
+
+    bullets: BulletPoolSnapshot
+    projection_digest: str
+    projection_version: VersionIdentity
+    projection_root_frame: int
+    bullet_root_frame: int
+    policy_source_frame: int
+    policy_horizon_frames: int
+    required_bullet_horizon_frames: int
+    complete: bool
+    reason: str | None
+    composition: CurrentPoolCallbackComposition | None
+
+    def __post_init__(self) -> None:
+        if len(self.projection_digest) != 64:
+            raise ValueError("callback join projection digest must be SHA-256")
+        if min(
+            self.projection_root_frame,
+            self.bullet_root_frame,
+            self.policy_source_frame,
+            self.policy_horizon_frames,
+            self.required_bullet_horizon_frames,
+        ) < 0:
+            raise ValueError("callback join frames cannot be negative")
+        if self.complete != (self.reason is None):
+            raise ValueError("complete callback join must have no reason")
+        if self.complete and (
+            self.composition is None or not self.composition.complete
+        ):
+            raise ValueError("complete callback join needs complete composition")
+        if self.composition is not None:
+            expected_offset = (
+                self.bullet_root_frame - self.projection_root_frame
+            )
+            if self.composition.source_offset != expected_offset:
+                raise ValueError("callback join composition offset disagrees")
+            if (
+                self.composition.covered_through_frame
+                != self.required_bullet_horizon_frames
+            ):
+                raise ValueError("callback join composition horizon disagrees")
+            if self.composition.bullets is not self.bullets:
+                raise ValueError("callback join bullets are not composed output")
+
+    @property
+    def semantics_version(self) -> str:
+        return CURRENT_POOL_CALLBACK_JOIN_SEMANTICS_VERSION
+
+    def matches_projection(
+        self,
+        projection: OrdinaryFutureHazardProjection,
+    ) -> bool:
+        return (
+            self.projection_digest == projection.digest
+            and self.projection_version == projection.version
+            and self.projection_root_frame == projection.root_frame
+        )
+
+    def record(self) -> dict[str, object]:
+        return {
+            "semantics_version": self.semantics_version,
+            "composition_semantics_version": (
+                self.composition.semantics_version
+                if self.composition is not None
+                else None
+            ),
+            "projection_digest": self.projection_digest,
+            "projection_version": self.projection_version.record(),
+            "projection_root_frame": self.projection_root_frame,
+            "bullet_root_frame": self.bullet_root_frame,
+            "policy_source_frame": self.policy_source_frame,
+            "policy_horizon_frames": self.policy_horizon_frames,
+            "required_bullet_horizon_frames": (
+                self.required_bullet_horizon_frames
+            ),
+            "complete": self.complete,
+            "reason": self.reason,
+            "callback_count": (
+                self.composition.callback_count
+                if self.composition is not None
+                else None
+            ),
+            "affected_bullet_count": (
+                self.composition.affected_bullet_count
+                if self.composition is not None
+                else None
+            ),
+        }
 
 
 def _result(
@@ -360,8 +458,85 @@ def compose_current_pool_callbacks(
     )
 
 
+def join_projection_callbacks_to_current_pool(
+    bullets: BulletPoolSnapshot,
+    *,
+    projection: OrdinaryFutureHazardProjection,
+    bullet_root_frame: int,
+    policy_source_frame: int,
+    policy_horizon_frames: int,
+    time_scale: float,
+    bullet_frame_uncertainty: int = 0,
+) -> CurrentPoolProjectionCallbackJoin:
+    """Bind source, bullet, and policy clocks around one composition."""
+
+    if min(
+        bullet_root_frame,
+        policy_source_frame,
+        policy_horizon_frames,
+        bullet_frame_uncertainty,
+    ) < 0:
+        raise ValueError("callback join frames cannot be negative")
+    policy_horizon_frame = policy_source_frame + policy_horizon_frames
+    required_bullet_horizon = max(
+        0,
+        policy_horizon_frame - bullet_root_frame,
+    )
+
+    def incomplete(reason: str) -> CurrentPoolProjectionCallbackJoin:
+        return CurrentPoolProjectionCallbackJoin(
+            bullets=bullets,
+            projection_digest=projection.digest,
+            projection_version=projection.version,
+            projection_root_frame=projection.root_frame,
+            bullet_root_frame=bullet_root_frame,
+            policy_source_frame=policy_source_frame,
+            policy_horizon_frames=policy_horizon_frames,
+            required_bullet_horizon_frames=required_bullet_horizon,
+            complete=False,
+            reason=reason,
+            composition=None,
+        )
+
+    if not projection.source_closure_complete or not projection.coverage.complete:
+        return incomplete("future source projection is incomplete")
+    if bullet_root_frame < projection.root_frame:
+        return incomplete("bullet snapshot predates future source root")
+    if policy_source_frame < bullet_root_frame:
+        return incomplete("policy source predates bullet snapshot")
+    if policy_horizon_frame > projection.horizon_frame:
+        return incomplete("future source projection misses policy horizon")
+    if projection.tagged_callbacks and bullet_frame_uncertainty:
+        return incomplete("bullet snapshot is not point-aligned to callbacks")
+
+    composition = compose_current_pool_callbacks(
+        bullets,
+        callbacks=projection.tagged_callbacks,
+        time_scale=time_scale,
+        source_offset=bullet_root_frame - projection.root_frame,
+        horizon_frames=required_bullet_horizon,
+        event_frame_uncertainty=bullet_frame_uncertainty,
+    )
+    return CurrentPoolProjectionCallbackJoin(
+        bullets=composition.bullets,
+        projection_digest=projection.digest,
+        projection_version=projection.version,
+        projection_root_frame=projection.root_frame,
+        bullet_root_frame=bullet_root_frame,
+        policy_source_frame=policy_source_frame,
+        policy_horizon_frames=policy_horizon_frames,
+        required_bullet_horizon_frames=required_bullet_horizon,
+        complete=composition.complete,
+        reason=composition.reason,
+        composition=composition,
+    )
+
+
 __all__ = [
     "CURRENT_POOL_CALLBACK_COMPOSITION_SEMANTICS_VERSION",
+    "CURRENT_POOL_CALLBACK_JOIN_SEMANTICS_VERSION",
     "CurrentPoolCallbackComposition",
+    "CurrentPoolProjectionCallbackJoin",
     "compose_current_pool_callbacks",
+    "join_projection_callbacks_to_current_pool",
 ]
