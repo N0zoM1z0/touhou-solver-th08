@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import gzip
+import hashlib
+import json
 import shutil
 import tempfile
 import unittest
 from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -12,8 +16,15 @@ from th08_ordinary_future_sources import project_ordinary_future_sources
 from th08_runtime.future_source_retention import (
     FutureSourceRetentionExpectation,
     RETAINED_FUTURE_SOURCE_ROOT_SCHEMA,
+    RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V1,
+    RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V2,
     read_retained_future_source_root,
     write_retained_future_source_root,
+)
+from th08_live.models import Bullet
+from th08_runtime.current_hazard_root import (
+    build_current_hazard_root,
+    current_hazards_from_root,
 )
 from th08_runtime.ordinary_future_source_capture import (
     ORDINARY_FUTURE_SOURCE_SNAPSHOT_SCHEMA,
@@ -57,6 +68,28 @@ def _expectation() -> FutureSourceRetentionExpectation:
     )
 
 
+def _write_canonical_root(
+    destination: Path,
+    record: dict[str, object],
+) -> Path:
+    canonical = (
+        json.dumps(
+            record,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+    ).encode("utf-8")
+    digest = hashlib.sha256(canonical).hexdigest()
+    compressed = bytearray(gzip.compress(canonical, mtime=0))
+    compressed[9] = 255
+    path = destination / f"sha256-{digest}.th08-future-root.json.gz"
+    path.write_bytes(compressed)
+    return path
+
+
 class FutureSourceRetentionTests(unittest.TestCase):
     def test_root_is_canonical_content_addressed_and_deduplicated(self) -> None:
         snapshot, closure = _root()
@@ -85,7 +118,7 @@ class FutureSourceRetentionTests(unittest.TestCase):
             retained = read_retained_future_source_root(first.path)
             self.assertEqual(
                 retained["schema"],
-                RETAINED_FUTURE_SOURCE_ROOT_SCHEMA,
+                RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V1,
             )
             self.assertEqual(retained["root_identity"]["route_id"], 2)
             self.assertEqual(retained["root_identity"]["spell_id"], 103)
@@ -93,6 +126,106 @@ class FutureSourceRetentionTests(unittest.TestCase):
                 retained["root_payload"]["compact_state"]["rng_state"],
                 1,
             )
+
+    def test_v2_root_retains_same_clock_current_hazards(self) -> None:
+        snapshot, closure = _root()
+        current_hazard_root = build_current_hazard_root(
+            root_frame=snapshot.frame_before,
+            bullets=(
+                Bullet(
+                    120.0,
+                    340.0,
+                    1.0,
+                    -2.0,
+                    2.0,
+                    3.0,
+                    slot=11,
+                    native_state=2,
+                    native_state_timer_elapsed=4,
+                    bullet_type=16,
+                ),
+            ),
+            lasers=(),
+        )
+        snapshot = replace(
+            snapshot,
+            current_hazard_root=current_hazard_root,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            artifact = write_retained_future_source_root(
+                snapshot,
+                closure,
+                Path(directory),
+                snapshot_schema=ORDINARY_FUTURE_SOURCE_SNAPSHOT_SCHEMA,
+                requested_horizon_frames=1,
+            )
+            retained = read_retained_future_source_root(artifact.path)
+
+        self.assertEqual(
+            RETAINED_FUTURE_SOURCE_ROOT_SCHEMA,
+            RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V2,
+        )
+        self.assertEqual(artifact.schema, RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V2)
+        self.assertEqual(retained["schema"], RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V2)
+        bullets, lasers = current_hazards_from_root(
+            retained["current_hazard_root"],
+            expected_root_frame=snapshot.frame_before,
+        )
+        self.assertEqual(len(bullets), 1)
+        self.assertEqual(bullets[0].slot, 11)
+        self.assertEqual(bullets[0].native_state, 2)
+        self.assertEqual(lasers, ())
+
+    def test_v2_writer_rejects_disagreed_root_clocks(self) -> None:
+        snapshot, closure = _root()
+        current_hazard_root = build_current_hazard_root(
+            root_frame=snapshot.frame_before,
+            bullets=(),
+            lasers=(),
+        )
+        payload = deepcopy(snapshot.payload)
+        payload["compact_state"]["manager_frame"] += 1
+        snapshot = replace(
+            snapshot,
+            payload=payload,
+            current_hazard_root=current_hazard_root,
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "clocks disagree"):
+                write_retained_future_source_root(
+                    snapshot,
+                    closure,
+                    Path(directory),
+                    snapshot_schema=ORDINARY_FUTURE_SOURCE_SNAPSHOT_SCHEMA,
+                    requested_horizon_frames=1,
+                )
+
+    def test_v2_reader_rejects_disagreed_root_clocks(self) -> None:
+        snapshot, closure = _root()
+        snapshot = replace(
+            snapshot,
+            current_hazard_root=build_current_hazard_root(
+                root_frame=snapshot.frame_before,
+                bullets=(),
+                lasers=(),
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)
+            artifact = write_retained_future_source_root(
+                snapshot,
+                closure,
+                destination,
+                snapshot_schema=ORDINARY_FUTURE_SOURCE_SNAPSHOT_SCHEMA,
+                requested_horizon_frames=1,
+            )
+            record = json.loads(gzip.decompress(artifact.path.read_bytes()))
+            record["projection_at_capture"]["root_frame"] += 1
+            mismatched = _write_canonical_root(destination, record)
+
+            with self.assertRaisesRegex(ValueError, "clocks disagree"):
+                read_retained_future_source_root(mismatched)
 
     def test_filename_digest_is_verified_before_replay(self) -> None:
         snapshot, closure = _root()
@@ -151,7 +284,7 @@ class FutureSourceRetentionTests(unittest.TestCase):
                 "th08_runtime.ordinary_future_source_capture."
                 "capture_ordinary_future_source_snapshot",
                 return_value=snapshot,
-            ),
+            ) as capture,
             patch(
                 "th08_runtime.ordinary_future_source_capture."
                 "project_ordinary_future_sources",
@@ -170,6 +303,9 @@ class FutureSourceRetentionTests(unittest.TestCase):
             self.assertTrue(result.retained_root.path.is_file())
             self.assertEqual(result.retained_root.spell_id, 103)
             self.assertIsNone(result.retention_rejection_reason)
+            self.assertTrue(
+                capture.call_args.kwargs["retain_current_hazards"]
+            )
 
     def test_async_phase_transition_does_not_write_or_consume_a_root(self) -> None:
         snapshot, closure = _root()

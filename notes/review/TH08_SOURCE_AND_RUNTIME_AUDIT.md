@@ -2128,6 +2128,64 @@ The focused callback/global/runtime suite passes 61 tests. This repairs an
 offline authority hole and changes no physical result; the full 1,511-test
 checkpoint and no-Wine nonclaim remain unchanged.
 
+### AUD-078 — Retained producer roots omitted their same-clock current hazards
+
+Status: **CONFIRMED PHYSICAL-ROOT CONTRACT GAP; FIXED FOR NEW CAPTURES,
+OLD ROOTS REMAIN FUTURE-ONLY**
+
+The four retained Stage-5 capsules from physical run
+`lunatic_route2_stage5_unattended_20260825_011207` contain the coherent enemy,
+ECL, timeline, and producer state needed to rebuild future births, but their v1
+schema never stored the current 1,536-slot bullet pool or 64-slot laser pool.
+The raw trace that once accompanied those capsules was deliberately cleaned,
+so current hazards cannot be reconstructed at the same manager clock. In
+particular, the eligible spell-115 root at frame 39,998 is not an honest
+same-root global-planner input. It must not be combined with an unrelated
+current pool or used for a physical-policy claim.
+
+The future-only half is nevertheless a useful non-vacuity check. Projecting
+that root through H136 produces 144 annular sectors, one hostile-body AABB,
+and one direct-fire event with complete source closure. With an empty current
+pool, the H80 global solve remains reachable and retains 17 initial safe
+actions; adding the future geometry changes the viable-state count from
+11,016 to 10,615. Thus the future stream materially changes the solved
+geometry, but this is not a same-root action result.
+
+New explicit-retention captures now emit v2 capsules. Inside the existing
+manager-frame/update-serial bracket they read both native hazard pools with
+two persistent buffers; decoding happens only after the bracket closes and
+only for a coherent attempt. The ordinary high-rate non-retention path is
+unchanged. The capsule stores only canonical active planner slots, including
+bullet lifecycle, callback schedules, current transform runtime/next record,
+and complete laser phase state. A reader reconstructs the ordinary `Bullet`
+and `Laser` inputs and rejects malformed capacities, slots, order, nonfinite
+values, or schema. The v2 writer and reader also require exact agreement among
+capture-before, capture-after, compact-state, future-projection, root-identity,
+and current-hazard clocks, plus equal update serials. Existing v1 capsules
+remain readable but explicitly lack current hazards.
+
+A source-stateful 120-frame quick-stage root exercises 319 bullets, two
+lasers, and 92 active transforms. Original versus serialized/reconstructed
+inputs produce identical H16 global reachability, initial actions, action
+masks, and the complete viability tensor. A 64-bullet/16-laser regression
+keeps the compressed capsule below 64 KiB. This proves compact offline planner
+replay, not full native game-state replay: only the next transform record is
+currently represented, not every queued 18-record native program.
+
+The VPS also has a measured rather than assumed parallel boundary. Five fair
+repetitions of the same spell-115 future-only solve produced identical 10,615
+viable states and approximately 171/62/41/35/39/48 ms at 1/4/8/16/24/32
+geometry workers. Scaling through 16 is real; 24 and 32 regress from overhead
+on this workload. An experimental native maximum-32 change was therefore
+reverted. Production geometry retains its historical 16-worker maximum and
+the live controller remains at eight workers because prior live 16-worker
+tests increased action latency. More CPU is useful for offline parallel roots,
+not as an unconditional per-root speedup.
+
+No Wine process was started. The next physical artifact must be a fresh v2
+Stage-5 root; only then can current hazards and future births be solved at one
+real clock.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this

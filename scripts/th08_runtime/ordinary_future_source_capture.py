@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from th08_ecl_tool.core import EclFile
+from th08_live.bullet_decode import decode_bullets
 from th08_live.enemy_sensor import (
     ENEMY_ACTIVE_FLAG,
     ENEMY_FLAGS_OFFSET,
@@ -20,6 +21,16 @@ from th08_live.enemy_sensor import (
     ENEMY_POOL_SIZE,
     ENEMY_STRIDE,
 )
+from th08_live.hazard_decode import decode_lasers
+from th08_live.sensor import (
+    BULLET_POOL_BASE,
+    BULLET_POOL_SIZE,
+    BULLET_STRIDE,
+    LASER_POOL_BASE,
+    LASER_POOL_SIZE,
+    LASER_STRIDE,
+)
+from th08_runtime.current_hazard_root import build_current_hazard_root
 from th08_runtime.game_state import (
     ADDR_ENEMY_MANAGER_FRAME,
     ADDR_FRSCREEN_UPDATE_SERIAL,
@@ -69,6 +80,7 @@ class OrdinaryFutureSourceSnapshot:
     payload: dict[str, object]
     read_ms: float
     attempts: int
+    current_hazard_root: dict[str, object] | None = None
 
     @property
     def stable(self) -> bool:
@@ -274,6 +286,28 @@ def _persistent_enemy_slab_buffer(reader: Any) -> Any | None:
     return buffer
 
 
+def _persistent_hazard_pool_buffers(
+    reader: Any,
+) -> tuple[Any | None, Any | None]:
+    """Allocate worker-local bullet/laser destinations outside the bracket."""
+
+    allocate_buffer = getattr(reader, "allocate_buffer", None)
+    read_into = getattr(reader, "read_into", None)
+    if not callable(allocate_buffer) or not callable(read_into):
+        return None, None
+    bullet_size = BULLET_POOL_SIZE * BULLET_STRIDE
+    laser_size = LASER_POOL_SIZE * LASER_STRIDE
+    bullet_buffer = getattr(_CAPTURE_BUFFERS, "bullet_pool", None)
+    laser_buffer = getattr(_CAPTURE_BUFFERS, "laser_pool", None)
+    if bullet_buffer is None or len(bullet_buffer) != bullet_size:
+        bullet_buffer = allocate_buffer(bullet_size)
+        _CAPTURE_BUFFERS.bullet_pool = bullet_buffer
+    if laser_buffer is None or len(laser_buffer) != laser_size:
+        laser_buffer = allocate_buffer(laser_size)
+        _CAPTURE_BUFFERS.laser_pool = laser_buffer
+    return bullet_buffer, laser_buffer
+
+
 def _unsigned_byte_view(data: Any) -> memoryview:
     view = memoryview(data)
     if view.ndim == 1 and view.format == "B":
@@ -328,6 +362,37 @@ def _read_active_enemy_records(
         )[0]
         active_record_count += int(bool(flags & ENEMY_ACTIVE_FLAG))
     return manager_blob, ordinary_blob, active_record_count
+
+
+def _read_current_hazard_pools(
+    reader: Any,
+    *,
+    bullet_buffer: Any | None = None,
+    laser_buffer: Any | None = None,
+) -> tuple[memoryview, memoryview]:
+    """Read both fixed pools while the enclosing caller owns the clock gate."""
+
+    bullet_size = BULLET_POOL_SIZE * BULLET_STRIDE
+    laser_size = LASER_POOL_SIZE * LASER_STRIDE
+    if bullet_buffer is None:
+        bullet_blob = _unsigned_byte_view(
+            reader.read(BULLET_POOL_BASE, bullet_size)
+        )
+    else:
+        reader.read_into(BULLET_POOL_BASE, bullet_buffer)
+        bullet_blob = _unsigned_byte_view(bullet_buffer)
+    if laser_buffer is None:
+        laser_blob = _unsigned_byte_view(
+            reader.read(LASER_POOL_BASE, laser_size)
+        )
+    else:
+        reader.read_into(LASER_POOL_BASE, laser_buffer)
+        laser_blob = _unsigned_byte_view(laser_buffer)
+    if len(bullet_blob) != bullet_size:
+        raise ValueError("ordinary future-source bullet slab is truncated")
+    if len(laser_blob) != laser_size:
+        raise ValueError("ordinary future-source laser slab is truncated")
+    return bullet_blob, laser_blob
 
 
 def _canonical_runtime_ecl_sha256(
@@ -451,6 +516,7 @@ def capture_ordinary_future_source_snapshot(
     reader: Any,
     *,
     maximum_attempts: int = 2,
+    retain_current_hazards: bool = False,
 ) -> OrdinaryFutureSourceSnapshot:
     """Capture one complete future-source root under a manager-frame bracket."""
 
@@ -461,6 +527,11 @@ def capture_ordinary_future_source_snapshot(
     # bracket. Allocation/zeroing is observer work and is not part of the
     # source observation.
     enemy_slab_buffer = _persistent_enemy_slab_buffer(reader)
+    bullet_buffer, laser_buffer = (
+        _persistent_hazard_pool_buffers(reader)
+        if retain_current_hazards
+        else (None, None)
+    )
     snapshot: OrdinaryFutureSourceSnapshot | None = None
     for attempt in range(1, maximum_attempts + 1):
         update_serial_before = reader.u32(ADDR_FRSCREEN_UPDATE_SERIAL)
@@ -478,8 +549,36 @@ def capture_ordinary_future_source_snapshot(
             ordinary_blob=ordinary_blob,
             state=state,
         )
+        hazard_blobs = (
+            _read_current_hazard_pools(
+                reader,
+                bullet_buffer=bullet_buffer,
+                laser_buffer=laser_buffer,
+            )
+            if retain_current_hazards
+            else None
+        )
         frame_after = reader.u32(ADDR_ENEMY_MANAGER_FRAME)
         update_serial_after = reader.u32(ADDR_FRSCREEN_UPDATE_SERIAL)
+        coherent = bool(
+            frame_before == frame_after
+            and update_serial_before == update_serial_after
+            and int(payload["compact_state"]["manager_frame"])
+            == frame_before
+        )
+        current_hazard_root = None
+        # Decode only after the closing clocks have been sampled.  Python
+        # object construction must not lengthen the native observation span.
+        if coherent and hazard_blobs is not None:
+            bullet_blob, laser_blob = hazard_blobs
+            current_hazard_root = build_current_hazard_root(
+                root_frame=frame_before,
+                bullets=decode_bullets(
+                    bullet_blob,
+                    retain_transform_runtime=True,
+                ),
+                lasers=decode_lasers(laser_blob),
+            )
         snapshot = OrdinaryFutureSourceSnapshot(
             frame_before=frame_before,
             frame_after=frame_after,
@@ -488,12 +587,9 @@ def capture_ordinary_future_source_snapshot(
             payload=payload,
             read_ms=(time.perf_counter() - started) * 1000.0,
             attempts=attempt,
+            current_hazard_root=current_hazard_root,
         )
-        if (
-            snapshot.stable
-            and int(payload["compact_state"]["manager_frame"])
-            == frame_before
-        ):
+        if coherent:
             return snapshot
     assert snapshot is not None
     return snapshot
@@ -515,6 +611,7 @@ def capture_and_project_ordinary_future_sources(
     snapshot = capture_ordinary_future_source_snapshot(
         reader,
         maximum_attempts=maximum_attempts,
+        retain_current_hazards=retain_dir is not None,
     )
     if not snapshot.stable:
         raise RuntimeError(

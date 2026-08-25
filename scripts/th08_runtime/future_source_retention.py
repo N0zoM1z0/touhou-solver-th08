@@ -15,10 +15,21 @@ from typing import Any
 from th08_ordinary_future_sources import (
     ORDINARY_FUTURE_SOURCE_SEMANTICS_VERSION,
 )
+from th08_runtime.current_hazard_root import current_hazards_from_root
 
 
-RETAINED_FUTURE_SOURCE_ROOT_SCHEMA = (
+RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V1 = (
     "th08-retained-ordinary-future-source-root-v1"
+)
+RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V2 = (
+    "th08-retained-ordinary-future-source-root-v2-current-hazards"
+)
+RETAINED_FUTURE_SOURCE_ROOT_SCHEMA = RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V2
+_SUPPORTED_ROOT_SCHEMAS = frozenset(
+    (
+        RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V1,
+        RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V2,
+    )
 )
 _ROOT_NAME = re.compile(
     r"^sha256-([0-9a-f]{64})\.th08-future-root\.json\.gz$"
@@ -36,10 +47,11 @@ class RetainedFutureSourceRoot:
     root_frame: int
     spell_id: int | None
     created: bool
+    schema: str
 
     def record(self) -> dict[str, object]:
         return {
-            "schema": RETAINED_FUTURE_SOURCE_ROOT_SCHEMA,
+            "schema": self.schema,
             "path": str(self.path),
             "sha256": self.sha256,
             "canonical_size_bytes": self.canonical_size_bytes,
@@ -138,6 +150,121 @@ def _deterministic_gzip(canonical: bytes) -> bytes:
     return bytes(compressed)
 
 
+def _required_mapping(
+    payload: object,
+    key: str,
+    *,
+    label: str,
+) -> dict[str, object]:
+    if not isinstance(payload, dict):
+        raise ValueError(f"{label} is malformed")
+    value = payload.get(key)
+    if not isinstance(value, dict):
+        raise ValueError(f"{label}.{key} is malformed")
+    return value
+
+
+def _required_nonnegative_int(
+    payload: object,
+    key: str,
+    *,
+    label: str,
+) -> int:
+    if not isinstance(payload, dict):
+        raise ValueError(f"{label} is malformed")
+    value = payload.get(key)
+    if type(value) is not int or value < 0:
+        raise ValueError(f"{label}.{key} is malformed")
+    return value
+
+
+def _validate_v2_root_clock_join(record: dict[str, object]) -> None:
+    """Fail closed unless every retained planner input shares one root clock."""
+
+    capture = _required_mapping(
+        record,
+        "capture_clock",
+        label="v2 future-source root",
+    )
+    identity = _required_mapping(
+        record,
+        "root_identity",
+        label="v2 future-source root",
+    )
+    projection = _required_mapping(
+        record,
+        "projection_at_capture",
+        label="v2 future-source root",
+    )
+    root_payload = _required_mapping(
+        record,
+        "root_payload",
+        label="v2 future-source root",
+    )
+    compact = _required_mapping(
+        root_payload,
+        "compact_state",
+        label="v2 future-source root.root_payload",
+    )
+    if capture.get("stable") is not True:
+        raise ValueError("v2 future-source root capture clock is not stable")
+
+    frames = {
+        "capture_clock.manager_frame_before": _required_nonnegative_int(
+            capture,
+            "manager_frame_before",
+            label="v2 future-source root.capture_clock",
+        ),
+        "capture_clock.manager_frame_after": _required_nonnegative_int(
+            capture,
+            "manager_frame_after",
+            label="v2 future-source root.capture_clock",
+        ),
+        "root_identity.manager_frame": _required_nonnegative_int(
+            identity,
+            "manager_frame",
+            label="v2 future-source root.root_identity",
+        ),
+        "projection_at_capture.root_frame": _required_nonnegative_int(
+            projection,
+            "root_frame",
+            label="v2 future-source root.projection_at_capture",
+        ),
+        "root_payload.compact_state.manager_frame": (
+            _required_nonnegative_int(
+                compact,
+                "manager_frame",
+                label=(
+                    "v2 future-source root.root_payload.compact_state"
+                ),
+            )
+        ),
+    }
+    root_frame = next(iter(frames.values()))
+    if any(frame != root_frame for frame in frames.values()):
+        detail = ",".join(f"{key}={value}" for key, value in frames.items())
+        raise ValueError(f"v2 future-source root clocks disagree: {detail}")
+
+    serial_before = _required_nonnegative_int(
+        capture,
+        "frscreen_update_serial_before",
+        label="v2 future-source root.capture_clock",
+    )
+    serial_after = _required_nonnegative_int(
+        capture,
+        "frscreen_update_serial_after",
+        label="v2 future-source root.capture_clock",
+    )
+    if serial_before != serial_after:
+        raise ValueError("v2 future-source root update serials disagree")
+    if "current_hazard_root" not in record:
+        raise ValueError("v2 future-source root lacks current hazards")
+    current_hazards_from_root(
+        record["current_hazard_root"],
+        expected_root_frame=root_frame,
+    )
+
+
 def _root_record(
     snapshot: Any,
     closure: Any,
@@ -165,8 +292,14 @@ def _root_record(
 
     projection = closure.projection
     coverage = projection.coverage
-    return {
-        "schema": RETAINED_FUTURE_SOURCE_ROOT_SCHEMA,
+    current_hazard_root = getattr(snapshot, "current_hazard_root", None)
+    schema = (
+        RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V2
+        if current_hazard_root is not None
+        else RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V1
+    )
+    record: dict[str, object] = {
+        "schema": schema,
         "role": "coherent_physical_root_shadow_only_no_action_authority",
         "snapshot_semantics": snapshot_schema,
         "future_source_semantics": (
@@ -224,6 +357,10 @@ def _root_record(
         },
         "root_payload": payload,
     }
+    if current_hazard_root is not None:
+        record["current_hazard_root"] = current_hazard_root
+        _validate_v2_root_clock_join(record)
+    return record
 
 
 def write_retained_future_source_root(
@@ -283,6 +420,7 @@ def write_retained_future_source_root(
             else None
         ),
         created=created,
+        schema=str(record["schema"]),
     )
 
 
@@ -305,16 +443,29 @@ def read_retained_future_source_root(path: Path) -> dict[str, object]:
         raise ValueError("future-source root JSON is invalid") from error
     if not isinstance(record, dict):
         raise ValueError("future-source root JSON is not an object")
-    if record.get("schema") != RETAINED_FUTURE_SOURCE_ROOT_SCHEMA:
+    schema = record.get("schema")
+    if schema not in _SUPPORTED_ROOT_SCHEMAS:
         raise ValueError("future-source root schema is unsupported")
     if _canonical_bytes(record) != canonical:
         raise ValueError("future-source root JSON is not canonical")
+    root_identity = record.get("root_identity")
+    if not isinstance(root_identity, dict):
+        raise ValueError("future-source root identity is malformed")
+    root_frame = root_identity.get("manager_frame")
+    if type(root_frame) is not int or root_frame < 0:
+        raise ValueError("future-source root manager frame is malformed")
+    if schema == RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V2:
+        _validate_v2_root_clock_join(record)
+    elif "current_hazard_root" in record:
+        raise ValueError("v1 future-source root cannot carry current hazards")
     return record
 
 
 __all__ = [
     "FutureSourceRetentionExpectation",
     "RETAINED_FUTURE_SOURCE_ROOT_SCHEMA",
+    "RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V1",
+    "RETAINED_FUTURE_SOURCE_ROOT_SCHEMA_V2",
     "RetainedFutureSourceRoot",
     "future_source_retention_rejection_reason",
     "read_retained_future_source_root",
