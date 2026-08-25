@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Compile a mode-correct Stage-5 Lunatic spell-producer contract.
+"""Compile a Stage-5 Lunatic spell-producer topology contract.
 
 This is a static topology oracle, not a future-hazard projection.  It pins the
-route and Practice ECL images, finds literal spell roots, closes over literal
-same-source/child program edges, and compares the two modes after normalizing
-subroutine numbers and phase-exit targets.  Runtime VM state is still required
-to decide which eligible sites are reached from a particular observation.
+route and stage-scoped Spell Practice ECL images, finds literal spell roots,
+closes over literal same-source/child program edges, and compares the two
+packages after normalizing subroutine numbers and phase-exit targets.  Runtime
+VM state is still required to decide which eligible sites are reached from a
+particular observation.  Ordinary Practice Start uses the route image and is
+not the meaning of ``*sp.ecl``.
 """
 
 from __future__ import annotations
@@ -32,12 +34,12 @@ from th08_ecl_birth import (
 from th08_ecl_callback_model import CALLBACK_SPECS
 from th08_ecl_opcodes import opcode_spec
 from th08_stage_ecl_catalog import (
-    PRACTICE_STAGE_ECL_IDENTITIES,
     ROUTE_STAGE_ECL_IDENTITIES,
+    STAGE_SPELL_PRACTICE_ECL_IDENTITIES,
 )
 
 
-SCHEMA = "th08-stage5-spell-producer-contract-v1"
+SCHEMA = "th08-stage5-spell-producer-contract-v2"
 DIFFICULTY_INDEX = 3
 DIFFICULTY_MASK = 0x08
 ROUTE_ID = 2
@@ -500,34 +502,36 @@ def _image_report(path: Path, *, expected_sha256: str) -> dict[str, object]:
 
 def build_report(decoded_dir: Path) -> dict[str, object]:
     route_identity = ROUTE_STAGE_ECL_IDENTITIES["5"]
-    practice_identity = PRACTICE_STAGE_ECL_IDENTITIES["5"]
+    spell_practice_identity = STAGE_SPELL_PRACTICE_ECL_IDENTITIES["5"]
     route = _image_report(
         decoded_dir / route_identity.filename,
         expected_sha256=route_identity.sha256,
     )
-    practice = _image_report(
-        decoded_dir / practice_identity.filename,
-        expected_sha256=practice_identity.sha256,
+    spell_practice = _image_report(
+        decoded_dir / spell_practice_identity.filename,
+        expected_sha256=spell_practice_identity.sha256,
     )
     route_programs = route["programs"]
-    practice_programs = practice["programs"]
+    spell_practice_programs = spell_practice["programs"]
     assert isinstance(route_programs, dict)
-    assert isinstance(practice_programs, dict)
+    assert isinstance(spell_practice_programs, dict)
     shared_spell_ids = sorted(
-        set(map(int, route_programs)) & set(map(int, practice_programs))
+        set(map(int, route_programs)) & set(map(int, spell_practice_programs))
     )
     equivalence = {}
     for spell_id in shared_spell_ids:
         route_program = route_programs[str(spell_id)]
-        practice_program = practice_programs[str(spell_id)]
+        spell_practice_program = spell_practice_programs[str(spell_id)]
         assert isinstance(route_program, dict)
-        assert isinstance(practice_program, dict)
+        assert isinstance(spell_practice_program, dict)
         route_digest = route_program["semantic_program_sha256"]
-        practice_digest = practice_program["semantic_program_sha256"]
+        spell_practice_digest = spell_practice_program[
+            "semantic_program_sha256"
+        ]
         equivalence[str(spell_id)] = {
             "route_semantic_program_sha256": route_digest,
-            "practice_semantic_program_sha256": practice_digest,
-            "equivalent": route_digest == practice_digest,
+            "spell_practice_semantic_program_sha256": spell_practice_digest,
+            "equivalent": route_digest == spell_practice_digest,
         }
     route_spell_ids = tuple(int(value) for value in route["spell_ids"])
     passed = (
@@ -552,14 +556,15 @@ def build_report(decoded_dir: Path) -> dict[str, object]:
             ),
             "claim": (
                 "static literal producer topology and normalized route/"
-                "Practice program equivalence; no reached-prefix or action "
+                "Spell-Practice program equivalence; no reached-prefix or action "
                 "authority"
             ),
         },
         "native_authority": {
             "loader": (
-                "th08/src/EnemyManager.cpp: game-manager bit14 selects the "
-                "stage *sp.ecl table for Practice spells below ID 205"
+                "th08/src/EnemyManager.cpp: isSpellPractice bit14 selects "
+                "the stage *sp.ecl table below card 205; Practice Start "
+                "keeps bit14 clear and loads the route stage ECL"
             ),
             "spell_layout": (
                 "th08/src/EclDependencies.cpp: opcode 0x7A stores enemyFace "
@@ -570,9 +575,9 @@ def build_report(decoded_dir: Path) -> dict[str, object]:
             ),
         },
         "route": route,
-        "practice": practice,
+        "spell_practice": spell_practice,
         "shared_spell_ids": shared_spell_ids,
-        "route_practice_equivalence": equivalence,
+        "route_spell_practice_equivalence": equivalence,
         "limitations": [
             "Static eligible lexical closure can include a branch not reached from a retained VM root.",
             "RNG state, player-aim dependence, phase timing, and live locals require a runtime-root replay.",

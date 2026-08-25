@@ -28,6 +28,7 @@ from th08_stage_ecl_catalog import (
     PRACTICE_STAGE_ECL_IDENTITIES,
     ROUTE_STAGE_ECL_IDENTITIES,
     SCALE_MODEL_NO_WRITER,
+    STAGE_SPELL_PRACTICE_ECL_IDENTITIES,
 )
 from th08_time_scale import TH08_UNIT_TIME_SCALE_BITS
 
@@ -83,6 +84,7 @@ class Stage5OfflineAuthorityPipelineTests(unittest.TestCase):
         for catalog in (
             ROUTE_STAGE_ECL_IDENTITIES,
             PRACTICE_STAGE_ECL_IDENTITIES,
+            STAGE_SPELL_PRACTICE_ECL_IDENTITIES,
         ):
             for identity in catalog.values():
                 image = DECODED / identity.filename
@@ -101,11 +103,19 @@ class Stage5OfflineAuthorityPipelineTests(unittest.TestCase):
         )
         self.assertEqual(
             PRACTICE_STAGE_ECL_IDENTITIES["5"].filename,
+            "ecldata5.ecl",
+        )
+        self.assertEqual(
+            ROUTE_STAGE_ECL_IDENTITIES["5"].sha256,
+            PRACTICE_STAGE_ECL_IDENTITIES["5"].sha256,
+        )
+        self.assertEqual(
+            STAGE_SPELL_PRACTICE_ECL_IDENTITIES["5"].filename,
             "ecldata5sp.ecl",
         )
         self.assertNotEqual(
-            ROUTE_STAGE_ECL_IDENTITIES["5"].sha256,
             PRACTICE_STAGE_ECL_IDENTITIES["5"].sha256,
+            STAGE_SPELL_PRACTICE_ECL_IDENTITIES["5"].sha256,
         )
 
         self.assertEqual(

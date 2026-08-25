@@ -948,8 +948,8 @@ the one-shot identity service compared its 67,324-byte Final-B image
 (`20b35d...`) with the 45,844-byte runtime Stage-1 image (`6b44a0...`) and
 reported `byte_mismatch`.  It never retried on stages `(1,2,3,5,7)`.  In
 addition, `NO_SCALE_WRITER_STAGE_ROUTE_INDICES = range(5)` excluded the real
-Stage-5 index 5.  Runtime index 4 is a valid no-writer Stage-4B Practice image,
-but is not part of the Sakuya/Remilia Route-2 sequence.  Static no-writer
+Stage-5 index 5.  Runtime index 4 is a valid no-writer Stage-4B route/Practice-
+Start image, but is not part of the Sakuya/Remilia Route-2 sequence.  Static no-writer
 audits are complete for `ecldata1/2/3/4a/4b/5`; Final A and Final B remain
 dynamic because their decoded programs reach callback 18.
 
@@ -1178,26 +1178,16 @@ remains deferred.
 
 ### AUD-048 — Practice runtime identity was pinned to the route ECL image
 
-Status: **CONFIRMED INFRA BUG; OFFLINE FIX VALIDATED; PHYSICAL IDENTITY CHECK
-DEFERRED**
+Status: **RETRACTED 2026-08-25; CONFUSED PRACTICE START WITH SPELL PRACTICE;
+CORRECTED BY AUD-060**
 
-The stage catalog called its entries Practice identities but named the route
-images (`ecldata5.ecl`, etc.). The native loader does not use those images in
-Practice Start. `EnemyManager.cpp` selects the ordinary stage table only when
-game-manager flag bit 14 is clear; with that practice flag set and a spell ID
-below 205 it selects the stage-specific `*sp.ecl` table. Thus the next Stage-5
-Practice command would have compared the relocated `ecldata5sp.ecl` runtime
-against `ecldata5.ecl`. Exact runtime identity would correctly reject it, so
-the scale and future-source lanes would remain unavailable regardless of VPS
-compute.
-
-Route and Practice catalogs are now separate. Practice Stage 5 is pinned to
-`ecldata5sp.ecl` SHA-256 `d9140821...`; route Stage 5 remains pinned to
-`ecldata5.ecl` SHA-256 `3148f45f...`. Final-B route launch retains its route
-digest instead of accidentally inheriting the Practice digest. Offline tests
-hash and parse every image in both catalogs, repeat the complete no-scale-
-writer audit, prove the two Stage-5 identities differ, and exercise the exact
-Stage-5 pre-plan identity/scale transaction with the Practice image.
+This finding interpreted game-manager bit 14 as the ordinary Practice flag.
+`GameManager.hpp` names bit 0 `isPracticeMode` and bit 14
+`isSpellPractice`. The ECL branch in `EnemyManager::AddedCallback` tests only
+bit 14. Ordinary Practice Start therefore loads the same route `*.ecl` image;
+`*sp.ecl` belongs to Spell Practice for cards below 205. The exact runtime
+identity gate physically falsified the old claim before it could grant scale,
+future-source, or action authority.
 
 The retained 28-hit Practice trace also narrows the next producer work. Its
 existing callback-12 lookahead was complete for every recorded decision in
@@ -1209,12 +1199,13 @@ structural omission is future births/child producers; spell 115 additionally
 requires callback-14 lowering. These are retained-trace diagnostics, not a
 survival or runtime-image-identity acceptance claim.
 
-The follow-up static contract is retained as
-`th08_stage5_spell_producer_contract_20260824.json`. It decodes opcode `0x7A`
+The follow-up static contract remains valid after relabelling its second image
+as Spell Practice. Corrected schema v2 is retained as
+`th08_stage5_spell_producer_contract_20260825.json`. It decodes opcode `0x7A`
 with the native `enemyFace`/`spellCardNumber` half-word layout, closes literal
 call/interrupt/auxiliary/child edges, and normalizes subroutine numbers and
 phase-exit targets. All five route Stage-5 spell programs (103, 107, 111, 115,
-118) have bit-for-bit-equivalent normalized producer graphs in
+118) have bit-for-bit-equivalent normalized producer graphs in Spell-Practice
 `ecldata5sp.ecl`; the different root and successor indices are packaging, not
 pattern differences. The observed four cards contain no dynamic subroutine
 target in that static closure.
@@ -1470,6 +1461,36 @@ certificate, or input filter; its only effects are diagnostic read/CPU/I/O
 load and trace metadata. The complete offline suite passes 1,443 tests with 5
 platform skips. One isolated Stage-5 Practice capture remains necessary to
 turn this infrastructure into real retained-root evidence.
+
+### AUD-060 — Practice Start and Spell Practice were conflated
+
+Status: **CONFIRMED BY SOURCE AND PHYSICAL IDENTITY; FIXED OFFLINE; ROOT RETRY PENDING**
+
+The first physical retained-root attempt
+`lunatic_route2_stage5_unattended_20260825_010248` selected Lunatic,
+Sakuya/Remilia, and Stage 5 under the isolated TH08 prefix. It used an
+86,400-second agent budget and 86,700-second trial timeout, hard no-Bomb, and a
+capture-only root sink. The controller expected `ecldata5sp.ecl` (31,184
+bytes, SHA-256 `d9140821...`) but captured a 47,224-byte runtime image whose
+normalized SHA-256 was `3148f45f...`, exactly the pinned `ecldata5.ecl` route
+image. It failed closed at `time_scale_authority_unknown`, emitted no decision
+or retained-root record, and exited after about 17 seconds. Thus duration did
+not terminate the attempt. Prefix cleanup found no remaining process and did
+not signal another Wine prefix.
+
+The root cause is explicit in the authoritative source. `GameManagerFlags`
+assigns bit 0 to `isPracticeMode` and bit 14 to `isSpellPractice`.
+`EnemyManager::AddedCallback` selects `g_StageEclFiles[currentStage]` whenever
+bit 14 is clear, selects an individual `g_SpellEclFiles` entry for Spell
+Practice cards at least 205, and otherwise selects
+`g_StageSpellEclFiles[currentStage]`. The runtime catalog now maps Practice
+Start to the ordinary route identities and exposes the `*sp.ecl` family under
+the unambiguous `STAGE_SPELL_PRACTICE_ECL_IDENTITIES` name. The Wine runner
+therefore pins `ecldata5.ecl`; the static producer contract uses the separately
+named Spell-Practice table and schema v2. Fifty-six focused catalog,
+identity/scale, producer-contract, Wine-command, and Practice-supervisor tests
+pass. This fixes acquisition identity only; it does not itself add a producer
+event or global-planner authority.
 
 ## Offline Verification Record
 

@@ -291,7 +291,7 @@ class Th08WineRunnerTests(unittest.TestCase):
                 runner.ROOT
                 / "artifacts"
                 / "decoded"
-                / "ecldata4bsp.ecl"
+                / "ecldata4b.ecl"
             ),
         )
         self.assertEqual(

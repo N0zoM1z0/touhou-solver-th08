@@ -1,11 +1,13 @@
-"""Pinned decoded ECL identities for original-game stage execution modes.
+"""Pinned decoded ECL identities for original-game execution modes.
 
 The route index is the value exposed by the shipped runtime.  The digest pins
 the decoded image that is compared with the relocated runtime image before any
-source-derived planning fact may receive action authority.  Practice Start
-sets the native game-manager practice flag and therefore loads ``*sp.ecl``;
-route play loads the corresponding ordinary ``*.ecl`` image.  Keeping those
-identities separate is mandatory because their subroutine layouts differ.
+source-derived planning fact may receive action authority.  Route play and
+Practice Start both load the ordinary ``*.ecl`` image: the loader tests the
+game-manager ``isSpellPractice`` bit, not ``isPracticeMode``.  Stage-scoped
+Spell Practice below card 205 instead loads ``*sp.ecl``.  Keeping the latter
+identities explicitly named is mandatory because their subroutine layouts can
+differ even when their normalized spell programs are equivalent.
 """
 
 from __future__ import annotations
@@ -20,7 +22,7 @@ SCALE_MODEL_FINAL_B = "finalb_complete_scale_source"
 
 @dataclass(frozen=True, slots=True)
 class StageEclIdentity:
-    practice_key: str
+    stage_key: str
     route_index: int
     label: str
     filename: str
@@ -95,7 +97,17 @@ ROUTE_STAGE_ECL_IDENTITIES = {
     ),
 }
 
-PRACTICE_STAGE_ECL_IDENTITIES = {
+# Practice Start sets GameManagerFlags::isPracticeMode (bit 0), but the ECL
+# branch in EnemyManager::AddedCallback tests isSpellPractice (bit 14).
+# Preserve a separate mapping name at call sites so the requested execution
+# mode remains explicit even though the pinned identities equal route play.
+PRACTICE_STAGE_ECL_IDENTITIES = dict(ROUTE_STAGE_ECL_IDENTITIES)
+
+
+# g_StageSpellEclFiles: used by Spell Practice while the selected card number
+# is below 205.  Cards 205 and above use the per-card g_SpellEclFiles table and
+# are intentionally outside this stage-indexed catalog.
+STAGE_SPELL_PRACTICE_ECL_IDENTITIES = {
     "1": StageEclIdentity(
         "1",
         0,
@@ -165,7 +177,7 @@ PRACTICE_STAGE_ECL_IDENTITIES = {
 PRACTICE_STAGE_KEYS = tuple(PRACTICE_STAGE_ECL_IDENTITIES)
 NO_SCALE_WRITER_STAGE_ROUTE_INDICES = frozenset(
     identity.route_index
-    for identity in PRACTICE_STAGE_ECL_IDENTITIES.values()
+    for identity in ROUTE_STAGE_ECL_IDENTITIES.values()
     if identity.scale_model == SCALE_MODEL_NO_WRITER
 )
 FINAL_B_ECL_SHA256 = ROUTE_STAGE_ECL_IDENTITIES["6b"].sha256
@@ -177,6 +189,7 @@ __all__ = [
     "PRACTICE_STAGE_ECL_IDENTITIES",
     "PRACTICE_STAGE_KEYS",
     "ROUTE_STAGE_ECL_IDENTITIES",
+    "STAGE_SPELL_PRACTICE_ECL_IDENTITIES",
     "SCALE_MODEL_DYNAMIC",
     "SCALE_MODEL_FINAL_B",
     "SCALE_MODEL_NO_WRITER",

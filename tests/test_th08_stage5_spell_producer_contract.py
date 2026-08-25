@@ -15,7 +15,7 @@ class Stage5SpellProducerContractTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.report = build_report(DECODED)
 
-    def test_route_and_practice_programs_are_source_equivalent(self) -> None:
+    def test_route_and_spell_practice_programs_are_source_equivalent(self) -> None:
         report = self.report
         self.assertTrue(report["passed"])
         self.assertEqual(
@@ -29,8 +29,14 @@ class Stage5SpellProducerContractTests(unittest.TestCase):
         self.assertTrue(
             all(
                 row["equivalent"]
-                for row in report["route_practice_equivalence"].values()
+                for row in report[
+                    "route_spell_practice_equivalence"
+                ].values()
             )
+        )
+        self.assertEqual(
+            report["spell_practice"]["filename"],
+            "ecldata5sp.ecl",
         )
 
     def test_observed_spell_roots_and_timeouts_are_exact(self) -> None:

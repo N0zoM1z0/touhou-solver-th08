@@ -240,21 +240,24 @@ schedules are exact complete unit-scale consequences of the same pinned
 source.  This gate prevents false global authority but does not manufacture
 the still-missing spell producers.
 
-Mode identity is itself part of that prerequisite.  Source inspection of the
-native stage loader showed that Practice Start selects the stage-specific
-\texttt{ecldata*sp.ecl} table, whereas route play selects
-\texttt{ecldata*.ecl}.  The initial catalog incorrectly used route images for
-both modes, which would have made exact Practice identity fail closed before
-planning.  Separate pinned catalogs now preserve the distinction.  A retained
-Stage~5 trace further shows complete 256-frame callback-12 schedules for every
+Mode identity is itself part of that prerequisite.  Source inspection and an
+exact physical identity check showed that Practice Start, like route play,
+loads \texttt{ecldata*.ecl}.  The loader selects
+\texttt{ecldata*sp.ecl} only when the distinct Spell-Practice flag is set.
+An intermediate catalog confused those two flags; its exact identity gate
+failed closed before planning, exposing the error without granting authority.
+The corrected catalog preserves a separate Spell-Practice image only for
+static cross-package analysis.  A retained Stage~5 trace further shows
+complete 256-frame callback-12 schedules for every
 decision in spells 103, 107, and 111, but callback-14 control remains unknown
 for 721 of 732 spell-115 decisions.  This shifts the immediate target from a
 wider callback-12 scan to future bullet births and child VMs, with callback 14
 as an additional spell-115 dependency.
 
 A static producer contract then normalized subroutine identifiers and phase
-exit targets across the two Stage~5 images.  All five route spell programs have
-identical normalized dependency graphs in the Practice image.  For the four
+exit targets across the route and Spell-Practice Stage~5 packages.  All five
+route spell programs have identical normalized dependency graphs in the
+Spell-Practice image.  For the four
 observed cards, the graph contains respectively 6/3/3/6 direct-fire sites,
 0/3/0/3 transform sites, and 1/3/13/2 child-spawn sites.  These counts are a
 coverage denominator, not predicted multiplicities: only a retained VM root

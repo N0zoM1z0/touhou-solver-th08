@@ -567,29 +567,31 @@ claim. GLOBAL-001C now measures reached Stage-5 producer coverage and shadow
 delivery on retained roots; physical Practice remains withheld until those
 metrics are nonzero and the candidate changes a same-root viability outcome.
 
-## GLOBAL-001C — Mode-Correct Practice Image And Producer Census
+## GLOBAL-001C — Practice-Start Identity And Producer Census
 
-Status: **FIRST ACTIVE-SPELL PREFIX CLOSED OFFLINE; CALLBACK-TAGGED BIRTHS
-ARE THE NEXT BLOCKER**
+Status: **PHYSICAL MODE-ID BUG CORRECTED; RETAINED-ROOT RETRY IS NEXT**
 
-The first retained-trace census exposed an infrastructure blocker before any
-producer extension: Practice Start loads the source-authoritative
-`ecldata*sp.ecl` family, while the new catalog and Wine command pinned route
-`ecldata*.ecl`. The catalogs are now mode-specific and the Stage-5 offline
-identity/scale transaction uses `ecldata5sp.ecl`. This prevents an exact
-identity service from correctly rejecting every Practice root before the VPS
-workers receive useful work.
+An intermediate source reading confused `GameManagerFlags::isPracticeMode`
+(bit 0) with `isSpellPractice` (bit 14), and consequently made the Practice
+Start runner pin `ecldata*sp.ecl`. The first capture-only Wine attempt rejected
+that claim exactly: the relocated Stage-5 image normalized to route
+`ecldata5.ecl` SHA-256 `3148f45f...`, not `ecldata5sp.ecl` SHA-256
+`d9140821...`. `EnemyManager::AddedCallback` confirms that ordinary route and
+Practice Start both take `g_StageEclFiles`; only Spell Practice takes
+`g_StageSpellEclFiles` for cards below 205. The runtime catalog and Wine command
+now pin `ecldata5.ecl` for Practice Start, while a separately named catalog
+retains `*sp.ecl` solely for Spell-Practice analysis.
 
 Across the retained 28-hit Stage-5 trace, callback-12 lookahead already covers
 all 1,986 decisions in spells 103/107/111. Spell 115 has 721/732 incomplete
 rows at its unsupported callback-14 path. The selected generic checkpoint was
-therefore not a wider callback-12 horizon: compile and test route/Practice
-spell producer topology, admit active-spell direct-fire prefixes into the
+therefore not a wider callback-12 horizon: compile and test route/Spell-
+Practice spell producer topology, admit active-spell direct-fire prefixes into the
 existing fail-closed future-source kernel, and then lower child sources and
 callback 14. Wine remains a final acceptance gate after offline projection
 coverage and same-root global viability changes are nonzero.
 
-The machine-readable producer contract now pins both Stage-5 images and proves
+The v2 machine-readable producer contract now pins both Stage-5 packages and proves
 normalized program equivalence for route spells 103/107/111/115/118. It also
 provides the exact direct-fire/transform/child/callback site denominator and
 fails if a literal target becomes dynamic. This closes the static census but
@@ -623,8 +625,9 @@ spell-103 fixture is synthetic. A new spell-filtered capture-only lane now
 writes content-addressed coherent capsules on the dedicated worker. Exact ECL
 identity is mandatory, capsule counts are bounded, and capture-only results
 are discarded before every action-authority consumer. The next physical step
-is therefore one isolated Stage-5 Practice used to acquire roots, not a hit
-comparison or policy gate.
+is therefore one corrected isolated Stage-5 Practice used to acquire roots,
+not a hit comparison or policy gate. The rejected attempt used 86,400/86,700
+second budgets and stopped in 17 seconds on the identity gate, not duration.
 
 The delivery side is also ready but remains unexercised physically. Spell
 captures may feed the shared corridor only when the captured spell ID exactly
