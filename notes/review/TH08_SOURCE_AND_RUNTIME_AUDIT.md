@@ -1939,6 +1939,45 @@ angle is an interval, not because of its tag; no midpoint is substituted. The
 complete Linux suite passes 1,493 tests with five conditional skips. No Wine
 run, global action authority, or hit-count improvement is claimed.
 
+### AUD-073 — Current-pool callbacks lacked a source-ordered hazard composer
+
+Status: **CONFIRMED ARCHITECTURE GAP; EXACT BOUNDED COMPOSER ADDED OFFLINE,
+LIVE CLOCK JOIN STILL GATED**
+
+The retained callback stream is rooted at the future-source snapshot, whereas
+the local hazard field begins at a separately captured bullet-pool state. The
+old main-VM callback-12 adapter could not consume child callbacks or callback
+14 and could not establish that these two clocks were the same. Merely
+clearing the projection's callback-composition bit would therefore have
+granted authority across an unproved temporal join.
+
+A generic bounded composer now accepts an explicit projection-to-bullet
+offset and schedules only callbacks strictly after the observed bullet state.
+Callbacks at or before the offset are required to be reflected in that state;
+later frames are rebased exactly. Equal-frame callbacks retain action-stream
+order and collapse to the final phase, velocity, and collision auxiliary state
+before that frame's native bullet movement. Callback 12 and callback 14 both
+use the C-differential source primitives. The local hazard integration tests
+also show that a callback replacement precedes the divided state-2 spawn-ANM
+movement, rather than being applied one update late.
+
+Authority remains deliberately narrow. A callback operand must be a point, its
+event-to-bullet alignment uncertainty must be zero, and every matching bullet
+must have finite base state with neither an active transform runtime nor a
+pre-existing trajectory schedule. Set-valued operands are harmless only when
+no sensed bullet tag matches their mask. These cases return a typed incomplete
+result without midpointing or partial mutation. Packed and materialized pool
+inputs produce identical schedules, and no stage or spell identifier appears
+in the implementation.
+
+This checkpoint proves an offline motion/collision composer, not the live
+clock join. The controller continues to reject nonempty projection callbacks
+until its coherent root, offset, horizon, and uncertainty evidence is passed
+through this API and the result is joined to the exact hazard snapshot. No
+Wine run or hit-count claim follows. A full 1,536-slot pool with sixteen
+ordered callbacks also composes without partial output. The complete Linux
+suite passes 1,500 tests with five conditional skips.
+
 ## Offline Verification Record
 
 After the Linux native build and fixes above, the latest complete repository

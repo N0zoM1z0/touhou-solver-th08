@@ -572,6 +572,15 @@ velocity nor collision auxiliary state. This removes the need to approximate
 callback 14 through the older callback-12-specific lookahead, but does not by
 itself establish live-pool scheduling or planner authority.
 
+That planner-relevant scheduling kernel now exists offline. It rebases a
+bounded ordered callback suffix from a future-source root to a coherent bullet
+snapshot and emits the velocity/collision events already consumed by the local
+hazard recurrence. Equal-frame transitions are composed before movement, and
+spawn-ANM divided motion sees the replaced velocity on that same update.
+Set-valued operands, uncertain frame alignment, transforms, and conflicting
+existing schedules fail closed. Live authority remains disabled until the
+controller supplies and validates the temporal join rather than assuming it.
+
 The same lifecycle is now part of the versioned complete-stage IR/runtime,
 not only a bounded envelope helper. A 3,600-frame stateful gate exercised all
 21 types, all three spawn-state flags, finite-pool saturation, delayed sensing,

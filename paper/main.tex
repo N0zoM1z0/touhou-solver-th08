@@ -411,6 +411,15 @@ phase-zero branch changes phase only, a detail that cannot be recovered by
 treating callback 14 as a parameter-reduced callback 12.  Scheduling this
 kernel against the sensed pool remains a separate, explicitly gated join.
 
+The bounded pool composer now makes that join explicit rather than implicit:
+it takes the bullet snapshot's offset from the source root, rebases only the
+strictly future callback suffix, and composes equal-frame transitions before
+native movement.  It emits velocity and collision schedules for the existing
+hazard recurrence and agrees for packed and materialized pools.  Uncertain
+frame alignment, set-valued operands, transform interaction, or an existing
+schedule produces an incomplete result.  Consequently the remaining live
+work is a clock-and-identity proof, not another callback dynamics model.
+
 The complete-stage laboratory then exposed several errors that short
 geometric fixtures had not revealed.  Callback-12 motion was modeled while
 its auxiliary non-collision state was omitted, and future frames shared a
