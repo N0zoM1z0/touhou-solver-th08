@@ -2,7 +2,7 @@
 
 Date: 2026-08-26
 
-Status: **bridge, local sensing, and route bootstrap implemented; replay differential pending**
+Status: **Linux self-repeat complete; aligned retail collector implemented; physical differential pending**
 
 This note records a deliberate change in viewpoint. The Linux reconstruction
 is not merely a cheaper replacement for Wine process sensing. It can become a
@@ -244,9 +244,12 @@ Linux runtime, and original replay is a localization tool, not a vote.
 5. **Done for a retained replay on Linux:** load retail-format replay input,
    construct the pointer-free semantic spine, and prove a 300-epoch exact
    Linux self-repeat with first-divergence tooling.
-6. **Next:** capture the same retained replay in original Wine, then
-   differential a Linux-generated replay in fresh Linux and original-Wine
-   processes.
+6. **In progress:** the retail collector now traps the shipped executable at
+   the verified pre-calculation callsite, advances through the original frame
+   pump one update at a time, and shares the Linux semantic-spine format.  Run
+   the same retained replay under isolated Wine and classify its first exact
+   field difference; then differential a Linux-generated replay in fresh
+   Linux and original-Wine processes.
 7. Only after that gate, connect the generic local planner epoch driver and
    solve Easy practice roots followed by the full Easy route.
 8. Accept success only after the original Wine runtime completes that replay

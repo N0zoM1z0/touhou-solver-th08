@@ -178,6 +178,17 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertEqual(args.trial_timeout, 86_700.0)
         self.assertFalse(args.diagnostic_continue_root_only_scale)
 
+    def test_replay_differential_defaults_to_bounded_aligned_capture(self) -> None:
+        args = runner.build_parser().parse_args(
+            ["--mode", "replay-differential"]
+        )
+        self.assertEqual(args.replay_slot, 1)
+        self.assertEqual(args.replay_route_id, 2)
+        self.assertEqual(args.replay_difficulty_index, 3)
+        self.assertEqual(args.replay_stage_index, 5)
+        self.assertEqual(args.replay_start_manager_frame, 600)
+        self.assertEqual(args.replay_gameplay_epochs, 300)
+
     def test_pty_bridge_provides_console_handles_and_propagates_status(
         self,
     ) -> None:
@@ -382,6 +393,115 @@ class Th08WineRunnerTests(unittest.TestCase):
             command[command.index("--runtime-ecl-static-sha256") + 1],
             runner.PRACTICE_STAGE_ECL_IDENTITIES["6b"].sha256,
         )
+
+    def test_replay_differential_command_pins_identity_and_has_no_route_budget(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            command = runner.build_windows_controller_command(
+                mode="replay-differential",
+                python=root / "python.exe",
+                game_dir=root / "game",
+                artifact_dir=root / "artifacts",
+                agent_duration=1.0,
+                trial_timeout=2.0,
+                kill_before_saturation=False,
+                ordinary_preexhaustion_authority=False,
+                authority_only_corridor=True,
+                trace_items=False,
+                replay_slot=4,
+                replay_expected_sha256="a" * 64,
+                replay_route_id=2,
+                replay_difficulty_index=3,
+                replay_stage_index=5,
+                replay_start_manager_frame=700,
+                replay_gameplay_epochs=123,
+            )
+
+        self.assertIn("th08_windows_replay_semantic_smoke.py", command[1])
+        self.assertEqual(command[command.index("--replay-slot") + 1], "4")
+        self.assertEqual(
+            command[command.index("--expected-replay-sha256") + 1],
+            "a" * 64,
+        )
+        self.assertEqual(
+            command[command.index("--start-manager-frame") + 1],
+            "700",
+        )
+        self.assertEqual(
+            command[command.index("--gameplay-epochs") + 1],
+            "123",
+        )
+        self.assertNotIn("--agent-duration", command)
+        self.assertNotIn("--trial-timeout", command)
+
+    def test_replay_slot_provision_is_exclusive_and_recoverable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.rpy"
+            source.write_bytes(b"exact replay")
+            expected_sha256 = runner.sha256(source)
+            game_dir = root / "game"
+
+            destination, owned = runner.provision_replay_slot(
+                source,
+                game_dir,
+                slot=1,
+                expected_sha256=expected_sha256,
+            )
+            self.assertTrue(owned)
+            self.assertEqual(destination.read_bytes(), b"exact replay")
+            runner.remove_provisioned_replay(
+                destination,
+                expected_sha256=expected_sha256,
+            )
+            self.assertFalse(destination.exists())
+
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(b"exact replay")
+            reused, owned = runner.provision_replay_slot(
+                source,
+                game_dir,
+                slot=1,
+                expected_sha256=expected_sha256,
+            )
+            self.assertEqual(reused, destination)
+            self.assertFalse(owned)
+            self.assertTrue(destination.is_file())
+
+    def test_replay_slot_refuses_overwrite_or_changed_cleanup(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.rpy"
+            source.write_bytes(b"exact replay")
+            expected_sha256 = runner.sha256(source)
+            game_dir = root / "game"
+            destination = game_dir / "replay" / "th8_01.rpy"
+            destination.parent.mkdir(parents=True)
+            destination.write_bytes(b"occupied")
+            with self.assertRaisesRegex(RuntimeError, "occupied"):
+                runner.provision_replay_slot(
+                    source,
+                    game_dir,
+                    slot=1,
+                    expected_sha256=expected_sha256,
+                )
+
+            destination.unlink()
+            destination, owned = runner.provision_replay_slot(
+                source,
+                game_dir,
+                slot=1,
+                expected_sha256=expected_sha256,
+            )
+            self.assertTrue(owned)
+            destination.write_bytes(b"changed")
+            with self.assertRaisesRegex(RuntimeError, "changed"):
+                runner.remove_provisioned_replay(
+                    destination,
+                    expected_sha256=expected_sha256,
+                )
 
     def test_pe_machine_reads_i386_coff_header(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

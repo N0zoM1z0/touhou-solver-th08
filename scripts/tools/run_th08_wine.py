@@ -26,6 +26,7 @@ from th08_stage_ecl_catalog import (  # noqa: E402
     PRACTICE_STAGE_KEYS,
     SCALE_MODEL_FINAL_B,
 )
+from th08_replay import decode_replay  # noqa: E402
 
 
 ROOT = SCRIPTS_ROOT.parent
@@ -243,6 +244,65 @@ def validate_prefix_target(prefix: Path) -> None:
         raise ValueError(f"refusing broad Wine prefix target: {resolved}")
 
 
+def provision_replay_slot(
+    source: Path,
+    game_dir: Path,
+    *,
+    slot: int,
+    expected_sha256: str,
+) -> tuple[Path, bool]:
+    """Install one exact replay without replacing an existing slot."""
+
+    if not 1 <= slot <= 15:
+        raise ValueError("Wine replay slot must be in 1..15")
+    source = source.resolve(strict=True)
+    expected_sha256 = expected_sha256.lower()
+    if sha256(source) != expected_sha256:
+        raise RuntimeError("Wine replay input SHA-256 mismatch")
+    destination = game_dir / "replay" / f"th8_{slot:02d}.rpy"
+    if destination.exists():
+        if not destination.is_file():
+            raise RuntimeError(
+                f"Wine replay destination is not a file: {destination}"
+            )
+        if sha256(destination) != expected_sha256:
+            raise RuntimeError(
+                "refusing to replace an occupied Wine replay slot: "
+                f"{destination}"
+            )
+        return destination, False
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with source.open("rb") as replay_input, destination.open(
+            "xb"
+        ) as replay_output:
+            shutil.copyfileobj(replay_input, replay_output, 1 << 20)
+        if sha256(destination) != expected_sha256:
+            raise RuntimeError("provisioned Wine replay failed verification")
+    except BaseException:
+        if destination.is_file():
+            destination.unlink()
+        raise
+    return destination, True
+
+
+def remove_provisioned_replay(
+    destination: Path,
+    *,
+    expected_sha256: str,
+) -> None:
+    """Remove only an exact replay file created by this host invocation."""
+
+    if not destination.exists():
+        return
+    if not destination.is_file() or sha256(destination) != expected_sha256:
+        raise RuntimeError(
+            "refusing to remove a changed provisioned replay: "
+            f"{destination}"
+        )
+    destination.unlink()
+
+
 def build_windows_controller_command(
     *,
     mode: str,
@@ -260,6 +320,13 @@ def build_windows_controller_command(
     diagnostic_continue_root_only_scale: bool = False,
     future_source_retain_spells: tuple[int, ...] = (),
     future_source_retain_max_per_spell: int = 1,
+    replay_slot: int = 1,
+    replay_expected_sha256: str | None = None,
+    replay_route_id: int = 2,
+    replay_difficulty_index: int = 3,
+    replay_stage_index: int = 5,
+    replay_start_manager_frame: int = 600,
+    replay_gameplay_epochs: int = 300,
 ) -> list[str]:
     if difficulty not in {"easy", "normal", "hard", "lunatic"}:
         raise ValueError(f"unsupported main difficulty: {difficulty}")
@@ -322,10 +389,46 @@ def build_windows_controller_command(
                 )
             )
         return command
+    if mode == "replay-differential":
+        if replay_expected_sha256 is None:
+            raise ValueError("replay differential requires an expected SHA-256")
+        return [
+            windows_path(python),
+            windows_path(
+                ROOT
+                / "scripts"
+                / "tools"
+                / "th08_windows_replay_semantic_smoke.py"
+            ),
+            "--game-dir",
+            windows_path(game_dir),
+            "--launch-bat",
+            windows_path(launcher),
+            "--report",
+            windows_path(artifact_dir / "windows-replay-semantic.json"),
+            "--fingerprint-output",
+            windows_path(artifact_dir / "windows-replay-semantic.jsonl.gz"),
+            "--replay-slot",
+            str(replay_slot),
+            "--expected-replay-sha256",
+            replay_expected_sha256,
+            "--expected-route-id",
+            str(replay_route_id),
+            "--expected-difficulty-index",
+            str(replay_difficulty_index),
+            "--expected-stage-index",
+            str(replay_stage_index),
+            "--start-manager-frame",
+            str(replay_start_manager_frame),
+            "--gameplay-epochs",
+            str(replay_gameplay_epochs),
+        ]
     if future_source_retain_spells:
         raise ValueError(
             "future-source root retention is currently a Practice-only gate"
         )
+    if mode != "full-route":
+        raise ValueError(f"unsupported Wine controller mode: {mode}")
     command = [
         windows_path(python),
         windows_path(ROOT / "scripts" / "th08_full_route_supervisor.py"),
@@ -362,7 +465,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--mode",
-        choices=("smoke", "practice", "full-route"),
+        choices=("smoke", "practice", "full-route", "replay-differential"),
         default="smoke",
     )
     parser.add_argument(
@@ -423,6 +526,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--artifact-dir", type=Path)
     parser.add_argument("--timeout", type=float)
+    parser.add_argument(
+        "--replay-input",
+        type=Path,
+        help="exact replay to provision for replay-differential mode",
+    )
+    parser.add_argument("--expected-replay-sha256")
+    parser.add_argument("--replay-slot", type=int, default=1)
+    parser.add_argument("--replay-route-id", type=int, default=2)
+    parser.add_argument("--replay-difficulty-index", type=int, default=3)
+    parser.add_argument("--replay-stage-index", type=int, default=5)
+    parser.add_argument("--replay-start-manager-frame", type=int, default=600)
+    parser.add_argument("--replay-gameplay-epochs", type=int, default=300)
     parser.add_argument(
         "--agent-duration",
         type=float,
@@ -485,6 +600,18 @@ def run(args: argparse.Namespace) -> int:
         "mode": args.mode,
         "difficulty": args.difficulty,
         "practice_stage": args.practice_stage if args.mode == "practice" else None,
+        "replay_input": (
+            str(args.replay_input.resolve())
+            if args.replay_input is not None
+            else None
+        ),
+        "expected_replay_sha256": args.expected_replay_sha256,
+        "replay_slot": args.replay_slot,
+        "replay_route_id": args.replay_route_id,
+        "replay_difficulty_index": args.replay_difficulty_index,
+        "replay_stage_index": args.replay_stage_index,
+        "replay_start_manager_frame": args.replay_start_manager_frame,
+        "replay_gameplay_epochs": args.replay_gameplay_epochs,
         "artifact_dir": str(artifact_dir),
         "display_requested": args.display,
         "cpu_list_requested": args.cpu_list,
@@ -521,6 +648,8 @@ def run(args: argparse.Namespace) -> int:
     prefix_owned = False
     environment: dict[str, str] | None = None
     wineserver: Path | None = None
+    provisioned_replay_path: Path | None = None
+    provisioned_replay_owned = False
     result_code = 78
     try:
         validate_prefix_target(prefix)
@@ -529,10 +658,81 @@ def run(args: argparse.Namespace) -> int:
         report["cpu_list"] = resolved_cpu_list
         if args.timeout is not None and args.timeout <= 0.0:
             raise ValueError("timeout must be positive")
-        if args.mode != "smoke" and args.agent_duration <= 0.0:
+        if args.mode in {"practice", "full-route"} and args.agent_duration <= 0.0:
             raise ValueError("agent duration must be positive")
-        if args.mode != "smoke" and args.trial_timeout <= args.agent_duration:
+        if (
+            args.mode in {"practice", "full-route"}
+            and args.trial_timeout <= args.agent_duration
+        ):
             raise ValueError("trial timeout must exceed agent duration")
+        replay_input: Path | None = None
+        replay_sha256: str | None = None
+        if args.mode == "replay-differential":
+            if args.replay_input is None:
+                raise ValueError(
+                    "replay-differential mode requires --replay-input"
+                )
+            if args.expected_replay_sha256 is None:
+                raise ValueError(
+                    "replay-differential mode requires "
+                    "--expected-replay-sha256"
+                )
+            if not 1 <= args.replay_slot <= 15:
+                raise ValueError("replay slot must be in 1..15")
+            if args.replay_start_manager_frame <= 0:
+                raise ValueError("replay start manager frame must be positive")
+            if args.replay_gameplay_epochs <= 0:
+                raise ValueError("replay gameplay epochs must be positive")
+            replay_input = args.replay_input.resolve(strict=True)
+            replay_sha256 = args.expected_replay_sha256.lower()
+            if len(replay_sha256) != 64:
+                raise ValueError(
+                    "expected replay SHA-256 must contain 64 hex digits"
+                )
+            try:
+                int(replay_sha256, 16)
+            except ValueError as error:
+                raise ValueError(
+                    "expected replay SHA-256 must contain only hex digits"
+                ) from error
+            if sha256(replay_input) != replay_sha256:
+                raise RuntimeError("replay input SHA-256 mismatch")
+            replay_metadata, _decoded = decode_replay(replay_input)
+            if replay_metadata.sha256 != replay_sha256:
+                raise RuntimeError("replay decoder/file SHA-256 disagreement")
+            if replay_metadata.route_id != args.replay_route_id:
+                raise RuntimeError("replay input route does not match request")
+            if (
+                replay_metadata.difficulty_index
+                != args.replay_difficulty_index
+            ):
+                raise RuntimeError(
+                    "replay input difficulty does not match request"
+                )
+            matching_stages = tuple(
+                stage
+                for stage in replay_metadata.stages
+                if stage.stage_index == args.replay_stage_index
+            )
+            if len(replay_metadata.stages) != 1 or len(matching_stages) != 1:
+                raise RuntimeError(
+                    "replay input must contain only the requested stage"
+                )
+            if matching_stages[0].frame_count <= 0:
+                raise RuntimeError("replay input stage has no frames")
+            if matching_stages[0].bomb_press_frames:
+                raise RuntimeError("replay input contains Bomb presses")
+            report["replay_input_contract"] = {
+                "sha256": replay_sha256,
+                "route_id": replay_metadata.route_id,
+                "difficulty_index": replay_metadata.difficulty_index,
+                "stage_index": matching_stages[0].stage_index,
+                "stage_frame_count": matching_stages[0].frame_count,
+                "stage_input_sha256": matching_stages[0].input_sha256,
+                "stage_bomb_press_frames": list(
+                    matching_stages[0].bomb_press_frames
+                ),
+            }
         if (
             args.diagnostic_continue_root_only_scale
             and args.mode != "practice"
@@ -583,6 +783,15 @@ def run(args: argparse.Namespace) -> int:
                 / "artifacts"
                 / "decoded"
                 / practice_identity.filename,
+            )
+        elif args.mode == "replay-differential":
+            assert replay_input is not None
+            required += (
+                replay_input,
+                ROOT
+                / "scripts"
+                / "tools"
+                / "th08_windows_replay_semantic_smoke.py",
             )
         for path in required:
             if not path.is_file():
@@ -760,6 +969,23 @@ def run(args: argparse.Namespace) -> int:
             raise RuntimeError("TH08 score restoration failed")
         if report["config_sha256_at_launch"] != EXPECTED_CONFIG_SHA256:
             raise RuntimeError("TH08 config restoration failed")
+        if args.mode == "replay-differential":
+            assert replay_input is not None
+            assert replay_sha256 is not None
+            (
+                provisioned_replay_path,
+                provisioned_replay_owned,
+            ) = provision_replay_slot(
+                replay_input,
+                game_dir,
+                slot=args.replay_slot,
+                expected_sha256=replay_sha256,
+            )
+            report["provisioned_replay"] = {
+                "path": str(provisioned_replay_path),
+                "sha256": replay_sha256,
+                "owned": provisioned_replay_owned,
+            }
         windows_command = build_windows_controller_command(
             mode=args.mode,
             python=windows_python,
@@ -784,6 +1010,13 @@ def run(args: argparse.Namespace) -> int:
             future_source_retain_max_per_spell=(
                 args.future_source_retain_max_per_spell
             ),
+            replay_slot=args.replay_slot,
+            replay_expected_sha256=replay_sha256,
+            replay_route_id=args.replay_route_id,
+            replay_difficulty_index=args.replay_difficulty_index,
+            replay_stage_index=args.replay_stage_index,
+            replay_start_manager_frame=args.replay_start_manager_frame,
+            replay_gameplay_epochs=args.replay_gameplay_epochs,
         )
         wine_command = [
             str(wine),
@@ -809,9 +1042,11 @@ def run(args: argparse.Namespace) -> int:
             stdout=controller_log,
             stderr=subprocess.STDOUT,
         )
-        timeout = args.timeout or (
-            180.0 if args.mode == "smoke" else args.trial_timeout + 180.0
-        )
+        default_timeout = {
+            "smoke": 180.0,
+            "replay-differential": 600.0,
+        }.get(args.mode, args.trial_timeout + 180.0)
+        timeout = args.timeout or default_timeout
         report["timeout_seconds"] = timeout
         try:
             returncode = controller_process.wait(timeout=timeout)
@@ -831,6 +1066,17 @@ def run(args: argparse.Namespace) -> int:
             report["windows_smoke"] = smoke
             if smoke.get("status") != "passed":
                 raise RuntimeError("Windows-side TH08 smoke did not pass")
+        elif args.mode == "replay-differential":
+            replay_smoke = json.loads(
+                (
+                    artifact_dir / "windows-replay-semantic.json"
+                ).read_text(encoding="utf-8")
+            )
+            report["windows_replay_semantic"] = replay_smoke
+            if replay_smoke.get("status") != "passed":
+                raise RuntimeError(
+                    "Windows-side TH08 replay semantic capture did not pass"
+                )
         report["status"] = "passed"
         result_code = 0
     except BaseException as error:
@@ -865,6 +1111,20 @@ def run(args: argparse.Namespace) -> int:
         stop_process(xvfb_process)
         if prefix_owned:
             wait_prefix_exit(prefix)
+        if provisioned_replay_owned and provisioned_replay_path is not None:
+            try:
+                assert replay_sha256 is not None
+                remove_provisioned_replay(
+                    provisioned_replay_path,
+                    expected_sha256=replay_sha256,
+                )
+                report["provisioned_replay_removed"] = True
+            except BaseException as error:
+                cleanup_errors.append(
+                    f"{type(error).__name__} removing provisioned replay: "
+                    f"{error}"
+                )
+                report["provisioned_replay_removed"] = False
         controller_log.close()
         xvfb_log.close()
         report["leftover_prefix_processes"] = (

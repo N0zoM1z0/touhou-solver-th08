@@ -3212,6 +3212,31 @@ were 12 KiB each and remain temporary, not repository artifacts. This closes
 Linux self-repeat only. No x87 allowance, Linux/original equivalence, replay
 clear, hit, or NMNB claim follows.
 
+### AUD-104 — Retail replay polling could not define the Linux input boundary
+
+Status: **FIXED OFFLINE; PHYSICAL CROSS-RUNTIME CAPTURE PENDING**
+
+A normal Wine memory poll can observe the original executable at an arbitrary
+instruction inside a frame.  Comparing that sample with the Linux bridge,
+which blocks inside priority-0 input acquisition, would therefore confound
+platform arithmetic with a half-updated state.  Increasing the polling rate
+cannot prove boundary identity.
+
+The bounded retail differential now reuses the verified calculation-chain
+callsite barrier at `0x00441F4D`.  It traps before the original ordered calc
+chain at one explicit manager frame, captures the pointer-free semantic spine,
+then uses the original frame pump to reach the next call boundary.  Replay
+SHA-256, route, difficulty, single stage, and zero-Bomb input are checked on
+both host and Windows sides.  The host provisions only an empty replay slot,
+refuses replacement, and removes only a byte-identical file created by that
+invocation.  Wine cleanup remains scoped to the dedicated exact prefix.
+
+This barrier is a diagnostic runtime modification, as is the no-life patch;
+it cannot serve as final completion authority.  The 300-epoch sample has a
+bounded diagnostic watchdog, not a route-duration limit.  No Linux/original
+agreement or x87 error bound is claimed until the physical capture and
+first-divergence comparison complete.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
