@@ -2621,10 +2621,104 @@ step is exact source-order callback plus transform rollout in a persistent
 batch, followed by an offline global/backward viability gate.  No Wine run is
 justified by this checkpoint.
 
+### AUD-089 — Practice dropped the host's authority-only corridor policy
+
+Status: **PHYSICALLY CONFIRMED CONFIGURATION BUG; FIXED**
+
+The accepted Easy Final-B Practice run
+`easy_route2_stage6b_unattended_20260826_043723` was launched through the
+isolated Wine host with `authority_only_corridor=true`, but its retained
+Practice session had no such field.  The host command builder forwarded the
+flag only to the full-route supervisor, while the Practice parser, session,
+and `AgentHotkey` construction had no matching path.  The physical consequence
+was 10,783 policy queries and 1,927 completed native solves at 276.70/598.53 ms
+median/p95, yet zero constrained decisions and zero selected recovery actions.
+This was pure diagnostic work in the latency-sensitive process, not useful VPS
+search.
+
+The Practice command and supervisor now carry the same explicit flag as the
+full route, record it in the session, and pass it to the existing agent
+contract.  Direct Practice invocations remain default-off; the isolated Wine
+runner's existing default now reaches its intended consumer.  This preserves
+the complete global framework and exact-authority entry point while avoiding
+diagnostic solves on Easy roots that cannot authorize an action.  Parser and
+both Stage-4B/Final-B command regressions cover the whole host-to-supervisor
+path.  Commit `c4d264a` is the checkpoint; physical latency improvement is
+reserved for the paired rerun.
+
+The apparent scale-authority failure at the end of the same trace is not a
+blocked clear.  Exact source schedules remained complete through source frame
+75548 and the final gameplay decision was frame 75551 with unchanged player
+phase and predeath counter.  The immutable context changed at 75552, after
+which authority correctly released input; native `terminal_unload` followed
+at 75553 and the Practice dossier accepted completion.  Relaxing that
+fail-closed gate would reduce correctness without extending gameplay coverage.
+
+### AUD-090 — Local boundary reserve incorrectly depended on global guidance
+
+Status: **PHYSICAL ROOT CAUSE CONFIRMED; GENERIC FIX VERIFIED OFFLINE;
+PHYSICAL A/B PENDING**
+
+The same accepted Practice run recorded 18 native hit edges and zero Bomb use.
+Fifteen hits carry the explicit playfield-boundary factor, thirteen exceed the
+modeled action-lag support, twelve miss a corridor deadline, and nine occur in
+fast mode.  Spell counts are 5/8/1/2/1 for 147/151/155/163/167 plus one
+nonspell.  This is a position-control cluster rather than evidence that Easy
+needs a spell-specific route.
+
+`prepare_local_hazards` already computed a delay-scaled distance from the
+measured control-delay support, but set it to zero unless global recovery,
+repair, or survival guidance existed.  Thus the exact condition seen above---
+an unavailable or losing global kernel---also erased the local planner's
+ability to prefer trajectories that retain enough distance to reverse a
+pending input.  The remaining movement penalty begins only 12 pixels from a
+side or bottom boundary, while the observed six-frame support represents about
+27.6 pixels at unfocused cardinal speed.
+
+The planner now treats this distance as actuator reachability whenever the
+existing `recovery_control_reserve` option is enabled.  Diagnostic losing-state
+reserve remains separately gated by the presence of global guidance.  The
+reserve is a soft ordering within the established collision, negative-
+clearance, and survival classes; it cannot trade a certified collision for a
+centerward action.  No difficulty, stage, or spell identifier is consulted.
+
+Exact-root replay of the first spell-147 cluster gives causal evidence.  At
+frame 10772 the width-24 choice changes from `right` to `left` with the same
+all-zero robust/terminal hard vector; frame 10778 changes from `stay` to
+`up_left`; and frame 10792 changes from a -1.10-pixel local continuation to a
++4.62-pixel one without adding robust collisions.  The complete 1,567-test
+suite passes, including a no-global-guidance regression and the historical
+repair/terminal fixtures.  Eight source-stateful quick stages also complete
+3,840 frames, 480/480 future joins, 28,543 allocations, and 30,000-plus
+callback changes with zero normalized hits or failures.  Commit `ac77c3f` is
+the checkpoint.  These results justify a physical Practice A/B, not a claim
+that the 18-hit count has already improved.
+
+### AUD-091 — A new saturated-stage seed escapes the C-oracle error budget
+
+Status: **CONFIRMED OFFLINE DIFFERENTIAL FAILURE; ROOT CAUSE OPEN**
+
+The 3,600-frame `gate` profile at seed `0xE4511000` exercised 450/450 future
+joins, saturated the 1,536-bullet pool for 106 frames, and completed the planner
+campaign without an exception or geometry-policy violation.  Its independent
+C source differential stopped at frame 255, slot 1354: Python/C position
+differed by `1.52587890625e-5` while the accumulated forward tolerance was only
+`7.867813110351562e-6`; velocity differed by `2.384185791015625e-7`.  All
+lifecycle samples retained zero position error, and RNG state/call count still
+matched.
+
+The source differential runs independently before the planner campaign, so
+this witness cannot be caused by the boundary policy change.  It does show that
+AUD-056's accumulated non-lifecycle error budget is not yet a proof for every
+high-density history.  The report remains temporary rather than tracked as a
+large artifact.  The next action is deterministic replay/minimization and an
+operation-order audit; the tolerance must not be widened merely to make the
+gate pass.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,565 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,567 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.
