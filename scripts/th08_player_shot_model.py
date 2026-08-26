@@ -237,6 +237,11 @@ def spawn_player_shot(
 def random_spread_shot_angle(rng: Th08Rng) -> float:
     """Return callback 7's stored float32 angle and consume two u16 calls.
 
+    Retail v1.00d ``FUN_004501B0`` calls the signed generator at
+    ``0x0043ED80``.  This distinction is observable even though the signed
+    and unsigned generators consume the same two words: using the unsigned
+    result mirrors the whole spread into the adjacent angular interval.
+
     The x87 intermediate rounding and the native polar helper have not yet
     received a native-bit differential. The returned binary32 angle is the
     correctly ordered scalar projection of the revalidated formula, while

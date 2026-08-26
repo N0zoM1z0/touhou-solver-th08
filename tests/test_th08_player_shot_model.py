@@ -18,6 +18,7 @@ from th08_player_shot_model import (
     remilia_bomb_sht_level,
     resolve_default_shot_damage,
     player_shot_feedback_increment,
+    random_spread_shot_angle,
     select_player_shot_level,
     select_normal_sht_level,
     shot_damage_contribution,
@@ -189,6 +190,22 @@ class PlayerShotModelTests(unittest.TestCase):
                 for shot in result.shots[2:]
             )
         )
+
+    def test_retained_stage5_spread_uses_retail_signed_rng(self) -> None:
+        rng = Th08Rng(32233)
+        angles = (
+            random_spread_shot_angle(rng),
+            random_spread_shot_angle(rng),
+        )
+
+        self.assertEqual(
+            tuple(
+                struct.unpack("<I", struct.pack("<f", angle))[0]
+                for angle in angles
+            ),
+            (3218062116, 3217486079),
+        )
+        self.assertEqual((rng.state, rng.calls), (17423, 4))
 
     def test_pool_capacity_controls_record_scan_and_rng(self) -> None:
         level = self.secondary_sht.levels[5]
