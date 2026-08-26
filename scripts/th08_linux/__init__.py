@@ -4,11 +4,25 @@ from th08_linux.bridge import SolverBridgeClient
 from th08_linux.process import LinuxProcessReader
 from th08_linux.protocol import InputRequest
 from th08_linux.session import LinuxGameSession, LinuxRuntimeIdentity
+from th08_linux.title import (
+    EASY_DIFFICULTY,
+    SAKUYA_REMILIA_SHOT_TYPE,
+    RouteTitleDriver,
+    TitleSnapshot,
+    capture_gameplay_bootstrap,
+    capture_title_snapshot,
+)
 
 __all__ = (
     "InputRequest",
+    "EASY_DIFFICULTY",
     "LinuxGameSession",
     "LinuxProcessReader",
     "LinuxRuntimeIdentity",
+    "RouteTitleDriver",
+    "SAKUYA_REMILIA_SHOT_TYPE",
     "SolverBridgeClient",
+    "TitleSnapshot",
+    "capture_gameplay_bootstrap",
+    "capture_title_snapshot",
 )
