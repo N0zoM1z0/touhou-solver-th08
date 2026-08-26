@@ -334,6 +334,15 @@ class PracticeSupervisorTests(unittest.TestCase):
             enabled_args.ordinary_preexhaustion_authority
         )
 
+    def test_authority_only_corridor_is_physical_opt_in(self) -> None:
+        default_args = build_parser().parse_args([])
+        enabled_args = build_parser().parse_args(
+            ["--authority-only-corridor"]
+        )
+
+        self.assertFalse(default_args.authority_only_corridor)
+        self.assertTrue(enabled_args.authority_only_corridor)
+
     def test_future_source_retention_is_shadow_only_opt_in(self) -> None:
         default_args = build_parser().parse_args([])
         enabled_args = build_parser().parse_args(

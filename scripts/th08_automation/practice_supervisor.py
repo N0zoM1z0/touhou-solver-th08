@@ -265,6 +265,7 @@ def run_trial(
         "ordinary_preexhaustion_authority": (
             args.ordinary_preexhaustion_authority
         ),
+        "authority_only_corridor": args.authority_only_corridor,
         "future_source_retention": {
             "directory": (
                 str(future_source_retain_dir)
@@ -333,6 +334,7 @@ def run_trial(
             ordinary_preexhaustion_authority=(
                 args.ordinary_preexhaustion_authority
             ),
+            authority_only_corridor=args.authority_only_corridor,
             future_source_retain_dir=future_source_retain_dir,
             future_source_retain_spells=tuple(
                 args.future_source_retain_spell
@@ -725,6 +727,14 @@ def build_parser() -> argparse.ArgumentParser:
             "enable the default-off signed ordinary prepublication "
             "predecessor; incomplete future birth/event coverage remains "
             "fail-closed"
+        ),
+    )
+    parser.add_argument(
+        "--authority-only-corridor",
+        action="store_true",
+        help=(
+            "skip diagnostic global solves until their exact time-scale "
+            "schedule grants action authority"
         ),
     )
     parser.add_argument(

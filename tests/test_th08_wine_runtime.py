@@ -320,6 +320,7 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertEqual(command[command.index("--difficulty") + 1], "lunatic")
         self.assertIn("--unlock-requested-stage", command)
         self.assertIn("--ordinary-preexhaustion-authority", command)
+        self.assertIn("--authority-only-corridor", command)
         self.assertIn("--diagnostic-continue-root-only-scale", command)
         self.assertEqual(
             [
@@ -376,6 +377,7 @@ class Th08WineRunnerTests(unittest.TestCase):
             )
 
         self.assertIn("--enable-finalb-scale-source-authority", command)
+        self.assertIn("--authority-only-corridor", command)
         self.assertEqual(
             command[command.index("--runtime-ecl-static-sha256") + 1],
             runner.PRACTICE_STAGE_ECL_IDENTITIES["6b"].sha256,

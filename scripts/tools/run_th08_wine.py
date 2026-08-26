@@ -306,6 +306,8 @@ def build_windows_controller_command(
             command.append("--enable-finalb-scale-source-authority")
         if ordinary_preexhaustion_authority:
             command.append("--ordinary-preexhaustion-authority")
+        if authority_only_corridor:
+            command.append("--authority-only-corridor")
         if diagnostic_continue_root_only_scale:
             command.append("--diagnostic-continue-root-only-scale")
         for spell_id in future_source_retain_spells:
