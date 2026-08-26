@@ -3016,6 +3016,51 @@ has no failure. No physical hit or latency improvement is claimed until a
 Wine sensor benchmark and complete isolated Easy route exercise the new read
 path.
 
+### AUD-097 — Separate search time from game time, with replay as the authority bridge
+
+Status: **SOURCE-CONFIRMED ARCHITECTURE; IMPLEMENTATION/DETERMINISM PENDING**
+
+The native Linux reconstruction changes the control problem if used at the
+correct boundary. It compiles the shared gameplay, ECL, manager, player, and
+replay sources while its Linux linker script retains original addresses for
+target-owned globals. A verified i386 build at source revision
+`4cffb2afa8d4a62083a5afc4a1968f51e96ac2cf` reached the difficulty screen;
+fixed-address local reads identified title mode 4 and the expected title/input
+state. This proves basic integration only, not equivalence to the shipped
+binary.
+
+`Supervisor::OnUpdate` samples `Controller::GetInput` at calc priority 0. The
+recording path later copies the resulting mask at priority 17. Linux DirectInput
+funnels the keyboard state through backend `FillKeyboard`, giving a generic
+Linux-only hook outside stage, spell, player, and replay logic. The proposed
+bridge blocks there while the solver computes, then supplies exactly one input
+sample. Every callback-chain restart is a separate input epoch; deduplication
+by render count or `enemy_manager_frame` would alter original progress.
+
+Wall-clock blocking alone is not valid. Linux QPC and `timeGetTime` currently
+read host time, which drives render admission, FPS estimation, play-time
+bookkeeping, and replay slowdown metadata. Bridge wait must therefore freeze
+the game-visible clock for all readers and compensate the accumulated pause
+before resuming. The first version retains ordinary 60 Hz admission after each
+released input. Faster-than-real or headless execution remains a later
+differential-gated optimization.
+
+Replay format sharing is also insufficient by itself. `AddedCallback` stores
+the current executable size and checksum. Modern builds bypass retail version
+checking on load, while the original v1.00d expects size `840704` and checksum
+`2724749753`. Solver mode must explicitly apply those canonical replay target
+fields, with normal replay checksum/obfuscation afterward. This is a target
+compatibility stamp and never a binary-equivalence claim.
+
+The hard acceptance ladder is Linux candidate NMNB, cross-runtime semantic
+fingerprint agreement, then a complete original-Wine replay with zero native
+hit edges and zero Bomb input. GCC versus VC7 floating-point evaluation,
+modern `cosf`/`sinf` versus x87 `fsincos`, and platform timing remain explicit
+divergence risks. Work must stop at the earliest unequal logical epoch and
+localize the field delta before solver policy is blamed. The full protocol is
+tracked in
+`notes/architecture/TH08_LINUX_LOCKSTEP_REPLAY_AUTHORITY_20260826.md`.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this

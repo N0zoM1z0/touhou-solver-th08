@@ -31,8 +31,10 @@ control, and fresh input publication.  Unsupported future producers become
 \unknown{} rather than silently safe.  The design is generic first; a
 stage- or spell-specific adapter is admitted only after practice and full-route
 evidence falsifies the shared kernel or policy.  A replayable source-stateful
-stage laboratory and an independently compiled C oracle now exercise this
-boundary over long, pool-saturating histories before Wine is used.
+stage laboratory and an independently compiled C oracle exercise this
+boundary over long, pool-saturating histories.  A native Linux build is then
+used as a pausable replay-generation runtime; only replay completion by the
+shipped Windows executable constitutes route success.
 \end{abstract}
 
 \section{Objective and Evidence Discipline}
@@ -122,6 +124,44 @@ but rises again at twenty-four and thirty-two while the viability tensor stays
 identical.  The experimental thirty-two-worker limit was therefore reverted.
 Surplus cores are better spent on independent retained roots and differentials;
 the latency-sensitive controller retains its smaller worker allocation.
+
+\section{Lockstep Search and Replay Authority}
+
+The playable Linux reconstruction permits a sharper separation between
+computation time and game time.  The shared supervisor samples DirectInput at
+calculation priority zero, and the shared replay manager records the resulting
+logical mask at priority seventeen.  The Linux backend can therefore block at
+the keyboard sampling boundary, expose the completed previous state, wait for
+an arbitrarily expensive solver decision, and provide one ordinary input
+sample.  No gameplay object, RNG state, or timer is written by the solver.
+
+Merely blocking the process is insufficient.  Host QPC and millisecond clocks
+also drive render admission, FPS estimates, play-time counters, and replay
+slowdown metadata.  Lockstep mode excludes only the solver-wait interval from
+the game-visible clocks, while preserving each callback-chain pass as a
+distinct logical epoch.  In particular, a restart-from-first-job event may
+sample input again even inside one outer render call; it cannot be collapsed by
+an enemy-frame or presentation counter.  The initial mode retains normal
+60~Hz progression after an action is released.  Headless or faster-than-real
+stepping requires a later state differential and carries no authority by
+default.
+
+The evidence boundary is a three-stage ladder.  A Linux NMNB clear is a
+candidate.  Next, a semantic fingerprint compares both runtimes at ordered
+input epochs, including stage clocks, input, RNG seed/call count, player and
+resource state, and slot-ordered active hazards.  Finally, the unmodified
+Japanese v1.00d executable under isolated Wine must accept the Linux-generated
+replay and complete the full route with no native hit edge or Bomb input.  Only
+the final observation closes the target.
+
+This gate is necessary despite shared source.  The Linux build uses GCC and
+libm where the target used VC7 and x87 operations; for example, some modern
+paths replace one \code{fsincos} with separate \code{cosf}/\code{sinf} calls.
+The replay header also stores executable size and checksum.  Solver mode must
+label the replay for the canonical v1.00d identity and recompute normal replay
+integrity, without representing the ELF as the original binary.  Divergence is
+localized at the first unequal epoch rather than hidden behind a terminal hit
+count.
 
 \section{Source-Stateful Offline Laboratory}
 

@@ -15,8 +15,11 @@ authority.
 The immediate completion target is a fresh full-game Sakuya/Remilia **Easy
 Route-2 Final-B NMNB**. Easy is the infrastructure and local-policy proof
 before difficulty is raised again; the ultimate target remains Lunatic NMNB.
-The user authorized isolated Wine gameplay on the current VPS. Extra remains
-deferred, and fixed-root wind tunnels remain diagnostic.
+The user authorized a separately cloned native Linux runtime as the search and
+replay-generation platform. The original Japanese v1.00d executable under
+isolated Wine remains the final authority: a Linux result counts only when its
+replay completes the same route there with zero native hit edges and zero Bomb
+input. Extra remains deferred, and fixed-root wind tunnels remain diagnostic.
 
 The 2026-08-01 Hard/pause state is historical. Preserve its useful physical
 and authority evidence, but do not let its stale scope override the current
@@ -27,7 +30,19 @@ ordered implementation plan are in
 
 ## Checkpoint
 
-- Branch: `codex/th08-lunatic-source-audit`.
+- Branch: `codex/th08-linux-native-replay-bridge`.
+- **Pre-pivot checkpoint:** `main` and annotated tag
+  `pre-linux-native-pivot-20260826` point to `d7a66c5`. The Linux runtime is a
+  separate clone at source revision `4cffb2afa8d4a62083a5afc4a1968f51e96ac2cf`
+  on branch `solver/linux-lockstep-replay-bridge`; its verified i386 build is
+  playable and exposes the original fixed target-owned globals. The adopted
+  architecture pauses at the Linux DirectInput sampling boundary, excludes
+  solver wait from the game-visible clock, and records a normal replay. It
+  must preserve every original logical update, input, held-key, and RNG epoch.
+  Linux NMNB is only a candidate; original-Wine replay NMNB is completion.
+  The protocol, replay-identity caveat, numerical risks, and differential gate
+  are specified in
+  `notes/architecture/TH08_LINUX_LOCKSTEP_REPLAY_AUTHORITY_20260826.md`.
 - **Current Easy physical/local checkpoint:** accepted Final-B Practice
   `easy_route2_stage6b_unattended_20260826_051733` remains the best result at
   nine hits and zero Bomb input, versus 18 hits in the paired baseline.  Source and native

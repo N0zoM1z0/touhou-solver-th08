@@ -13,6 +13,12 @@ Extra is deferred until Lunatic closes. Survival is a hard constraint. Within
 the viable set, prefer useful position, damage, Power collection, and shorter
 dangerous nonspell exposure.
 
+The native Linux reconstruction may pause between original logical input
+epochs to search and may generate a candidate replay. It is not the physical
+completion authority. Only a complete zero-hit, zero-Bomb playback of that
+replay by the original Japanese v1.00d executable under isolated Wine closes
+the target.
+
 A state includes the native player state, complete active hazards, relevant
 enemy/phase state, resources, active input, held desired input, pending issue
 belief, timing/cadence support, and immutable model/content version.
@@ -33,6 +39,14 @@ The promoted live path is:
 5. a fresh issue-time local collision certificate;
 6. version-checked publication and the fresh/global action transaction;
 7. hard no-Bomb actuation.
+
+The Linux lockstep path may replace cross-process Wine sensing and actuation,
+but not the logical transition contract. Solver wall time is excluded from the
+game-visible clock; every `Controller::GetInput` sample, including callback-
+chain restarts, remains a distinct ordered epoch. The bridge supplies only an
+input mask and never writes gameplay/RNG state. Linux/original semantic replay
+differential is required before its generated replay receives candidate
+authority.
 
 The Easy execution profile uses no stage or spell policy. It reads native
 enemy slots 0--63 synchronously and retains a complete asynchronous read of
