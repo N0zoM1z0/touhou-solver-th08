@@ -127,6 +127,92 @@ def _bullet_frame_without_retired_state(
     return tuple(np.asarray(field)[retained] for field in bullet_frame)
 
 
+def _conservative_bullet_age_hull(
+    frames: tuple[tuple[np.ndarray, ...], ...],
+) -> tuple[np.ndarray, ...]:
+    """Merge mutually exclusive ages into one conservative AABB per slot.
+
+    A bulk-read bracket describes one unknown age for each native pool slot;
+    it does not create one physical bullet at every supported age.  Keep the
+    axis-aligned hull of every supported source AABB so collision remains
+    conservative while risk and collision counts still contain exactly one
+    contribution per slot.  A slot is lethal when any supported age is
+    native state 1 with its callback collision gate enabled.
+    """
+
+    if not frames:
+        raise ValueError("bullet age hull requires at least one frame")
+    if len(frames) == 1:
+        return frames[0]
+    field_count = len(frames[0])
+    if field_count < 7 or any(len(frame) != field_count for frame in frames):
+        raise ValueError("bullet age hull requires uniform lifecycle frames")
+    slot_count = len(frames[0][0])
+    if any(len(field) != slot_count for frame in frames for field in frame):
+        raise ValueError("bullet age hull requires slot-aligned fields")
+
+    first = frames[0]
+    left = np.asarray(first[0]) - np.asarray(first[2])
+    right = np.asarray(first[0]) + np.asarray(first[2])
+    top = np.asarray(first[1]) - np.asarray(first[3])
+    bottom = np.asarray(first[1]) + np.asarray(first[3])
+    transformed = np.asarray(first[4]).copy()
+    native_state = np.asarray(first[5])
+    callback_state = np.asarray(first[6])
+    lethal = (native_state == 1) & (callback_state == 0)
+    for frame in frames[1:]:
+        frame_x = np.asarray(frame[0])
+        frame_y = np.asarray(frame[1])
+        frame_half_width = np.asarray(frame[2])
+        frame_half_height = np.asarray(frame[3])
+        left = np.minimum(left, frame_x - frame_half_width)
+        right = np.maximum(right, frame_x + frame_half_width)
+        top = np.minimum(top, frame_y - frame_half_height)
+        bottom = np.maximum(bottom, frame_y + frame_half_height)
+        transformed |= np.asarray(frame[4])
+        lethal |= (
+            (np.asarray(frame[5]) == 1)
+            & (np.asarray(frame[6]) == 0)
+        )
+    center_x = np.asarray(
+        (left.astype(np.float64) + right.astype(np.float64)) * 0.5,
+        dtype=np.float32,
+    )
+    center_y = np.asarray(
+        (top.astype(np.float64) + bottom.astype(np.float64)) * 0.5,
+        dtype=np.float32,
+    )
+    positive_infinity = np.asarray(np.inf, dtype=np.float32)
+    hull_half_width = np.nextafter(
+        np.maximum(center_x - left, right - center_x).astype(np.float32),
+        positive_infinity,
+    )
+    hull_half_height = np.nextafter(
+        np.maximum(center_y - top, bottom - center_y).astype(np.float32),
+        positive_infinity,
+    )
+    merged_state = np.where(lethal, 1, native_state).astype(
+        native_state.dtype,
+        copy=False,
+    )
+    merged_callback_aux = np.where(lethal, 0, callback_state).astype(
+        callback_state.dtype,
+        copy=False,
+    )
+    return tuple(
+        np.ascontiguousarray(field)
+        for field in (
+            center_x,
+            center_y,
+            hull_half_width,
+            hull_half_height,
+            transformed,
+            merged_state,
+            merged_callback_aux,
+        )
+    )
+
+
 def _aabb_clearance(
     px: float, py: float, bullet_x: float, bullet_y: float, bullet: Bullet
 ) -> float:
@@ -254,16 +340,8 @@ def _build_bullet_frames(
         if len(supported) == 1:
             return supported[0]
         return tuple(
-            tuple(
-                np.ascontiguousarray(
-                    np.concatenate(
-                        tuple(
-                            projection[step][field]
-                            for projection in supported
-                        )
-                    )
-                )
-                for field in range(len(supported[0][step]))
+            _conservative_bullet_age_hull(
+                tuple(projection[step] for projection in supported)
             )
             for step in range(horizon)
         )

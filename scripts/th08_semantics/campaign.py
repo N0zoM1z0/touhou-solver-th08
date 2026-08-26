@@ -153,11 +153,6 @@ def _geometry_differential(
     horizon: int,
 ) -> tuple[int, int, int, int, int]:
     positions_x, positions_y = _geometry_positions(player_x, player_y)
-    bullet_frames = live._build_bullet_frames(
-        bullets,
-        horizon=horizon,
-        snapshot_lag=0,
-    )
     laser_frames = live._build_packed_laser_collision_frames(
         lasers,
         horizon=horizon,
@@ -167,45 +162,58 @@ def _geometry_differential(
     sign_mismatches = 0
     clearance_mismatches = 0
     risk_mismatches = 0
-    for step, (bullet_frame, laser_frame) in enumerate(
-        zip(bullet_frames, laser_frames),
-        start=1,
-    ):
-        values = {
-            "positions_x": positions_x,
-            "positions_y": positions_y,
-            "step": step,
-            "bullet_frame": bullet_frame,
-            "lasers": laser_frame,
-            "enemy_bodies": (),
-        }
-        reference = live._numpy_hazards_for_positions(**values)
-        candidate = live._native_hazards_for_positions(**values)
-        checks += 1
-        collision_mismatches += int(
-            not np.array_equal(reference[1], candidate[1])
+    # Exercise both an atomic snapshot and the common one-frame-straddled
+    # live-read contract.  The latter must retain one conservative hull per
+    # native slot and remain identical across the NumPy/native kernels.
+    for age_support in (None, (0, 1)):
+        bullet_frames = live._build_bullet_frames(
+            bullets,
+            horizon=horizon,
+            snapshot_lag=0,
+            snapshot_age_support=age_support,
         )
-        sign_mismatches += int(
-            not np.array_equal(reference[2] <= 0.0, candidate[2] <= 0.0)
-        )
-        clearance_mismatches += int(
-            not np.allclose(
-                reference[2],
-                candidate[2],
-                rtol=1.0e-6,
-                atol=1.0e-4,
-                equal_nan=False,
+        for step, (bullet_frame, laser_frame) in enumerate(
+            zip(bullet_frames, laser_frames),
+            start=1,
+        ):
+            values = {
+                "positions_x": positions_x,
+                "positions_y": positions_y,
+                "step": step,
+                "bullet_frame": bullet_frame,
+                "lasers": laser_frame,
+                "enemy_bodies": (),
+            }
+            reference = live._numpy_hazards_for_positions(**values)
+            candidate = live._native_hazards_for_positions(**values)
+            checks += 1
+            collision_mismatches += int(
+                not np.array_equal(reference[1], candidate[1])
             )
-        )
-        risk_mismatches += int(
-            not np.allclose(
-                reference[0],
-                candidate[0],
-                rtol=2.0e-5,
-                atol=1.0e-3,
-                equal_nan=False,
+            sign_mismatches += int(
+                not np.array_equal(
+                    reference[2] <= 0.0,
+                    candidate[2] <= 0.0,
+                )
             )
-        )
+            clearance_mismatches += int(
+                not np.allclose(
+                    reference[2],
+                    candidate[2],
+                    rtol=1.0e-6,
+                    atol=1.0e-4,
+                    equal_nan=False,
+                )
+            )
+            risk_mismatches += int(
+                not np.allclose(
+                    reference[0],
+                    candidate[0],
+                    rtol=2.0e-5,
+                    atol=1.0e-3,
+                    equal_nan=False,
+                )
+            )
     return (
         checks,
         collision_mismatches,

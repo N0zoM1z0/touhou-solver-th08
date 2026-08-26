@@ -703,7 +703,10 @@ it.
    action-set exhaustion.  AUD-094 shows that supported ages are incorrectly
    counted as simultaneous bullets and that the configured 32-frame local
    threat tail is silently reduced to ten without global guidance.  Correct
-   those generic local defects offline, then require a clean Final-B Practice
+   The per-slot outward-rounded age hull now passes the exact contacts,
+   complete suite, and atomic/straddled stateful differential while reducing
+   a 400-bullet local pass about 13 percent.  Activate the still-dormant
+   generic 10..32 local tail offline, then require a clean Final-B Practice
    before one complete Easy Route-2 NMNB attempt.  Then close
    template/derived births, connect a complete current-plus-future horizon to
    global shadow, take one fresh v2 Stage-5 root, and require a same-root

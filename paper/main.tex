@@ -689,6 +689,14 @@ leads as large as 48 frames at eventual contact.  The next experiment is thus
 per-slot uncertainty reduction followed by a bounded constant-tail local
 lookahead, not global search or a card-specific rule.
 
+The first correction uses a single outward-rounded source-AABB hull per native
+slot.  It is lethal if any supported lifecycle/callback state is lethal, so it
+contains every supported contact without multiplying one slot's cost.  This
+keeps the native geometry ABI unchanged, retains both causal physical
+collisions, and reduces a deterministic 400-bullet two-age full local pass by
+about 13 percent.  Atomic and straddled hulls agree between the NumPy and
+native kernels over a saturated 3,600-frame differential campaign.
+
 Development after this correction uses source-driven, complete-stage, and
 retained-root differentials as the primary experiment.  Physical Wine trials
 are delayed until submissions, completions, version matching, and producer

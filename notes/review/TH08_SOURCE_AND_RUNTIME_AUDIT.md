@@ -2857,7 +2857,7 @@ active, not evidence that the resulting policy is better.
 
 ### AUD-094 — Exact age support was aggregated as simultaneous bullets while the local threat tail stayed dormant
 
-Status: **MODEL/CONFIGURATION DEFECTS CONFIRMED; POLICY EFFECT REQUIRES OFFLINE DIFFERENTIAL**
+Status: **AGE AGGREGATION FIXED OFFLINE; LOCAL-TAIL CONFIGURATION PENDING**
 
 The AUD-093 implementation concatenates every supported projection before the
 local hazard kernel.  A slot captured across a frame bracket has one unknown
@@ -2890,6 +2890,21 @@ dead throughout this Easy run.  Enabling that generic local tail is the next
 viable-continuation hypothesis, after correcting age aggregation and measuring
 its cost offline.  Neither finding authorizes a difficulty, stage, spell, or
 coordinate branch, and neither justifies re-enabling global work for Easy.
+
+The age half of this audit is now corrected without a scenario solver.  Each
+native slot becomes one outward-rounded axis-aligned hull of all supported
+source AABBs at each step; if any supported lifecycle/callback state is
+lethal, that one hull is lethal.  It therefore preserves every supported
+collision while avoiding duplicate collision/risk contributions and keeps
+the existing native geometry ABI.  The two physical contact regressions
+remain collisions at -1.224/-0.214 pixels.  On a deterministic 400-bullet
+two-age root, a complete ten-frame local pass falls from 26.17/27.16 ms to
+22.75/23.61 ms median/p95.  The complete suite passes 1,569 tests with five
+conditional skips.  The 3,600-frame source-stateful gate passes 360/360
+NumPy/native geometry comparisons (atomic plus straddled), 120/120 future
+joins, and 1,414,390 source/C lifecycle samples with zero lifecycle-position
+error.  Physical policy effect remains unclaimed; the independent dormant
+local-tail defect is the next checkpoint.
 
 ## Offline Verification Record
 

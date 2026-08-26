@@ -99,7 +99,9 @@ This is an accepted observability falsifier, not a survival promotion: 11 hits
 is worse than the retained nine-hit checkpoint.  The age correction is active
 because no contact remains in the old sensing-gap class, but ten of eleven
 contacts reach short-horizon robust action-set exhaustion first.  The next
-generic offline gate is AUD-094: aggregate mutually exclusive ages per bullet
-instead of summing duplicate trajectories, then make the configured 10..32
-frame constant-tail local threat check actually run without global guidance.
+generic offline gate is AUD-094.  Mutually exclusive ages now use one
+outward-rounded AABB hull per bullet instead of summed duplicate trajectories;
+exact contacts, latency, and stateful differentials pass.  Next make the
+configured 10..32 frame constant-tail local threat check actually run without
+global guidance.
 Do not add a difficulty/stage/spell branch or re-enable global work for Easy.

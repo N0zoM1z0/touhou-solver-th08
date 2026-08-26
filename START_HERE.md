@@ -44,9 +44,11 @@ ordered implementation plan are in
   remove the residual observability class: all 11 contacts now have observed
   bullet/laser or modeled committed-prefix evidence, and ten reach robust
   action-set exhaustion before contact.  AUD-094/CE-0268 retain this split.
-  The next gate is offline correction of the mutually exclusive age
-  aggregation and the dormant 32-frame local threat tail, not a full route or
-  a global-planner run.  The
+  Mutually exclusive ages now reduce to one conservative source-AABB hull per
+  native slot.  Exact contacts, the 1,569-test suite, and a 360-check
+  atomic/straddled stateful geometry gate pass; a 400-bullet local pass is
+  about 13 percent faster than concatenation.  The next gate is the dormant
+  32-frame local threat tail, not a full route or a global-planner run.  The
   complete Linux suite passes 1,568 tests with five conditional skips.  A
   3,600-frame saturated source-stateful gate also passes 120/120 future joins,
   180/180 geometry checks, and 1,414,390 lifecycle samples against the C
@@ -752,9 +754,8 @@ full route or re-enable non-authoritative global work yet:
 1. preserve the bullet-specific discrete age support and its two physical-root
    regressions; do not collapse a straddled read to one endpoint or count one
    slot's mutually exclusive ages as simultaneous bullets;
-2. replace the current concatenated age trajectories with a bounded per-slot
-   robust representation and require the exact contact regressions plus lower
-   dense-root latency offline;
+2. preserve the implemented outward-rounded per-slot age hull, exact contact
+   regressions, and atomic/straddled native differential;
 3. expose the configured 32-frame local threat tail without enabling global
    guidance.  The current preparation path silently collapses it to the
    10-frame beam whenever global viability is absent, even though ten of

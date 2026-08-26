@@ -975,6 +975,80 @@ class BulletRuntimeDecoderTests(unittest.TestCase):
             [19.0, 18.0, 18.0, 18.0, 18.0],
         )
 
+    def test_age_support_keeps_one_conservative_hull_per_native_slot(
+        self,
+    ) -> None:
+        bullets = (
+            Bullet(10.0, 20.0, 4.0, -2.0, 2.0, 3.0, slot=7),
+            Bullet(
+                40.0,
+                60.0,
+                -2.0,
+                1.0,
+                2.0,
+                3.0,
+                slot=8,
+                native_state=2,
+                native_state_timer_elapsed=8,
+                bullet_type=0,
+            ),
+        )
+        supported = _build_bullet_frames(
+            bullets,
+            horizon=2,
+            snapshot_lag=0,
+            snapshot_age_support=(0, 1),
+        )
+        age_zero = _build_bullet_frames(
+            bullets,
+            horizon=2,
+            snapshot_lag=0,
+        )
+        age_one = _build_bullet_frames(
+            bullets,
+            horizon=2,
+            snapshot_lag=1,
+        )
+
+        for step, hull in enumerate(supported):
+            self.assertEqual(hull[0].size, len(bullets))
+            for source in (age_zero[step], age_one[step]):
+                np.testing.assert_array_less(
+                    hull[0] - hull[2],
+                    np.nextafter(
+                        source[0] - source[2],
+                        np.asarray(np.inf, dtype=np.float32),
+                    ),
+                )
+                np.testing.assert_array_less(
+                    source[0] + source[2],
+                    np.nextafter(
+                        hull[0] + hull[2],
+                        np.asarray(np.inf, dtype=np.float32),
+                    ),
+                )
+                np.testing.assert_array_less(
+                    hull[1] - hull[3],
+                    np.nextafter(
+                        source[1] - source[3],
+                        np.asarray(np.inf, dtype=np.float32),
+                    ),
+                )
+                np.testing.assert_array_less(
+                    source[1] + source[3],
+                    np.nextafter(
+                        hull[1] + hull[3],
+                        np.asarray(np.inf, dtype=np.float32),
+                    ),
+                )
+
+        # At step one, age zero remains in preactivation while age one has
+        # completed.  Any lethal supported age makes the one-slot hull lethal.
+        self.assertEqual(int(age_zero[0][5][1]), 2)
+        self.assertEqual(int(age_one[0][5][1]), 1)
+        self.assertEqual(int(supported[0][5][1]), 1)
+        self.assertEqual(int(supported[0][6][1]), 0)
+
     def test_state2_spawn_motion_and_same_update_completion_are_exact(
         self,
     ) -> None:
