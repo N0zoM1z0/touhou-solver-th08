@@ -1,0 +1,873 @@
+{
+  "schema": "th08-unattended-practice-session-v1",
+  "run_id": "easy_route2_stage6b_unattended_20260826_051733",
+  "iteration": 1,
+  "stage": {
+    "key": "6b",
+    "label": "Stage 6B",
+    "menu_index": 7,
+    "route_index": 7
+  },
+  "difficulty": {
+    "key": "easy",
+    "label": "Easy",
+    "menu_index": 0
+  },
+  "game_dir": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\reference\\th08-game-original\\th08",
+  "launch_bat": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\scripts\\tools\\run_th08_wine_launch.bat",
+  "menu_plan": [
+    {
+      "key": "down",
+      "purpose": "main-menu Practice Start (2/4)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "main-menu Practice Start (3/4)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "main-menu Practice Start (4/4)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "confirm",
+      "purpose": "enter Practice Start",
+      "wait_after_ms": 700
+    },
+    {
+      "key": "confirm",
+      "purpose": "accept native-verified Easy",
+      "wait_after_ms": 700
+    },
+    {
+      "key": "right",
+      "purpose": "team Sakuya/Remilia (2/3)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "right",
+      "purpose": "team Sakuya/Remilia (3/3)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "confirm",
+      "purpose": "accept native-verified Sakuya/Remilia",
+      "wait_after_ms": 700
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B (1/7)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B (2/7)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B (3/7)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B (4/7)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B (5/7)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B (6/7)",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B (7/7)",
+      "wait_after_ms": 700
+    }
+  ],
+  "hard_no_bomb": true,
+  "trace_transform_runtime": false,
+  "trace_enemy_mode_transitions": false,
+  "trace_enemy_lifecycle_events": false,
+  "kill_before_saturation": false,
+  "unlock_requested_stage": true,
+  "ordinary_preexhaustion_authority": false,
+  "authority_only_corridor": true,
+  "future_source_retention": {
+    "directory": null,
+    "spell_ids": [],
+    "maximum_per_spell": 1,
+    "role": "shadow_capture_only_no_action_authority"
+  },
+  "diagnostic_continue_root_only_scale": false,
+  "runtime_ecl_static_image": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\decoded\\ecldata7.ecl",
+  "runtime_ecl_static_sha256": "20b35dca3820438f0b90ae44e3362a7af27d2fc1ac7ae5888c477dc1c89a3734",
+  "enable_finalb_scale_source_authority": true,
+  "viability_audit": false,
+  "input_clock_boundary_shadow": false,
+  "input_clock_shadow_sample_ms": 1.0,
+  "local_pipeline_root_shadow_every": 0,
+  "local_hazard_backend": "native",
+  "local_beam_reducer": "native",
+  "bullet_decode_backend": "native",
+  "agent_duration_seconds": 86400.0,
+  "trial_timeout_seconds": 86700.0,
+  "save_replay_slot": null,
+  "replay_save_timeout": 20.0,
+  "caps_lock_bootstrap": {
+    "required": false,
+    "reason": "direct supervisor arm has no Caps Lock dependency"
+  },
+  "started_at": "2026-08-26T05:17:33.778325+00:00",
+  "target": {
+    "pid": 284,
+    "image_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\reference\\th08-game-original\\th08\\th08.exe",
+    "sha256": "330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924",
+    "runtime_patch": {
+      "address": 4509946,
+      "byte": 0,
+      "no_life_decrement": true
+    }
+  },
+  "pid": 284,
+  "executed_menu_taps": [
+    {
+      "key": "down",
+      "purpose": "select Practice Start feedback step 1",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Practice Start feedback step 2",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Practice Start feedback step 3",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "confirm",
+      "purpose": "enter Practice Start",
+      "wait_after_ms": 700
+    },
+    {
+      "key": "down",
+      "purpose": "select Easy feedback step 1",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "confirm",
+      "purpose": "accept native-verified Easy",
+      "wait_after_ms": 700
+    },
+    {
+      "key": "right",
+      "purpose": "select Sakuya/Remilia feedback step 1",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "right",
+      "purpose": "select Sakuya/Remilia feedback step 2",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "confirm",
+      "purpose": "accept native-verified Sakuya/Remilia",
+      "wait_after_ms": 700
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B feedback step 1",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B feedback step 2",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B feedback step 3",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B feedback step 4",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B feedback step 5",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B feedback step 6",
+      "wait_after_ms": 180
+    },
+    {
+      "key": "down",
+      "purpose": "select Stage 6B feedback step 7",
+      "wait_after_ms": 180
+    }
+  ],
+  "menu_native_trace": [
+    {
+      "label": "practice_start_selected",
+      "manager": 82035576,
+      "mode": 0,
+      "substate": 1,
+      "screen_age": 51,
+      "cursor": 3,
+      "difficulty_cursor": 3,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 1
+    },
+    {
+      "label": "difficulty_screen_entered",
+      "manager": 82035576,
+      "mode": 8,
+      "substate": 1,
+      "screen_age": 43,
+      "cursor": 3,
+      "difficulty_cursor": 3,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 1
+    },
+    {
+      "label": "difficulty_selected",
+      "manager": 82035576,
+      "mode": 8,
+      "substate": 1,
+      "screen_age": 58,
+      "cursor": 0,
+      "difficulty_cursor": 3,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 1
+    },
+    {
+      "label": "team_screen_entered",
+      "manager": 82035576,
+      "mode": 9,
+      "substate": 1,
+      "screen_age": 45,
+      "cursor": 0,
+      "difficulty_cursor": 0,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 49399
+    },
+    {
+      "label": "team_selected",
+      "manager": 82035576,
+      "mode": 9,
+      "substate": 1,
+      "screen_age": 75,
+      "cursor": 2,
+      "difficulty_cursor": 0,
+      "difficulty_index": 0,
+      "route_id": 0,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 49399
+    },
+    {
+      "label": "stage_screen_entered",
+      "manager": 82035576,
+      "mode": 11,
+      "substate": 1,
+      "screen_age": 46,
+      "cursor": 0,
+      "difficulty_cursor": 0,
+      "difficulty_index": 0,
+      "route_id": 2,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 49391
+    },
+    {
+      "label": "stage_unlock_verified",
+      "manager": 82035576,
+      "mode": 11,
+      "substate": 1,
+      "screen_age": 46,
+      "cursor": 0,
+      "difficulty_cursor": 0,
+      "difficulty_index": 0,
+      "route_id": 2,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 49391
+    },
+    {
+      "label": "stage_selected",
+      "manager": 82035576,
+      "mode": 11,
+      "substate": 1,
+      "screen_age": 151,
+      "cursor": 7,
+      "difficulty_cursor": 0,
+      "difficulty_index": 0,
+      "route_id": 2,
+      "stage_route_index": 0,
+      "practice_stage_availability_mask": 49391
+    }
+  ],
+  "practice_stage_unlock": {
+    "requested": true,
+    "address": 23378422,
+    "stage_index": 7,
+    "requested_bit": 128,
+    "mask_before": 49391,
+    "mask_after": 49391,
+    "wrote": false,
+    "verified": true
+  },
+  "menu_native_state": {
+    "manager": 82035576,
+    "mode": 11,
+    "substate": 1,
+    "screen_age": 151,
+    "cursor": 7,
+    "difficulty_cursor": 0,
+    "difficulty_index": 0,
+    "route_id": 2,
+    "stage_route_index": 0,
+    "practice_stage_availability_mask": 49391
+  },
+  "agent_armed_at": "2026-08-26T05:17:48.846776+00:00",
+  "agent_summary": {
+    "decision_count": 12394,
+    "first_frame": 3,
+    "last_frame": 72320,
+    "frame_span": 72317,
+    "termination_reason": "route_complete",
+    "counter_gaps": 396,
+    "hit_frames": [
+      10519,
+      10843,
+      11417,
+      11818,
+      19278,
+      19846,
+      35028,
+      53738,
+      62118
+    ],
+    "hit_analyses": [
+      {
+        "hit_frame": 10519,
+        "window_start": 10279,
+        "stage_route_index": 7,
+        "stage_label": "Final B / Kaguya",
+        "resources": {
+          "lives": 8.0,
+          "bombs": 3.0,
+          "power": 128.0
+        },
+        "player": {
+          "x": 8.0,
+          "y": 345.41766357421875,
+          "projected_x": 8.0,
+          "projected_y": 345.41766357421875,
+          "control_origin_x": 8.0,
+          "control_origin_y": 345.41766357421875,
+          "phase": 2,
+          "phase_at_action": 2,
+          "predeath_at_action": 25,
+          "focus_logic": 0,
+          "secondary_character_active": true,
+          "focus_transition_counter": 6
+        },
+        "last_nonnegative_gate": null,
+        "first_negative_gate": null,
+        "minimum_gate_slack": null,
+        "first_nonpositive_pipeline": {
+          "frame": 10506,
+          "clearance": -0.611846923828125
+        },
+        "minimum_pipeline_clearance": -0.611846923828125,
+        "nearest_bullet": {
+          "slot": 1043,
+          "x": 10.647798538208008,
+          "y": 346.46673583984375,
+          "center_distance": 2.8480501606256925,
+          "aabb_clearance": -1.3522014617919922
+        },
+        "observed_bullet_contact_candidate": {
+          "slot": 1043,
+          "x": 10.647798538208008,
+          "y": 346.46673583984375,
+          "center_distance": 2.8480501606256925,
+          "aabb_clearance": -1.3522014617919922
+        },
+        "active_lasers_at_observation": 0
+      },
+      {
+        "hit_frame": 10843,
+        "window_start": 10603,
+        "stage_route_index": 7,
+        "stage_label": "Final B / Kaguya",
+        "resources": {
+          "lives": 8.0,
+          "bombs": 3.0,
+          "power": 112.0
+        },
+        "player": {
+          "x": 376.0,
+          "y": 410.8575439453125,
+          "projected_x": 376.0,
+          "projected_y": 410.8575439453125,
+          "control_origin_x": 376.0,
+          "control_origin_y": 410.8575439453125,
+          "phase": 0,
+          "phase_at_action": 2,
+          "predeath_at_action": 29,
+          "focus_logic": 1,
+          "secondary_character_active": true,
+          "focus_transition_counter": 22
+        },
+        "last_nonnegative_gate": null,
+        "first_negative_gate": null,
+        "minimum_gate_slack": null,
+        "first_nonpositive_pipeline": null,
+        "minimum_pipeline_clearance": 0.22917801141738892,
+        "nearest_bullet": {
+          "slot": 10,
+          "x": 376.1638488769531,
+          "y": 402.1535949707031,
+          "center_distance": 8.705491037677449,
+          "aabb_clearance": 4.703948974609375
+        },
+        "observed_bullet_contact_candidate": null,
+        "active_lasers_at_observation": 0
+      },
+      {
+        "hit_frame": 11417,
+        "window_start": 11177,
+        "stage_route_index": 7,
+        "stage_label": "Final B / Kaguya",
+        "resources": {
+          "lives": 8.0,
+          "bombs": 3.0,
+          "power": 96.0
+        },
+        "player": {
+          "x": 15.319308280944824,
+          "y": 414.62530517578125,
+          "projected_x": 15.319308280944824,
+          "projected_y": 414.62530517578125,
+          "control_origin_x": 15.319308280944824,
+          "control_origin_y": 414.62530517578125,
+          "phase": 0,
+          "phase_at_action": 2,
+          "predeath_at_action": 28,
+          "focus_logic": 0,
+          "secondary_character_active": false,
+          "focus_transition_counter": 13
+        },
+        "last_nonnegative_gate": null,
+        "first_negative_gate": null,
+        "minimum_gate_slack": null,
+        "first_nonpositive_pipeline": null,
+        "minimum_pipeline_clearance": 1.1741885244846344,
+        "nearest_bullet": {
+          "slot": 1155,
+          "x": 22.802040100097656,
+          "y": 407.9723815917969,
+          "center_distance": 10.012625414530284,
+          "aabb_clearance": 4.378061724850404
+        },
+        "observed_bullet_contact_candidate": null,
+        "active_lasers_at_observation": 0
+      },
+      {
+        "hit_frame": 11818,
+        "window_start": 11578,
+        "stage_route_index": 7,
+        "stage_label": "Final B / Kaguya",
+        "resources": {
+          "lives": 8.0,
+          "bombs": 3.0,
+          "power": 80.0
+        },
+        "player": {
+          "x": 344.0,
+          "y": 432.0,
+          "projected_x": 344.0,
+          "projected_y": 432.0,
+          "control_origin_x": 344.0,
+          "control_origin_y": 432.0,
+          "phase": 0,
+          "phase_at_action": 2,
+          "predeath_at_action": 29,
+          "focus_logic": 0,
+          "secondary_character_active": false,
+          "focus_transition_counter": 6
+        },
+        "last_nonnegative_gate": null,
+        "first_negative_gate": null,
+        "minimum_gate_slack": null,
+        "first_nonpositive_pipeline": {
+          "frame": 11805,
+          "clearance": -0.3680509924888611
+        },
+        "minimum_pipeline_clearance": -7.819183349609375,
+        "nearest_bullet": {
+          "slot": 356,
+          "x": 349.3792419433594,
+          "y": 436.1256408691406,
+          "center_distance": 6.779170780141193,
+          "aabb_clearance": 1.3849526946145696
+        },
+        "observed_bullet_contact_candidate": null,
+        "active_lasers_at_observation": 0
+      },
+      {
+        "hit_frame": 19278,
+        "window_start": 19038,
+        "stage_route_index": 7,
+        "stage_label": "Final B / Kaguya",
+        "resources": {
+          "lives": 8.0,
+          "bombs": 3.0,
+          "power": 65.0
+        },
+        "player": {
+          "x": 376.0,
+          "y": 432.0,
+          "projected_x": 376.0,
+          "projected_y": 432.0,
+          "control_origin_x": 376.0,
+          "control_origin_y": 432.0,
+          "phase": 0,
+          "phase_at_action": 2,
+          "predeath_at_action": 27,
+          "focus_logic": 0,
+          "secondary_character_active": true,
+          "focus_transition_counter": 4
+        },
+        "last_nonnegative_gate": null,
+        "first_negative_gate": null,
+        "minimum_gate_slack": null,
+        "first_nonpositive_pipeline": {
+          "frame": 19278,
+          "clearance": -4.261802613735199
+        },
+        "minimum_pipeline_clearance": -4.261802613735199,
+        "nearest_bullet": {
+          "slot": 709,
+          "x": 344.4398498535156,
+          "y": 446.9872741699219,
+          "center_distance": 34.93796594412796,
+          "aabb_clearance": 28.37582106563584
+        },
+        "observed_bullet_contact_candidate": null,
+        "active_lasers_at_observation": 195
+      },
+      {
+        "hit_frame": 19846,
+        "window_start": 19606,
+        "stage_route_index": 7,
+        "stage_label": "Final B / Kaguya",
+        "resources": {
+          "lives": 8.0,
+          "bombs": 3.0,
+          "power": 50.0
+        },
+        "player": {
+          "x": 349.2668762207031,
+          "y": 429.70001220703125,
+          "projected_x": 349.2668762207031,
+          "projected_y": 429.70001220703125,
+          "control_origin_x": 349.2668762207031,
+          "control_origin_y": 429.70001220703125,
+          "phase": 0,
+          "phase_at_action": 2,
+          "predeath_at_action": 27,
+          "focus_logic": 1,
+          "secondary_character_active": true,
+          "focus_transition_counter": 92
+        },
+        "last_nonnegative_gate": null,
+        "first_negative_gate": null,
+        "minimum_gate_slack": null,
+        "first_nonpositive_pipeline": {
+          "frame": 19846,
+          "clearance": -0.1396847665309906
+        },
+        "minimum_pipeline_clearance": -0.1396847665309906,
+        "nearest_bullet": {
+          "slot": 765,
+          "x": 344.06390380859375,
+          "y": 422.9220275878906,
+          "center_distance": 8.544705812283892,
+          "aabb_clearance": 1.7895326501570545
+        },
+        "observed_bullet_contact_candidate": null,
+        "active_lasers_at_observation": 215
+      },
+      {
+        "hit_frame": 35028,
+        "window_start": 34788,
+        "stage_route_index": 7,
+        "stage_label": "Final B / Kaguya",
+        "resources": {
+          "lives": 8.0,
+          "bombs": 3.0,
+          "power": 34.0
+        },
+        "player": {
+          "x": 367.085205078125,
+          "y": 429.17156982421875,
+          "projected_x": 367.085205078125,
+          "projected_y": 429.17156982421875,
+          "control_origin_x": 367.085205078125,
+          "control_origin_y": 429.17156982421875,
+          "phase": 0,
+          "phase_at_action": 2,
+          "predeath_at_action": 14,
+          "focus_logic": 1,
+          "secondary_character_active": true,
+          "focus_transition_counter": 9
+        },
+        "last_nonnegative_gate": null,
+        "first_negative_gate": null,
+        "minimum_gate_slack": null,
+        "first_nonpositive_pipeline": {
+          "frame": 35028,
+          "clearance": -1.0673275887966156
+        },
+        "minimum_pipeline_clearance": -1.0673275887966156,
+        "nearest_bullet": {
+          "slot": 1370,
+          "x": 371.3760681152344,
+          "y": 413.95306396484375,
+          "center_distance": 15.811844490604589,
+          "aabb_clearance": 10.218505859375
+        },
+        "observed_bullet_contact_candidate": null,
+        "active_lasers_at_observation": 0
+      },
+      {
+        "hit_frame": 53738,
+        "window_start": 53498,
+        "stage_route_index": 7,
+        "stage_label": "Final B / Kaguya",
+        "resources": {
+          "lives": 8.0,
+          "bombs": 3.0,
+          "power": 19.0
+        },
+        "player": {
+          "x": 16.131729125976562,
+          "y": 363.64691162109375,
+          "projected_x": 16.131729125976562,
+          "projected_y": 363.64691162109375,
+          "control_origin_x": 16.131729125976562,
+          "control_origin_y": 363.64691162109375,
+          "phase": 0,
+          "phase_at_action": 2,
+          "predeath_at_action": 29,
+          "focus_logic": 0,
+          "secondary_character_active": true,
+          "focus_transition_counter": 3
+        },
+        "last_nonnegative_gate": null,
+        "first_negative_gate": null,
+        "minimum_gate_slack": null,
+        "first_nonpositive_pipeline": null,
+        "minimum_pipeline_clearance": 0.02789175510406494,
+        "nearest_bullet": {
+          "slot": 340,
+          "x": 21.59866714477539,
+          "y": 358.9141540527344,
+          "center_distance": 7.230933930153905,
+          "aabb_clearance": 1.6397685217692695
+        },
+        "observed_bullet_contact_candidate": null,
+        "active_lasers_at_observation": 0
+      },
+      {
+        "hit_frame": 62118,
+        "window_start": 61878,
+        "stage_route_index": 7,
+        "stage_label": "Final B / Kaguya",
+        "resources": {
+          "lives": 8.0,
+          "bombs": 4.0,
+          "power": 9.0
+        },
+        "player": {
+          "x": 56.57177734375,
+          "y": 429.70001220703125,
+          "projected_x": 56.57177734375,
+          "projected_y": 429.70001220703125,
+          "control_origin_x": 56.57177734375,
+          "control_origin_y": 429.70001220703125,
+          "phase": 0,
+          "phase_at_action": 2,
+          "predeath_at_action": 1,
+          "focus_logic": 0,
+          "secondary_character_active": true,
+          "focus_transition_counter": 4
+        },
+        "last_nonnegative_gate": null,
+        "first_negative_gate": null,
+        "minimum_gate_slack": null,
+        "first_nonpositive_pipeline": {
+          "frame": 61882,
+          "clearance": -0.3625006675720215
+        },
+        "minimum_pipeline_clearance": -5.532876491546631,
+        "nearest_bullet": {
+          "slot": 1089,
+          "x": 58.89180374145508,
+          "y": 424.1656188964844,
+          "center_distance": 6.001002566394585,
+          "aabb_clearance": 1.534393310546875
+        },
+        "observed_bullet_contact_candidate": null,
+        "active_lasers_at_observation": 0
+      }
+    ],
+    "resources": {
+      "bombs": [
+        3.0,
+        4.0
+      ],
+      "lives": [
+        8.0,
+        8.0
+      ],
+      "power": [
+        128.0,
+        9.0
+      ]
+    },
+    "local_latency_ms": {
+      "read": {
+        "median": 14.506600000459002,
+        "p95": 17.398800002411008,
+        "max": 38.25230000074953
+      },
+      "plan": {
+        "median": 34.64709999752813,
+        "p95": 47.29569999472005,
+        "max": 102.48590000264812
+      }
+    },
+    "frame_lag": {
+      "snapshot": {
+        "median": 1.0,
+        "p95": 1.0,
+        "max": 2.0
+      },
+      "action": {
+        "median": 3.0,
+        "p95": 4.0,
+        "max": 7.0
+      },
+      "modeled_control_delays": [
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "corridor": {
+      "record_count": 0,
+      "unique_solution_count": 0,
+      "stale_record_count": 0,
+      "stale_fraction": null,
+      "solve_latency_ms": null,
+      "lane_transitions": []
+    },
+    "boundary_occupancy": {
+      "bottom_frames": 136,
+      "side_frames": 296
+    },
+    "stage_progress": {
+      "transitions": [
+        {
+          "frame": 3,
+          "stage_route_index": 7,
+          "stage_label": "Final B / Kaguya"
+        }
+      ],
+      "last_stage_route_index": 7,
+      "last_stage_label": "Final B / Kaguya"
+    },
+    "first_hit_analysis": {
+      "hit_frame": 10519,
+      "window_start": 10279,
+      "stage_route_index": 7,
+      "stage_label": "Final B / Kaguya",
+      "resources": {
+        "lives": 8.0,
+        "bombs": 3.0,
+        "power": 128.0
+      },
+      "player": {
+        "x": 8.0,
+        "y": 345.41766357421875,
+        "projected_x": 8.0,
+        "projected_y": 345.41766357421875,
+        "control_origin_x": 8.0,
+        "control_origin_y": 345.41766357421875,
+        "phase": 2,
+        "phase_at_action": 2,
+        "predeath_at_action": 25,
+        "focus_logic": 0,
+        "secondary_character_active": true,
+        "focus_transition_counter": 6
+      },
+      "last_nonnegative_gate": null,
+      "first_negative_gate": null,
+      "minimum_gate_slack": null,
+      "first_nonpositive_pipeline": {
+        "frame": 10506,
+        "clearance": -0.611846923828125
+      },
+      "minimum_pipeline_clearance": -0.611846923828125,
+      "nearest_bullet": {
+        "slot": 1043,
+        "x": 10.647798538208008,
+        "y": 346.46673583984375,
+        "center_distance": 2.8480501606256925,
+        "aabb_clearance": -1.3522014617919922
+      },
+      "observed_bullet_contact_candidate": {
+        "slot": 1043,
+        "x": 10.647798538208008,
+        "y": 346.46673583984375,
+        "center_distance": 2.8480501606256925,
+        "aabb_clearance": -1.3522014617919922
+      },
+      "active_lasers_at_observation": 0
+    }
+  },
+  "trial_accepted": true,
+  "acceptance_scope": "complete_practice_stage",
+  "post_stage_no_save": {
+    "attempted": true,
+    "key": "right",
+    "sent": true
+  },
+  "game_terminated_after_trial": true,
+  "finished_at": "2026-08-26T05:33:00.960519+00:00",
+  "status": "completed"
+}

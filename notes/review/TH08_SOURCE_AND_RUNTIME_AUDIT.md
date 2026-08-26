@@ -2656,8 +2656,7 @@ fail-closed gate would reduce correctness without extending gameplay coverage.
 
 ### AUD-090 — Local boundary reserve incorrectly depended on global guidance
 
-Status: **PHYSICAL ROOT CAUSE CONFIRMED; GENERIC FIX VERIFIED OFFLINE;
-PHYSICAL A/B PENDING**
+Status: **PHYSICALLY VALIDATED; HIT COUNT HALVED; NMNB OPEN**
 
 The same accepted Practice run recorded 18 native hit edges and zero Bomb use.
 Fifteen hits carry the explicit playfield-boundary factor, thirteen exceed the
@@ -2691,8 +2690,15 @@ suite passes, including a no-global-guidance regression and the historical
 repair/terminal fixtures.  Eight source-stateful quick stages also complete
 3,840 frames, 480/480 future joins, 28,543 allocations, and 30,000-plus
 callback changes with zero normalized hits or failures.  Commit `ac77c3f` is
-the checkpoint.  These results justify a physical Practice A/B, not a claim
-that the 18-hit count has already improved.
+the implementation checkpoint.
+
+The paired physical Practice A/B at the same Easy Final-B scope subsequently
+completed with 9 hits and zero Bomb use, versus 18 hits and zero Bomb use at
+the baseline.  Bottom-eight-pixel pre-hit occupancy fell from 0.432 to 0.230,
+nonpositive pipeline occupancy from 0.129 to 0.071, and the old
+`corridor_deadline_miss` cluster disappeared.  The result physically validates
+the correction while leaving NMNB open; detailed residual attribution is
+recorded in AUD-092.
 
 ### AUD-091 — A new saturated-stage seed escapes the C-oracle error budget
 
@@ -2714,6 +2720,50 @@ high-density history.  The report remains temporary rather than tracked as a
 large artifact.  The next action is deterministic replay/minimization and an
 operation-order audit; the tolerance must not be widened merely to make the
 gate pass.
+
+### AUD-092 — Easy Final-B paired rerun halves hits but leaves two failure classes
+
+Status: **PHYSICALLY VALIDATED IMPROVEMENT; RESIDUAL ROOT CAUSES OPEN**
+
+The isolated Practice run
+`easy_route2_stage6b_unattended_20260826_051733` at commit `90da0ca` completed
+frames 3..72320 with 12,394 decisions, nine native hit edges, and no Bomb
+input.  It used the same Easy, Route-2, Sakuya/Remilia Final-B scope as
+`easy_route2_stage6b_unattended_20260826_043723`; both runs are accepted
+completions with valid raw-summary scope.  The baseline recorded 18 hits, so
+the paired reduction is 50 percent.  The Wine wrapper selected CPUs 8--15 in
+an isolated prefix, used 86,400/86,700/86,880-second agent/trial/host budgets,
+terminated normally, and left no Wine process.  This was not a duration kill.
+
+The spell ledger changes from `5/8/1/0/2/1/0/0/0/0/0` to
+`4/2/0/0/0/1/0/1/0/0/0` for spell IDs
+147/151/155/159/163/167/171/175/179/183/187; nonspell remains one.  Thus the
+gain is broad rather than a single-card shortcut, although spell 175 acquires
+one new residual and must not be hidden by the aggregate.  Boundary occupancy
+falls from 687/651 bottom/side decisions to 136/296.  Action lag falls from a
+17-frame maximum and 5-frame p95 to 7 and 4; read latency improves from
+16.16/30.38 ms median/p95 to 14.51/17.40 ms, and local-plan p95 improves from
+59.54 to 47.30 ms.  The candidate deliberately submits zero global queries,
+whereas the baseline submitted 10,783 non-authoritative queries and obtained
+no constrained decision.  Input visibility remains essentially unchanged
+(0.9975 versus 0.9964), so visibility cannot explain away the hit reduction.
+
+The residuals divide cleanly.  Seven of nine reach robust action-set
+exhaustion before the native hit, with warning leads of 4--13 frames where a
+positive lead exists; five are modeled committed-prefix collisions, one is an
+observed bullet overlap, and one is an observed laser overlap.  These are
+early viable-continuation failures, not missing collision geometry at the hit
+row.  The other two, at frames 11417 and 53738, retain positive modeled
+pipeline clearance and no warning and are classified
+`sensor_gap_or_unmodeled_hazard`.  Their exact pool, hit-edge ordering, and
+future-birth coverage require a separate audit before any planner change.
+
+This result rejects two tempting responses.  Easy does not need the expensive
+non-authoritative global workload, and a wider beam is not justified merely by
+the remaining count.  The next generic work is (1) identify the two unresolved
+contact roots and (2) improve cheap local viable-continuation ordering early
+enough to use the measured warning lead.  No stage, spell, or difficulty
+branch is authorized by this evidence.
 
 ## Offline Verification Record
 
