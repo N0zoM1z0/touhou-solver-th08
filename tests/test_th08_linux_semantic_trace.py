@@ -5,6 +5,9 @@ from pathlib import Path
 import unittest
 
 from th08_linux.semantic_trace import (
+    MANAGER_FRAME_ROOT_EXPECTED,
+    MANAGER_FRAME_ROOT_REPEATED_PREVIOUS,
+    classify_manager_frame_root,
     compare_semantic_traces,
     read_semantic_trace,
     write_semantic_trace,
@@ -27,6 +30,27 @@ def _record(
 
 
 class LinuxSemanticTraceTests(unittest.TestCase):
+    def test_manager_frame_root_classifies_expected_and_restart(self) -> None:
+        self.assertEqual(
+            classify_manager_frame_root(observed=7650, expected=7650),
+            MANAGER_FRAME_ROOT_EXPECTED,
+        )
+        self.assertEqual(
+            classify_manager_frame_root(observed=7649, expected=7650),
+            MANAGER_FRAME_ROOT_REPEATED_PREVIOUS,
+        )
+
+    def test_manager_frame_root_rejects_regression_or_skip(self) -> None:
+        for observed in (7648, 7651):
+            with self.subTest(observed=observed):
+                with self.assertRaisesRegex(
+                    ValueError, "neither the expected manager frame"
+                ):
+                    classify_manager_frame_root(
+                        observed=observed,
+                        expected=7650,
+                    )
+
     def test_gzip_round_trip_and_refuse_overwrite(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "trace.jsonl.gz"

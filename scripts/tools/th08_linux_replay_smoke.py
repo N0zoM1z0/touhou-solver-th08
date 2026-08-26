@@ -15,11 +15,13 @@ if str(SCRIPTS) not in sys.path:
 
 from th08_linux import (  # noqa: E402
     LinuxGameSession,
+    MANAGER_FRAME_ROOT_EXPECTED,
     ReplayTitleDriver,
     canonical_fingerprint_bytes,
     capture_gameplay_bootstrap,
     capture_semantic_spine,
     capture_title_snapshot,
+    classify_manager_frame_root,
     enrich_with_collision_control_projection,
     validate_request_memory_witness,
     write_semantic_trace,
@@ -196,7 +198,9 @@ def run(args: argparse.Namespace) -> int:
             fingerprints: list[dict[str, object]] = []
             rng_calls_origin = None
             skipped_gameplay_epochs = 0
+            repeated_manager_frame_input_epochs = 0
             for relative_epoch in range(1, args.gameplay_epochs + 1):
+                repeated_boundaries_before_root = 0
                 while True:
                     request = session.bridge.receive()
                     fingerprint = capture_semantic_spine(
@@ -221,16 +225,29 @@ def run(args: argparse.Namespace) -> int:
                         session.bridge.respond(0)
                         skipped_gameplay_epochs += 1
                         continue
-                    session.bridge.respond(0)
-                    if manager_frame != expected_manager_frame:
+                    try:
+                        root_relation = classify_manager_frame_root(
+                            observed=manager_frame,
+                            expected=expected_manager_frame,
+                        )
+                    except ValueError as error:
+                        session.bridge.respond(0)
                         raise RuntimeError(
                             "replay manager-frame alignment changed: "
                             f"expected={expected_manager_frame} "
                             f"observed={manager_frame}"
-                        )
+                        ) from error
+                    session.bridge.respond(0)
+                    if root_relation != MANAGER_FRAME_ROOT_EXPECTED:
+                        repeated_boundaries_before_root += 1
+                        repeated_manager_frame_input_epochs += 1
+                        continue
                     break
                 trace_locators = fingerprint["trace_locators"]
                 assert isinstance(trace_locators, dict)
+                trace_locators[
+                    "same_manager_calculation_boundaries_before_root"
+                ] = repeated_boundaries_before_root
                 if rng_calls_origin is None:
                     rng_calls_origin = int(trace_locators["rng_calls_absolute"])
                 if not fingerprint["gameplay_active"]:
@@ -278,6 +295,9 @@ def run(args: argparse.Namespace) -> int:
                 },
                 "bootstrap_last_epoch": bootstrap_last_epoch,
                 "skipped_gameplay_epochs": skipped_gameplay_epochs,
+                "repeated_manager_frame_input_epochs": (
+                    repeated_manager_frame_input_epochs
+                ),
                 "start_manager_frame": args.start_manager_frame,
                 "sample_epochs": args.gameplay_epochs,
                 "semantic_spine_sha256": digest.hexdigest(),

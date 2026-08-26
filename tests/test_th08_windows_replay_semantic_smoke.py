@@ -7,6 +7,7 @@ import unittest
 
 from th08_automation.finalb_replay_observer import NativeReplayStageContract
 from tools.th08_windows_replay_semantic_smoke import (
+    advance_to_next_manager_frame_root,
     build_parser,
     validate_semantic_sample,
 )
@@ -39,7 +40,44 @@ def _fingerprint() -> dict[str, object]:
     }
 
 
+class _FakeBarrier:
+    def __init__(self, manager_frames: list[int]) -> None:
+        self.manager_frames = manager_frames
+        self.timeouts: list[float] = []
+
+    def natural_advance(self, *, timeout_seconds: float):
+        self.timeouts.append(timeout_seconds)
+        manager_frame = self.manager_frames.pop(0)
+        return type("Root", (), {"root_manager_frame": manager_frame})()
+
+
 class WindowsReplaySemanticSmokeTests(unittest.TestCase):
+    def test_advance_executes_same_manager_restarts_before_next_frame(
+        self,
+    ) -> None:
+        barrier = _FakeBarrier([7649, 7649, 7650])
+        root, repeated = advance_to_next_manager_frame_root(
+            barrier,  # type: ignore[arg-type]
+            current_manager_frame=7649,
+            timeout_seconds=5.0,
+        )
+        self.assertEqual(root.root_manager_frame, 7650)
+        self.assertEqual(repeated, 2)
+        self.assertEqual(len(barrier.timeouts), 3)
+
+    def test_advance_rejects_manager_frame_regression_or_skip(self) -> None:
+        for observed in (7648, 7651):
+            with self.subTest(observed=observed):
+                barrier = _FakeBarrier([observed])
+                with self.assertRaisesRegex(
+                    RuntimeError, "invalid manager frame"
+                ):
+                    advance_to_next_manager_frame_root(
+                        barrier,  # type: ignore[arg-type]
+                        current_manager_frame=7649,
+                        timeout_seconds=5.0,
+                    )
+
     def test_parser_requires_explicit_replay_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

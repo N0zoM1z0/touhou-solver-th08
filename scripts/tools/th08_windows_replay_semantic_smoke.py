@@ -28,13 +28,18 @@ from th08_automation.practice_windows import (
     wait_for_patched_target,
 )
 from th08_linux import (
+    MANAGER_FRAME_ROOT_EXPECTED,
     canonical_fingerprint_bytes,
     capture_runtime_semantic_spine,
+    classify_manager_frame_root,
     enrich_with_collision_control_projection,
     write_semantic_trace,
 )
 from th08_runtime.game_state import TARGET_EXE
-from th08_runtime.native_snapshot import NativeCalculationBarrier
+from th08_runtime.native_snapshot import (
+    NativeBarrierHeader,
+    NativeCalculationBarrier,
+)
 from th08_runtime.win32 import ProcessReader, Win32, verify_target
 from th08_runtime_agent import release_injected_keys
 
@@ -79,6 +84,45 @@ def _sha256(path: Path) -> str:
         for block in iter(lambda: source.read(1 << 20), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def advance_to_next_manager_frame_root(
+    barrier: NativeCalculationBarrier,
+    *,
+    current_manager_frame: int,
+    timeout_seconds: float,
+) -> tuple[NativeBarrierHeader, int]:
+    """Execute every natural calc boundary until the manager clock advances."""
+
+    if current_manager_frame < 0:
+        raise ValueError("current manager frame must be nonnegative")
+    if timeout_seconds <= 0.0:
+        raise ValueError("manager-frame advance timeout must be positive")
+    expected = current_manager_frame + 1
+    deadline = time.monotonic() + timeout_seconds
+    repeated_boundaries = 0
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0.0:
+            raise TimeoutError(
+                "retail natural frame pump did not advance the manager clock: "
+                f"current={current_manager_frame} expected={expected}"
+            )
+        root = barrier.natural_advance(timeout_seconds=remaining)
+        try:
+            root_relation = classify_manager_frame_root(
+                observed=root.root_manager_frame,
+                expected=expected,
+            )
+        except ValueError as error:
+            raise RuntimeError(
+                "retail natural frame pump reached an invalid manager frame: "
+                f"current={current_manager_frame} expected={expected} "
+                f"observed={root.root_manager_frame}"
+            ) from error
+        if root_relation == MANAGER_FRAME_ROOT_EXPECTED:
+            return root, repeated_boundaries
+        repeated_boundaries += 1
 
 
 def validate_semantic_sample(
@@ -238,6 +282,8 @@ def run(args: argparse.Namespace) -> int:
         fingerprints: list[dict[str, object]] = []
         digest = hashlib.sha256()
         rng_calls_origin = None
+        repeated_manager_frame_input_epochs = 0
+        repeated_boundaries_before_root = 0
         for relative_epoch in range(1, args.gameplay_epochs + 1):
             expected_frame = args.start_manager_frame + relative_epoch - 1
             fingerprint = capture_runtime_semantic_spine(
@@ -246,6 +292,9 @@ def run(args: argparse.Namespace) -> int:
                 rng_calls_origin=rng_calls_origin,
                 trace_locators={
                     "barrier_arrival_serial": root.arrival_serial,
+                    "same_manager_calculation_boundaries_before_root": (
+                        repeated_boundaries_before_root
+                    ),
                 },
             )
             if args.collision_control_projection:
@@ -266,14 +315,16 @@ def run(args: argparse.Namespace) -> int:
             digest.update(canonical_fingerprint_bytes(fingerprint))
             digest.update(b"\n")
             if relative_epoch != args.gameplay_epochs:
-                root = barrier.natural_advance(
-                    timeout_seconds=args.step_timeout
-                )
-                if root.root_manager_frame != expected_frame + 1:
-                    raise RuntimeError(
-                        "retail natural frame pump did not reach the next "
-                        "manager frame"
+                root, repeated_boundaries_before_root = (
+                    advance_to_next_manager_frame_root(
+                        barrier,
+                        current_manager_frame=expected_frame,
+                        timeout_seconds=args.step_timeout,
                     )
+                )
+                repeated_manager_frame_input_epochs += (
+                    repeated_boundaries_before_root
+                )
 
         write_semantic_trace(args.fingerprint_output, fingerprints)
         report.update(
@@ -285,6 +336,9 @@ def run(args: argparse.Namespace) -> int:
                     args.start_manager_frame + args.gameplay_epochs - 1,
                 ],
                 "rng_calls_origin": rng_calls_origin,
+                "repeated_manager_frame_input_epochs": (
+                    repeated_manager_frame_input_epochs
+                ),
                 "semantic_spine_sha256": digest.hexdigest(),
                 "fingerprint_output": str(args.fingerprint_output),
                 "fingerprint_output_sha256": _sha256(

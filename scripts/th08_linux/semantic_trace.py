@@ -6,10 +6,39 @@ from collections.abc import Iterable, Iterator
 import gzip
 import json
 from pathlib import Path
+from typing import Literal
 
 
 TRACE_COMPARISON_SCHEMA = "th08-semantic-spine-comparison-v1"
+MANAGER_FRAME_ROOT_EXPECTED = "expected"
+MANAGER_FRAME_ROOT_REPEATED_PREVIOUS = "repeated_previous"
 _ABSENT = object()
+
+
+def classify_manager_frame_root(
+    *,
+    observed: int,
+    expected: int,
+) -> Literal["expected", "repeated_previous"]:
+    """Classify an input/calc boundary against a manager-frame trace root.
+
+    TH08 may restart the ordered calculation chain before the outer frame pump
+    advances the manager clock. Such a boundary is still a real input epoch,
+    but it is not a second semantic manager-frame sample.
+    """
+
+    if expected <= 0:
+        raise ValueError("expected manager frame must be positive")
+    if observed < 0:
+        raise ValueError("observed manager frame must be nonnegative")
+    if observed == expected:
+        return MANAGER_FRAME_ROOT_EXPECTED
+    if observed == expected - 1:
+        return MANAGER_FRAME_ROOT_REPEATED_PREVIOUS
+    raise ValueError(
+        "calculation root is neither the expected manager frame nor its "
+        f"immediate predecessor: expected={expected} observed={observed}"
+    )
 
 
 def _open_text(path: Path, mode: str):
@@ -217,7 +246,10 @@ def compare_semantic_traces(
 
 
 __all__ = (
+    "MANAGER_FRAME_ROOT_EXPECTED",
+    "MANAGER_FRAME_ROOT_REPEATED_PREVIOUS",
     "TRACE_COMPARISON_SCHEMA",
+    "classify_manager_frame_root",
     "compare_semantic_traces",
     "read_semantic_trace",
     "semantic_trace_record",
