@@ -50,12 +50,13 @@ authority.
 
 The implemented bridge/session now has route-bootstrap integration authority.
 It verifies one exact ELF and child PID, enforces contiguous wire epochs and
-hard no-Bomb responses, and has matched blocked input/RNG witnesses against
-fixed-address memory.  Its source-driven feedback controller has twice
-selected Start, Easy, and Sakuya/Remilia and reached completed Stage-1 loading
-with difficulty 0 and shot type 2.  It has not yet crossed replay or numerical
-differential.  In particular, the existing Windows continuous-poll/SendInput
-loop is not silently treated as a zero-delay Linux epoch controller.
+hard no-Bomb responses, and now matches the exact source globals
+`g_CurFrameInput`, `g_LastFrameInput`, and RNG seed across dynamic input
+epochs.  Its source-driven feedback controller has selected Start, Easy, and
+Sakuya/Remilia and reached completed Stage-1 loading with difficulty 0 and
+shot type 2.  It has not yet crossed replay or numerical differential.  In
+particular, the existing Windows continuous-poll/SendInput loop is not
+silently treated as a zero-delay Linux epoch controller.
 
 Cross-runtime float comparison may temporarily retain explicit absolute/ULP
 error for coordinates, velocities, and angles, but discrete semantics remain

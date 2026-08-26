@@ -565,6 +565,11 @@ ordered implementation plan are in
   loading with difficulty 0 and shot type 2 at epochs 140 and 138.  This is
   menu/lifecycle authority only; replay and numerical differentials remain
   open.
+- **Dynamic bridge evidence corrected:** commit `5ab79d2` distinguishes
+  supervisor input `0x164d528/0x164d530` from adjacent GUI replay input and
+  matches the true wire globals plus RNG through a 134-epoch live route
+  bootstrap.  It also retries the real Unix connect across the bind/listen
+  startup gap; no route-duration timeout was added.
 - `audits/` and `archive/` are untracked/local. Never stage them.
 
 ## Current Outcome

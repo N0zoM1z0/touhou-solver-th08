@@ -188,14 +188,15 @@ compatibility target is therefore not necessarily byte-identical float state,
 but an identical ordered discrete trajectory with bounded, measured
 continuous error through the replay horizon.
 
-The first live synchronization probe passes below this stronger gate.  On the
-verified ELF, three consecutive requests were epochs 1, 2, and 3.  At each
-blocked callback, request current/previous input and RNG seed exactly equalled
-independent reads of the fixed-address globals, and the replay target flag was
-set.  The first cold Xvfb callback took roughly 41 seconds to reach, but its
-reported solver pause was only 1 ms; warm startup reached the three-epoch
-probe in roughly 12 seconds.  This is observed socket/memory coherence, not a
-gameplay, replay, numerical-equivalence, or NMNB result.
+The first live synchronization probe reached three consecutive requests at
+epochs 1, 2, and 3 and matched RNG state, but its neutral inputs could not
+distinguish supervisor input from the adjacent GUI replay-input globals.  The
+corrected witness reads `g_CurFrameInput` and `g_LastFrameInput` exactly.  A
+later title/bootstrap run matched those fields and RNG seed through all 134
+epochs, including nonzero press/release edges.  The first cold Xvfb callback
+took roughly 41 seconds to reach, but its reported solver pause was only 1 ms.
+This is observed socket/memory coherence, not a replay, numerical-equivalence,
+or NMNB result.
 
 The next live probe now crosses the title-to-game transition.  Source-derived
 cursor feedback selected Start, Easy, and Sakuya/Remilia with explicit
@@ -205,6 +206,11 @@ index 0.  This also found that `TitleScreen::DeletedCallback` leaves
 `g_TitleScreen` dangling, so the release/handoff epoch no longer dereferences
 that global.  The result establishes deterministic menu and lifecycle
 integration, not replay or numerical authority.
+
+Session startup likewise waits for an accepted socket connection, not merely
+path existence: Unix `bind` can publish the path before `listen`.  Connection
+refusal in that interval is retried only inside the bounded startup phase;
+gameplay and route execution retain no duration timeout.
 
 ## Relationship to the offline fuzzer
 

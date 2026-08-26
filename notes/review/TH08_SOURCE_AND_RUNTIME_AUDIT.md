@@ -3083,13 +3083,14 @@ Its 120-second smoke allowance bounds cold startup only; the route/session
 layer has no duration-based stop.
 
 On Xvfb `:120`, a bounded neutral smoke observed request epochs 1, 2, and 3.
-At every blocked callback, current input, previous input, and RNG seed in the
-wire request exactly matched independent reads of the fixed-address globals;
-the replay-target flag was present.  The first cold callback took roughly 41
-seconds to reach under software rendering, but reported only 1 ms accumulated
-solver pause.  A warm three-epoch run reached completion in roughly 12
-seconds.  Fourteen focused protocol/process/session tests pass and no native
-TH08 process remains.
+The RNG seed and all-zero input fields agreed with fixed-address sensing, and
+the replay-target flag was present.  Because the input was neutral throughout,
+that original probe did not distinguish the adjacent supervisor and GUI replay
+input globals; AUD-100 corrects the stronger former wording.  The first cold
+callback took roughly 41 seconds to reach under software rendering, but
+reported only 1 ms accumulated solver pause.  A warm three-epoch run reached
+completion in roughly 12 seconds.  Fourteen focused protocol/process/session
+tests passed at this checkpoint and no native TH08 process remained.
 
 This closes process ownership, wire symmetry, and title-boundary state
 coherence only.  It does not establish menu correctness, gameplay transition
@@ -3117,8 +3118,8 @@ The first reached ready epoch 140 after correcting the persisted default
 difficulty from Hard cursor 3 to Easy; the second reached ready epoch 138 with
 Easy already persisted.  Both independently reported difficulty 0, shot type
 2, and Stage-1 route index 0 from fixed-address game state.  Twenty-one
-focused protocol/process/session/title tests pass, and each smoke cleaned up
-only its exact native child.
+focused protocol/process/session/title tests passed at this checkpoint, and
+each smoke cleaned up only its exact native child.
 
 The first run also exposed a source lifecycle hazard: `TitleScreen` deletion
 frees the object but does not clear `g_TitleScreen`.  The post-character-
@@ -3133,6 +3134,39 @@ handoff only.  It does not establish replay recording, Linux/original numeric
 agreement, collision equivalence, route completion, or NMNB.  The next hard
 gate is a short recorded input sequence plus an earliest-divergence semantic
 fingerprint in both runtimes.
+
+### AUD-100 — The first wire witness compared adjacent GUI inputs, not the bridge globals
+
+Status: **SOURCE-CONFIRMED AND FIXED; DYNAMIC LIVE WITNESS PASSED**
+
+The bridge request is populated from `g_CurFrameInput@0x0164d528` and
+`g_LastFrameInput@0x0164d530`.  The original smoke compared those fields with
+the existing observer's `input_current@0x0164d52c` and
+`input_previous@0x0164d534`, which source identifies as
+`g_GuiMessageInputCurrent/Previous`.  All four values were zero in the first
+three-epoch smoke, so the wrong comparison produced a false-positive
+coherence claim.
+
+Commit `5ab79d2` adds the missing source address, a shared fail-closed wire
+witness, and schema-v2 smoke output that names supervisor and GUI inputs
+separately.  A live source-driven title bootstrap then checked the true
+supervisor current/previous globals and RNG seed at all 134 epochs, including
+Shoot and Right press/release transitions, before reaching Easy
+Sakuya/Remilia Stage-1 load.  This restores dynamic wire/memory evidence; it
+does not compare Linux with the original executable.
+
+### AUD-101 — Socket publication raced the runtime's listen call
+
+Status: **REPRODUCED AND FIXED**
+
+The exact-child session formerly waited for the Unix socket path and then
+attempted one connection.  `bind(2)` publishes that path before `listen(2)`
+makes it connectable, so a focused suite intermittently failed with
+`ECONNREFUSED`.  Commit `5ab79d2` retries the actual connection inside the
+single bounded startup budget while continuing to monitor exact-child exit.
+A deterministic fake runtime now holds a 50-ms bind-to-listen gap; five
+consecutive 24-test focused suites pass.  This timeout still governs startup
+only and does not introduce any route-duration limit.
 
 ## Offline Verification Record
 
