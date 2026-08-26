@@ -15,18 +15,19 @@ if str(SCRIPTS) not in sys.path:
 
 from th08_linux import (  # noqa: E402
     LinuxGameSession,
-    MANAGER_FRAME_ROOT_EXPECTED,
+    MANAGER_FRAME_TRANSITION_SAME,
     ReplayTitleDriver,
     canonical_fingerprint_bytes,
     capture_gameplay_bootstrap,
     capture_semantic_spine,
     capture_title_snapshot,
-    classify_manager_frame_root,
+    classify_manager_frame_transition,
     enrich_with_collision_control_projection,
     validate_request_memory_witness,
     write_semantic_trace,
 )
 from th08_replay import decode_replay  # noqa: E402
+from th08_runtime.game_state import ADDR_ENEMY_MANAGER_FRAME  # noqa: E402
 from th08_runtime.sensing import observe_state  # noqa: E402
 
 
@@ -198,11 +199,36 @@ def run(args: argparse.Namespace) -> int:
             fingerprints: list[dict[str, object]] = []
             rng_calls_origin = None
             skipped_gameplay_epochs = 0
-            repeated_manager_frame_input_epochs = 0
+            same_manager_input_epochs = 0
+            previous_manager_frame = None
+            replay_frame_origin = None
             for relative_epoch in range(1, args.gameplay_epochs + 1):
-                repeated_boundaries_before_root = 0
                 while True:
                     request = session.bridge.receive()
+                    if relative_epoch == 1:
+                        seek_manager_frame = session.reader.u32(
+                            ADDR_ENEMY_MANAGER_FRAME
+                        )
+                        if seek_manager_frame < args.start_manager_frame:
+                            validate_request_memory_witness(
+                                request,
+                                session.reader,
+                            )
+                            session.bridge.respond(0)
+                            skipped_gameplay_epochs += 1
+                            continue
+                        if seek_manager_frame > args.start_manager_frame:
+                            validate_request_memory_witness(
+                                request,
+                                session.reader,
+                            )
+                            session.bridge.respond(0)
+                            raise RuntimeError(
+                                "replay seek skipped the requested manager "
+                                "frame: "
+                                f"requested={args.start_manager_frame} "
+                                f"observed={seek_manager_frame}"
+                            )
                     fingerprint = capture_semantic_spine(
                         session.reader,
                         request,
@@ -214,40 +240,41 @@ def run(args: argparse.Namespace) -> int:
                             session.reader,
                             fingerprint,
                         )
-                    manager_frame = int(fingerprint["manager_frame"])
-                    expected_manager_frame = (
-                        args.start_manager_frame + relative_epoch - 1
-                    )
-                    if (
-                        relative_epoch == 1
-                        and manager_frame < expected_manager_frame
-                    ):
-                        session.bridge.respond(0)
-                        skipped_gameplay_epochs += 1
-                        continue
+                    session.bridge.respond(0)
+                    break
+                manager_frame = int(fingerprint["manager_frame"])
+                if previous_manager_frame is None:
+                    if manager_frame != args.start_manager_frame:
+                        raise RuntimeError(
+                            "replay manager-frame seek changed during root "
+                            f"capture: requested={args.start_manager_frame} "
+                            f"observed={manager_frame}"
+                        )
+                    manager_frame_delta = 0
+                else:
                     try:
-                        root_relation = classify_manager_frame_root(
+                        manager_relation = classify_manager_frame_transition(
+                            previous=previous_manager_frame,
                             observed=manager_frame,
-                            expected=expected_manager_frame,
                         )
                     except ValueError as error:
-                        session.bridge.respond(0)
                         raise RuntimeError(
-                            "replay manager-frame alignment changed: "
-                            f"expected={expected_manager_frame} "
+                            "replay manager-frame transition changed across "
+                            "logical input epochs: "
+                            f"previous={previous_manager_frame} "
                             f"observed={manager_frame}"
                         ) from error
-                    session.bridge.respond(0)
-                    if root_relation != MANAGER_FRAME_ROOT_EXPECTED:
-                        repeated_boundaries_before_root += 1
-                        repeated_manager_frame_input_epochs += 1
-                        continue
-                    break
+                    manager_frame_delta = (
+                        manager_frame - previous_manager_frame
+                    )
+                    if manager_relation == MANAGER_FRAME_TRANSITION_SAME:
+                        same_manager_input_epochs += 1
+                previous_manager_frame = manager_frame
                 trace_locators = fingerprint["trace_locators"]
                 assert isinstance(trace_locators, dict)
-                trace_locators[
-                    "same_manager_calculation_boundaries_before_root"
-                ] = repeated_boundaries_before_root
+                trace_locators["manager_frame_delta_from_previous_root"] = (
+                    manager_frame_delta
+                )
                 if rng_calls_origin is None:
                     rng_calls_origin = int(trace_locators["rng_calls_absolute"])
                 if not fingerprint["gameplay_active"]:
@@ -260,6 +287,23 @@ def run(args: argparse.Namespace) -> int:
                     raise RuntimeError("replay difficulty changed inside sample")
                 if fingerprint["shot_type_index"] != metadata.route_id:
                     raise RuntimeError("replay shot type changed inside sample")
+                replay = fingerprint["replay"]
+                if not isinstance(replay, dict):
+                    raise RuntimeError(
+                        "replay manager is absent inside gameplay sample"
+                    )
+                replay_frame = int(replay["frame_counter"])
+                if replay_frame_origin is None:
+                    replay_frame_origin = replay_frame
+                expected_replay_frame = (
+                    replay_frame_origin + relative_epoch - 1
+                )
+                if replay_frame != expected_replay_frame:
+                    raise RuntimeError(
+                        "replay logical input clock changed: "
+                        f"expected={expected_replay_frame} "
+                        f"observed={replay_frame}"
+                    )
                 encoded = canonical_fingerprint_bytes(fingerprint)
                 digest.update(encoded)
                 digest.update(b"\n")
@@ -270,15 +314,13 @@ def run(args: argparse.Namespace) -> int:
                 last = fingerprint
                 if int(fingerprint["input"]["gui_current"]) != 0:
                     nonzero_gui_epochs += 1
-                replay = fingerprint["replay"]
-                if replay is not None:
-                    replay_frames.append(int(replay["frame_counter"]))
+                replay_frames.append(replay_frame)
 
             if args.fingerprint_output is not None:
                 write_semantic_trace(args.fingerprint_output, fingerprints)
 
             report = {
-                "schema": "th08-linux-replay-semantic-smoke-v4",
+                "schema": "th08-linux-replay-semantic-smoke-v5",
                 "runtime": {
                     "path": str(session.identity.path),
                     "size": session.identity.size,
@@ -295,10 +337,9 @@ def run(args: argparse.Namespace) -> int:
                 },
                 "bootstrap_last_epoch": bootstrap_last_epoch,
                 "skipped_gameplay_epochs": skipped_gameplay_epochs,
-                "repeated_manager_frame_input_epochs": (
-                    repeated_manager_frame_input_epochs
-                ),
+                "same_manager_input_epochs": same_manager_input_epochs,
                 "start_manager_frame": args.start_manager_frame,
+                "start_replay_frame": replay_frame_origin,
                 "sample_epochs": args.gameplay_epochs,
                 "semantic_spine_sha256": digest.hexdigest(),
                 "rng_calls_origin": rng_calls_origin,

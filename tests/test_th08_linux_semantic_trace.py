@@ -5,9 +5,9 @@ from pathlib import Path
 import unittest
 
 from th08_linux.semantic_trace import (
-    MANAGER_FRAME_ROOT_EXPECTED,
-    MANAGER_FRAME_ROOT_REPEATED_PREVIOUS,
-    classify_manager_frame_root,
+    MANAGER_FRAME_TRANSITION_ADVANCED,
+    MANAGER_FRAME_TRANSITION_SAME,
+    classify_manager_frame_transition,
     compare_semantic_traces,
     read_semantic_trace,
     write_semantic_trace,
@@ -30,25 +30,25 @@ def _record(
 
 
 class LinuxSemanticTraceTests(unittest.TestCase):
-    def test_manager_frame_root_classifies_expected_and_restart(self) -> None:
+    def test_manager_frame_transition_classifies_advance_and_freeze(self) -> None:
         self.assertEqual(
-            classify_manager_frame_root(observed=7650, expected=7650),
-            MANAGER_FRAME_ROOT_EXPECTED,
+            classify_manager_frame_transition(previous=7649, observed=7650),
+            MANAGER_FRAME_TRANSITION_ADVANCED,
         )
         self.assertEqual(
-            classify_manager_frame_root(observed=7649, expected=7650),
-            MANAGER_FRAME_ROOT_REPEATED_PREVIOUS,
+            classify_manager_frame_transition(previous=7649, observed=7649),
+            MANAGER_FRAME_TRANSITION_SAME,
         )
 
-    def test_manager_frame_root_rejects_regression_or_skip(self) -> None:
+    def test_manager_frame_transition_rejects_regression_or_skip(self) -> None:
         for observed in (7648, 7651):
             with self.subTest(observed=observed):
                 with self.assertRaisesRegex(
-                    ValueError, "neither the expected manager frame"
+                    ValueError, "neither stayed fixed nor advanced"
                 ):
-                    classify_manager_frame_root(
+                    classify_manager_frame_transition(
+                        previous=7649,
                         observed=observed,
-                        expected=7650,
                     )
 
     def test_gzip_round_trip_and_refuse_overwrite(self) -> None:

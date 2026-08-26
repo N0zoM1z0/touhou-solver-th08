@@ -10,34 +10,32 @@ from typing import Literal
 
 
 TRACE_COMPARISON_SCHEMA = "th08-semantic-spine-comparison-v1"
-MANAGER_FRAME_ROOT_EXPECTED = "expected"
-MANAGER_FRAME_ROOT_REPEATED_PREVIOUS = "repeated_previous"
+MANAGER_FRAME_TRANSITION_ADVANCED = "advanced"
+MANAGER_FRAME_TRANSITION_SAME = "same"
 _ABSENT = object()
 
 
-def classify_manager_frame_root(
+def classify_manager_frame_transition(
     *,
+    previous: int,
     observed: int,
-    expected: int,
-) -> Literal["expected", "repeated_previous"]:
-    """Classify an input/calc boundary against a manager-frame trace root.
+) -> Literal["advanced", "same"]:
+    """Classify the non-universal manager clock across input epochs.
 
-    TH08 may restart the ordered calculation chain before the outer frame pump
-    advances the manager clock. Such a boundary is still a real input epoch,
-    but it is not a second semantic manager-frame sample.
+    Every calculation-chain restart is a real logical input epoch. The enemy
+    manager clock may stay frozen at that boundary, but it must not regress or
+    jump over an update inside one ordered replay stage.
     """
 
-    if expected <= 0:
-        raise ValueError("expected manager frame must be positive")
-    if observed < 0:
-        raise ValueError("observed manager frame must be nonnegative")
-    if observed == expected:
-        return MANAGER_FRAME_ROOT_EXPECTED
-    if observed == expected - 1:
-        return MANAGER_FRAME_ROOT_REPEATED_PREVIOUS
+    if previous < 0 or observed < 0:
+        raise ValueError("manager frames must be nonnegative")
+    if observed == previous:
+        return MANAGER_FRAME_TRANSITION_SAME
+    if observed == previous + 1:
+        return MANAGER_FRAME_TRANSITION_ADVANCED
     raise ValueError(
-        "calculation root is neither the expected manager frame nor its "
-        f"immediate predecessor: expected={expected} observed={observed}"
+        "manager frame neither stayed fixed nor advanced by one input epoch: "
+        f"previous={previous} observed={observed}"
     )
 
 
@@ -246,10 +244,10 @@ def compare_semantic_traces(
 
 
 __all__ = (
-    "MANAGER_FRAME_ROOT_EXPECTED",
-    "MANAGER_FRAME_ROOT_REPEATED_PREVIOUS",
+    "MANAGER_FRAME_TRANSITION_ADVANCED",
+    "MANAGER_FRAME_TRANSITION_SAME",
     "TRACE_COMPARISON_SCHEMA",
-    "classify_manager_frame_root",
+    "classify_manager_frame_transition",
     "compare_semantic_traces",
     "read_semantic_trace",
     "semantic_trace_record",

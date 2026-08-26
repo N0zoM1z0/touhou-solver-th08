@@ -11,9 +11,9 @@ from th08_linux.process import LinuxProcessReader
 from th08_linux.protocol import InputRequest
 from th08_linux.session import LinuxGameSession, LinuxRuntimeIdentity
 from th08_linux.semantic_trace import (
-    MANAGER_FRAME_ROOT_EXPECTED,
-    MANAGER_FRAME_ROOT_REPEATED_PREVIOUS,
-    classify_manager_frame_root,
+    MANAGER_FRAME_TRANSITION_ADVANCED,
+    MANAGER_FRAME_TRANSITION_SAME,
+    classify_manager_frame_transition,
     compare_semantic_traces,
     read_semantic_trace,
     write_semantic_trace,
@@ -40,8 +40,8 @@ __all__ = (
     "LockstepMemoryWitness",
     "LinuxProcessReader",
     "LinuxRuntimeIdentity",
-    "MANAGER_FRAME_ROOT_EXPECTED",
-    "MANAGER_FRAME_ROOT_REPEATED_PREVIOUS",
+    "MANAGER_FRAME_TRANSITION_ADVANCED",
+    "MANAGER_FRAME_TRANSITION_SAME",
     "RouteTitleDriver",
     "ReplayTitleDriver",
     "SAKUYA_REMILIA_SHOT_TYPE",
@@ -54,7 +54,7 @@ __all__ = (
     "capture_semantic_spine",
     "enrich_with_collision_control_projection",
     "capture_title_snapshot",
-    "classify_manager_frame_root",
+    "classify_manager_frame_transition",
     "compare_semantic_traces",
     "read_semantic_trace",
     "validate_request_memory_witness",
