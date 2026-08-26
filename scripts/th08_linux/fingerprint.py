@@ -245,6 +245,16 @@ def _capture_effect_lifecycle_projection(
     return capture_effect_lifecycle_projection(reader)
 
 
+def _capture_player_damage_collision_projection(
+    reader: FingerprintStateReader,
+) -> object:
+    from th08_runtime.player_damage_collision_projection import (
+        capture_player_damage_collision_projection,
+    )
+
+    return capture_player_damage_collision_projection(reader)
+
+
 def enrich_with_collision_control_projection(
     reader: FingerprintStateReader,
     fingerprint: dict[str, object],
@@ -258,6 +268,7 @@ def enrich_with_collision_control_projection(
     if (
         "collision_control_projection" in fingerprint
         or "effect_lifecycle_projection" in fingerprint
+        or "player_damage_collision_projection" in fingerprint
     ):
         raise ValueError("semantic spine already has a deep projection")
     player = fingerprint["player"]
@@ -300,12 +311,18 @@ def enrich_with_collision_control_projection(
         compact_state=compact_state,
     )
     effect_projection = _capture_effect_lifecycle_projection(reader)
+    player_damage_projection = _capture_player_damage_collision_projection(
+        reader
+    )
     enriched = dict(fingerprint)
     enriched["collision_control_projection"] = projection.record(
         include_model_payload=True
     )
     enriched["effect_lifecycle_projection"] = effect_projection.record(
         include_payload=True
+    )
+    enriched["player_damage_collision_projection"] = (
+        player_damage_projection.record(include_payload=True)
     )
     return enriched
 
