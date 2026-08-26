@@ -80,8 +80,14 @@ def prepare_local_hazards(
         if actuator.control_delay_candidates is not None
         else (actuator.control_delay_frames,)
     )
-    diagnostic_reserve = (
+    latency_control_reserve = (
         unfocused_cardinal_speed * max(certificate_delay_frames)
+    )
+    # This is actuator reachability, not global-planner advice.  A missing or
+    # losing corridor must not erase the distance needed to reverse an input
+    # that can remain pending for the full measured delay support.
+    diagnostic_reserve = (
+        latency_control_reserve
         if (
             validated.recovery_by_action
             or validated.repair_by_action
@@ -90,12 +96,9 @@ def prepare_local_hazards(
         else 0.0
     )
     recovery_reserve = (
-        diagnostic_reserve
+        latency_control_reserve
         if (
-            (
-                config.recovery_control_reserve
-                and validated.recovery_by_action
-            )
+            config.recovery_control_reserve
             or (
                 config.losing_control_reserve
                 and (

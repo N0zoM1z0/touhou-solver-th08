@@ -2487,6 +2487,38 @@ class LiveDodgeAgentTests(unittest.TestCase):
         self.assertEqual(decision.viability_recovery_distance, 315.0)
         self.assertEqual(decision.viability_control_reserve_deficit, 0.0)
 
+    def test_latency_boundary_reserve_does_not_require_global_guidance(
+        self,
+    ) -> None:
+        common = {
+            "player_x": 352.0,
+            "player_y": 400.0,
+            "bullets": (
+                Bullet(192.0, 240.0, 0.0, 0.0, 2.0, 2.0),
+            ),
+            "lasers": (),
+            "previous_direction": RIGHT,
+            "previous_focus": False,
+            "can_bomb": False,
+            "control_delay_frames": 3,
+            "control_delay_candidates": (3, 4, 5, 6),
+            "action_hold_frames": 6,
+            "horizon": 10,
+        }
+        baseline = choose_action(
+            **common,
+            recovery_control_reserve=False,
+        )
+        decision = choose_action(
+            **common,
+            recovery_control_reserve=True,
+        )
+
+        self.assertEqual(baseline.action, "stay")
+        self.assertEqual(decision.action, "up_fast")
+        self.assertEqual(decision.viability_control_reserve_deficit, 0.0)
+        self.assertIsNone(decision.viability_recovery_distance)
+
     def test_repair_state_control_reserve_remains_shadow_only(self) -> None:
         common = {
             "player_x": 362.0,
@@ -2500,6 +2532,7 @@ class LiveDodgeAgentTests(unittest.TestCase):
             "control_delay_candidates": (3, 4, 5, 6),
             "action_hold_frames": 6,
             "horizon": 10,
+            "recovery_control_reserve": False,
             "viability_repair_volumes": (
                 ("stay", 1),
                 ("down", 100),
@@ -3194,8 +3227,16 @@ class LiveDodgeAgentTests(unittest.TestCase):
             threat_horizon=32,
         )
         self.assertEqual(singleton_legacy.action, "stay")
-        self.assertEqual(singleton_fixed.action, "stay")
+        self.assertEqual(singleton_fixed.action, "right_fast")
         self.assertTrue(singleton_fixed.viability_constraint_relaxed)
+        self.assertGreater(
+            singleton_fixed.min_clearance,
+            singleton_legacy.min_clearance,
+        )
+        self.assertEqual(
+            singleton_fixed.viability_control_reserve_deficit,
+            0.0,
+        )
         self.assertLess(
             singleton_fixed.terminal_threat_min_clearance,
             9999.0,
