@@ -18,6 +18,7 @@ class SolverBridgeClient:
     def __init__(self, connection: socket.socket) -> None:
         self._connection = connection
         self._pending_epoch: int | None = None
+        self._last_epoch = 0
 
     @classmethod
     def connect(cls, path: Path | str) -> "SolverBridgeClient":
@@ -43,7 +44,14 @@ class SolverBridgeClient:
                 f"input epoch {self._pending_epoch} still needs a response"
             )
         request = decode_request(read_exact(self._connection, REQUEST_SIZE))
+        expected_epoch = self._last_epoch + 1
+        if request.epoch != expected_epoch:
+            raise RuntimeError(
+                "non-contiguous solver input epoch: "
+                f"expected {expected_epoch}, got {request.epoch}"
+            )
         self._pending_epoch = request.epoch
+        self._last_epoch = request.epoch
         return request
 
     def respond(self, input_mask: int) -> None:

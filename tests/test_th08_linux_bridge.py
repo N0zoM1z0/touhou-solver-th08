@@ -93,18 +93,34 @@ class LinuxBridgeProtocolTests(unittest.TestCase):
         self.addCleanup(game.close)
         client = SolverBridgeClient(solver)
         self.addCleanup(client.close)
-        game.sendall(_request(epoch=41))
+        game.sendall(_request(epoch=1))
 
         request = client.receive()
-        self.assertEqual(request.epoch, 41)
+        self.assertEqual(request.epoch, 1)
         with self.assertRaisesRegex(RuntimeError, "still needs a response"):
             client.receive()
         client.respond(LEFT)
 
         response = read_exact(game, 24)
-        self.assertEqual(struct.unpack("<Q", response[8:16])[0], 41)
+        self.assertEqual(struct.unpack("<Q", response[8:16])[0], 1)
         with self.assertRaisesRegex(RuntimeError, "no pending"):
             client.respond(0)
+
+        game.sendall(_request(epoch=2))
+        self.assertEqual(client.receive().epoch, 2)
+        client.respond(0)
+        self.assertEqual(
+            struct.unpack("<Q", read_exact(game, 24)[8:16])[0], 2
+        )
+
+    def test_client_rejects_a_skipped_input_epoch(self) -> None:
+        game, solver = socket.socketpair()
+        self.addCleanup(game.close)
+        client = SolverBridgeClient(solver)
+        self.addCleanup(client.close)
+        game.sendall(_request(epoch=2))
+        with self.assertRaisesRegex(RuntimeError, "expected 1, got 2"):
+            client.receive()
 
 
 if __name__ == "__main__":
