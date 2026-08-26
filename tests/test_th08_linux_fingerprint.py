@@ -8,6 +8,7 @@ from th08_linux.fingerprint import (
     ReplayClockSnapshot,
     canonical_fingerprint_bytes,
     capture_runtime_semantic_spine,
+    enrich_with_collision_control_projection,
     semantic_spine_from_observation,
 )
 from th08_linux.protocol import InputRequest, REPLAY_TARGET_STAMPED
@@ -167,6 +168,46 @@ class LinuxSemanticFingerprintTests(unittest.TestCase):
         self.assertEqual(
             canonical_fingerprint_bytes({"b": 2, "a": 1}),
             canonical_fingerprint_bytes({"a": 1, "b": 2}),
+        )
+
+    def test_deep_projection_is_explicit_and_uses_float_bit_identity(self) -> None:
+        class Projection:
+            def record(self, *, include_model_payload: bool) -> dict[str, object]:
+                return {"payload_included": include_model_payload}
+
+        fingerprint = {
+            "manager_frame": 267,
+            "time_scale_bits": 0x3F800000,
+            "input": {"gui_current": 5, "gui_previous": 1},
+            "rng": {"seed": 0x1234, "calls_since_trace_start": 9},
+            "player": {
+                "phase": 0,
+                "focus_logic": 1,
+                "secondary_character_active": True,
+                "focus_transition_counter": 3,
+                "predeath_counter": 0,
+                "x_bits": 0x43400000,
+                "y_bits": 0x43C80000,
+            },
+            "resources": {"power_bits": 0x43000000},
+            "spell": {"active": False, "spell_id": 0},
+        }
+        with mock.patch(
+            "th08_linux.fingerprint._capture_collision_control_projection",
+            return_value=Projection(),
+        ) as capture:
+            enriched = enrich_with_collision_control_projection(
+                object(), fingerprint
+            )
+
+        compact = capture.call_args.kwargs["compact_state"]
+        self.assertEqual(compact["manager_frame"], 267)
+        self.assertEqual(compact["player_x"], 192.0)
+        self.assertEqual(compact["player_y"], 400.0)
+        self.assertEqual(compact["rng_calls_since_trace_start"], 9)
+        self.assertNotIn("collision_control_projection", fingerprint)
+        self.assertTrue(
+            enriched["collision_control_projection"]["payload_included"]
         )
 
     def test_absolute_bridge_epoch_is_a_locator_not_replay_semantics(self) -> None:

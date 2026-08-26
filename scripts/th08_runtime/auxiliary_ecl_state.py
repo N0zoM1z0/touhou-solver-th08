@@ -32,7 +32,12 @@ class AuxiliaryEclTimerState:
     auxiliary_marker: int
 
     @classmethod
-    def from_active_vm(cls, active_vm: bytes) -> AuxiliaryEclTimerState:
+    def from_active_vm(
+        cls,
+        active_vm: bytes,
+        *,
+        runtime_instruction_bounds: tuple[int, int] | None = None,
+    ) -> AuxiliaryEclTimerState:
         if len(active_vm) != ACTIVE_VM_BYTES:
             raise ValueError(
                 "auxiliary active VM must contain exactly "
@@ -56,11 +61,18 @@ class AuxiliaryEclTimerState:
             active_vm,
             ACTIVE_VM_AUXILIARY_MARKER_OFFSET,
         )[0]
-        if not (
-            MINIMUM_RUNTIME_ADDRESS
-            <= instruction_pointer
-            <= MAXIMUM_RUNTIME_ADDRESS
-        ):
+        if runtime_instruction_bounds is not None:
+            lower, upper = runtime_instruction_bounds
+            if not MINIMUM_RUNTIME_ADDRESS <= lower < upper <= 0x100000000:
+                raise ValueError("runtime instruction bounds are invalid")
+            instruction_pointer_valid = lower <= instruction_pointer < upper
+        else:
+            instruction_pointer_valid = (
+                MINIMUM_RUNTIME_ADDRESS
+                <= instruction_pointer
+                <= MAXIMUM_RUNTIME_ADDRESS
+            )
+        if not instruction_pointer_valid:
             raise ValueError(
                 "auxiliary active VM has an invalid instruction pointer"
             )
@@ -115,8 +127,16 @@ class AuxiliaryEclVmState(AuxiliaryEclTimerState):
     local_projection: EclVmLocalProjection
 
     @classmethod
-    def from_active_vm(cls, active_vm: bytes) -> AuxiliaryEclVmState:
-        timer = AuxiliaryEclTimerState.from_active_vm(active_vm)
+    def from_active_vm(
+        cls,
+        active_vm: bytes,
+        *,
+        runtime_instruction_bounds: tuple[int, int] | None = None,
+    ) -> AuxiliaryEclVmState:
+        timer = AuxiliaryEclTimerState.from_active_vm(
+            active_vm,
+            runtime_instruction_bounds=runtime_instruction_bounds,
+        )
         return cls(
             instruction_pointer=timer.instruction_pointer,
             timer_previous=timer.timer_previous,

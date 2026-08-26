@@ -20,6 +20,7 @@ from th08_linux import (  # noqa: E402
     capture_gameplay_bootstrap,
     capture_semantic_spine,
     capture_title_snapshot,
+    enrich_with_collision_control_projection,
     validate_request_memory_witness,
     write_semantic_trace,
 )
@@ -43,6 +44,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--fingerprint-output",
         type=Path,
         help="write every sampled spine to a new .jsonl or .jsonl.gz file",
+    )
+    parser.add_argument(
+        "--collision-control-projection",
+        action="store_true",
+        help=(
+            "attach decoded bullet/laser/enemy/ECL state at every sampled "
+            "root; intended only for short differential windows"
+        ),
     )
     return parser
 
@@ -196,6 +205,11 @@ def run(args: argparse.Namespace) -> int:
                         relative_epoch=relative_epoch,
                         rng_calls_origin=rng_calls_origin,
                     )
+                    if args.collision_control_projection:
+                        fingerprint = enrich_with_collision_control_projection(
+                            session.reader,
+                            fingerprint,
+                        )
                     manager_frame = int(fingerprint["manager_frame"])
                     expected_manager_frame = (
                         args.start_manager_frame + relative_epoch - 1
@@ -284,6 +298,9 @@ def run(args: argparse.Namespace) -> int:
                 "transitions": transitions,
                 "route_duration_limit": None,
                 "scope": "bounded replay differential bootstrap; no route claim",
+                "collision_control_projection": bool(
+                    args.collision_control_projection
+                ),
             }
             print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     except BaseException:

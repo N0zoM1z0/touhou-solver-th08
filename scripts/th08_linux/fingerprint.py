@@ -209,6 +209,88 @@ def capture_runtime_semantic_spine(
     )
 
 
+class _DirectRuntimeProjectionRoot:
+    """No broad snapshot components for a direct stable-root projection."""
+
+    components: tuple[object, ...] = ()
+
+
+def _capture_collision_control_projection(
+    reader: FingerprintStateReader,
+    *,
+    compact_state: dict[str, object],
+) -> object:
+    # Keep ordinary semantic sensing lightweight.  The deep decoder imports
+    # NumPy and is loaded only for an explicitly requested short diagnostic.
+    from th08_runtime.native_snapshot_projection import (
+        capture_collision_control_projection,
+    )
+
+    return capture_collision_control_projection(
+        reader,
+        native_root_projection=_DirectRuntimeProjectionRoot(),
+        compact_state=compact_state,
+    )
+
+
+def enrich_with_collision_control_projection(
+    reader: FingerprintStateReader,
+    fingerprint: dict[str, object],
+) -> dict[str, object]:
+    """Attach the source-derived combat projection at the same stable root.
+
+    This deliberately captures only the decoded projection.  The multi-megabyte
+    native pools are transient inputs and never enter the semantic trace.
+    """
+
+    if "collision_control_projection" in fingerprint:
+        raise ValueError("semantic spine already has a collision projection")
+    player = fingerprint["player"]
+    resources = fingerprint["resources"]
+    spell = fingerprint["spell"]
+    input_state = fingerprint["input"]
+    rng = fingerprint["rng"]
+    assert isinstance(player, dict)
+    assert resources is None or isinstance(resources, dict)
+    assert isinstance(spell, dict)
+    assert isinstance(input_state, dict)
+    assert isinstance(rng, dict)
+
+    compact_state: dict[str, object] = {
+        "schema": "th08-collision-control-semantic-compact-v1",
+        "manager_frame": int(fingerprint["manager_frame"]),
+        "input_current": int(input_state["gui_current"]),
+        "input_previous": int(input_state["gui_previous"]),
+        "rng_seed": int(rng["seed"]),
+        "rng_calls_since_trace_start": int(
+            rng["calls_since_trace_start"]
+        ),
+        "time_scale_bits": int(fingerprint["time_scale_bits"]),
+        "spell_id": int(spell["spell_id"]) if spell["active"] else None,
+        "player_phase": int(player["phase"]),
+        "player_x": struct.unpack("<f", struct.pack("<I", player["x_bits"]))[0],
+        "player_y": struct.unpack("<f", struct.pack("<I", player["y_bits"]))[0],
+        "focus_logic": int(player["focus_logic"]),
+        "secondary_character_active": bool(
+            player["secondary_character_active"]
+        ),
+        "focus_transition_counter": int(
+            player["focus_transition_counter"]
+        ),
+        "predeath_counter": int(player["predeath_counter"]),
+        "resources": resources,
+    }
+    projection = _capture_collision_control_projection(
+        reader,
+        compact_state=compact_state,
+    )
+    enriched = dict(fingerprint)
+    enriched["collision_control_projection"] = projection.record(
+        include_model_payload=True
+    )
+    return enriched
+
+
 def canonical_fingerprint_bytes(fingerprint: dict[str, object]) -> bytes:
     # Absolute bridge epochs and the legacy replay's pre-sample RNG-call prefix
     # are locators, not replay semantics.  Relative replay epoch, relative RNG
@@ -228,5 +310,6 @@ __all__ = (
     "capture_replay_clock",
     "capture_runtime_semantic_spine",
     "capture_semantic_spine",
+    "enrich_with_collision_control_projection",
     "semantic_spine_from_observation",
 )

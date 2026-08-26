@@ -243,6 +243,60 @@ class EnemyEclInventoryTests(unittest.TestCase):
         self.assertNotIn("auxiliary_context_rows", record)
         self.assertFalse(baseline.auxiliary_pointer_coverage)
 
+    def test_exact_ecl_bounds_admit_a_high_linux_runtime_mapping(self) -> None:
+        blob = bytearray(_STRIDE)
+        _write_active_record(
+            blob,
+            slot=0,
+            instruction_pointer=0xD7553B68,
+            timer_fraction_bits=0,
+            timer_elapsed=7,
+            auxiliary_context_pointers=(0xD7001000, 0, 0, 0),
+        )
+
+        inventory = decode_enemy_main_ecl_vm_inventory(
+            bytes(blob),
+            pool_base=ENEMY_POOL_BASE,
+            pool_size=1,
+            enemy_stride=ENEMY_STRIDE,
+            enemy_flags_offset=ENEMY_FLAGS_OFFSET,
+            enemy_active_flag=ENEMY_ACTIVE_FLAG,
+            runtime_instruction_bounds=(0xD75532B0, 0xD755EB28),
+            maximum_runtime_address=0xFFFFFFFF,
+        )
+
+        self.assertEqual(len(inventory.observations), 1)
+        self.assertEqual(inventory.invalid, ())
+        self.assertEqual(inventory.invalid_auxiliary_contexts, ())
+        self.assertEqual(
+            inventory.observations[0].instruction_pointer,
+            0xD7553B68,
+        )
+
+    def test_exact_ecl_bounds_reject_high_pointer_outside_image(self) -> None:
+        blob = bytearray(_STRIDE)
+        _write_active_record(
+            blob,
+            slot=0,
+            instruction_pointer=0xD7560000,
+            timer_fraction_bits=0,
+            timer_elapsed=7,
+        )
+
+        inventory = decode_enemy_main_ecl_vm_inventory(
+            bytes(blob),
+            pool_base=ENEMY_POOL_BASE,
+            pool_size=1,
+            enemy_stride=ENEMY_STRIDE,
+            enemy_flags_offset=ENEMY_FLAGS_OFFSET,
+            enemy_active_flag=ENEMY_ACTIVE_FLAG,
+            runtime_instruction_bounds=(0xD75532B0, 0xD755EB28),
+            maximum_runtime_address=0xFFFFFFFF,
+        )
+
+        self.assertEqual(inventory.observations, ())
+        self.assertEqual(len(inventory.invalid), 1)
+
     def test_capture_reuses_one_blob_and_preserves_body_parity(self) -> None:
         plain_reader = _Reader(bytes(self.blob))
         traced_reader = _Reader(bytes(self.blob))

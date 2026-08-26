@@ -186,7 +186,7 @@ def audit(
             "runtime ECL capture did not use exactly four reads"
         )
     runtime_base = _integer(capture.get("runtime_base"), "runtime_base")
-    if not 0x00010000 <= runtime_base <= 0x7FFFFFFF:
+    if not 0x00010000 <= runtime_base <= 0xFFFFFFFF:
         raise RuntimeEclIdentityAuditError("runtime ECL base is invalid")
     if _integer(capture.get("subroutine_count"), "subroutine_count") <= 0:
         raise RuntimeEclIdentityAuditError(

@@ -5,6 +5,7 @@ from th08_linux.fingerprint import (
     canonical_fingerprint_bytes,
     capture_runtime_semantic_spine,
     capture_semantic_spine,
+    enrich_with_collision_control_projection,
 )
 from th08_linux.process import LinuxProcessReader
 from th08_linux.protocol import InputRequest
@@ -46,6 +47,7 @@ __all__ = (
     "capture_gameplay_bootstrap",
     "capture_runtime_semantic_spine",
     "capture_semantic_spine",
+    "enrich_with_collision_control_projection",
     "capture_title_snapshot",
     "compare_semantic_traces",
     "read_semantic_trace",

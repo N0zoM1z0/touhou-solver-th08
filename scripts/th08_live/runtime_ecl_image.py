@@ -17,6 +17,8 @@ ECL_TIMELINE_SLOT_OFFSET = 0x08
 ECL_TIMELINE_SLOT_COUNT = 16
 MAXIMUM_RUNTIME_ECL_IMAGE_SIZE = 8 * 1024 * 1024
 MAXIMUM_ECL_SUBROUTINES = 4096
+MINIMUM_RUNTIME_ADDRESS = 0x00010000
+MAXIMUM_RUNTIME_ADDRESS = 0xFFFFFFFF
 
 
 class RuntimeEclImageError(ValueError):
@@ -194,9 +196,16 @@ def capture_runtime_ecl_image(
     if len(context_before) != 8:
         raise RuntimeEclImageError("ECL context read is truncated")
     runtime_base, subroutine_table = struct.unpack("<II", context_before)
-    if runtime_base < 0x00010000 or runtime_base > 0x7FFFFFFF:
+    if not (
+        MINIMUM_RUNTIME_ADDRESS
+        <= runtime_base
+        <= MAXIMUM_RUNTIME_ADDRESS - ECL_RUNTIME_HEADER_SIZE
+    ):
         raise RuntimeEclImageError("runtime ECL image base is invalid")
-    if subroutine_table != runtime_base + ECL_SUBROUTINE_TABLE_OFFSET:
+    if (
+        runtime_base + MAXIMUM_RUNTIME_ECL_IMAGE_SIZE > 0x100000000
+        or subroutine_table != runtime_base + ECL_SUBROUTINE_TABLE_OFFSET
+    ):
         raise RuntimeEclImageError("runtime ECL subroutine table is invalid")
 
     header = reader.read(runtime_base, ECL_RUNTIME_HEADER_SIZE)

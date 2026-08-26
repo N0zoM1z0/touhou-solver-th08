@@ -417,6 +417,7 @@ class Th08WineRunnerTests(unittest.TestCase):
                 replay_stage_index=5,
                 replay_start_manager_frame=700,
                 replay_gameplay_epochs=123,
+                replay_collision_control_projection=True,
             )
 
         self.assertIn("th08_windows_replay_semantic_smoke.py", command[1])
@@ -433,6 +434,7 @@ class Th08WineRunnerTests(unittest.TestCase):
             command[command.index("--gameplay-epochs") + 1],
             "123",
         )
+        self.assertIn("--collision-control-projection", command)
         self.assertNotIn("--agent-duration", command)
         self.assertNotIn("--trial-timeout", command)
 

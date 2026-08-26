@@ -30,6 +30,7 @@ from th08_automation.practice_windows import (
 from th08_linux import (
     canonical_fingerprint_bytes,
     capture_runtime_semantic_spine,
+    enrich_with_collision_control_projection,
     write_semantic_trace,
 )
 from th08_runtime.game_state import TARGET_EXE
@@ -61,6 +62,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--tap-hold-ms", type=int, default=65)
     parser.add_argument("--tap-gap-ms", type=int, default=90)
     parser.add_argument("--screen-settle-ms", type=int, default=350)
+    parser.add_argument(
+        "--collision-control-projection",
+        action="store_true",
+        help=(
+            "attach decoded bullet/laser/enemy/ECL state at every sampled "
+            "root; intended only for short differential windows"
+        ),
+    )
     return parser
 
 
@@ -239,6 +248,11 @@ def run(args: argparse.Namespace) -> int:
                     "barrier_arrival_serial": root.arrival_serial,
                 },
             )
+            if args.collision_control_projection:
+                fingerprint = enrich_with_collision_control_projection(
+                    reader,
+                    fingerprint,
+                )
             locators = fingerprint["trace_locators"]
             assert isinstance(locators, dict)
             if rng_calls_origin is None:
@@ -279,6 +293,9 @@ def run(args: argparse.Namespace) -> int:
                 "first": fingerprints[0],
                 "last": fingerprints[-1],
                 "status": "passed",
+                "collision_control_projection": bool(
+                    args.collision_control_projection
+                ),
             }
         )
         result_code = 0

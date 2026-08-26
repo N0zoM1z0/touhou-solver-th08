@@ -201,6 +201,8 @@ def decode_enemy_main_ecl_vm_inventory(
     enemy_flags_offset: int,
     enemy_active_flag: int,
     include_auxiliary_context_pointers: bool = True,
+    runtime_instruction_bounds: tuple[int, int] | None = None,
+    maximum_runtime_address: int = MAXIMUM_RUNTIME_ECL_ADDRESS,
     clock: Callable[[], float] = time.perf_counter,
 ) -> EnemyMainEclVmInventory:
     """Decode active main VMs without issuing any process-memory read."""
@@ -215,6 +217,18 @@ def decode_enemy_main_ecl_vm_inventory(
         raise ValueError("enemy flags offset must belong to one record")
     if not enemy_active_flag:
         raise ValueError("enemy active flag must be non-zero")
+    if not (
+        MINIMUM_RUNTIME_ECL_ADDRESS
+        <= maximum_runtime_address
+        <= 0xFFFFFFFF
+    ):
+        raise ValueError("maximum runtime address is outside uint32 memory")
+    if runtime_instruction_bounds is not None:
+        lower, upper = runtime_instruction_bounds
+        if not (
+            MINIMUM_RUNTIME_ECL_ADDRESS <= lower < upper <= 0x100000000
+        ):
+            raise ValueError("runtime instruction bounds are invalid")
     if ENEMY_MAIN_ECL_VM_OFFSET + ECL_VM_SNAPSHOT_SIZE > enemy_stride:
         raise ValueError("main ECL VM prefix exceeds one enemy record")
     if (
@@ -268,7 +282,7 @@ def decode_enemy_main_ecl_vm_inventory(
                 if context_pointer != 0 and not (
                     MINIMUM_RUNTIME_ECL_ADDRESS
                     <= context_pointer
-                    <= MAXIMUM_RUNTIME_ECL_ADDRESS
+                    <= maximum_runtime_address
                 ):
                     invalid_auxiliary_contexts.append(
                         InvalidEnemyAuxiliaryEclContextPointer(
@@ -280,11 +294,18 @@ def decode_enemy_main_ecl_vm_inventory(
                     )
         vm_base = record_base + ENEMY_MAIN_ECL_VM_OFFSET
         instruction_pointer = struct.unpack_from("<I", blob, vm_base)[0]
-        if not (
-            MINIMUM_RUNTIME_ECL_ADDRESS
+        instruction_pointer_valid = (
+            runtime_instruction_bounds[0]
             <= instruction_pointer
-            <= MAXIMUM_RUNTIME_ECL_ADDRESS
-        ):
+            < runtime_instruction_bounds[1]
+            if runtime_instruction_bounds is not None
+            else (
+                MINIMUM_RUNTIME_ECL_ADDRESS
+                <= instruction_pointer
+                <= maximum_runtime_address
+            )
+        )
+        if not instruction_pointer_valid:
             invalid.append(
                 InvalidEnemyMainEclVmObservation(
                     slot,

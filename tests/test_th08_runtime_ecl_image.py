@@ -36,18 +36,22 @@ def _static_ecl_image() -> bytes:
     return bytes(image)
 
 
-def _relocated_ecl_image(static_image: bytes) -> bytes:
+def _relocated_ecl_image(
+    static_image: bytes,
+    *,
+    runtime_base: int = _RUNTIME_BASE,
+) -> bytes:
     """Independent oracle for the two relocation loops in ecl_load_file."""
 
     image = bytearray(static_image)
     for index in range(16):
         offset = 8 + 4 * index
         relative = struct.unpack_from("<I", image, offset)[0]
-        struct.pack_into("<I", image, offset, _RUNTIME_BASE + relative)
+        struct.pack_into("<I", image, offset, runtime_base + relative)
     for index in range(2):
         offset = ECL_RUNTIME_HEADER_SIZE + 4 * index
         relative = struct.unpack_from("<I", image, offset)[0]
-        struct.pack_into("<I", image, offset, _RUNTIME_BASE + relative)
+        struct.pack_into("<I", image, offset, runtime_base + relative)
     return bytes(image)
 
 
@@ -57,12 +61,14 @@ class _Reader:
         image: bytes,
         *,
         context_after: bytes | None = None,
+        runtime_base: int = _RUNTIME_BASE,
     ) -> None:
         self.image = image
+        self.runtime_base = runtime_base
         self.context = struct.pack(
             "<II",
-            _RUNTIME_BASE,
-            _RUNTIME_BASE + ECL_RUNTIME_HEADER_SIZE,
+            runtime_base,
+            runtime_base + ECL_RUNTIME_HEADER_SIZE,
         )
         self.context_after = context_after or self.context
         self.context_reads = 0
@@ -77,7 +83,7 @@ class _Reader:
                 if self.context_reads == 1
                 else self.context_after
             )
-        if address != _RUNTIME_BASE:
+        if address != self.runtime_base:
             raise AssertionError(f"unexpected address {address:#x}")
         return self.image[:size]
 
@@ -128,6 +134,23 @@ class RuntimeEclImageTests(unittest.TestCase):
         identity = compare_runtime_ecl_image(capture, static_image)
         self.assertFalse(identity.exact_match)
         self.assertEqual(identity.first_difference_offset, 0x90)
+
+    def test_capture_accepts_a_valid_high_linux_i386_mapping(self) -> None:
+        runtime_base = 0xD75532B0
+        static_image = _static_ecl_image()
+        relocated = _relocated_ecl_image(
+            static_image,
+            runtime_base=runtime_base,
+        )
+
+        capture = capture_runtime_ecl_image(
+            _Reader(relocated, runtime_base=runtime_base)
+        )
+
+        self.assertEqual(capture.runtime_base, runtime_base)
+        self.assertTrue(
+            compare_runtime_ecl_image(capture, static_image).exact_match
+        )
 
     def test_context_churn_fails_closed(self) -> None:
         changed = struct.pack(

@@ -454,6 +454,8 @@ def _enemy_main_ecl_inventory_record(
     *,
     pool_base: int = ENEMY_POOL_BASE,
     pool_size: int = ENEMY_POOL_SIZE,
+    runtime_instruction_bounds: tuple[int, int] | None = None,
+    maximum_runtime_address: int = 0x7FFFFFFF,
 ) -> tuple[EnemyMainEclVmInventory, dict[str, object]]:
     """Decode one deterministic active-enemy VM inventory.
 
@@ -468,6 +470,8 @@ def _enemy_main_ecl_inventory_record(
         enemy_stride=ENEMY_STRIDE,
         enemy_flags_offset=ENEMY_FLAGS_OFFSET,
         enemy_active_flag=ENEMY_ACTIVE_FLAG,
+        runtime_instruction_bounds=runtime_instruction_bounds,
+        maximum_runtime_address=maximum_runtime_address,
     )
     record = inventory.record()
     record.pop("decode_ms", None)
@@ -481,6 +485,8 @@ def _enemy_source_record(
     pool_base: int,
     pool_size: int,
     source_role: str,
+    runtime_instruction_bounds: tuple[int, int] | None = None,
+    maximum_runtime_address: int = 0x7FFFFFFF,
 ) -> dict[str, object]:
     """Decode every emission root for one contiguous enemy source range."""
 
@@ -488,6 +494,8 @@ def _enemy_source_record(
         enemy_blob,
         pool_base=pool_base,
         pool_size=pool_size,
+        runtime_instruction_bounds=runtime_instruction_bounds,
+        maximum_runtime_address=maximum_runtime_address,
     )
     bodies = decode_enemy_bodies(
         enemy_blob,
@@ -531,6 +539,7 @@ def _enemy_source_record(
         "auxiliary_ecl_contexts": _enemy_auxiliary_ecl_context_records(
             reader,
             inventory,
+            runtime_instruction_bounds=runtime_instruction_bounds,
         ),
     }
 
@@ -1057,6 +1066,8 @@ def _enemy_main_ecl_callback_records(
 def _enemy_auxiliary_ecl_context_records(
     reader: Any,
     inventory: EnemyMainEclVmInventory,
+    *,
+    runtime_instruction_bounds: tuple[int, int] | None = None,
 ) -> dict[str, object]:
     """Dereference only non-null active auxiliary contexts at the seam."""
 
@@ -1094,7 +1105,10 @@ def _enemy_auxiliary_ecl_context_records(
                     CONTEXT_ACTIVE_VM_OFFSET + ACTIVE_VM_BYTES
                 ]
             )
-            state = AuxiliaryEclVmState.from_active_vm(active_vm)
+            state = AuxiliaryEclVmState.from_active_vm(
+                active_vm,
+                runtime_instruction_bounds=runtime_instruction_bounds,
+            )
             callback_function, callback_argument_record = struct.unpack_from(
                 "<II",
                 active_vm,
@@ -1446,6 +1460,18 @@ def capture_collision_control_projection(
 ) -> CollisionControlProjection:
     """Capture exact decoded hit-relevant state at one calculation seam."""
 
+    stage_timeline_runtime = _timeline_runtime_inventory_record(reader)
+    ecl_file = stage_timeline_runtime["ecl_file"]
+    assert isinstance(ecl_file, dict)
+    runtime_instruction_bounds = (
+        int(ecl_file["file_base"]),
+        int(ecl_file["data_end_pointer"]),
+    )
+    maximum_runtime_address = (
+        0xFFFFFFFF
+        if runtime_instruction_bounds[0] > 0x7FFFFFFF
+        else 0x7FFFFFFF
+    )
     bullet_blob = reader.read(
         BULLET_POOL_BASE,
         BULLET_POOL_SIZE * BULLET_STRIDE,
@@ -1470,7 +1496,11 @@ def capture_collision_control_projection(
         include_contact_disabled=True,
     )
     enemy_ecl_inventory, enemy_ecl_inventory_record = (
-        _enemy_main_ecl_inventory_record(enemy_blob)
+        _enemy_main_ecl_inventory_record(
+            enemy_blob,
+            runtime_instruction_bounds=runtime_instruction_bounds,
+            maximum_runtime_address=maximum_runtime_address,
+        )
     )
     manager_template_source = _enemy_source_record(
         reader,
@@ -1478,6 +1508,8 @@ def capture_collision_control_projection(
         pool_base=TH08_ENEMY_MANAGER_TEMPLATE_BASE,
         pool_size=1,
         source_role="native_enemy_slot_zero_legacy_manager_singleton",
+        runtime_instruction_bounds=runtime_instruction_bounds,
+        maximum_runtime_address=maximum_runtime_address,
     )
     player_x = float(compact_state["player_x"])
     player_y = float(compact_state["player_y"])
@@ -1538,11 +1570,12 @@ def capture_collision_control_projection(
             _enemy_auxiliary_ecl_context_records(
                 reader,
                 enemy_ecl_inventory,
+                runtime_instruction_bounds=runtime_instruction_bounds,
             )
         ),
         "enemy_manager_template_source": manager_template_source,
         "bullet_template_geometry": _bullet_template_geometry_record(reader),
-        "stage_timeline_runtime": _timeline_runtime_inventory_record(reader),
+        "stage_timeline_runtime": stage_timeline_runtime,
         "normalized_native_components": list(normalized_components),
     }
     summary = {

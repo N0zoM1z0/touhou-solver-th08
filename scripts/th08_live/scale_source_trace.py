@@ -314,9 +314,14 @@ def decode_scale_vm_source(
     slot: int | None,
     enemy_pointer: int,
     scale_bits: int,
+    runtime_instruction_bounds: tuple[int, int] | None = None,
 ) -> ScaleVmSource:
     if len(record) < ENEMY_SCALE_SOURCE_READ_SIZE:
         raise ValueError("enemy scale-source record is truncated")
+    if runtime_instruction_bounds is not None:
+        lower, upper = runtime_instruction_bounds
+        if not MINIMUM_RUNTIME_ADDRESS <= lower < upper <= 0x100000000:
+            raise ValueError("runtime instruction bounds are invalid")
     enemy_flags = struct.unpack_from("<I", record, ENEMY_FLAGS_OFFSET)[0]
     vm = record[
         ENEMY_MAIN_ECL_VM_OFFSET :
@@ -343,11 +348,18 @@ def decode_scale_vm_source(
         vm,
         ECL_VM_TIMER_ELAPSED_OFFSET,
     )[0]
-    if not (
-        MINIMUM_RUNTIME_ADDRESS
+    instruction_pointer_valid = (
+        runtime_instruction_bounds[0]
         <= instruction_pointer
-        <= MAXIMUM_RUNTIME_ADDRESS
-    ):
+        < runtime_instruction_bounds[1]
+        if runtime_instruction_bounds is not None
+        else (
+            MINIMUM_RUNTIME_ADDRESS
+            <= instruction_pointer
+            <= MAXIMUM_RUNTIME_ADDRESS
+        )
+    )
+    if not instruction_pointer_valid:
         snapshot = None
         invalid_reason = "main_vm_instruction_pointer_invalid"
     elif not math.isfinite(fraction):
@@ -452,6 +464,7 @@ def capture_complete_scale_sources(
     reader: ScaleSourceReader,
     *,
     expected_manager_frame: int,
+    runtime_instruction_bounds: tuple[int, int] | None = None,
     maximum_attempts: int = 3,
     clock: Callable[[], float] = time.perf_counter,
 ) -> CompleteScaleSourceCapture:
@@ -461,6 +474,10 @@ def capture_complete_scale_sources(
         raise ValueError("expected manager frame cannot be negative")
     if maximum_attempts <= 0:
         raise ValueError("scale-source capture attempts must be positive")
+    if runtime_instruction_bounds is not None:
+        lower, upper = runtime_instruction_bounds
+        if not MINIMUM_RUNTIME_ADDRESS <= lower < upper <= 0x100000000:
+            raise ValueError("runtime instruction bounds are invalid")
     started = clock()
     selected: CompleteScaleSourceCapture | None = None
     pool_read_size = ENEMY_POOL_SIZE * ENEMY_STRIDE
@@ -546,6 +563,7 @@ def capture_complete_scale_sources(
                     slot=None,
                     enemy_pointer=ENEMY_MANAGER_TEMPLATE_BASE,
                     scale_bits=phase_before.scale_bits,
+                    runtime_instruction_bounds=runtime_instruction_bounds,
                 )
             )
         ordinary_active_slots = 0
@@ -563,6 +581,7 @@ def capture_complete_scale_sources(
                     slot=slot,
                     enemy_pointer=ENEMY_POOL_BASE + base,
                     scale_bits=phase_before.scale_bits,
+                    runtime_instruction_bounds=runtime_instruction_bounds,
                 )
             )
         if external_owner is not None:
@@ -573,6 +592,7 @@ def capture_complete_scale_sources(
                     slot=None,
                     enemy_pointer=spell_pointer,
                     scale_bits=phase_before.scale_bits,
+                    runtime_instruction_bounds=runtime_instruction_bounds,
                 )
             )
 
@@ -765,6 +785,11 @@ class FinalBScaleSourceTraceService:
             source_capture = capture_complete_scale_sources(
                 reader,
                 expected_manager_frame=expected_manager_frame,
+                runtime_instruction_bounds=(
+                    runtime_capture.runtime_base,
+                    runtime_capture.runtime_base
+                    + runtime_capture.image_length,
+                ),
                 maximum_attempts=(
                     self.configuration.maximum_capture_attempts
                 ),

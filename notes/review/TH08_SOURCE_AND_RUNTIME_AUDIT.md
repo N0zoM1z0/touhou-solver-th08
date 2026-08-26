@@ -3214,7 +3214,7 @@ clear, hit, or NMNB claim follows.
 
 ### AUD-104 — Retail replay polling could not define the Linux input boundary
 
-Status: **FIXED OFFLINE; PHYSICAL CROSS-RUNTIME CAPTURE PENDING**
+Status: **VALIDATED PHYSICAL; FIRST CROSS-RUNTIME DIVERGENCE LOCALIZED**
 
 A normal Wine memory poll can observe the original executable at an arbitrary
 instruction inside a frame.  Comparing that sample with the Linux bridge,
@@ -3233,13 +3233,22 @@ invocation.  Wine cleanup remains scoped to the dedicated exact prefix.
 
 This barrier is a diagnostic runtime modification, as is the no-life patch;
 it cannot serve as final completion authority.  The 300-epoch sample has a
-bounded diagnostic watchdog, not a route-duration limit.  No Linux/original
-agreement or x87 error bound is claimed until the physical capture and
-first-divergence comparison complete.
+bounded diagnostic watchdog, not a route-duration limit.
+
+The isolated physical collector now passes at manager-frame roots 100--300
+and 600--899. Linux and retail agree exactly through frame 267 on the current
+semantic spine, including replay/input clocks, player float bits, resources,
+RNG seed, and RNG calls relative to the common frame-100 origin. The first
+discrete difference is update 267--268: Linux consumes 20 RNG words while
+retail consumes 16. The resulting four-word offset remains visible at frame
+300 and grows to eight by frame 600. All non-RNG fields in the current spine
+remain equal over those samples. This rules out boundary misalignment and
+initial replay decoding, but the former spine omitted combat pools, so it does
+not yet identify the producer or establish an x87 error bound.
 
 ### AUD-105 — Native planner attestation was tied to PE wall-clock time
 
-Status: **REPRODUCED AND FIXED OFFLINE; PHYSICAL REVALIDATION PENDING**
+Status: **VALIDATED PHYSICAL**
 
 The first retail-differential preflight failed before starting Wine because
 the current Win32 planner did not match the runner's pinned SHA-256.  Rebuilding
@@ -3253,6 +3262,37 @@ consecutive i686 release builds produced identical SHA-256
 with both PE timestamp fields zero.  The binary remains PE32 i386 and all 46
 manifest exports pass the ABI gate.  The runner now pins this reproducible
 identity; it does not weaken or dynamically accept the hash check.
+
+The rebuilt DLL passed the complete host preflight and the two successful
+retail replay captures above. Both exact-target runs cleaned the temporary
+replay slot and left the dedicated prefix with no target processes.
+
+### AUD-106 — Win32 low-half pointer validation hid every Linux ECL VM
+
+Status: **REPRODUCED PHYSICAL; GENERIC BOUNDED FIX IMPLEMENTED; RETAIL DEEP DIFFERENTIAL PENDING**
+
+The first opt-in collision/control fingerprint at Linux Stage-5 frame 267
+found 13 active enemy records but reported all 13 main ECL VMs invalid. Their
+instruction pointers were real addresses inside the relocated Stage-5 ECL
+image at `0xd75532b0..0xd755eb28`; the old decoder rejected every address
+above `0x7fffffff`, an inherited Win32 2-GiB user-address assumption rather
+than a TH08 source invariant. This would make Linux future-source and global
+authority silently unavailable even when gameplay itself was correct.
+
+The decoder now accepts an explicit half-open relocated-ECL interval and uses
+that exact image bound for main and auxiliary VM instruction pointers. The
+runtime ECL capture/index likewise accepts a checked non-wrapping uint32
+mapping, while legacy callers without an established image retain the old
+fail-closed default. Final-B source capture receives the range from its
+already verified runtime ECL identity; no stage or spell dispatch was added.
+
+A second physical Linux capture recognizes 13/13 valid VMs at frames 267 and
+268, with normalized static PC offsets `2232 x3, 2588 x5, 3008 x5`, zero
+invalid VMs, zero bullets, zero lasers, and 13 stable enemy slots. The deep
+trace writes decoded active rows only: two gzip records consume about 14 KiB;
+the roughly 17 MiB of transient pool reads per root are not retained. The next
+gate is the same two-root projection on retail, followed by pointer
+normalization and the first enemy-field delta.
 
 ## Offline Verification Record
 

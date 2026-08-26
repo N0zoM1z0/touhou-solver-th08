@@ -327,6 +327,7 @@ def build_windows_controller_command(
     replay_stage_index: int = 5,
     replay_start_manager_frame: int = 600,
     replay_gameplay_epochs: int = 300,
+    replay_collision_control_projection: bool = False,
 ) -> list[str]:
     if difficulty not in {"easy", "normal", "hard", "lunatic"}:
         raise ValueError(f"unsupported main difficulty: {difficulty}")
@@ -392,7 +393,7 @@ def build_windows_controller_command(
     if mode == "replay-differential":
         if replay_expected_sha256 is None:
             raise ValueError("replay differential requires an expected SHA-256")
-        return [
+        command = [
             windows_path(python),
             windows_path(
                 ROOT
@@ -423,6 +424,9 @@ def build_windows_controller_command(
             "--gameplay-epochs",
             str(replay_gameplay_epochs),
         ]
+        if replay_collision_control_projection:
+            command.append("--collision-control-projection")
+        return command
     if future_source_retain_spells:
         raise ValueError(
             "future-source root retention is currently a Practice-only gate"
@@ -539,6 +543,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--replay-start-manager-frame", type=int, default=600)
     parser.add_argument("--replay-gameplay-epochs", type=int, default=300)
     parser.add_argument(
+        "--replay-collision-control-projection",
+        action="store_true",
+        help=(
+            "capture decoded combat/ECL state for short replay-differential "
+            "windows"
+        ),
+    )
+    parser.add_argument(
         "--agent-duration",
         type=float,
         default=WINE_FULL_ROUTE_AGENT_DURATION_SECONDS,
@@ -612,6 +624,9 @@ def run(args: argparse.Namespace) -> int:
         "replay_stage_index": args.replay_stage_index,
         "replay_start_manager_frame": args.replay_start_manager_frame,
         "replay_gameplay_epochs": args.replay_gameplay_epochs,
+        "replay_collision_control_projection": bool(
+            args.replay_collision_control_projection
+        ),
         "artifact_dir": str(artifact_dir),
         "display_requested": args.display,
         "cpu_list_requested": args.cpu_list,
@@ -1017,6 +1032,9 @@ def run(args: argparse.Namespace) -> int:
             replay_stage_index=args.replay_stage_index,
             replay_start_manager_frame=args.replay_start_manager_frame,
             replay_gameplay_epochs=args.replay_gameplay_epochs,
+            replay_collision_control_projection=(
+                args.replay_collision_control_projection
+            ),
         )
         wine_command = [
             str(wine),

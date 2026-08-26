@@ -11,7 +11,7 @@ from th08_ecl_tool.core import EclFile
 
 ECL_HEADER_SIZE = 12
 MINIMUM_RUNTIME_ADDRESS = 0x00010000
-MAXIMUM_RUNTIME_ADDRESS = 0x7FFFFFFF
+MAXIMUM_RUNTIME_ADDRESS = 0xFFFFFFFF
 
 
 def build_exact_runtime_instruction_index(
