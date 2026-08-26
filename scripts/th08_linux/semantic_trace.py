@@ -39,6 +39,51 @@ def classify_manager_frame_transition(
     )
 
 
+def replay_stage_binding_mismatch(
+    fingerprint: dict[str, object],
+    *,
+    difficulty_index: int,
+    shot_type_index: int,
+    stage_index: int,
+) -> str | None:
+    """Return the first reason a semantic root is no longer replay-bound."""
+
+    replay = fingerprint.get("replay")
+    if not isinstance(replay, dict):
+        return "replay manager is absent"
+    flags = fingerprint.get("game_manager_flags")
+    if not isinstance(flags, int) or isinstance(flags, bool) or not flags & 0x08:
+        return "game manager replay flag is clear"
+    for field, expected in (
+        ("difficulty_index", difficulty_index),
+        ("shot_type_index", shot_type_index),
+        ("stage_index", stage_index),
+    ):
+        observed = fingerprint.get(field)
+        if observed != expected:
+            return f"{field} expected={expected} observed={observed}"
+    return None
+
+
+def replay_stage_terminal_reason(
+    fingerprint: dict[str, object],
+    *,
+    difficulty_index: int,
+    shot_type_index: int,
+    stage_index: int,
+) -> str | None:
+    """Recognize only an inactive root whose replay-stage binding has ended."""
+
+    if fingerprint.get("gameplay_active") is not False:
+        return None
+    return replay_stage_binding_mismatch(
+        fingerprint,
+        difficulty_index=difficulty_index,
+        shot_type_index=shot_type_index,
+        stage_index=stage_index,
+    )
+
+
 def _open_text(path: Path, mode: str):
     if path.suffix == ".gz":
         return gzip.open(path, mode, encoding="utf-8", newline="")
@@ -250,6 +295,8 @@ __all__ = (
     "classify_manager_frame_transition",
     "compare_semantic_traces",
     "read_semantic_trace",
+    "replay_stage_binding_mismatch",
+    "replay_stage_terminal_reason",
     "semantic_trace_record",
     "write_semantic_trace",
 )

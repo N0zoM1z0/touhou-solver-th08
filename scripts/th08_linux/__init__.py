@@ -16,6 +16,8 @@ from th08_linux.semantic_trace import (
     classify_manager_frame_transition,
     compare_semantic_traces,
     read_semantic_trace,
+    replay_stage_binding_mismatch,
+    replay_stage_terminal_reason,
     write_semantic_trace,
 )
 from th08_linux.title import (
@@ -57,6 +59,8 @@ __all__ = (
     "classify_manager_frame_transition",
     "compare_semantic_traces",
     "read_semantic_trace",
+    "replay_stage_binding_mismatch",
+    "replay_stage_terminal_reason",
     "validate_request_memory_witness",
     "write_semantic_trace",
 )

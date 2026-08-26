@@ -328,6 +328,7 @@ def build_windows_controller_command(
     replay_start_manager_frame: int = 600,
     replay_gameplay_epochs: int = 300,
     replay_root_timeout: float = 300.0,
+    replay_stop_at_stage_terminal: bool = False,
     replay_collision_control_projection: bool = False,
 ) -> list[str]:
     if difficulty not in {"easy", "normal", "hard", "lunatic"}:
@@ -427,6 +428,8 @@ def build_windows_controller_command(
             "--root-timeout",
             str(replay_root_timeout),
         ]
+        if replay_stop_at_stage_terminal:
+            command.append("--stop-at-stage-terminal")
         if replay_collision_control_projection:
             command.append("--collision-control-projection")
         return command
@@ -547,6 +550,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--replay-gameplay-epochs", type=int, default=300)
     parser.add_argument("--replay-root-timeout", type=float, default=300.0)
     parser.add_argument(
+        "--replay-stop-at-stage-terminal",
+        action="store_true",
+    )
+    parser.add_argument(
         "--replay-collision-control-projection",
         action="store_true",
         help=(
@@ -629,6 +636,9 @@ def run(args: argparse.Namespace) -> int:
         "replay_start_manager_frame": args.replay_start_manager_frame,
         "replay_gameplay_epochs": args.replay_gameplay_epochs,
         "replay_root_timeout_seconds": args.replay_root_timeout,
+        "replay_stop_at_stage_terminal": bool(
+            args.replay_stop_at_stage_terminal
+        ),
         "replay_collision_control_projection": bool(
             args.replay_collision_control_projection
         ),
@@ -749,7 +759,9 @@ def run(args: argparse.Namespace) -> int:
                 "route_id": replay_metadata.route_id,
                 "difficulty_index": replay_metadata.difficulty_index,
                 "stage_index": matching_stages[0].stage_index,
-                "stage_frame_count": matching_stages[0].frame_count,
+                "stage_stored_input_word_count": (
+                    matching_stages[0].stored_input_word_count
+                ),
                 "stage_input_sha256": matching_stages[0].input_sha256,
                 "stage_bomb_press_frames": list(
                     matching_stages[0].bomb_press_frames
@@ -1040,6 +1052,9 @@ def run(args: argparse.Namespace) -> int:
             replay_start_manager_frame=args.replay_start_manager_frame,
             replay_gameplay_epochs=args.replay_gameplay_epochs,
             replay_root_timeout=args.replay_root_timeout,
+            replay_stop_at_stage_terminal=(
+                args.replay_stop_at_stage_terminal
+            ),
             replay_collision_control_projection=(
                 args.replay_collision_control_projection
             ),

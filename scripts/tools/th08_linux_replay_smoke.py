@@ -23,6 +23,8 @@ from th08_linux import (  # noqa: E402
     capture_title_snapshot,
     classify_manager_frame_transition,
     enrich_with_collision_control_projection,
+    replay_stage_binding_mismatch,
+    replay_stage_terminal_reason,
     validate_request_memory_witness,
     write_semantic_trace,
 )
@@ -41,6 +43,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--stage-index", type=int, required=True)
     parser.add_argument("--start-manager-frame", type=int, default=1)
     parser.add_argument("--gameplay-epochs", type=int, default=300)
+    parser.add_argument(
+        "--stop-at-stage-terminal",
+        action="store_true",
+        help=(
+            "treat gameplay-inactive replay-binding teardown as successful "
+            "completion before the epoch guard"
+        ),
+    )
     parser.add_argument("--maximum-bootstrap-epochs", type=int, default=4096)
     parser.add_argument("--startup-timeout-seconds", type=float, default=120.0)
     parser.add_argument(
@@ -203,6 +213,8 @@ def run(args: argparse.Namespace) -> int:
             inactive_gameplay_epochs = 0
             previous_manager_frame = None
             replay_frame_origin = None
+            sample_epochs = 0
+            terminal_observation = None
             for relative_epoch in range(1, args.gameplay_epochs + 1):
                 while True:
                     request = session.bridge.receive()
@@ -243,6 +255,44 @@ def run(args: argparse.Namespace) -> int:
                         )
                     session.bridge.respond(0)
                     break
+                binding_mismatch = replay_stage_binding_mismatch(
+                    fingerprint,
+                    difficulty_index=metadata.difficulty_index,
+                    shot_type_index=metadata.route_id,
+                    stage_index=args.stage_index,
+                )
+                terminal_reason = replay_stage_terminal_reason(
+                    fingerprint,
+                    difficulty_index=metadata.difficulty_index,
+                    shot_type_index=metadata.route_id,
+                    stage_index=args.stage_index,
+                )
+                if terminal_reason is not None:
+                    if not args.stop_at_stage_terminal:
+                        raise RuntimeError(
+                            "replay stage binding ended inside fixed sample: "
+                            f"{terminal_reason}"
+                        )
+                    replay_at_terminal = fingerprint.get("replay")
+                    terminal_observation = {
+                        "relative_epoch": relative_epoch,
+                        "manager_frame": fingerprint.get("manager_frame"),
+                        "replay_frame": (
+                            replay_at_terminal.get("frame_counter")
+                            if isinstance(replay_at_terminal, dict)
+                            else None
+                        ),
+                        "gameplay_active": fingerprint.get(
+                            "gameplay_active"
+                        ),
+                        "reason": terminal_reason,
+                    }
+                    break
+                if binding_mismatch is not None:
+                    raise RuntimeError(
+                        "replay stage binding changed while still active: "
+                        f"{binding_mismatch}"
+                    )
                 manager_frame = int(fingerprint["manager_frame"])
                 if previous_manager_frame is None:
                     if manager_frame != args.start_manager_frame:
@@ -280,17 +330,8 @@ def run(args: argparse.Namespace) -> int:
                     rng_calls_origin = int(trace_locators["rng_calls_absolute"])
                 if not fingerprint["gameplay_active"]:
                     inactive_gameplay_epochs += 1
-                if not int(fingerprint["game_manager_flags"]) & 0x08:
-                    raise RuntimeError("gameplay sample is not in replay mode")
-                if fingerprint["difficulty_index"] != metadata.difficulty_index:
-                    raise RuntimeError("replay difficulty changed inside sample")
-                if fingerprint["shot_type_index"] != metadata.route_id:
-                    raise RuntimeError("replay shot type changed inside sample")
                 replay = fingerprint["replay"]
-                if not isinstance(replay, dict):
-                    raise RuntimeError(
-                        "replay manager is absent inside gameplay sample"
-                    )
+                assert isinstance(replay, dict)
                 replay_frame = int(replay["frame_counter"])
                 if replay_frame_origin is None:
                     replay_frame_origin = replay_frame
@@ -314,12 +355,21 @@ def run(args: argparse.Namespace) -> int:
                 if int(fingerprint["input"]["gui_current"]) != 0:
                     nonzero_gui_epochs += 1
                 replay_frames.append(replay_frame)
+                sample_epochs += 1
+
+            if args.stop_at_stage_terminal and terminal_observation is None:
+                raise RuntimeError(
+                    "replay stage terminal was not reached inside the "
+                    f"{args.gameplay_epochs}-epoch guard"
+                )
+            if sample_epochs == 0:
+                raise RuntimeError("replay sample contains no bound input epoch")
 
             if args.fingerprint_output is not None:
                 write_semantic_trace(args.fingerprint_output, fingerprints)
 
             report = {
-                "schema": "th08-linux-replay-semantic-smoke-v6",
+                "schema": "th08-linux-replay-semantic-smoke-v7",
                 "runtime": {
                     "path": str(session.identity.path),
                     "size": session.identity.size,
@@ -332,7 +382,9 @@ def run(args: argparse.Namespace) -> int:
                     "difficulty_index": metadata.difficulty_index,
                     "stage_index": args.stage_index,
                     "stage_rng_seed": stage.rng_seed,
-                    "stage_frame_count": stage.frame_count,
+                    "stage_stored_input_word_count": (
+                        stage.stored_input_word_count
+                    ),
                 },
                 "bootstrap_last_epoch": bootstrap_last_epoch,
                 "skipped_gameplay_epochs": skipped_gameplay_epochs,
@@ -340,7 +392,10 @@ def run(args: argparse.Namespace) -> int:
                 "inactive_gameplay_epochs": inactive_gameplay_epochs,
                 "start_manager_frame": args.start_manager_frame,
                 "start_replay_frame": replay_frame_origin,
-                "sample_epochs": args.gameplay_epochs,
+                "sample_epochs": sample_epochs,
+                "maximum_sample_epochs": args.gameplay_epochs,
+                "stop_at_stage_terminal": bool(args.stop_at_stage_terminal),
+                "stage_terminal": terminal_observation,
                 "semantic_spine_sha256": digest.hexdigest(),
                 "rng_calls_origin": rng_calls_origin,
                 "fingerprint_output": (

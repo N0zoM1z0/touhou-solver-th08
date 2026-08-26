@@ -33,6 +33,8 @@ from th08_linux import (
     capture_runtime_semantic_spine,
     classify_manager_frame_transition,
     enrich_with_collision_control_projection,
+    replay_stage_binding_mismatch,
+    replay_stage_terminal_reason,
     write_semantic_trace,
 )
 from th08_runtime.game_state import TARGET_EXE
@@ -54,12 +56,20 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--expected-stage-index", type=int, required=True)
     parser.add_argument("--start-manager-frame", type=int, default=600)
     parser.add_argument("--gameplay-epochs", type=int, default=300)
+    parser.add_argument(
+        "--stop-at-stage-terminal",
+        action="store_true",
+        help=(
+            "treat gameplay-inactive replay-binding teardown as successful "
+            "completion before the epoch guard"
+        ),
+    )
     parser.add_argument("--launch-timeout", type=float, default=60.0)
     parser.add_argument("--focus-timeout", type=float, default=20.0)
     parser.add_argument("--startup-settle", type=float, default=2.0)
     parser.add_argument("--menu-timeout", type=float, default=30.0)
     parser.add_argument("--gameplay-timeout", type=float, default=60.0)
-    parser.add_argument("--root-timeout", type=float, default=90.0)
+    parser.add_argument("--root-timeout", type=float, default=300.0)
     parser.add_argument("--step-timeout", type=float, default=5.0)
     parser.add_argument("--tap-hold-ms", type=int, default=65)
     parser.add_argument("--tap-gap-ms", type=int, default=90)
@@ -89,18 +99,14 @@ def validate_semantic_sample(
     contract: NativeReplayStageContract,
     expected_replay_frame: int,
 ) -> None:
-    if not int(fingerprint["game_manager_flags"]) & 0x08:
-        raise RuntimeError("retail gameplay sample is not in replay mode")
-    for field, expected in (
-        ("difficulty_index", contract.difficulty_index),
-        ("shot_type_index", contract.route_id),
-        ("stage_index", contract.stage_route_index),
-    ):
-        if int(fingerprint[field]) != expected:
-            raise RuntimeError(
-                f"retail replay {field} changed: "
-                f"expected={expected} observed={fingerprint[field]}"
-            )
+    mismatch = replay_stage_binding_mismatch(
+        fingerprint,
+        difficulty_index=contract.difficulty_index,
+        shot_type_index=contract.route_id,
+        stage_index=contract.stage_route_index,
+    )
+    if mismatch is not None:
+        raise RuntimeError(f"retail replay stage binding changed: {mismatch}")
     replay = fingerprint["replay"]
     if not isinstance(replay, dict):
         raise RuntimeError("retail replay manager is absent at barrier root")
@@ -144,7 +150,7 @@ def _validate_args(args: argparse.Namespace) -> None:
 def run(args: argparse.Namespace) -> int:
     _validate_args(args)
     report: dict[str, object] = {
-        "schema": "th08-windows-replay-semantic-smoke-v3",
+        "schema": "th08-windows-replay-semantic-smoke-v4",
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "status": "failed",
         "scope": "bounded barrier-aligned replay differential; no route claim",
@@ -236,27 +242,14 @@ def run(args: argparse.Namespace) -> int:
         inactive_gameplay_epochs = 0
         previous_manager_frame = None
         replay_frame_origin = None
+        sample_epochs = 0
+        terminal_observation = None
         for relative_epoch in range(1, args.gameplay_epochs + 1):
             manager_frame = root.root_manager_frame
             if previous_manager_frame is None:
                 manager_frame_delta = 0
             else:
-                try:
-                    manager_relation = classify_manager_frame_transition(
-                        previous=previous_manager_frame,
-                        observed=manager_frame,
-                    )
-                except ValueError as error:
-                    raise RuntimeError(
-                        "retail manager-frame transition changed across "
-                        "logical input epochs: "
-                        f"previous={previous_manager_frame} "
-                        f"observed={manager_frame}"
-                    ) from error
                 manager_frame_delta = manager_frame - previous_manager_frame
-                if manager_relation == MANAGER_FRAME_TRANSITION_SAME:
-                    same_manager_input_epochs += 1
-            previous_manager_frame = manager_frame
             fingerprint = capture_runtime_semantic_spine(
                 reader,
                 relative_epoch=relative_epoch,
@@ -273,6 +266,47 @@ def run(args: argparse.Namespace) -> int:
                     reader,
                     fingerprint,
                 )
+            terminal_reason = replay_stage_terminal_reason(
+                fingerprint,
+                difficulty_index=contract.difficulty_index,
+                shot_type_index=contract.route_id,
+                stage_index=contract.stage_route_index,
+            )
+            if terminal_reason is not None:
+                if not args.stop_at_stage_terminal:
+                    raise RuntimeError(
+                        "retail replay stage binding ended inside fixed "
+                        f"sample: {terminal_reason}"
+                    )
+                replay_at_terminal = fingerprint.get("replay")
+                terminal_observation = {
+                    "relative_epoch": relative_epoch,
+                    "manager_frame": fingerprint.get("manager_frame"),
+                    "replay_frame": (
+                        replay_at_terminal.get("frame_counter")
+                        if isinstance(replay_at_terminal, dict)
+                        else None
+                    ),
+                    "gameplay_active": fingerprint.get("gameplay_active"),
+                    "reason": terminal_reason,
+                }
+                break
+            if previous_manager_frame is not None:
+                try:
+                    manager_relation = classify_manager_frame_transition(
+                        previous=previous_manager_frame,
+                        observed=manager_frame,
+                    )
+                except ValueError as error:
+                    raise RuntimeError(
+                        "retail manager-frame transition changed across "
+                        "logical input epochs: "
+                        f"previous={previous_manager_frame} "
+                        f"observed={manager_frame}"
+                    ) from error
+                if manager_relation == MANAGER_FRAME_TRANSITION_SAME:
+                    same_manager_input_epochs += 1
+            previous_manager_frame = manager_frame
             locators = fingerprint["trace_locators"]
             assert isinstance(locators, dict)
             if rng_calls_origin is None:
@@ -301,6 +335,7 @@ def run(args: argparse.Namespace) -> int:
             if not fingerprint["gameplay_active"]:
                 inactive_gameplay_epochs += 1
             fingerprints.append(fingerprint)
+            sample_epochs += 1
             digest.update(canonical_fingerprint_bytes(fingerprint))
             digest.update(b"\n")
             if relative_epoch != args.gameplay_epochs:
@@ -308,10 +343,21 @@ def run(args: argparse.Namespace) -> int:
                     timeout_seconds=args.step_timeout
                 )
 
+        if args.stop_at_stage_terminal and terminal_observation is None:
+            raise RuntimeError(
+                "retail replay stage terminal was not reached inside the "
+                f"{args.gameplay_epochs}-epoch guard"
+            )
+        if sample_epochs == 0:
+            raise RuntimeError("retail replay sample contains no bound input epoch")
+
         write_semantic_trace(args.fingerprint_output, fingerprints)
         report.update(
             {
-                "sample_epochs": args.gameplay_epochs,
+                "sample_epochs": sample_epochs,
+                "maximum_sample_epochs": args.gameplay_epochs,
+                "stop_at_stage_terminal": bool(args.stop_at_stage_terminal),
+                "stage_terminal": terminal_observation,
                 "start_manager_frame": args.start_manager_frame,
                 "manager_frame_range": [
                     int(fingerprints[0]["manager_frame"]),

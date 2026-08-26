@@ -10,6 +10,8 @@ from th08_linux.semantic_trace import (
     classify_manager_frame_transition,
     compare_semantic_traces,
     read_semantic_trace,
+    replay_stage_binding_mismatch,
+    replay_stage_terminal_reason,
     write_semantic_trace,
 )
 
@@ -30,6 +32,61 @@ def _record(
 
 
 class LinuxSemanticTraceTests(unittest.TestCase):
+    def test_replay_terminal_requires_inactive_and_binding_end(self) -> None:
+        fingerprint = {
+            "gameplay_active": False,
+            "game_manager_flags": 0x08,
+            "difficulty_index": 3,
+            "shot_type_index": 2,
+            "stage_index": 5,
+            "replay": {"frame_counter": 7650},
+        }
+        self.assertIsNone(
+            replay_stage_terminal_reason(
+                fingerprint,
+                difficulty_index=3,
+                shot_type_index=2,
+                stage_index=5,
+            )
+        )
+        fingerprint["shot_type_index"] = 0
+        self.assertEqual(
+            replay_stage_terminal_reason(
+                fingerprint,
+                difficulty_index=3,
+                shot_type_index=2,
+                stage_index=5,
+            ),
+            "shot_type_index expected=2 observed=0",
+        )
+        fingerprint["gameplay_active"] = True
+        self.assertIsNone(
+            replay_stage_terminal_reason(
+                fingerprint,
+                difficulty_index=3,
+                shot_type_index=2,
+                stage_index=5,
+            )
+        )
+
+    def test_replay_binding_reports_missing_manager(self) -> None:
+        self.assertEqual(
+            replay_stage_binding_mismatch(
+                {
+                    "gameplay_active": False,
+                    "game_manager_flags": 0,
+                    "difficulty_index": 3,
+                    "shot_type_index": 2,
+                    "stage_index": 5,
+                    "replay": None,
+                },
+                difficulty_index=3,
+                shot_type_index=2,
+                stage_index=5,
+            ),
+            "replay manager is absent",
+        )
+
     def test_manager_frame_transition_classifies_advance_and_freeze(self) -> None:
         self.assertEqual(
             classify_manager_frame_transition(previous=7649, observed=7650),

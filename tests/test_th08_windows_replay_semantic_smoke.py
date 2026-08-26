@@ -21,7 +21,7 @@ def _contract() -> NativeReplayStageContract:
         route_id=2,
         difficulty_index=3,
         stage_route_index=5,
-        stage_frame_count=33728,
+        stage_stored_input_word_count=33728,
         stage_input_sha256="b" * 64,
         stage_bomb_press_frames=(),
     )
@@ -67,6 +67,7 @@ class WindowsReplaySemanticSmokeTests(unittest.TestCase):
             )
         self.assertEqual(args.start_manager_frame, 600)
         self.assertEqual(args.gameplay_epochs, 300)
+        self.assertEqual(args.root_timeout, 300.0)
 
     def test_sample_contract_accepts_exact_aligned_replay(self) -> None:
         validate_semantic_sample(
@@ -93,7 +94,9 @@ class WindowsReplaySemanticSmokeTests(unittest.TestCase):
                 contract=_contract(),
                 expected_replay_frame=600,
             )
-        with self.assertRaisesRegex(RuntimeError, "difficulty_index changed"):
+        with self.assertRaisesRegex(
+            RuntimeError, "difficulty_index expected=2 observed=3"
+        ):
             validate_semantic_sample(
                 _fingerprint(),
                 contract=replace(_contract(), difficulty_index=2),

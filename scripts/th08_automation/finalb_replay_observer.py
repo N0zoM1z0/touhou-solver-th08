@@ -45,7 +45,7 @@ class NativeReplayStageContract:
     route_id: int
     difficulty_index: int
     stage_route_index: int
-    stage_frame_count: int
+    stage_stored_input_word_count: int
     stage_input_sha256: str
     stage_bomb_press_frames: tuple[int, ...]
 
@@ -161,7 +161,7 @@ def validate_native_stage_replay(
         route_id=target_metadata.route_id,
         difficulty_index=target_metadata.difficulty_index,
         stage_route_index=stage.stage_index,
-        stage_frame_count=stage.frame_count,
+        stage_stored_input_word_count=stage.stored_input_word_count,
         stage_input_sha256=stage.input_sha256,
         stage_bomb_press_frames=stage.bomb_press_frames,
     )

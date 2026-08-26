@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Inspect TH08 replay metadata, RNG seeds, and frame-indexed input streams.
+"""Inspect TH08 replay metadata, RNG seeds, and stored input streams.
 
 The parser reproduces replay loading at 0x00451D90: rolling-byte decode,
 checksum validation, and the same 0x2000-ring LZSS decoder used by PBGZ.
 It can emit compact held-input runs; it does not copy replay payloads.
+
+The stage input extent can include words recorded after playable stage teardown
+and before the result-screen save. Its length is therefore a storage bound,
+not source authority for playable stage duration.
 """
 
 from __future__ import annotations
@@ -49,6 +53,10 @@ class ReplayStage:
     input_sha256: str
     bomb_press_frames: tuple[int, ...]
 
+    @property
+    def stored_input_word_count(self) -> int:
+        return self.frame_count
+
 
 @dataclass(frozen=True)
 class ReplayInputRun:
@@ -93,7 +101,10 @@ def _stage_end(decoded: bytes, data_offset: int) -> int:
 def extract_stage_inputs(
     decoded: bytes, stage: ReplayStage | int, *, extended: bool | None = None
 ) -> tuple[int, ...]:
-    """Return the exact input word consumed on each replay callback frame."""
+    """Return every stored input word in the stage-data extent.
+
+    A playable stage may tear down before consuming the full saved extent.
+    """
 
     data_offset = stage.data_offset if isinstance(stage, ReplayStage) else stage
     if extended is None:
