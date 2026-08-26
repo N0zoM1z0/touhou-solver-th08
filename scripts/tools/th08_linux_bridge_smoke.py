@@ -12,7 +12,10 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from th08_linux import LinuxGameSession  # noqa: E402
+from th08_linux import (  # noqa: E402
+    LinuxGameSession,
+    validate_request_memory_witness,
+)
 from th08_runtime.sensing import observe_state  # noqa: E402
 
 
@@ -44,14 +47,23 @@ def run(args: argparse.Namespace) -> int:
             for _ in range(args.epochs):
                 request = session.bridge.receive()
                 state = observe_state(session.reader)
+                memory_witness = validate_request_memory_witness(
+                    request, session.reader
+                )
                 witness = {
                 "epoch": request.epoch,
                 "request_current_input": request.current_input,
-                "memory_current_input": state["input_current"],
+                "memory_supervisor_current_input": (
+                    memory_witness.supervisor_current_input
+                ),
                 "request_previous_input": request.previous_input,
-                "memory_previous_input": state["input_previous"],
+                "memory_supervisor_previous_input": (
+                    memory_witness.supervisor_previous_input
+                ),
+                "memory_gui_current_input": state["input_current"],
+                "memory_gui_previous_input": state["input_previous"],
                 "request_rng_seed": request.rng_seed,
-                "memory_rng_seed": state["rng_state"],
+                "memory_rng_seed": memory_witness.rng_seed,
                 "enemy_manager_frame": state["enemy_manager_frame"],
                 "engine_flags": state["engine_flags"],
                 "stage_route_index": state["stage_route_index"],
@@ -59,24 +71,10 @@ def run(args: argparse.Namespace) -> int:
                 "replay_target_stamped": request.replay_target_stamped,
                 "paused_milliseconds": request.paused_milliseconds,
                 }
-                if not request.replay_target_stamped:
-                    raise RuntimeError(
-                        "runtime did not stamp original replay target"
-                    )
-                if request.current_input != state["input_current"]:
-                    raise RuntimeError(
-                        "bridge/current-input memory witness mismatch"
-                    )
-                if request.previous_input != state["input_previous"]:
-                    raise RuntimeError(
-                        "bridge/previous-input memory witness mismatch"
-                    )
-                if request.rng_seed != state["rng_state"]:
-                    raise RuntimeError("bridge/RNG memory witness mismatch")
                 observations.append(witness)
                 session.bridge.respond(0)
             report = {
-                "schema": "th08-linux-lockstep-smoke-v1",
+                "schema": "th08-linux-lockstep-smoke-v2",
                 "runtime": {
                     "path": str(session.identity.path),
                     "size": session.identity.size,

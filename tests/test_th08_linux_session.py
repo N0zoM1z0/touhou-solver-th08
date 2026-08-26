@@ -17,10 +17,12 @@ _FAKE_RUNTIME = textwrap.dedent(
     import signal
     import socket
     import struct
+    import time
 
     path = os.environ["TH08_SOLVER_SOCKET"]
     server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     server.bind(path)
+    time.sleep(float(os.environ.get("FAKE_LISTEN_DELAY", "0")))
     server.listen(1)
     connection, _ = server.accept()
     connection.sendall(struct.pack(
@@ -67,6 +69,22 @@ class LinuxGameSessionTests(unittest.TestCase):
                 self.assertEqual(request.epoch, 1)
                 session.bridge.respond(0)
             self.assertTrue(Path(f"/proc/{pid}").exists() is False)
+
+    def test_retries_the_bind_to_listen_startup_gap(self) -> None:
+        identity = identify_linux_runtime(sys.executable)
+        with tempfile.TemporaryDirectory() as data_directory:
+            session = LinuxGameSession(
+                executable=identity.path,
+                data_directory=data_directory,
+                expected_sha256=identity.sha256,
+                display=":test",
+                arguments=("-c", _FAKE_RUNTIME),
+                environment={"FAKE_LISTEN_DELAY": "0.05"},
+            )
+            with session:
+                request = session.bridge.receive()
+                self.assertEqual(request.epoch, 1)
+                session.bridge.respond(0)
 
     def test_rejects_runtime_identity_mismatch_before_launch(self) -> None:
         with tempfile.TemporaryDirectory() as data_directory:

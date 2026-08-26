@@ -12,11 +12,16 @@ from th08_linux.title import (
     capture_gameplay_bootstrap,
     capture_title_snapshot,
 )
+from th08_linux.witness import (
+    LockstepMemoryWitness,
+    validate_request_memory_witness,
+)
 
 __all__ = (
     "InputRequest",
     "EASY_DIFFICULTY",
     "LinuxGameSession",
+    "LockstepMemoryWitness",
     "LinuxProcessReader",
     "LinuxRuntimeIdentity",
     "RouteTitleDriver",
@@ -25,4 +30,5 @@ __all__ = (
     "TitleSnapshot",
     "capture_gameplay_bootstrap",
     "capture_title_snapshot",
+    "validate_request_memory_witness",
 )

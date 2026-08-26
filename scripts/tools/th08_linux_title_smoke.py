@@ -20,6 +20,7 @@ from th08_linux import (  # noqa: E402
     TitleSnapshot,
     capture_gameplay_bootstrap,
     capture_title_snapshot,
+    validate_request_memory_witness,
 )
 
 
@@ -72,6 +73,7 @@ def run(args: argparse.Namespace) -> int:
         with session:
             for _ in range(args.maximum_bootstrap_epochs):
                 request = session.bridge.receive()
+                validate_request_memory_witness(request, session.reader)
                 gameplay = capture_gameplay_bootstrap(session.reader)
                 if gameplay.registered:
                     session.bridge.respond(0)
@@ -172,7 +174,7 @@ def run(args: argparse.Namespace) -> int:
                     f"{ready.stage_route_index}"
                 )
             report = {
-                "schema": "th08-linux-title-bootstrap-smoke-v1",
+                "schema": "th08-linux-title-bootstrap-smoke-v2",
                 "runtime": {
                     "path": str(session.identity.path),
                     "size": session.identity.size,
@@ -192,6 +194,7 @@ def run(args: argparse.Namespace) -> int:
                     "stage_route_index": ready.stage_route_index,
                 },
                 "last_epoch": request.epoch,
+                "wire_memory_checks": request.epoch,
                 "transitions": transitions,
                 "route_duration_limit": None,
                 "scope": "bounded bootstrap diagnostic; no gameplay claim",

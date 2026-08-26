@@ -152,8 +152,7 @@ class LinuxGameSession:
                 stderr=subprocess.STDOUT,
                 start_new_session=True,
             )
-            self._wait_for_socket()
-            self._bridge = SolverBridgeClient.connect(self._socket_path)
+            self._bridge = self._connect_bridge()
             self._reader = LinuxProcessReader(self._process.pid)
             selected_image = self._reader.image_path().resolve(strict=True)
             if selected_image != identity.path:
@@ -166,21 +165,35 @@ class LinuxGameSession:
             raise
         return self
 
-    def _wait_for_socket(self) -> None:
+    def _connect_bridge(self) -> SolverBridgeClient:
         assert self._process is not None
         assert self._socket_path is not None
         deadline = time.monotonic() + self._startup_timeout_seconds
-        while not self._socket_path.exists():
+        last_connect_error: OSError | None = None
+        while True:
             return_code = self._process.poll()
             if return_code is not None:
                 raise RuntimeError(
-                    "Linux runtime exited before publishing its solver socket "
+                    "Linux runtime exited before accepting its solver socket "
                     f"with status {return_code}"
                 )
+            if self._socket_path.exists():
+                try:
+                    return SolverBridgeClient.connect(self._socket_path)
+                except (FileNotFoundError, ConnectionRefusedError) as error:
+                    # bind(2) publishes the path before listen(2) makes the
+                    # server connectable.  Treat that gap as startup, not as a
+                    # permanent protocol failure.
+                    last_connect_error = error
             if time.monotonic() >= deadline:
+                detail = (
+                    f"; last connect error: {last_connect_error}"
+                    if last_connect_error is not None
+                    else ""
+                )
                 raise TimeoutError(
-                    "Linux runtime did not publish its solver socket during "
-                    "the bounded startup phase"
+                    "Linux runtime did not accept its solver socket during "
+                    f"the bounded startup phase{detail}"
                 )
             time.sleep(0.01)
 
