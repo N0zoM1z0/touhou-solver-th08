@@ -56,8 +56,14 @@ ordered implementation plan are in
   binary32/time-scale movement recurrence, but remains dormant on ordinary
   Easy roots.  AUD-094/CE-0269 retain this negative result.  The next gate is
   an earlier-loss audit of the physical boundary/exhaustion roots, not a full
-  route or a global-planner run.  The
-  complete Linux suite passes 1,571 tests with five conditional skips.  A
+  route or a global-planner run.  That audit first found that beam replay had
+  substituted total issue age for player-to-hazard lag and omitted the
+  discrete bullet-age support.  Corrected replay now matches all eight sampled
+  physical actions and fails closed on incomplete clock authority.  Dense
+  deadline roots still cost roughly 43--47 ms locally, so the next Easy change
+  targets exact certificate sharing/batching rather than more search.
+  AUD-095/CE-0270 retain the evidence.  The complete Linux suite passes 1,573
+  tests with five conditional skips.  A
   3,600-frame saturated source-stateful gate also passes 120/120 future joins,
   180/180 geometry checks, and 1,414,390 lifecycle samples against the C
   oracle with zero lifecycle-position error.

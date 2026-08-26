@@ -144,6 +144,21 @@ def _decision(
     forced_first_action: str | None = None,
 ):
     row = root.row
+    hazard_alignment = row.get("hazard_alignment")
+    if not isinstance(hazard_alignment, dict):
+        raise ValueError("trace decision lacks hazard-alignment authority")
+    player_to_hazard_lag = hazard_alignment.get("player_to_hazard_lag")
+    bullet_age_support = hazard_alignment.get(
+        "bullet_snapshot_age_support"
+    )
+    if type(player_to_hazard_lag) is not int:
+        raise ValueError("trace decision lacks player-to-hazard lag")
+    if (
+        not isinstance(bullet_age_support, (list, tuple))
+        or not bullet_age_support
+        or any(type(value) is not int for value in bullet_age_support)
+    ):
+        raise ValueError("trace decision lacks bullet-age support")
     bullets, lasers, enemy_bodies = hazards_from_trace(row)
     items = tuple(Item(*values) for values in row.get("items", ()))
     corridor = row.get("corridor") or {}
@@ -193,7 +208,8 @@ def _decision(
         previous_focus=bool(held_mask & 0x04),
         local_pipeline_root=root.root,
         can_bomb=False,
-        snapshot_lag=int(row["snapshot_lag"]),
+        snapshot_lag=player_to_hazard_lag,
+        bullet_snapshot_age_support=tuple(bullet_age_support),
         control_delay_frames=int(row["control_delay_frames"]),
         control_delay_candidates=tuple(
             int(value) for value in row["control_delay_candidates"]

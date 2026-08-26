@@ -711,6 +711,15 @@ source-derived binary32 movement and phase-specific time-scale schedule as the
 beam.  The result favors a semantically exact small policy over an inexpensive
 but structurally incorrect proxy for global search.
 
+The offline replay boundary must preserve the same discipline.  A retained
+decision has separate observation-to-input age, player-to-hazard alignment,
+and discrete bullet-age support.  An audit had collapsed these into the first
+scalar, so it no longer represented the live root after the bullet-clock
+correction.  Replay now requires the latter two fields explicitly and fails
+closed without them.  A bounded corrected replay reproduces all eight sampled
+Easy actions; this restores experimental comparability but grants no new
+policy authority.
+
 Development after this correction uses source-driven, complete-stage, and
 retained-root differentials as the primary experiment.  Physical Wine trials
 are delayed until submissions, completions, version matching, and producer

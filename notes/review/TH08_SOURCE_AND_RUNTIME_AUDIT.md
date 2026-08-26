@@ -2931,10 +2931,34 @@ scale coverage.  Focused tests prove schedule indexing across the beam/tail
 boundary.  CE-0269 retains the smallest failure and decision record; no
 difficulty, stage, spell, or coordinate branch was added.
 
+### AUD-095 — Local beam replay conflated issue age with hazard epoch
+
+Status: **FIXED OFFLINE; CORRECTED RETAINED-ROOT REPLAY VALIDATED**
+
+The retained Easy trace carries three different clocks: observation-to-input
+`snapshot_lag`, player-to-hazard alignment, and a discrete bullet-age support
+for a bulk read that may straddle updates.  The beam-stability audit passed the
+first scalar as local `snapshot_lag` and dropped the bullet support entirely.
+After AUD-093 this no longer reconstructed the same physical problem as the
+live planner, so action or beam-width conclusions from that audit could be
+silently confounded by a different hazard epoch.
+
+The compatibility planner entry point now transports explicit
+`bullet_snapshot_age_support`, and replay requires both
+`hazard_alignment.player_to_hazard_lag` and the nonempty discrete bullet
+support.  Missing authority fails closed rather than falling back to the
+unrelated observation age.  On an eight-root bounded sample of
+`easy_route2_stage6b_unattended_20260826_063823`, corrected replay matches the
+recorded first action at all eight roots and has no action difference between
+widths 24 and 25.  Seven hard vectors match exactly; frame 57590 keeps the
+same action and penetration but changes the accumulated collision count from
+six to three, which remains an explicit residual rather than being hidden.
+This repairs the offline experiment, not the physical policy.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,568 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,573 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.
