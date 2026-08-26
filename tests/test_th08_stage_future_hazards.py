@@ -323,6 +323,62 @@ class StageFutureHazardTests(unittest.TestCase):
             {(bullet.x, bullet.y) for bullet in bullets},
         )
 
+    def test_transform_fallback_does_not_apply_callback_before_due_frame(
+        self,
+    ) -> None:
+        base = _program()
+        phase = base.phases[0]
+        transformed = replace(
+            phase.emitters[0],
+            transforms=(
+                TransformSpec(
+                    kind=TRANSFORM_VECTOR_ACCELERATION,
+                    duration=60,
+                    float_0=0.03,
+                    float_1=0.5,
+                ),
+            ),
+        )
+        delayed_callback = Callback14Event(
+            frame=6,
+            tag_mask=0x100000,
+            speed=50.0,
+        )
+        program = replace(
+            base,
+            phases=(
+                replace(
+                    phase,
+                    emitters=(transformed,),
+                    callbacks=(delayed_callback,),
+                ),
+            ),
+        )
+        runtime = StageRuntime(program)
+        runtime.step(player_x=192.0, player_y=400.0)
+        bullets, _ = runtime.live_snapshot()
+
+        joined = join_stage_future_hazards(
+            program,
+            root_frame=runtime.frame,
+            root_player_x=192.0,
+            root_player_y=400.0,
+            bullets=bullets,
+            horizon_frames=6,
+        )
+
+        self.assertTrue(joined.complete, joined.reason)
+        assert joined.projection is not None
+        fallback_trajectories = joined.projection.aabb_trajectories[-3:]
+        for trajectory in fallback_trajectories:
+            before = trajectory.sample(5)
+            due = trajectory.sample(6)
+            self.assertIsNotNone(before)
+            self.assertIsNotNone(due)
+            assert before is not None and due is not None
+            self.assertLess(before.half_width, 20.0)
+            self.assertGreater(due.half_width, 50.0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -615,6 +615,19 @@ callback/transform object fallbacks.  It is suitable offline but cannot enter
 a 16-ms Wine issue loop.  The next architectural step is a persistent packed
 batch and a denser matched-cadence gate, not a spell-specific policy.
 
+A denser 3,600-frame fixed stage does distinguish the information sets.  At
+beam width 8, blind planning records five normalized hits and six collision
+frames, whereas the complete future join records two and three.  Increasing
+width to 24 does not remove the two hits and increases collision duration,
+which falsifies beam size as the immediate bottleneck.  That trace instead
+revealed a temporal over-approximation: a future callback's maximum speed was
+applied from projection frame one as soon as the callback entered the rolling
+horizon.  Source order begins that branch only on its due update.  Piecewise
+integration corrects the timing, but the rerun records three hits; the old
+error was accidentally protective.  We retain the source-faithful correction
+and treat the result as evidence for exact callback--transform rollout and
+backward viability, not as an empirical policy improvement.
+
 Development after this correction uses source-driven, complete-stage, and
 retained-root differentials as the primary experiment.  Physical Wine trials
 are delayed until submissions, completions, version matching, and producer

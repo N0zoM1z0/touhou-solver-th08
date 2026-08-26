@@ -321,23 +321,26 @@ def _callback_transform_fallback_trajectory(
         raise StageFutureHazardError(
             f"bullet slot {bullet.slot} active transform lacks a program record"
         )
-    maximum_speed = max(
+    base_maximum_speed = max(
         math.hypot(float(bullet.vx), float(bullet.vy)),
         abs(float(bullet.speed or 0.0)),
-        *(
+    )
+    callback_speed_schedule = tuple(
+        (
+            callback.frame,
             max(
                 abs(callback.callback_speed.lower),
                 abs(callback.callback_speed.upper),
-            )
-            for callback in callbacks
-        ),
+            ),
+        )
+        for callback in callbacks
     )
     acceleration = 0.0
     for record in records:
         if record.kind == TRANSFORM_DECELERATE:
             # The recovered handler begins at speed 5 regardless of the
             # bullet's current magnitude, then linearly reaches zero.
-            maximum_speed = max(maximum_speed, 5.0)
+            base_maximum_speed = max(base_maximum_speed, 5.0)
         elif record.kind in (
             TRANSFORM_VECTOR_ACCELERATION,
             TRANSFORM_ANGULAR_VELOCITY,
@@ -349,12 +352,18 @@ def _callback_transform_fallback_trajectory(
             TRANSFORM_STOP_SNAP,
         ):
             if float(record.float_1) > -999.0:
-                maximum_speed = max(maximum_speed, abs(float(record.float_1)))
+                base_maximum_speed = max(
+                    base_maximum_speed,
+                    abs(float(record.float_1)),
+                )
         elif record.kind in (
             TRANSFORM_REFLECT_ALL,
             TRANSFORM_REFLECT_SIDES_TOP,
         ) and float(record.float_0) >= 0.0:
-            maximum_speed = max(maximum_speed, abs(float(record.float_0)))
+            base_maximum_speed = max(
+                base_maximum_speed,
+                abs(float(record.float_0)),
+            )
 
     samples: list[AabbHazard | None] = [
         AabbHazard(
@@ -364,11 +373,23 @@ def _callback_transform_fallback_trajectory(
             half_height=float(bullet.half_height),
         )
     ]
+    radius = 0.0
     for frame in range(1, horizon_frames + 1):
-        radius = (
-            maximum_speed * frame
-            + acceleration * frame * (frame + 1) * 0.5
-        )
+        # A future callback may change speed/direction only on its own source
+        # update.  Applying its speed from frame one made the fallback grow
+        # discontinuously as soon as a far-future callback entered the rolling
+        # horizon.  Sum a per-update speed bound instead: the active transform
+        # is allowed from the root, while each callback branch starts at its
+        # certified relative frame and may then receive every acceleration.
+        step_speed = base_maximum_speed + acceleration * frame
+        for callback_frame, callback_speed in callback_speed_schedule:
+            if callback_frame <= frame:
+                step_speed = max(
+                    step_speed,
+                    callback_speed
+                    + acceleration * (frame - callback_frame + 1),
+                )
+        radius += step_speed
         samples.append(
             AabbHazard(
                 x=float(bullet.x),

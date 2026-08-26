@@ -2586,10 +2586,45 @@ error substring after callback-14 had joined the same feature gate; its regex
 now names the current combined gate.  No planner implementation changed for
 this cleanup.
 
+### AUD-088 — Callback/transform fallback applied future speed too early
+
+Status: **SOURCE-CONFIRMED TIMING BUG; CORRECTED OFFLINE, NOT A POLICY WIN**
+
+A denser fixed gate (`seed=0x8414`, 3,600 frames, two-frame cadence,
+width 8) established a useful controlled result.  The blind controller
+recorded five normalized hits and six collision frames; the complete
+future-aware join recorded two hits and three collision frames.  Widening the
+future-aware beam from 8 to 24 did not remove either hit and increased the
+collision duration to eleven frames, so this residual is not explained by a
+small beam alone.
+
+The width-24 trace exposed a model discontinuity near source callback frame
+1740.  At root 1722 the callback was just outside the 18-frame horizon; at root
+1724 it entered the horizon, and the conservative callback/active-transform
+fallback immediately applied its maximum callback speed from projection frame
+one.  Source order permits that speed change only when the callback update is
+due.  Merely entering a rolling horizon must not enlarge earlier samples.
+
+The fallback now integrates a piecewise per-update speed bound.  The active
+transform contributes from the sensed root, while each callback speed begins
+at its certified relative frame.  A regression with a delayed 50-pixel speed
+change proves that sample five remains narrow and sample six expands.  This is
+a correctness fix, but rerunning the same width-8 gate changed the closed-loop
+path from two to three normalized hits (four collision frames).  The old early
+over-approximation was unsound in time yet accidentally protective.  The
+corrected result remains better than blind, but it is not promoted as a
+survival improvement.
+
+The remaining hits become locally unavoidable inside the receding horizon;
+simply increasing width does not repair them.  The next source-authoritative
+step is exact source-order callback plus transform rollout in a persistent
+batch, followed by an offline global/backward viability gate.  No Wine run is
+justified by this checkpoint.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,547 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,565 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

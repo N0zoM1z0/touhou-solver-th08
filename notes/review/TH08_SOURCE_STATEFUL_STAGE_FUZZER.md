@@ -310,6 +310,11 @@ all eight handlers.
     writes magnitude 5 at timer zero and then subtracts `timer*5/16`.  The
     future-birth and current-pool fallback bounds now include the fixed 5 px
     maximum and retain the current root AABB at projection frame zero.
+19. The callback/active-transform fallback used the largest callback speed for
+    every projected update as soon as that callback entered the rolling
+    horizon.  Source order changes speed only on the callback's due update.
+    The fallback now integrates a piecewise speed schedule so a delayed
+    callback cannot enlarge earlier samples merely because the root advanced.
 
 These are source-backed semantic corrections. None is presented as a route
 hit improvement until it changes a complete future projection and passes a
@@ -364,8 +369,10 @@ Wine. The next work should remain incremental and differential:
 4. preserve the completed exact-clock local join for resolved births,
    callback 12/14, lasers, current bullets, action-conditioned aim bounds, and
    fail-closed request coverage; use the fixed quick corpus as its smoke gate;
-5. replace the callback/active-transform AABB object fallback with a packed,
-   persistent batch and exercise a denser gate at the real two-frame cadence;
+5. replace the now time-correct callback/active-transform AABB object fallback
+   with an exact source-order packed, persistent batch and exercise a denser
+   gate at the real two-frame cadence; a width-24 control already rules out
+   simple beam widening on the fixed `0x8414` residual;
 6. add template replacement and derived finite-pool child births, then feed
    only a complete, version-matched current-plus-future horizon into the
    global viability planner in offline shadow mode, with player-relative
