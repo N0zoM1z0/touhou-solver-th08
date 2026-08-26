@@ -2376,8 +2376,8 @@ live authority or route claim.
 
 ### AUD-083 — Final-B scale authority encoded Lunatic identity as mechanics
 
-Status: **CONFIRMED LIVE AUTHORITY BUG; FIXED OFFLINE, PHYSICAL EASY
-VALIDATION PENDING**
+Status: **CONFIRMED LIVE AUTHORITY BUG; FIXED AND VALIDATED ON A COMPLETE
+PHYSICAL EASY ROUTE**
 
 The isolated Wine wrapper could only request Lunatic, and four independent
 live gates rejected exact Final-B scale authority unless the difficulty index
@@ -2410,8 +2410,56 @@ to the Windows supervisor and compact host report without changing the
 
 Focused regression executes the same complete 300-frame source capture for
 all four difficulty/spell pairs and verifies Easy live delivery at spell 187.
-This grants no hit-count claim yet. The next evidence is one clean-checkpoint
-Easy Sakuya/Remilia Route-2 hard-no-Bomb run through terminal unload.
+The clean-checkpoint Easy Sakuya/Remilia Route-2 hard-no-Bomb run
+``easy_route2_fullrun_unattended_20260825_101715`` subsequently reached
+terminal unload at manager frame 213264. At spell 187 the live service
+accepted the complete source trace, retained the exact 300-frame horizon, and
+delivered the callback-18 restore schedule. This validates the corrected
+difficulty/stage identity; it is not by itself a survival gain.
+
+### AUD-084 — The first complete Easy route exposes two generic transition failures
+
+Status: **PHYSICAL ROOT CAUSES CONFIRMED; OFFLINE REGRESSIONS AND POLICY
+CORRECTIONS IN PROGRESS**
+
+The first complete Easy Sakuya/Remilia Route-2 trial at commit ``6f512fe``
+finished continuously from frame 1 through 213262 with 49,325 agent decisions,
+zero JSON errors, hard no-Bomb verification, and 13 native phase-2 hit edges.
+Stage counts were ``0/0/0/1/1/11``. Eleven of thirteen hits were at a side or
+bottom boundary and nine were in fast mode. Six Final-B spell-147 hits form a
+single dense cluster; all three later spell-151 hits are exact finite-laser
+overlaps at a playfield boundary. The run therefore falsifies any claim that
+Easy difficulty alone removes planner/infra failures.
+
+The Stage-4A hit at frame 67903 has a causal local-trap witness. The player was
+driven to ``y=432`` while the beam repeatedly selected down/right continuations
+with shrinking positive reserve; the fresh safe-action set became empty at
+67891, six usable warning frames before an observed bullet overlap. This is a
+generic terminal-position/escape-width failure, not evidence for a Reimu
+waypoint. Boundary and fast labels remain correlates; the correction must rank
+future viable volume within the same collision certificate.
+
+The Stage-5 hit at frame 139187 is a separate source-semantic transition. At
+139182 all 437 live bullets were native state 1 but callback-aux suppressed,
+so the local projector reported 136 px minimum clearance even though tagged
+slot 948 was only 8.83 px from the player. Five frames later callback 14
+changed the pool to collision-enabled state and restored slot 948 to its
+1.2 px/frame base motion; the first usable warning and the hit arrived in the
+same control window. ``FUN_00424c40`` proves that this collision transition is
+performed before that frame's bullet movement. The scalar and current-pool
+callback composers already model it, but the complete-stage fuzzer still
+generates callback 12 only and the live local prefix had no future callback
+stream.
+
+Finally, the retained dossier reports zero global queries, zero global
+solutions, and zero constrained decisions. This was not a 16 ms solver
+failure: the physical runner omitted the explicit
+``--ordinary-preexhaustion-authority`` opt-in, so future-source capture and
+global submission were disabled by construction. In whole-route mode the
+single pinned static ECL image is also Final-B-only; enabling the flag cannot
+claim Stage-5 source authority until stage-indexed runtime ECL identity is
+wired. These are distinct configuration/identity gaps and must not be hidden
+by tuning local boundary penalties.
 
 ## Offline Verification Record
 
