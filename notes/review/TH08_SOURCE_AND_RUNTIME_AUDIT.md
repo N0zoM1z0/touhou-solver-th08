@@ -2955,10 +2955,71 @@ same action and penetration but changes the accumulated collision count from
 six to three, which remains an explicit residual rather than being hidden.
 This repairs the offline experiment, not the physical policy.
 
+### AUD-096 — The enemy sensor used the wrong pool root and scalar full scan
+
+Status: **SOURCE-CONFIRMED; SAFE FIX OFFLINE; PHYSICAL GATE PENDING**
+
+The old live sensor combines a synchronous 64-record prefix rooted at
+`0x005826C0` with a continuously resubmitted sparse background scan. AUD-070
+already proved that the prefix address is native `enemies[1]`, not slot zero;
+the old sparse reader compensates through a special slot-zero probe and then
+scans a legacy slots-1--480 range that includes the unscanned failure
+sentinel. Thus the latency-critical prefix is rooted at the wrong manager
+slot while a Python thread repeatedly performs hundreds of scalar process
+reads to maintain complete coverage.
+
+The authoritative allocation and update loops fix the pool identity but also
+falsify the initially proposed prefix-only shortcut.
+`SpawnEnemy1` and `SpawnEnemy2` both select the first inactive slot while
+scanning native slots 0--479 in ascending order. At
+`g_EnemyManager+0x9DCDC4`, `EnemyManager::OnUpdate` resets `EnemyCount`
+immediately before that scan and increments it before updating each
+encountered active slot. The update can subsequently deactivate that enemy;
+an ECL update can also create a child in a lower inactive slot after the scan
+has passed it. The field therefore describes encounters in an in-progress
+scan, not current active occupancy. A prefix active count may equal it through
+offsetting death/birth transitions while an active tail remains. The proposed
+`certified-prefix` profile was rejected before commit or physical play.
+
+The safe `source-contiguous` profile synchronously reads native slots 0--63
+from the correct slot-zero base and retains the background enemy executor for
+complete native slots-0--479 coverage. Its worker replaces the scalar flag
+probes with one contiguous 10.3 MiB process-memory read into a reusable
+buffer. Easy supervisors select it generically by difficulty; when ordinary
+pre-exhaustion authority is disabled they also select the existing
+`--local-only` path, removing corridor prewarm without deleting the global
+framework. Enabling ordinary authority keeps the global path.
+
+The retained 11-hit Easy Final-B trace supplies bounded workload evidence, not
+a prefix completeness certificate. Across 13,083 decisions its serialized
+collision-body watermark is native slot 32, with zero body beyond slot 63.
+The old sparse worker reports 91.40/134.38 ms median/p95 and 207.13 ms maximum;
+the existing synchronous prefix reports 2.41/2.96 ms and 10.44 ms. Because
+that trace contains decoded contact geometry rather than all raw active flags,
+it cannot rule out a contact-disabled zero-size tail. Complete coverage is
+therefore retained by construction. The compact reproducible report is
+`artifacts/runtime_reports/th08_easy_enemy_prefix_profile_audit_20260826.json`.
+
+An exact native timeline-call prototype was also evaluated before this
+change. It preserved three physical-root decisions bit-for-bit but did not
+improve idle scalar planning and sometimes regressed it because Python packing
+replaced call overhead. Under artificial GIL contention it improved some p95
+certificate tails without improving total median latency. The prototype was
+removed. This rejects another ABI layer as the first Easy fix and locates a
+safer optimization in process-read shape and the source-correct pool root.
+The complete suite passes 1,577 tests with five conditional skips. An
+unretained full 3,600-frame
+source-stateful gate passes all 120 future joins, 360 geometry checks, and
+1,414,390 lifecycle samples against the independent C oracle with zero
+lifecycle-position error; it reaches the 1,536-bullet limit for 85 frames and
+has no failure. No physical hit or latency improvement is claimed until a
+Wine sensor benchmark and complete isolated Easy route exercise the new read
+path.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,573 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,577 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

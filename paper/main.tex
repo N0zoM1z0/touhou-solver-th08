@@ -562,7 +562,9 @@ architecture.  Corridor, audit, enemy-sensing, and future-source services are
 currently thread executors in the same Win32 Python process.  A controlled
 foreground-versus-thread/process benchmark is needed before assigning causal
 latency, but the implementation does not yet provide the process and affinity
-isolation assumed by our parallel-search design.
+isolation assumed by our parallel-search design.  A later Easy profile changes
+the enemy worker from hundreds of scalar cross-process probes to one complete
+contiguous read, while keeping the wider architecture and its coverage.
 
 The first complete Easy route also supplied a clean beam-pruning falsifier.
 Near the Stage~4 bottom-right boundary, width 24 spent every slot on minor
@@ -719,6 +721,26 @@ correction.  Replay now requires the latter two fields explicitly and fails
 closed without them.  A bounded corrected replay reproduces all eight sampled
 Easy actions; this restores experimental comparability but grants no new
 policy authority.
+
+Source layout then exposes a simpler Easy latency error.  Both enemy spawn
+functions allocate the first inactive native slot in ascending order, whereas
+the legacy synchronous sensor begins at slot~1 and relies on a continuously
+resubmitted scalar Python worker for slot~0 and the tail.  In the retained Easy
+trace that worker takes 91.40/134.38 ms median/p95, versus 2.41/2.96 ms for the
+prefix; serialized collision bodies never exceed slot~32.  A tempting
+prefix-only certificate was rejected by closer source inspection:
+`EnemyCount` is reset immediately before the ascending update scan and
+incremented before each encountered active enemy is updated, so same-frame
+death and lower-slot birth make it a scan-encounter counter rather than a
+current occupancy oracle.  The safe profile reads slots~0--63 synchronously
+and keeps complete slots~0--479 background coverage, but turns that coverage
+into one contiguous 10.3~MiB process read with a reusable buffer.  With
+ordinary global authority disabled, Easy also selects the existing local-only
+path and performs no corridor prewarm.  The old trace is workload evidence,
+not proof of tail absence, and the new read path is not yet a physical latency
+or hit result.  A proposed native timeline ABI was exact but showed no idle
+median gain and was removed, favoring the smaller execution change over
+another batching layer.
 
 Development after this correction uses source-driven, complete-stage, and
 retained-root differentials as the primary experiment.  Physical Wine trials

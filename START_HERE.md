@@ -12,11 +12,11 @@ authority.
 
 ## Active Scope Override
 
-The active completion target is a fresh full-game Sakuya/Remilia **Lunatic
-Route-2 Final-B NMNB**. The user explicitly restored this scope on 2026-08-23
-and authorized isolated Wine gameplay on the current VPS. Extra remains
-deferred. Fixed-root wind tunnels remain diagnostic; original-engine Lunatic
-evidence leads iteration.
+The immediate completion target is a fresh full-game Sakuya/Remilia **Easy
+Route-2 Final-B NMNB**. Easy is the infrastructure and local-policy proof
+before difficulty is raised again; the ultimate target remains Lunatic NMNB.
+The user authorized isolated Wine gameplay on the current VPS. Extra remains
+deferred, and fixed-root wind tunnels remain diagnostic.
 
 The 2026-08-01 Hard/pause state is historical. Preserve its useful physical
 and authority evidence, but do not let its stale scope override the current
@@ -60,12 +60,24 @@ ordered implementation plan are in
   substituted total issue age for player-to-hazard lag and omitted the
   discrete bullet-age support.  Corrected replay now matches all eight sampled
   physical actions and fails closed on incomplete clock authority.  Dense
-  deadline roots still cost roughly 43--47 ms locally, so the next Easy change
-  targets exact certificate sharing/batching rather than more search.
-  AUD-095/CE-0270 retain the evidence.  The complete Linux suite passes 1,573
-  tests with five conditional skips.  A
+  deadline roots still cost roughly 43--47 ms locally. Source audit then
+  identified a simpler execution-profile error: the synchronous enemy prefix
+  begins at native slot 1, while the legacy background worker makes hundreds
+  of scalar process reads to supply slot 0 and the tail. The worker costs
+  91.40/134.38 ms median/p95 in the retained route even though serialized
+  collision bodies never exceed slot 32. An attempted prefix-only shortcut
+  was rejected before commit or play: `EnemyCount` counts slots encountered
+  during the in-progress update scan and is not a current-occupancy oracle.
+  The safe generic `source-contiguous` profile instead reads slots 0--63
+  synchronously and retains a complete asynchronous slots-0--479 scan as one
+  contiguous 10.3 MiB process read with a reusable buffer. When ordinary
+  global authority is disabled, Easy also selects the existing local-only
+  controller. A rejected timeline-ABI experiment was exact but had no idle
+  median gain; it was removed rather than retained as complexity.
+  AUD-095--096 and CE-0270--0271 retain the evidence. The complete Linux suite
+  passes 1,577 tests with five conditional skips. A
   3,600-frame saturated source-stateful gate also passes 120/120 future joins,
-  180/180 geometry checks, and 1,414,390 lifecycle samples against the C
+  360/360 geometry checks, and 1,414,390 lifecycle samples against the C
   oracle with zero lifecycle-position error.
 - **Current offline source-stateful checkpoint:** the replayable complete-stage
   laboratory still covers 480--12,000-frame programs, finite 1,536-bullet and

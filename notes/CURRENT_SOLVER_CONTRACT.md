@@ -1,16 +1,17 @@
 # Current TH08 Solver Contract
 
-Last updated: 2026-08-25.
+Last updated: 2026-08-26.
 
 This is the compact authority boundary for the active solver. Historical
 derivations are recoverable from tag `pre-workspace-prune-20260731`.
 
 ## Physical Problem
 
-Control Sakuya/Remilia through original TH08 Lunatic Route 2 Final-B without
-misses or Bombs. Extra is deferred until Lunatic closes. Survival is a hard
-constraint. Within the viable set, prefer useful position, damage, Power
-collection, and shorter dangerous nonspell exposure.
+The immediate proof target is Sakuya/Remilia through original TH08 Easy Route
+2 Final-B without misses or Bombs; Lunatic NMNB remains the ultimate target.
+Extra is deferred until Lunatic closes. Survival is a hard constraint. Within
+the viable set, prefer useful position, damage, Power collection, and shorter
+dangerous nonspell exposure.
 
 A state includes the native player state, complete active hazards, relevant
 enemy/phase state, resources, active input, held desired input, pending issue
@@ -32,6 +33,16 @@ The promoted live path is:
 5. a fresh issue-time local collision certificate;
 6. version-checked publication and the fresh/global action transaction;
 7. hard no-Bomb actuation.
+
+The Easy execution profile uses no stage or spell policy. It reads native
+enemy slots 0--63 synchronously and retains a complete asynchronous read of
+source slots 0--479. The background pass is one contiguous process-memory
+read with a reusable buffer rather than hundreds of scalar reads. It does not
+use `EnemyManager::EnemyCount` as a completeness oracle: source order proves
+that field is a scan-encounter counter and can disagree with current
+occupancy after same-frame death or lower-slot birth. With ordinary global
+authority disabled Easy also selects the existing local-only resource path;
+enabling that authority keeps the global framework available.
 
 The exact Final-B player-laser global-time-scale schedule is live only inside
 its pinned Route-2 content identity. Unknown or mismatched schedule state
