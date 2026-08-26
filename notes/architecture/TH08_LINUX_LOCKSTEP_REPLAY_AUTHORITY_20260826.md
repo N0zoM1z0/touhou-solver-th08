@@ -212,6 +212,16 @@ path existence: Unix `bind` can publish the path before `listen`.  Connection
 refusal in that interval is retried only inside the bounded startup phase;
 gameplay and route execution retain no duration timeout.
 
+A retained retail-format Stage-5 replay now supplies the first gameplay
+semantic spine. Two 300-epoch Linux runs are exactly equal after separating
+two source-proven locators from semantics: the variable number of title/setup
+bridge callbacks and the legacy replay's absolute RNG generation-count prefix.
+For headers with `unk0x6 == 0`, replay registration does not install the
+priority-7 RNG reset chain, and `SetSeed` itself does not reset that counter.
+The comparator therefore requires exact RNG seed and exact calls since the
+first blocked gameplay sample while retaining the absolute prefix for
+diagnosis. This is normalization of history origin, not numerical tolerance.
+
 ## Relationship to the offline fuzzer
 
 The source-stateful stage fuzzer remains the high-volume adversarial laboratory
@@ -231,10 +241,12 @@ Linux runtime, and original replay is a localization tool, not a vote.
    three live request witnesses against fixed-address input/RNG state.
 4. **Done for route selection:** drive the source-observed Start, Easy, and
    Sakuya/Remilia menus and wait for completed Stage-1 gameplay loading.
-5. **Next:** drive a short gameplay input sequence, save an ordinary replay,
-   and build the semantic fingerprint at each epoch.
-6. Differential a retained Windows-origin replay in both runtimes, then a
-   Linux-generated replay in fresh Linux and original-Wine processes.
+5. **Done for a retained replay on Linux:** load retail-format replay input,
+   construct the pointer-free semantic spine, and prove a 300-epoch exact
+   Linux self-repeat with first-divergence tooling.
+6. **Next:** capture the same retained replay in original Wine, then
+   differential a Linux-generated replay in fresh Linux and original-Wine
+   processes.
 7. Only after that gate, connect the generic local planner epoch driver and
    solve Easy practice roots followed by the full Easy route.
 8. Accept success only after the original Wine runtime completes that replay

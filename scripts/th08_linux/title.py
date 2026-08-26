@@ -39,6 +39,12 @@ TITLE_CURSOR_OFFSET = 0
 TITLE_CURRENT_SCREEN_STATE_OFFSET = 12
 TITLE_STATE_TIMER_OFFSET = 16
 TITLE_PREVIOUS_SCREEN_OFFSET = 104
+TITLE_REPLAY_PATHS_OFFSET = 112
+TITLE_REPLAY_PATH_SIZE = 512
+TITLE_MAX_REPLAYS = 60
+TITLE_REPLAY_COUNT_OFFSET = 49800
+TITLE_SELECTED_REPLAY_OFFSET = 49804
+TITLE_SELECTED_REPLAY_STAGE_OFFSET = 49808
 TITLE_IDLE_FRAMES_OFFSET = 49812
 TITLE_CURRENT_SCREEN_OFFSET = 82984
 TITLE_STATE_TIMER2_OFFSET = 82988
@@ -49,6 +55,7 @@ TITLE_CAPTURE_SIZE = TITLE_STATE_OFFSET + 4
 TITLE_SCREEN_START = 0
 TITLE_SCREEN_DIFFICULTY = 4
 TITLE_SCREEN_CHARACTER = 5
+TITLE_SCREEN_REPLAY = 7
 
 TITLE_LIFECYCLE_READY = 0
 TITLE_LIFECYCLE_LOADING = 1
@@ -86,6 +93,10 @@ class TitleSnapshot:
     start_menu_idle_frames: int
     lifecycle_state: int
     game_manager_flags: int
+    replay_count: int = 0
+    selected_replay: int = 0
+    selected_replay_stage: int = 0
+    replay_paths: tuple[str, ...] = ()
 
     @property
     def ready_for_input(self) -> bool:
@@ -132,6 +143,23 @@ def capture_title_snapshot(reader: TitleStateReader) -> TitleSnapshot | None:
     pointer_after = reader.u32(ADDR_TITLE_SCREEN_POINTER)
     if pointer_after != pointer:
         raise RuntimeError("title-screen root changed during one lockstep capture")
+    replay_count = _i32(blob, TITLE_REPLAY_COUNT_OFFSET)
+    if not 0 <= replay_count <= TITLE_MAX_REPLAYS:
+        raise RuntimeError(
+            f"observed invalid title replay count {replay_count}"
+        )
+    replay_paths = []
+    for index in range(replay_count):
+        offset = TITLE_REPLAY_PATHS_OFFSET + index * TITLE_REPLAY_PATH_SIZE
+        encoded = blob[offset : offset + TITLE_REPLAY_PATH_SIZE].split(
+            b"\0", 1
+        )[0]
+        try:
+            replay_paths.append(encoded.decode("ascii"))
+        except UnicodeDecodeError as error:
+            raise RuntimeError(
+                f"title replay path {index} is not ASCII"
+            ) from error
     return TitleSnapshot(
         pointer=pointer,
         cursor=_i32(blob, TITLE_CURSOR_OFFSET),
@@ -148,6 +176,12 @@ def capture_title_snapshot(reader: TitleStateReader) -> TitleSnapshot | None:
         ),
         lifecycle_state=_i32(blob, TITLE_STATE_OFFSET),
         game_manager_flags=reader.u32(ADDR_ENGINE_FLAGS),
+        replay_count=replay_count,
+        selected_replay=_i32(blob, TITLE_SELECTED_REPLAY_OFFSET),
+        selected_replay_stage=_i32(
+            blob, TITLE_SELECTED_REPLAY_STAGE_OFFSET
+        ),
+        replay_paths=tuple(replay_paths),
     )
 
 
@@ -282,12 +316,129 @@ class RouteTitleDriver:
         return TitleDecision(SHOOT, "confirm-shot-type")
 
 
+class ReplayTitleDriver:
+    """Select one named replay, stage, and normal replay mode from feedback."""
+
+    def __init__(
+        self,
+        *,
+        replay_name: str,
+        stage_index: int,
+        replay_mode: int = 0,
+    ) -> None:
+        if not replay_name or "/" in replay_name or "\\" in replay_name:
+            raise ValueError("replay target must be one basename")
+        if not 0 <= stage_index < 9:
+            raise ValueError("replay stage index must be in [0, 8]")
+        if not 0 <= replay_mode < 3:
+            raise ValueError("replay mode must be in [0, 2]")
+        self.replay_name = replay_name
+        self.stage_index = stage_index
+        self.replay_mode = replay_mode
+        self._entered_replay_screen = False
+
+    def decide(
+        self,
+        snapshot: TitleSnapshot | None,
+        *,
+        current_input: int,
+    ) -> TitleDecision:
+        if current_input != 0:
+            return TitleDecision(0, "release")
+        if snapshot is None:
+            return TitleDecision(0, "wait-title-root")
+        if snapshot.lifecycle_state == TITLE_LIFECYCLE_CLOSE:
+            raise RuntimeError("title screen entered the source-defined close state")
+        if snapshot.lifecycle_state != TITLE_LIFECYCLE_READY:
+            return TitleDecision(0, "wait-title-lifecycle")
+
+        if snapshot.current_screen == TITLE_SCREEN_START:
+            if self._entered_replay_screen:
+                raise RuntimeError("replay bootstrap returned to the start menu")
+            if snapshot.current_screen_state != TITLE_CURRENT_STATE_READY:
+                if snapshot.current_screen_state != TITLE_CURRENT_STATE_INIT:
+                    raise RuntimeError(
+                        "unexpected start current-screen state during replay bootstrap"
+                    )
+                return TitleDecision(0, "wait-screen-ready")
+            step = _circular_step(
+                snapshot.cursor,
+                4,
+                _START_MENU_COUNT,
+                negative=UP,
+                positive=DOWN,
+            )
+            if step:
+                return TitleDecision(step, "select-replay-menu")
+            if snapshot.state_timer2 < 10:
+                return TitleDecision(0, "wait-start-confirm-gate")
+            return TitleDecision(SHOOT, "confirm-replay-menu")
+
+        if snapshot.current_screen != TITLE_SCREEN_REPLAY:
+            raise RuntimeError(
+                f"unexpected title screen {snapshot.current_screen} on replay bootstrap"
+            )
+        self._entered_replay_screen = True
+        state = snapshot.current_screen_state
+        if state == 0:
+            return TitleDecision(0, "wait-replay-list")
+        if state == 1:
+            matches = tuple(
+                index
+                for index, path in enumerate(snapshot.replay_paths)
+                if path.rsplit("/", 1)[-1] == self.replay_name
+            )
+            if len(matches) != 1:
+                raise RuntimeError(
+                    f"expected one replay named {self.replay_name!r}, "
+                    f"observed {len(matches)}"
+                )
+            step = _circular_step(
+                snapshot.cursor,
+                matches[0],
+                snapshot.replay_count,
+                negative=UP,
+                positive=DOWN,
+            )
+            if step:
+                return TitleDecision(step, "select-replay")
+            if snapshot.state_timer < 10:
+                return TitleDecision(0, "wait-replay-confirm-gate")
+            return TitleDecision(SHOOT, "confirm-replay")
+        if state == 2:
+            step = _circular_step(
+                snapshot.cursor,
+                self.stage_index,
+                9,
+                negative=UP,
+                positive=DOWN,
+            )
+            if step:
+                return TitleDecision(step, "select-replay-stage")
+            return TitleDecision(SHOOT, "confirm-replay-stage")
+        if state == 3:
+            step = _circular_step(
+                snapshot.cursor,
+                self.replay_mode,
+                3,
+                negative=UP,
+                positive=DOWN,
+            )
+            if step:
+                return TitleDecision(step, "select-replay-mode")
+            return TitleDecision(SHOOT, "confirm-replay-mode")
+        raise RuntimeError(
+            f"unexpected replay-menu current-screen state {state}"
+        )
+
+
 __all__ = (
     "ADDR_GAME_MANAGER_CALC_CALLBACK",
     "ADDR_GAME_MANAGER_LOADING_STATE",
     "ADDR_TITLE_SCREEN_POINTER",
     "EASY_DIFFICULTY",
     "GameplayBootstrapSnapshot",
+    "ReplayTitleDriver",
     "RouteTitleDriver",
     "SAKUYA_REMILIA_SHOT_TYPE",
     "TITLE_CAPTURE_SIZE",
@@ -295,6 +446,7 @@ __all__ = (
     "TITLE_LIFECYCLE_READY",
     "TITLE_SCREEN_CHARACTER",
     "TITLE_SCREEN_DIFFICULTY",
+    "TITLE_SCREEN_REPLAY",
     "TITLE_SCREEN_START",
     "TitleDecision",
     "TitleSnapshot",

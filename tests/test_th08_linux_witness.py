@@ -60,6 +60,21 @@ class LinuxLockstepWitnessTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "g_LastFrameInput"):
             validate_request_memory_witness(_request(), reader)
 
+    def test_can_defer_only_rng_equality_during_async_gameplay_setup(self) -> None:
+        reader = _ScalarReader(
+            {
+                ADDR_RAW_INPUT: 0x0080,
+                ADDR_LAST_FRAME_INPUT: 0x0001,
+                ADDR_GAMEPLAY_RNG: 0x1234,
+            }
+        )
+        witness = validate_request_memory_witness(
+            _request(), reader, verify_rng=False
+        )
+        self.assertEqual(witness.rng_seed, 0x1234)
+        with self.assertRaisesRegex(RuntimeError, "wire=0x9630"):
+            validate_request_memory_witness(_request(), reader)
+
 
 if __name__ == "__main__":
     unittest.main()

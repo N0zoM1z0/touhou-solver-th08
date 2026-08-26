@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import struct
 import unittest
 
@@ -10,6 +11,7 @@ from th08_linux.title import (
     ADDR_TITLE_SCREEN_POINTER,
     EASY_DIFFICULTY,
     RouteTitleDriver,
+    ReplayTitleDriver,
     SAKUYA_REMILIA_SHOT_TYPE,
     TITLE_CAPTURE_SIZE,
     TITLE_CURRENT_SCREEN_OFFSET,
@@ -19,9 +21,15 @@ from th08_linux.title import (
     TITLE_IDLE_FRAMES_OFFSET,
     TITLE_LIFECYCLE_READY,
     TITLE_PREVIOUS_SCREEN_OFFSET,
+    TITLE_REPLAY_COUNT_OFFSET,
+    TITLE_REPLAY_PATHS_OFFSET,
+    TITLE_REPLAY_PATH_SIZE,
     TITLE_SCREEN_CHARACTER,
     TITLE_SCREEN_DIFFICULTY,
     TITLE_SCREEN_START,
+    TITLE_SCREEN_REPLAY,
+    TITLE_SELECTED_REPLAY_OFFSET,
+    TITLE_SELECTED_REPLAY_STAGE_OFFSET,
     TITLE_START_MENU_IDLE_FRAMES_OFFSET,
     TITLE_STATE_OFFSET,
     TITLE_STATE_TIMER2_OFFSET,
@@ -110,6 +118,31 @@ class LinuxTitleCaptureTests(unittest.TestCase):
         self.assertEqual(snapshot.state_timer2, 11)
         self.assertEqual(snapshot.character_menu_length, 12)
 
+    def test_decodes_compacted_replay_paths(self) -> None:
+        reader = _MemoryReader()
+        pointer = 0x20000000
+        blob = bytearray(TITLE_CAPTURE_SIZE)
+        struct.pack_into("<i", blob, TITLE_REPLAY_COUNT_OFFSET, 2)
+        struct.pack_into("<i", blob, TITLE_SELECTED_REPLAY_OFFSET, 1)
+        struct.pack_into("<i", blob, TITLE_SELECTED_REPLAY_STAGE_OFFSET, 5)
+        first = b"./replay/th8_03.rpy\0"
+        second = b"./replay/th8_15.rpy\0"
+        blob[TITLE_REPLAY_PATHS_OFFSET : TITLE_REPLAY_PATHS_OFFSET + len(first)] = first
+        second_offset = TITLE_REPLAY_PATHS_OFFSET + TITLE_REPLAY_PATH_SIZE
+        blob[second_offset : second_offset + len(second)] = second
+        reader.put_u32(ADDR_TITLE_SCREEN_POINTER, pointer)
+        reader.put(pointer, blob)
+
+        snapshot = capture_title_snapshot(reader)
+
+        assert snapshot is not None
+        self.assertEqual(
+            snapshot.replay_paths,
+            ("./replay/th8_03.rpy", "./replay/th8_15.rpy"),
+        )
+        self.assertEqual(snapshot.selected_replay, 1)
+        self.assertEqual(snapshot.selected_replay_stage, 5)
+
     def test_absent_title_root_is_not_dereferenced(self) -> None:
         self.assertIsNone(capture_title_snapshot(_MemoryReader()))
 
@@ -197,6 +230,51 @@ class LinuxRouteTitleDriverTests(unittest.TestCase):
     def test_unexpected_route_screen_fails_closed(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "unexpected title screen"):
             self.driver.decide(_snapshot(screen=7, cursor=0), current_input=0)
+
+
+class LinuxReplayTitleDriverTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.driver = ReplayTitleDriver(
+            replay_name="th8_15.rpy",
+            stage_index=5,
+        )
+
+    def test_selects_replay_from_observed_compacted_path(self) -> None:
+        replay_list = replace(
+            _snapshot(screen=TITLE_SCREEN_REPLAY, cursor=0),
+            state_timer=10,
+            replay_count=2,
+            replay_paths=(
+                "./replay/th8_03.rpy",
+                "./replay/th8_15.rpy",
+            ),
+        )
+        self.assertEqual(
+            self.driver.decide(replay_list, current_input=0).input_mask,
+            DOWN,
+        )
+        selected = replace(replay_list, cursor=1)
+        self.assertEqual(
+            self.driver.decide(selected, current_input=0).input_mask,
+            SHOOT,
+        )
+
+    def test_selects_stage_and_normal_mode_from_replay_substates(self) -> None:
+        stage = _snapshot(screen=TITLE_SCREEN_REPLAY, cursor=5, screen_state=2)
+        mode = _snapshot(screen=TITLE_SCREEN_REPLAY, cursor=0, screen_state=3)
+        self.assertEqual(
+            self.driver.decide(stage, current_input=0).input_mask,
+            SHOOT,
+        )
+        self.assertEqual(
+            self.driver.decide(mode, current_input=0).input_mask,
+            SHOOT,
+        )
+
+    def test_missing_named_replay_fails_closed(self) -> None:
+        replay_list = _snapshot(screen=TITLE_SCREEN_REPLAY, cursor=0)
+        with self.assertRaisesRegex(RuntimeError, "observed 0"):
+            self.driver.decide(replay_list, current_input=0)
 
 
 if __name__ == "__main__":

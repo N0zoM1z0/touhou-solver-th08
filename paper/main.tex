@@ -185,8 +185,19 @@ release epoch.  Source review then corrected the wire witness itself: the
 bridge carries supervisor current/previous input, not the adjacent GUI replay
 pair used by the first all-neutral probe.  A dynamic 134-epoch bootstrap
 matches the corrected globals and RNG through nonzero edges.  These witnesses
-do not promote Linux gameplay: ordinary replay recording and the cross-runtime
-semantic differential remain the next gates.
+do not by themselves promote Linux gameplay.
+
+A retained retail-format replay provides the first gameplay repeatability
+gate.  An exact field comparator initially localized an apparent divergence to
+the RNG generation counter even though seeds and gameplay state agreed.  This
+was a measurement-origin error, not floating-point drift: legacy replay setup
+sets the stage seed but omits the per-frame chain that resets the counter, so
+asynchronous setup contributes a variable prefix.  The fingerprint now keeps
+that prefix only as diagnostic provenance and compares the exact call distance
+from the first blocked gameplay epoch.  Two subsequent 300-epoch Linux runs
+match at every semantic field.  Thus the Linux lane is internally repeatable
+over this bounded prefix; original-runtime comparison, x87 error envelopes,
+Linux replay generation, and complete NMNB authority remain open.
 
 \section{Source-Stateful Offline Laboratory}
 

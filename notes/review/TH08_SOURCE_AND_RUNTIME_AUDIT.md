@@ -3018,7 +3018,7 @@ path.
 
 ### AUD-097 — Separate search time from game time, with replay as the authority bridge
 
-Status: **SOURCE-CONFIRMED ARCHITECTURE; BRIDGE IMPLEMENTED; DETERMINISM PENDING**
+Status: **LINUX SELF-REPEAT OBSERVED; CROSS-RUNTIME DETERMINISM PENDING**
 
 The native Linux reconstruction changes the control problem if used at the
 correct boundary. It compiles the shared gameplay, ECL, manager, player, and
@@ -3167,6 +3167,50 @@ single bounded startup budget while continuing to monitor exact-child exit.
 A deterministic fake runtime now holds a 50-ms bind-to-listen gap; five
 consecutive 24-test focused suites pass.  This timeout still governs startup
 only and does not introduce any route-duration limit.
+
+### AUD-102 — Async gameplay setup invalidates a cross-thread RNG witness
+
+Status: **SOURCE-LOCALIZED AND FIXED AT THE WITNESS BOUNDARY**
+
+The bridge blocks the main thread inside DirectInput sampling, but
+`GameplaySetupThread` can still run while GameManager loading state is
+nonzero. During that interval, the RNG seed stamped into an input request can
+legitimately precede a setup-thread RNG mutation observed through
+`/proc/<pid>/mem`. Intermittently requiring those two reads to agree therefore
+claimed an atomic snapshot across threads that the runtime does not provide.
+
+The startup witness now defers only request-versus-memory RNG equality while
+the GameManager calc chain is registered and loading state remains nonzero.
+Supervisor current and previous input remain exact throughout; after loading
+state reaches zero, the complete input/RNG witness is exact again and every
+gameplay fingerprint uses that strict path. This does not add a gameplay
+tolerance and does not excuse a post-load RNG mismatch.
+
+### AUD-103 — Legacy replay RNG call counts inherited a nondeterministic setup prefix
+
+Status: **SOURCE-CONFIRMED MEASUREMENT BUG; FIXED; 300-EPOCH SELF-REPEAT EXACT**
+
+The first two bounded Stage-5 replay fingerprints disagreed despite identical
+RNG seeds and identical first/last gameplay state. New gzip JSONL traces and
+an exact first-divergence comparator localized the first unequal field to the
+absolute `g_Rng.generationCount`: 92 versus 90 at relative epoch 1, retaining
+the same offset through epoch 300.
+
+Source explains the result. `Rng::SetSeed` changes only the seed. For old
+replays whose header byte `unk0x6` is zero, replay registration does not add
+the priority-7 `OnUpdateLowPrio` chain that resets the generation counter.
+Consequently the counter contains a variable async-setup prefix even though
+the replay RNG trajectory is identical. The semantic-spine v3 record retains
+that absolute value only under `trace_locators` and compares the modulo-u32
+call distance from the first blocked gameplay sample. RNG seed and every
+subsequent relative call increment remain exact.
+
+Two fresh 300-epoch runs then produced the same semantic SHA-256
+`4d2f02cb6821a30089ba078e4cce31efd6c5d91de6032f469519f5a3fba9f04f`;
+the field-level comparator reports 300 equal records. The compressed traces
+were 12 KiB each and remain temporary, not repository artifacts. This closes
+Linux self-repeat only. No x87 allowance, Linux/original equivalence, replay
+clear, hit, or NMNB claim follows.
 
 ## Offline Verification Record
 

@@ -27,6 +27,8 @@ class LockstepMemoryWitness:
 def validate_request_memory_witness(
     request: InputRequest,
     reader: WireStateReader,
+    *,
+    verify_rng: bool = True,
 ) -> LockstepMemoryWitness:
     """Match the wire fields to their exact source globals, or fail closed."""
 
@@ -36,11 +38,22 @@ def validate_request_memory_witness(
         rng_seed=reader.u16(ADDR_GAMEPLAY_RNG),
     )
     if request.current_input != witness.supervisor_current_input:
-        raise RuntimeError("bridge/g_CurFrameInput memory witness mismatch")
+        raise RuntimeError(
+            "bridge/g_CurFrameInput memory witness mismatch: "
+            f"wire={request.current_input:#06x}, "
+            f"memory={witness.supervisor_current_input:#06x}"
+        )
     if request.previous_input != witness.supervisor_previous_input:
-        raise RuntimeError("bridge/g_LastFrameInput memory witness mismatch")
-    if request.rng_seed != witness.rng_seed:
-        raise RuntimeError("bridge/RNG memory witness mismatch")
+        raise RuntimeError(
+            "bridge/g_LastFrameInput memory witness mismatch: "
+            f"wire={request.previous_input:#06x}, "
+            f"memory={witness.supervisor_previous_input:#06x}"
+        )
+    if verify_rng and request.rng_seed != witness.rng_seed:
+        raise RuntimeError(
+            "bridge/RNG memory witness mismatch: "
+            f"wire={request.rng_seed:#06x}, memory={witness.rng_seed:#06x}"
+        )
     if not request.replay_target_stamped:
         raise RuntimeError("runtime did not stamp original replay target")
     return witness

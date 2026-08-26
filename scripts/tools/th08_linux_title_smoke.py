@@ -73,8 +73,14 @@ def run(args: argparse.Namespace) -> int:
         with session:
             for _ in range(args.maximum_bootstrap_epochs):
                 request = session.bridge.receive()
-                validate_request_memory_witness(request, session.reader)
                 gameplay = capture_gameplay_bootstrap(session.reader)
+                validate_request_memory_witness(
+                    request,
+                    session.reader,
+                    verify_rng=(
+                        not gameplay.registered or gameplay.loading_state == 0
+                    ),
+                )
                 if gameplay.registered:
                     session.bridge.respond(0)
                     key = (
