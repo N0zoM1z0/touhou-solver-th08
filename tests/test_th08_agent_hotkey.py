@@ -49,6 +49,8 @@ class AgentHotkeyTests(unittest.TestCase):
         self.assertFalse(parsed.enable_finalb_scale_source_authority)
         self.assertIsNone(parsed.future_source_retain_dir)
         self.assertEqual(parsed.future_source_retain_spell, [])
+        self.assertEqual(parsed.enemy_sensing_profile, "async-full")
+        self.assertFalse(parsed.local_only)
 
     def test_active_diagnostics_are_explicit(self) -> None:
         parsed = build_parser().parse_args(
@@ -182,6 +184,15 @@ class AgentHotkeyTests(unittest.TestCase):
                 _arguments(**{attribute: rollback})
             )
             self.assertEqual(getattr(parsed, attribute), rollback)
+        source_contiguous = build_parser().parse_args(
+            _arguments(enemy_sensing_profile="source-contiguous")
+        )
+        self.assertEqual(
+            source_contiguous.enemy_sensing_profile,
+            "source-contiguous",
+        )
+        local = build_parser().parse_args(_arguments(local_only=True))
+        self.assertTrue(local.local_only)
 
     def test_terminal_summary_reader_is_bounded(self) -> None:
         with TemporaryDirectory() as temporary:

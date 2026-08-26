@@ -13,6 +13,7 @@ from th08_enemy_mode import (
 )
 from th08_live.enemy_sensor import (
     ENEMY_LOCAL_PREFIX_SIZE,
+    ENEMY_POOL_BASE,
     ENEMY_POOL_SIZE,
     capture_enemy_pool_prefix_contiguous,
 )
@@ -202,6 +203,7 @@ def capture_player_enemy_mode_prefix(
     include_main_ecl_vms: bool = False,
     include_combat_progress: bool = False,
     pool_buffer: object | None = None,
+    pool_base: int = ENEMY_POOL_BASE,
 ) -> PlayerEnemyModePrefixCapture:
     """Capture a stable player/input root around the existing enemy prefix.
 
@@ -227,6 +229,7 @@ def capture_player_enemy_mode_prefix(
             include_main_ecl_vms=include_main_ecl_vms,
             include_combat_progress=include_combat_progress,
             pool_buffer=pool_buffer,
+            pool_base=pool_base,
         )
         player_after = _read_player_mode(reader)
         mismatches = _mode_sync_mismatches(

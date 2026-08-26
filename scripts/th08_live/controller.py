@@ -335,6 +335,7 @@ from th08_live.enemy_sensor import (  # noqa: F401
     ENEMY_POOL_BASE,
     ENEMY_POOL_SIZE,
     ENEMY_POSITION_OFFSET,
+    ENEMY_SLOT_ZERO_BASE,
     ENEMY_STRIDE,
     ENEMY_VELOCITY_OFFSET,
     PLAYER_LETHAL_AABB_OFFSET,
@@ -2884,6 +2885,13 @@ def _prepare_live_run(args: argparse.Namespace) -> None:
         raise ValueError(
             "local pipeline root shadow cadence cannot be negative"
         )
+    enemy_sensing_profile = getattr(
+        args,
+        "enemy_sensing_profile",
+        "async-full",
+    )
+    if enemy_sensing_profile not in {"async-full", "source-contiguous"}:
+        raise ValueError("unknown enemy sensing profile")
     runtime_ecl_static_image = getattr(
         args,
         "runtime_ecl_static_image",
@@ -3010,6 +3018,19 @@ def _run_live_session(
     reader = session.reader
     output = session.output
     trace_sink = TraceSink(output)
+    enemy_sensing_profile = getattr(
+        args,
+        "enemy_sensing_profile",
+        "async-full",
+    )
+    source_contiguous_enemy = (
+        enemy_sensing_profile == "source-contiguous"
+    )
+    enemy_prefix_pool_base = (
+        ENEMY_SLOT_ZERO_BASE
+        if source_contiguous_enemy
+        else ENEMY_POOL_BASE
+    )
     previous_mask = 0
     previous_direction = 0
     previous_counter: int | None = None
@@ -3371,6 +3392,7 @@ def _run_live_session(
                     ),
                     "enemy_prefix_sensor": {
                         "pool_slots": ENEMY_LOCAL_PREFIX_SIZE,
+                        "pool_base": enemy_prefix_pool_base,
                         "bytes": (
                             ENEMY_LOCAL_PREFIX_SIZE * ENEMY_STRIDE
                         ),
@@ -3478,9 +3500,17 @@ def _run_live_session(
                         "hard_no_bomb_required": True,
                     },
                     "enemy_body_sensor": (
-                        "synchronous_latent_contact_prefix_plus_"
-                        "async_enabled_tail_with_observed_world_motion"
+                        (
+                            "source_slot_zero_synchronous_prefix_"
+                            "plus_source_contiguous_full_background_pool"
+                        )
+                        if source_contiguous_enemy
+                        else (
+                            "synchronous_latent_contact_prefix_plus_"
+                            "async_enabled_tail_with_observed_world_motion"
+                        )
                     ),
+                    "enemy_sensing_profile": enemy_sensing_profile,
                     "enemy_body_synchronous_prefix_slots": (
                         ENEMY_LOCAL_PREFIX_SIZE
                     ),
@@ -3813,11 +3843,6 @@ def _run_live_session(
             current_stage=int(state["stage_route_index"]),
             now=time.perf_counter(),
         )
-        enemy_future = enemy_executor.submit(
-            capture_enemy_pool_snapshot,
-            reader,
-        )
-        enemy_last_submit = int(state["enemy_manager_frame"])
         item_sensor_enabled = ITEM_OBJECTIVES_ENABLED or bool(
             args.trace_items
         )
@@ -3825,15 +3850,55 @@ def _run_live_session(
         enemy_prefix_buffer = reader.allocate_buffer(
             ENEMY_LOCAL_PREFIX_SIZE * ENEMY_STRIDE
         )
-        fresh_enemy_issue_dependencies = FreshEnemyIssueDependencies(
-            capture_prefix=lambda active_reader: (
-                capture_enemy_pool_prefix_contiguous(
+        enemy_background_buffer = (
+            reader.allocate_buffer(ENEMY_POOL_SIZE * ENEMY_STRIDE)
+            if source_contiguous_enemy
+            else None
+        )
+
+        def capture_enemy_background(
+            active_reader: object,
+        ) -> EnemyPoolSnapshot:
+            if source_contiguous_enemy:
+                return capture_enemy_pool_snapshot_contiguous(
                     active_reader,
-                    pool_buffer=enemy_prefix_buffer,
+                    pool_base=ENEMY_SLOT_ZERO_BASE,
+                    pool_size=ENEMY_POOL_SIZE,
+                    pool_buffer=enemy_background_buffer,
                 )
-            ),
+            return capture_enemy_pool_snapshot(active_reader)
+
+        def capture_local_enemy_prefix(
+            active_reader: object,
+        ) -> EnemyPoolSnapshot:
+            return capture_enemy_pool_prefix_contiguous(
+                active_reader,
+                include_main_ecl_vms=False,
+                include_combat_progress=kill_before_saturation,
+                pool_buffer=enemy_prefix_buffer,
+                pool_base=enemy_prefix_pool_base,
+            )
+
+        def merge_local_enemy_prefix(
+            background_bodies: tuple[EnemyBody, ...],
+            prefix_bodies: tuple[EnemyBody, ...],
+        ) -> tuple[EnemyBody, ...]:
+            return merge_enemy_pool_prefix(
+                background_bodies,
+                prefix_bodies,
+                pool_base=enemy_prefix_pool_base,
+            )
+
+        enemy_future = enemy_executor.submit(
+            capture_enemy_background,
+            reader,
+        )
+        enemy_last_submit = int(state["enemy_manager_frame"])
+
+        fresh_enemy_issue_dependencies = FreshEnemyIssueDependencies(
+            capture_prefix=capture_local_enemy_prefix,
             detect_changes=issue_enemy_snapshot_changes,
-            merge_prefix=merge_enemy_pool_prefix,
+            merge_prefix=merge_local_enemy_prefix,
             monotonic=time.perf_counter,
         )
         deadline = time.perf_counter() + args.duration
@@ -4271,7 +4336,7 @@ def _run_live_session(
                 )
             ):
                 enemy_future = enemy_executor.submit(
-                    capture_enemy_pool_snapshot,
+                    capture_enemy_background,
                     reader,
                 )
                 enemy_last_submit = counter
@@ -4308,20 +4373,14 @@ def _run_live_session(
                         include_main_ecl_vms=False,
                         include_combat_progress=kill_before_saturation,
                         pool_buffer=enemy_prefix_buffer,
+                        pool_base=enemy_prefix_pool_base,
                     )
                 )
                 enemy_prefix_snapshot = (
                     enemy_mode_prefix_capture.enemy_snapshot
                 )
             else:
-                enemy_prefix_snapshot = (
-                    capture_enemy_pool_prefix_contiguous(
-                        reader,
-                        include_main_ecl_vms=False,
-                        include_combat_progress=kill_before_saturation,
-                        pool_buffer=enemy_prefix_buffer,
-                    )
-                )
+                enemy_prefix_snapshot = capture_local_enemy_prefix(reader)
             enemy_prefix_capture_ms = (
                 time.perf_counter() - enemy_prefix_capture_started
             ) * 1000.0
@@ -4334,7 +4393,8 @@ def _run_live_session(
                 frame=int(state["enemy_manager_frame"]),
             )
             prefix_end = (
-                ENEMY_POOL_BASE + ENEMY_LOCAL_PREFIX_SIZE * ENEMY_STRIDE
+                enemy_prefix_pool_base
+                + ENEMY_LOCAL_PREFIX_SIZE * ENEMY_STRIDE
             )
             dormant_enemy_body_pointers = frozenset(
                 set(prefix_dormant_enemy_body_pointers)
@@ -4344,7 +4404,7 @@ def _run_live_session(
                     if pointer >= prefix_end
                 }
             )
-            enemy_bodies = merge_enemy_pool_prefix(
+            enemy_bodies = merge_local_enemy_prefix(
                 enemy_bodies,
                 enemy_prefix_bodies,
             )

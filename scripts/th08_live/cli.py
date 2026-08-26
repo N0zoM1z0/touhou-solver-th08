@@ -219,6 +219,16 @@ def build_live_parser(
         ),
     )
     parser.add_argument(
+        "--enemy-sensing-profile",
+        choices=("async-full", "source-contiguous"),
+        default="async-full",
+        help=(
+            "enemy-body coverage strategy; source-contiguous reads native "
+            "slots 0..63 synchronously and retains a one-read asynchronous "
+            "scan of every source-authoritative slot 0..479"
+        ),
+    )
+    parser.add_argument(
         "--viability-audit-dir",
         type=Path,
         help=(

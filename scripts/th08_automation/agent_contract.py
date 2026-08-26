@@ -74,6 +74,8 @@ def build_long_run_arguments(
     local_hazard_backend: str = "native",
     local_beam_reducer: str = "native",
     bullet_decode_backend: str = "native",
+    enemy_sensing_profile: str = "async-full",
+    local_only: bool = False,
     duration_seconds: float = LONG_RUN_DURATION_SECONDS,
 ) -> list[str]:
     if safety_value_horizon < 0:
@@ -92,6 +94,8 @@ def build_long_run_arguments(
         raise ValueError("unknown local beam reducer")
     if bullet_decode_backend not in {"python", "native"}:
         raise ValueError("unknown bullet decode backend")
+    if enemy_sensing_profile not in {"async-full", "source-contiguous"}:
+        raise ValueError("unknown enemy sensing profile")
     if (future_source_retain_dir is None) != (
         not future_source_retain_spells
     ):
@@ -182,6 +186,8 @@ def build_long_run_arguments(
         arguments.append("--trace-enemy-mode-transitions")
     if trace_enemy_lifecycle_events:
         arguments.append("--trace-enemy-lifecycle-events")
+    if local_only:
+        arguments.append("--local-only")
     if kill_before_saturation:
         arguments.append("--kill-before-saturation")
     if ordinary_preexhaustion_authority:
@@ -241,4 +247,5 @@ def build_long_run_arguments(
     arguments.extend(("--local-hazard-backend", local_hazard_backend))
     arguments.extend(("--local-beam-reducer", local_beam_reducer))
     arguments.extend(("--bullet-decode-backend", bullet_decode_backend))
+    arguments.extend(("--enemy-sensing-profile", enemy_sensing_profile))
     return arguments

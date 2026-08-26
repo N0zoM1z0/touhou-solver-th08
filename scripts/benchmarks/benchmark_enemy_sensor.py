@@ -8,6 +8,9 @@ import json
 import statistics
 
 from th08_live_dodge_agent import (
+    ENEMY_POOL_SIZE,
+    ENEMY_SLOT_ZERO_BASE,
+    ENEMY_STRIDE,
     capture_enemy_pool_snapshot_contiguous,
     capture_enemy_pool_snapshot_sparse,
 )
@@ -33,12 +36,20 @@ def main() -> int:
 
     api = Win32()
     reader = ProcessReader(api, args.pid)
+    contiguous_buffer = reader.allocate_buffer(
+        ENEMY_POOL_SIZE * ENEMY_STRIDE
+    )
     timings = {"contiguous": [], "sparse": []}
     body_counts = {"contiguous": [], "sparse": []}
     stable_pair_equivalence = []
     try:
         for _ in range(args.iterations):
-            contiguous = capture_enemy_pool_snapshot_contiguous(reader)
+            contiguous = capture_enemy_pool_snapshot_contiguous(
+                reader,
+                pool_base=ENEMY_SLOT_ZERO_BASE,
+                pool_size=ENEMY_POOL_SIZE,
+                pool_buffer=contiguous_buffer,
+            )
             sparse = capture_enemy_pool_snapshot_sparse(reader)
             for name, snapshot in (
                 ("contiguous", contiguous),

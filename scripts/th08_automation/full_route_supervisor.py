@@ -183,6 +183,15 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     difficulty = args.difficulty
+    enemy_sensing_profile = (
+        "source-contiguous"
+        if difficulty.menu_index == 0
+        else "async-full"
+    )
+    local_only = bool(
+        difficulty.menu_index == 0
+        and not args.ordinary_preexhaustion_authority
+    )
     run_id = (
         f"{difficulty.key}_route2_fullrun_unattended_{timestamp}"
     )
@@ -224,6 +233,8 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
             args.ordinary_preexhaustion_authority
         ),
         "authority_only_corridor": args.authority_only_corridor,
+        "enemy_sensing_profile": enemy_sensing_profile,
+        "local_only": local_only,
         "diagnostic_continue_root_only_scale": (
             args.diagnostic_continue_root_only_scale
         ),
@@ -257,6 +268,8 @@ def run_trial(args: argparse.Namespace, *, api: Win32) -> str:
                 args.ordinary_preexhaustion_authority
             ),
             authority_only_corridor=args.authority_only_corridor,
+            enemy_sensing_profile=enemy_sensing_profile,
+            local_only=local_only,
             diagnostic_continue_root_only_scale=(
                 args.diagnostic_continue_root_only_scale
             ),

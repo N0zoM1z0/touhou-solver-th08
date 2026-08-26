@@ -83,6 +83,8 @@ class AgentHotkey:
         local_hazard_backend: str = "native",
         local_beam_reducer: str = "native",
         bullet_decode_backend: str = "native",
+        enemy_sensing_profile: str | None = None,
+        local_only: bool | None = None,
         duration_seconds: float = LONG_RUN_DURATION_SECONDS,
         detailed_summary: bool = True,
     ) -> None:
@@ -127,6 +129,22 @@ class AgentHotkey:
             )
         if bullet_decode_backend not in {"python", "native"}:
             raise ValueError("unknown bullet decode backend")
+        if enemy_sensing_profile is None:
+            enemy_sensing_profile = (
+                "source-contiguous"
+                if expected_difficulty == 0
+                else "async-full"
+            )
+        if enemy_sensing_profile not in {
+            "async-full",
+            "source-contiguous",
+        }:
+            raise ValueError("unknown enemy sensing profile")
+        if local_only is None:
+            local_only = bool(
+                expected_difficulty == 0
+                and not ordinary_preexhaustion_authority
+            )
         if (runtime_ecl_static_image is None) != (
             runtime_ecl_static_sha256 is None
         ):
@@ -191,6 +209,8 @@ class AgentHotkey:
         self.local_hazard_backend = local_hazard_backend
         self.local_beam_reducer = local_beam_reducer
         self.bullet_decode_backend = bullet_decode_backend
+        self.enemy_sensing_profile = enemy_sensing_profile
+        self.local_only = local_only
         self.duration_seconds = duration_seconds
         self.detailed_summary = detailed_summary
         self.artifact_dir = (
@@ -198,7 +218,8 @@ class AgentHotkey:
             / "artifacts"
             / "runtime_reports"
         )
-        prewarm_th08_corridor()
+        if not self.local_only:
+            prewarm_th08_corridor()
 
     def _open_target(self) -> tuple[int, ProcessReader, dict[str, object]]:
         pid = self.api.find_pid(TARGET_EXE)
@@ -368,6 +389,8 @@ class AgentHotkey:
                 local_hazard_backend=self.local_hazard_backend,
                 local_beam_reducer=self.local_beam_reducer,
                 bullet_decode_backend=self.bullet_decode_backend,
+                enemy_sensing_profile=self.enemy_sensing_profile,
+                local_only=self.local_only,
                 duration_seconds=self.duration_seconds,
             )
             if not gameplay_active:

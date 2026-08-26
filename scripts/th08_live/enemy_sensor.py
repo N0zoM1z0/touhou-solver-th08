@@ -138,11 +138,11 @@ def enemy_body_contact_enabled(body: EnemyBody) -> bool:
 
 
 def enemy_pointer_in_scanned_pool(pointer: int) -> bool:
-    """Return whether a pointer is one of the 480 async-scanned slots."""
+    """Return whether a pointer is one of the 480 manager-scanned slots."""
 
-    offset = pointer - ENEMY_POOL_BASE
+    offset = pointer - ENEMY_SLOT_ZERO_BASE
     return (
-        0 <= offset < ENEMY_POOL_SIZE * ENEMY_STRIDE
+        0 <= offset < ENEMY_MANAGER_SCANNED_SLOT_COUNT * ENEMY_STRIDE
         and offset % ENEMY_STRIDE == 0
     )
 
@@ -260,18 +260,47 @@ def decode_enemy_bodies(
 
 def capture_enemy_pool_snapshot_contiguous(
     reader: ProcessReader,
+    *,
+    pool_base: int = ENEMY_POOL_BASE,
+    pool_size: int = ENEMY_POOL_SIZE,
+    pool_buffer: object | None = None,
 ) -> EnemyPoolSnapshot:
+    """Capture a full pool with one frame-bracketed process-memory read.
+
+    ``pool_buffer`` is owned by the caller.  A background worker can therefore
+    reuse one 10.3 MiB buffer instead of allocating and copying it every scan.
+    """
+
+    if not 0 < pool_size <= ENEMY_POOL_SIZE:
+        raise ValueError("enemy pool size must belong to the native pool")
+    read_size = pool_size * ENEMY_STRIDE
+    pool_blob: memoryview | None = None
+    if pool_buffer is not None:
+        pool_blob = memoryview(pool_buffer)
+        if pool_blob.readonly:
+            raise ValueError("enemy pool buffer must be writable")
+        if pool_blob.ndim != 1 or pool_blob.format != "B":
+            pool_blob = pool_blob.cast("B")
+        if len(pool_blob) != read_size:
+            raise ValueError(
+                "enemy pool buffer must exactly match the requested pool"
+            )
     started = time.perf_counter()
     frame_before = reader.u32(ADDR_ENEMY_MANAGER_FRAME)
-    blob = reader.read(
-        ENEMY_POOL_BASE,
-        ENEMY_POOL_SIZE * ENEMY_STRIDE,
-    )
+    if pool_blob is None:
+        blob = reader.read(pool_base, read_size)
+    else:
+        reader.read_into(pool_base, pool_buffer)
+        blob = pool_blob
     frame_after = reader.u32(ADDR_ENEMY_MANAGER_FRAME)
     return EnemyPoolSnapshot(
         frame_before,
         frame_after,
-        decode_enemy_bodies(blob),
+        decode_enemy_bodies(
+            blob,
+            pool_base=pool_base,
+            pool_size=pool_size,
+        ),
         (time.perf_counter() - started) * 1000.0,
     )
 
@@ -284,6 +313,7 @@ def capture_enemy_pool_prefix_contiguous(
     include_main_ecl_vms: bool = False,
     include_combat_progress: bool = False,
     pool_buffer: object | None = None,
+    pool_base: int = ENEMY_POOL_BASE,
 ) -> EnemyPoolSnapshot:
     """Capture the allocation head once per local decision.
 
@@ -314,15 +344,15 @@ def capture_enemy_pool_prefix_contiguous(
     for attempt in range(1, maximum_attempts + 1):
         frame_before = reader.u32(ADDR_ENEMY_MANAGER_FRAME)
         if pool_blob is None:
-            blob = reader.read(ENEMY_POOL_BASE, read_size)
+            blob = reader.read(pool_base, read_size)
         else:
-            reader.read_into(ENEMY_POOL_BASE, pool_buffer)
+            reader.read_into(pool_base, pool_buffer)
             blob = pool_blob
         frame_after = reader.u32(ADDR_ENEMY_MANAGER_FRAME)
         main_ecl_vm_inventory = (
             decode_enemy_main_ecl_vm_inventory(
                 blob,
-                pool_base=ENEMY_POOL_BASE,
+                pool_base=pool_base,
                 pool_size=pool_size,
                 enemy_stride=ENEMY_STRIDE,
                 enemy_flags_offset=ENEMY_FLAGS_OFFSET,
@@ -334,7 +364,7 @@ def capture_enemy_pool_prefix_contiguous(
         combat_progress_inventory = (
             decode_enemy_combat_progress_inventory(
                 blob,
-                pool_base=ENEMY_POOL_BASE,
+                pool_base=pool_base,
                 pool_size=pool_size,
                 enemy_stride=ENEMY_STRIDE,
                 enemy_active_flag=ENEMY_ACTIVE_FLAG,
@@ -347,6 +377,7 @@ def capture_enemy_pool_prefix_contiguous(
             frame_after,
             decode_enemy_bodies(
                 blob,
+                pool_base=pool_base,
                 pool_size=pool_size,
                 include_contact_disabled=True,
             ),
@@ -364,15 +395,12 @@ def capture_enemy_pool_prefix_contiguous(
 def read_enemy_bodies_sparse(
     reader: ProcessReader,
 ) -> tuple[EnemyBody, ...]:
-    """Read the manager singleton plus every ordinary pool body."""
+    """Read every source-authoritative manager slot with scalar probes."""
 
     bodies = []
     pointers = (
-        ENEMY_MANAGER_TEMPLATE_BASE,
-        *(
-            ENEMY_POOL_BASE + slot * ENEMY_STRIDE
-            for slot in range(ENEMY_POOL_SIZE)
-        ),
+        ENEMY_SLOT_ZERO_BASE + slot * ENEMY_STRIDE
+        for slot in range(ENEMY_MANAGER_SCANNED_SLOT_COUNT)
     )
     for pointer in pointers:
         flags = reader.u32(pointer + ENEMY_FLAGS_OFFSET)
@@ -440,16 +468,17 @@ def merge_enemy_pool_prefix(
     prefix_bodies: tuple[EnemyBody, ...],
     *,
     pool_size: int = ENEMY_LOCAL_PREFIX_SIZE,
+    pool_base: int = ENEMY_POOL_BASE,
 ) -> tuple[EnemyBody, ...]:
     """Replace stale background copies in the synchronously read prefix."""
 
     if not 0 < pool_size <= ENEMY_POOL_SIZE:
         raise ValueError("enemy prefix size must belong to the native pool")
-    prefix_end = ENEMY_POOL_BASE + pool_size * ENEMY_STRIDE
+    prefix_end = pool_base + pool_size * ENEMY_STRIDE
     tail = tuple(
         body
         for body in background_bodies
-        if not ENEMY_POOL_BASE <= body.pointer < prefix_end
+        if not pool_base <= body.pointer < prefix_end
     )
     return prefix_bodies + tail
 
@@ -644,10 +673,14 @@ def capture_hit_contact_observation(
             PLAYER_LETHAL_AABB_SIZE,
         )
         enemy_blob = reader.read(
-            ENEMY_POOL_BASE,
-            ENEMY_POOL_SIZE * ENEMY_STRIDE,
+            ENEMY_SLOT_ZERO_BASE,
+            ENEMY_MANAGER_SCANNED_SLOT_COUNT * ENEMY_STRIDE,
         )
-        enemy_bodies = decode_enemy_bodies(enemy_blob)
+        enemy_bodies = decode_enemy_bodies(
+            enemy_blob,
+            pool_base=ENEMY_SLOT_ZERO_BASE,
+            pool_size=ENEMY_MANAGER_SCANNED_SLOT_COUNT,
+        )
         frame_after = reader.u32(ADDR_ENEMY_MANAGER_FRAME)
         player_aabb = decode_player_lethal_aabb(player_blob)
         observation = {

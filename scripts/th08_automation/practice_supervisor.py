@@ -225,6 +225,15 @@ def run_trial(
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     difficulty = args.difficulty
+    enemy_sensing_profile = (
+        "source-contiguous"
+        if difficulty.menu_index == 0
+        else "async-full"
+    )
+    local_only = bool(
+        difficulty.menu_index == 0
+        and not args.ordinary_preexhaustion_authority
+    )
     run_kind = "unattended"
     run_id = (
         f"{difficulty.key}_route2_stage{stage.key}_{run_kind}_{timestamp}"
@@ -305,6 +314,8 @@ def run_trial(
         "local_hazard_backend": args.local_hazard_backend,
         "local_beam_reducer": args.local_beam_reducer,
         "bullet_decode_backend": args.bullet_decode_backend,
+        "enemy_sensing_profile": enemy_sensing_profile,
+        "local_only": local_only,
         "agent_duration_seconds": args.agent_duration,
         "trial_timeout_seconds": args.trial_timeout,
         "save_replay_slot": args.save_replay_slot,
@@ -372,6 +383,8 @@ def run_trial(
             local_hazard_backend=args.local_hazard_backend,
             local_beam_reducer=args.local_beam_reducer,
             bullet_decode_backend=args.bullet_decode_backend,
+            enemy_sensing_profile=enemy_sensing_profile,
+            local_only=local_only,
             duration_seconds=args.agent_duration,
             detailed_summary=True,
         )

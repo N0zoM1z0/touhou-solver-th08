@@ -1,0 +1,54 @@
+{
+  "schema": "th08-enemy-prefix-profile-audit-v2",
+  "generated_at": "2026-08-26",
+  "profile": {
+    "native_slot_start": 0,
+    "native_slot_end_inclusive": 63,
+    "asynchronous_native_slot_start": 0,
+    "asynchronous_native_slot_end_inclusive": 479,
+    "asynchronous_read_path": "one_contiguous_process_read",
+    "prefix_only_authority": false,
+    "rejected_completeness_oracle": "EnemyManagerUpdateOverlay::EnemyCount is a scan-encounter counter, not a current active-slot count"
+  },
+  "traces": [
+    {
+      "trace": "artifacts/runtime_reports/easy_route2_stage6b_unattended_20260826_063823.jsonl",
+      "sha256": "d0f97d1d2505fb91378904af07f036f6e628b95f5fff5b56c6d5ef25698400a8",
+      "decision_rows": 13083,
+      "rows_with_serialized_bodies": 12372,
+      "maximum_serialized_body_count": 32,
+      "maximum_native_slot_observed": 32,
+      "rows_with_native_slot_zero": 11623,
+      "outside_slot_zero_to_63_rows": 0,
+      "outside_slot_zero_to_63_bodies": 0,
+      "unaligned_manager_pointers": [],
+      "timing": {
+        "async_full_pool_worker": {
+          "count": 13082,
+          "median_ms": 91.3987999992969,
+          "p95_ms": 134.38309999764897,
+          "maximum_ms": 207.1326000004774
+        },
+        "synchronous_prefix": {
+          "count": 13083,
+          "median_ms": 2.4135999992722645,
+          "p95_ms": 2.9597000029752962,
+          "maximum_ms": 10.437199998705182
+        },
+        "local_plan": {
+          "count": 13083,
+          "median_ms": 32.85499999765307,
+          "p95_ms": 51.67849999997998,
+          "maximum_ms": 114.87519999354845
+        },
+        "observe_to_input": {
+          "count": 13083,
+          "median_ms": 55.33260000083828,
+          "p95_ms": 76.39429999835556,
+          "maximum_ms": 190.49799999629613
+        }
+      },
+      "evidence_boundary": "The retained trace proves the serialized collision-body slot watermark only and cannot prove that contact-disabled or zero-size active tail slots were absent. It therefore cannot justify a prefix-only live sensor. The source-contiguous profile keeps a complete asynchronous read of native slots 0..479."
+    }
+  ]
+}
