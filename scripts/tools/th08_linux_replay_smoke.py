@@ -23,6 +23,7 @@ from th08_linux import (  # noqa: E402
     capture_title_snapshot,
     classify_manager_frame_transition,
     enrich_with_collision_control_projection,
+    enrich_with_effect_lifecycle_summary,
     partial_semantic_trace_path,
     replay_stage_binding_mismatch,
     replay_stage_terminal_reason,
@@ -67,6 +68,14 @@ def build_parser() -> argparse.ArgumentParser:
             "state at every sampled root; intended only for short windows"
         ),
     )
+    parser.add_argument(
+        "--effect-lifecycle-summary",
+        action="store_true",
+        help=(
+            "decode and hash the complete effect/ANM pool but retain only "
+            "its bounded summary at every sampled root"
+        ),
+    )
     return parser
 
 
@@ -75,6 +84,11 @@ def run(args: argparse.Namespace) -> int:
         raise ValueError("gameplay fingerprint epoch count must be positive")
     if args.start_manager_frame <= 0:
         raise ValueError("starting manager frame must be positive")
+    if args.collision_control_projection and args.effect_lifecycle_summary:
+        raise ValueError(
+            "collision/control and effect-summary projections are mutually "
+            "exclusive"
+        )
     if args.maximum_bootstrap_epochs <= 0:
         raise ValueError("maximum bootstrap epoch count must be positive")
     if args.fingerprint_output is not None and args.fingerprint_output.exists():
@@ -278,6 +292,11 @@ def run(args: argparse.Namespace) -> int:
                             session.reader,
                             fingerprint,
                         )
+                    elif args.effect_lifecycle_summary:
+                        fingerprint = enrich_with_effect_lifecycle_summary(
+                            session.reader,
+                            fingerprint,
+                        )
                     session.bridge.respond(0)
                     break
                 binding_mismatch = replay_stage_binding_mismatch(
@@ -447,6 +466,9 @@ def run(args: argparse.Namespace) -> int:
                 "scope": "bounded replay differential bootstrap; no route claim",
                 "collision_control_projection": bool(
                     args.collision_control_projection
+                ),
+                "effect_lifecycle_summary": bool(
+                    args.effect_lifecycle_summary
                 ),
             }
             print(json.dumps(report, ensure_ascii=False, sort_keys=True))

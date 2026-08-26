@@ -447,6 +447,27 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertNotIn("--agent-duration", command)
         self.assertNotIn("--trial-timeout", command)
 
+    def test_replay_differential_can_retain_effect_summary_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            command = runner.build_windows_controller_command(
+                mode="replay-differential",
+                python=root / "python.exe",
+                game_dir=root / "game",
+                artifact_dir=root / "artifacts",
+                agent_duration=1.0,
+                trial_timeout=2.0,
+                kill_before_saturation=False,
+                ordinary_preexhaustion_authority=False,
+                authority_only_corridor=True,
+                trace_items=False,
+                replay_expected_sha256="a" * 64,
+                replay_effect_lifecycle_summary=True,
+            )
+
+        self.assertIn("--effect-lifecycle-summary", command)
+        self.assertNotIn("--collision-control-projection", command)
+
     def test_replay_slot_provision_is_exclusive_and_recoverable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

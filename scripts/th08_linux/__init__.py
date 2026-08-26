@@ -6,6 +6,7 @@ from th08_linux.fingerprint import (
     capture_runtime_semantic_spine,
     capture_semantic_spine,
     enrich_with_collision_control_projection,
+    enrich_with_effect_lifecycle_summary,
 )
 from th08_linux.process import LinuxProcessReader
 from th08_linux.protocol import InputRequest
@@ -56,6 +57,7 @@ __all__ = (
     "capture_runtime_semantic_spine",
     "capture_semantic_spine",
     "enrich_with_collision_control_projection",
+    "enrich_with_effect_lifecycle_summary",
     "capture_title_snapshot",
     "classify_manager_frame_transition",
     "compare_semantic_traces",

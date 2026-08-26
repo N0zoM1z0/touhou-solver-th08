@@ -9,6 +9,7 @@ from th08_linux.fingerprint import (
     canonical_fingerprint_bytes,
     capture_runtime_semantic_spine,
     enrich_with_collision_control_projection,
+    enrich_with_effect_lifecycle_summary,
     semantic_spine_from_observation,
 )
 from th08_linux.protocol import InputRequest, REPLAY_TARGET_STAMPED
@@ -234,6 +235,29 @@ class LinuxSemanticFingerprintTests(unittest.TestCase):
             enriched["player_damage_collision_projection"][
                 "payload_included"
             ]
+        )
+
+    def test_effect_lifecycle_summary_decodes_without_retaining_payload(
+        self,
+    ) -> None:
+        class EffectProjection:
+            def record(self, *, include_payload: bool) -> dict[str, object]:
+                return {"payload_included": include_payload, "sha256": "a" * 64}
+
+        fingerprint = {"manager_frame": 267}
+        with mock.patch(
+            "th08_linux.fingerprint._capture_effect_lifecycle_projection",
+            return_value=EffectProjection(),
+        ) as capture:
+            enriched = enrich_with_effect_lifecycle_summary(
+                object(), fingerprint
+            )
+
+        capture.assert_called_once()
+        self.assertNotIn("effect_lifecycle_projection", fingerprint)
+        self.assertEqual(
+            enriched["effect_lifecycle_projection"],
+            {"payload_included": False, "sha256": "a" * 64},
         )
 
     def test_absolute_bridge_epoch_is_a_locator_not_replay_semantics(self) -> None:

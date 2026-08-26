@@ -33,6 +33,7 @@ from th08_linux import (
     capture_runtime_semantic_spine,
     classify_manager_frame_transition,
     enrich_with_collision_control_projection,
+    enrich_with_effect_lifecycle_summary,
     partial_semantic_trace_path,
     replay_stage_binding_mismatch,
     replay_stage_terminal_reason,
@@ -81,6 +82,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "attach decoded hostile, effect/ANM, and player-shot damage "
             "state at every sampled root; intended only for short windows"
+        ),
+    )
+    parser.add_argument(
+        "--effect-lifecycle-summary",
+        action="store_true",
+        help=(
+            "decode and hash the complete effect/ANM pool but retain only "
+            "its bounded summary at every sampled root"
         ),
     )
     return parser
@@ -157,6 +166,11 @@ def _validate_args(args: argparse.Namespace) -> None:
         raise ValueError("starting manager frame must be positive")
     if args.gameplay_epochs <= 0:
         raise ValueError("gameplay fingerprint epoch count must be positive")
+    if args.collision_control_projection and args.effect_lifecycle_summary:
+        raise ValueError(
+            "collision/control and effect-summary projections are mutually "
+            "exclusive"
+        )
     for name in (
         "launch_timeout",
         "focus_timeout",
@@ -305,6 +319,11 @@ def run(args: argparse.Namespace) -> int:
                     reader,
                     fingerprint,
                 )
+            elif args.effect_lifecycle_summary:
+                fingerprint = enrich_with_effect_lifecycle_summary(
+                    reader,
+                    fingerprint,
+                )
             terminal_reason = replay_stage_terminal_reason(
                 fingerprint,
                 difficulty_index=contract.difficulty_index,
@@ -433,6 +452,9 @@ def run(args: argparse.Namespace) -> int:
                 "status": "passed",
                 "collision_control_projection": bool(
                     args.collision_control_projection
+                ),
+                "effect_lifecycle_summary": bool(
+                    args.effect_lifecycle_summary
                 ),
             }
         )

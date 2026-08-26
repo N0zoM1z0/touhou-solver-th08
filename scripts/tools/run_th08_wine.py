@@ -330,6 +330,7 @@ def build_windows_controller_command(
     replay_root_timeout: float = 300.0,
     replay_stop_at_stage_terminal: bool = False,
     replay_collision_control_projection: bool = False,
+    replay_effect_lifecycle_summary: bool = False,
 ) -> list[str]:
     if difficulty not in {"easy", "normal", "hard", "lunatic"}:
         raise ValueError(f"unsupported main difficulty: {difficulty}")
@@ -395,6 +396,14 @@ def build_windows_controller_command(
     if mode == "replay-differential":
         if replay_expected_sha256 is None:
             raise ValueError("replay differential requires an expected SHA-256")
+        if (
+            replay_collision_control_projection
+            and replay_effect_lifecycle_summary
+        ):
+            raise ValueError(
+                "replay collision/control and effect-summary projections are "
+                "mutually exclusive"
+            )
         command = [
             windows_path(python),
             windows_path(
@@ -432,6 +441,8 @@ def build_windows_controller_command(
             command.append("--stop-at-stage-terminal")
         if replay_collision_control_projection:
             command.append("--collision-control-projection")
+        if replay_effect_lifecycle_summary:
+            command.append("--effect-lifecycle-summary")
         return command
     if future_source_retain_spells:
         raise ValueError(
@@ -562,6 +573,14 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--replay-effect-lifecycle-summary",
+        action="store_true",
+        help=(
+            "capture a payload-free complete effect/ANM pool summary for "
+            "replay-differential lifecycle localization"
+        ),
+    )
+    parser.add_argument(
         "--agent-duration",
         type=float,
         default=WINE_FULL_ROUTE_AGENT_DURATION_SECONDS,
@@ -641,6 +660,9 @@ def run(args: argparse.Namespace) -> int:
         ),
         "replay_collision_control_projection": bool(
             args.replay_collision_control_projection
+        ),
+        "replay_effect_lifecycle_summary": bool(
+            args.replay_effect_lifecycle_summary
         ),
         "artifact_dir": str(artifact_dir),
         "display_requested": args.display,
@@ -1057,6 +1079,9 @@ def run(args: argparse.Namespace) -> int:
             ),
             replay_collision_control_projection=(
                 args.replay_collision_control_projection
+            ),
+            replay_effect_lifecycle_summary=(
+                args.replay_effect_lifecycle_summary
             ),
         )
         wine_command = [

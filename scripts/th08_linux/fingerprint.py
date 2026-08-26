@@ -255,6 +255,32 @@ def _capture_player_damage_collision_projection(
     return capture_player_damage_collision_projection(reader)
 
 
+def enrich_with_effect_lifecycle_summary(
+    reader: FingerprintStateReader,
+    fingerprint: dict[str, object],
+) -> dict[str, object]:
+    """Attach a payload-free effect/ANM pool summary at the stable root.
+
+    The complete effect pool is still decoded and hashed, but only its bounded
+    summary and digest enter the semantic trace.  This is suitable for long
+    lifecycle localization windows where retaining every ANM row would dwarf
+    the replay spine.
+    """
+
+    if (
+        "collision_control_projection" in fingerprint
+        or "effect_lifecycle_projection" in fingerprint
+        or "player_damage_collision_projection" in fingerprint
+    ):
+        raise ValueError("semantic spine already has a deep projection")
+    projection = _capture_effect_lifecycle_projection(reader)
+    enriched = dict(fingerprint)
+    enriched["effect_lifecycle_projection"] = projection.record(
+        include_payload=False
+    )
+    return enriched
+
+
 def enrich_with_collision_control_projection(
     reader: FingerprintStateReader,
     fingerprint: dict[str, object],
@@ -347,5 +373,6 @@ __all__ = (
     "capture_runtime_semantic_spine",
     "capture_semantic_spine",
     "enrich_with_collision_control_projection",
+    "enrich_with_effect_lifecycle_summary",
     "semantic_spine_from_observation",
 )
