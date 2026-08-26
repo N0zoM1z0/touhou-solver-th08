@@ -47,9 +47,17 @@ ordered implementation plan are in
   Mutually exclusive ages now reduce to one conservative source-AABB hull per
   native slot.  Exact contacts, the 1,569-test suite, and a 360-check
   atomic/straddled stateful geometry gate pass; a 400-bullet local pass is
-  about 13 percent faster than concatenation.  The next gate is the dormant
-  32-frame local threat tail, not a full route or a global-planner run.  The
-  complete Linux suite passes 1,568 tests with five conditional skips.  A
+  about 13 percent faster than concatenation.  The proposed unconditional
+  10..32-frame constant-action tail was then rejected offline: on eight
+  deterministic complete stages it did not reduce aggregate hits, introduced
+  two regressions, and paid substantial future/local latency.  A same-future
+  three-seed isolation still introduced one hit and added 10--23 percent
+  median local latency.  The conditional tail now uses the exact native
+  binary32/time-scale movement recurrence, but remains dormant on ordinary
+  Easy roots.  AUD-094/CE-0269 retain this negative result.  The next gate is
+  an earlier-loss audit of the physical boundary/exhaustion roots, not a full
+  route or a global-planner run.  The
+  complete Linux suite passes 1,571 tests with five conditional skips.  A
   3,600-frame saturated source-stateful gate also passes 120/120 future joins,
   180/180 geometry checks, and 1,414,390 lifecycle samples against the C
   oracle with zero lifecycle-position error.
@@ -756,11 +764,15 @@ full route or re-enable non-authoritative global work yet:
    slot's mutually exclusive ages as simultaneous bullets;
 2. preserve the implemented outward-rounded per-slot age hull, exact contact
    regressions, and atomic/straddled native differential;
-3. expose the configured 32-frame local threat tail without enabling global
-   guidance.  The current preparation path silently collapses it to the
-   10-frame beam whenever global viability is absent, even though ten of
-   eleven physical contacts exhaust the short robust action set first;
-4. rotate one focused Final-B Practice only after same-root/fuzzer evidence;
+3. preserve the evidence-backed rejection of an unconditional 32-frame
+   constant-action tail.  It is not a substitute for global viability and
+   must remain conditional; when invoked it must use the exact player
+   time-scale schedule and native movement recurrence;
+4. move backward from the boundary-associated physical exhaustion roots and
+   determine whether the first avoidable loss is beam pruning, receding-policy
+   reversal, or already-committed input.  Reproduce that loss offline before
+   changing horizon, focus, or boundary weights;
+5. rotate one focused Final-B Practice only after same-root/fuzzer evidence;
    require a clean Final-B Practice before a complete Easy Route-2 NMNB
    attempt.  The source-current-plus-future global worker remains preserved
    for later Hard/Lunatic work, not inserted into Easy without evidence.

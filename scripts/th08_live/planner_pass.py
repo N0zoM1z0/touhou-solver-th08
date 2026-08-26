@@ -331,6 +331,11 @@ def _run_local_planner_pass(
         start_step=config.horizon,
         end_step=effective_threat_horizon,
         control_delay_frames=control_delay_frames,
+        player_scale_bits=(
+            physical.time_scale_schedule.require_player_horizon(
+                control_delay_frames + effective_threat_horizon
+            )[control_delay_frames:]
+        ),
         bullet_frames=bullet_frames,
         laser_frames=laser_frames,
         enemy_bodies=enemy_bodies,

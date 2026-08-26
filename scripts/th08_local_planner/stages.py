@@ -117,6 +117,9 @@ def prepare_local_hazards(
         )
         else 0
     )
+    # A long constant-action tail can mis-rank the ordinary short-cycle local
+    # policy.  Keep it dormant unless global viability needs a continuation
+    # warning or boundary degeneracy explicitly requests one.
     potential_threat_horizon = (
         validated.threat_horizon
         if (

@@ -700,14 +700,17 @@ it.
    player root; exact pre-hit replay excludes the issued actions while other
    actions remain.  The corrected physical falsifier completes with 11 hits,
    but every contact is now observed or modeled; ten reach short-horizon
-   action-set exhaustion.  AUD-094 shows that supported ages are incorrectly
-   counted as simultaneous bullets and that the configured 32-frame local
-   threat tail is silently reduced to ten without global guidance.  Correct
-   The per-slot outward-rounded age hull now passes the exact contacts,
+   action-set exhaustion.  AUD-094 showed that supported ages were incorrectly
+   counted as simultaneous bullets.  The per-slot outward-rounded age hull
+   now passes the exact contacts,
    complete suite, and atomic/straddled stateful differential while reducing
-   a 400-bullet local pass about 13 percent.  Activate the still-dormant
-   generic 10..32 local tail offline, then require a clean Final-B Practice
-   before one complete Easy Route-2 NMNB attempt.  Then close
+   a 400-bullet local pass about 13 percent.  The proposed unconditional
+   10..32 local tail failed complete-stage A/B: constant-action continuation
+   is not closed-loop viability and introduced a new hit.  Its conditional
+   implementation now uses exact native/time-scale movement, while ordinary
+   Easy retains the ten-frame beam.  Audit the first avoidable loss before the
+   physical boundary/exhaustion contacts, then require a clean Final-B
+   Practice before one complete Easy Route-2 NMNB attempt.  Then close
    template/derived births, connect a complete current-plus-future horizon to
    global shadow, take one fresh v2 Stage-5 root, and require a same-root
    losing-to-viable change plus bounded solve/publication cost before returning

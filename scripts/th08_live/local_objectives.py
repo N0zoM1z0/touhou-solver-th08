@@ -35,6 +35,7 @@ ITEM_APPROACH_POTENTIAL_WEIGHT = 0.02
 ITEM_OBJECTIVES_ENABLED = False
 
 HazardQuery = Callable[..., tuple[np.ndarray, np.ndarray, np.ndarray]]
+AdvanceAction = Callable[..., tuple[float, float]]
 
 
 def item_potential(
@@ -123,9 +124,11 @@ def terminal_threat_scores(
     nodes: list[SearchNode],
     *,
     hazards_for_positions: HazardQuery,
+    advance_action: AdvanceAction,
     start_step: int,
     end_step: int,
     control_delay_frames: int,
+    player_scale_bits: tuple[int, ...],
     bullet_frames: tuple[tuple[np.ndarray, ...], ...],
     laser_frames: tuple[tuple[Laser, ...], ...],
     enemy_bodies: tuple[EnemyBody, ...],
@@ -134,6 +137,10 @@ def terminal_threat_scores(
 
     if not nodes or end_step <= start_step:
         return {node: (0, math.inf) for node in nodes}
+    if len(player_scale_bits) < end_step:
+        raise ValueError(
+            "player time-scale schedule does not cover terminal threat tail"
+        )
     positions_x = np.asarray(
         [node.x for node in nodes],
         dtype=np.float32,
@@ -142,26 +149,28 @@ def terminal_threat_scores(
         [node.y for node in nodes],
         dtype=np.float32,
     )
-    velocity_x = np.asarray(
-        [node.last_action.dx for node in nodes],
-        dtype=np.float32,
-    )
-    velocity_y = np.asarray(
-        [node.last_action.dy for node in nodes],
-        dtype=np.float32,
-    )
     collisions = np.zeros(len(nodes), dtype=np.int32)
     minimum = np.full(len(nodes), np.inf, dtype=np.float64)
     for step in range(start_step + 1, end_step + 1):
-        positions_x = np.clip(
-            positions_x + velocity_x,
-            PLAYFIELD_LEFT,
-            PLAYFIELD_RIGHT,
+        scale_bits = player_scale_bits[step - 1]
+        advanced = tuple(
+            advance_action(
+                float(positions_x[index]),
+                float(positions_y[index]),
+                node.last_action,
+                time_scale_bits=scale_bits,
+            )
+            for index, node in enumerate(nodes)
         )
-        positions_y = np.clip(
-            positions_y + velocity_y,
-            PLAYFIELD_TOP,
-            PLAYFIELD_BOTTOM,
+        positions_x = np.fromiter(
+            (position[0] for position in advanced),
+            dtype=np.float32,
+            count=len(nodes),
+        )
+        positions_y = np.fromiter(
+            (position[1] for position in advanced),
+            dtype=np.float32,
+            count=len(nodes),
         )
         _, step_collisions, step_clearance = hazards_for_positions(
             positions_x,

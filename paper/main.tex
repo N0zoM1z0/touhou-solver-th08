@@ -697,6 +697,20 @@ collisions, and reduces a deterministic 400-bullet two-age full local pass by
 about 13 percent.  Atomic and straddled hulls agree between the NumPy and
 native kernels over a saturated 3,600-frame differential campaign.
 
+The subsequent experiment also demonstrates why longer lookahead is not
+automatically better.  A proposed terminal heuristic held each ten-frame beam
+endpoint's last action for another 22 frames.  Complete-stage A/B tests found
+no aggregate survival gain and produced new contacts, even after separating
+future-generation work from the local score.  This continuation is not the
+future closed-loop controller, which replans after only a few frames, and
+therefore can reject a recoverable endpoint for a collision the endpoint need
+not actually approach.  The ordinary Easy controller keeps the short local
+beam; the long tail remains conditional on genuine viability guidance or a
+boundary-degeneracy repair.  When used, it now follows the same
+source-derived binary32 movement and phase-specific time-scale schedule as the
+beam.  The result favors a semantically exact small policy over an inexpensive
+but structurally incorrect proxy for global search.
+
 Development after this correction uses source-driven, complete-stage, and
 retained-root differentials as the primary experiment.  Physical Wine trials
 are delayed until submissions, completions, version matching, and producer

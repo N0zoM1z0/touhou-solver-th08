@@ -2857,7 +2857,7 @@ active, not evidence that the resulting policy is better.
 
 ### AUD-094 — Exact age support was aggregated as simultaneous bullets while the local threat tail stayed dormant
 
-Status: **AGE AGGREGATION FIXED OFFLINE; LOCAL-TAIL CONFIGURATION PENDING**
+Status: **AGE AGGREGATION FIXED; UNCONDITIONAL LONG TAIL REJECTED OFFLINE**
 
 The AUD-093 implementation concatenates every supported projection before the
 local hazard kernel.  A slot captured across a frame bracket has one unknown
@@ -2903,8 +2903,33 @@ two-age root, a complete ten-frame local pass falls from 26.17/27.16 ms to
 conditional skips.  The 3,600-frame source-stateful gate passes 360/360
 NumPy/native geometry comparisons (atomic plus straddled), 120/120 future
 joins, and 1,414,390 source/C lifecycle samples with zero lifecycle-position
-error.  Physical policy effect remains unclaimed; the independent dormant
-local-tail defect is the next checkpoint.
+error.  Physical policy effect remains unclaimed.
+
+The independent local-tail experiment rejects the premise that the dormant
+path should simply be enabled.  Eight deterministic 480-frame complete-stage
+programs were run with the same ten-frame beam and widths at threat horizons
+10, 16, and 32.  The normalized-hit totals were respectively one, one, and
+two; the 32-frame setting fixed the one horizon-10 contact but introduced two
+new contacts.  Its median planner cost was commonly three to five times the
+ten-frame setting because the future join also had to cover the longer
+horizon.  A stricter three-seed isolation held the joined future horizon at
+32 in both arms and changed only the local tail.  The active tail reduced one
+collision-frame count but introduced one normalized hit, with no aggregate
+hit reduction and 10--23 percent higher per-seed median local latency.
+
+This follows from the architecture: the tail repeats each beam endpoint's
+last action for another 22 frames, while the controller replans every few
+frames.  It is neither a viability solve nor a faithful model of the future
+closed-loop policy, so a distant collision can mis-rank a locally recoverable
+endpoint.  The ordinary Easy path therefore continues to collapse the tail
+to the ten-frame beam.  The existing conditional path remains useful for a
+global-viability relaxation or boundary-degeneracy repair, but its movement
+was itself incorrect: it added static `dx/dy`, ignoring native binary32
+ordering and the per-frame player time-scale schedule.  It now advances via
+the same source-derived movement callback as the beam and rejects incomplete
+scale coverage.  Focused tests prove schedule indexing across the beam/tail
+boundary.  CE-0269 retains the smallest failure and decision record; no
+difficulty, stage, spell, or coordinate branch was added.
 
 ## Offline Verification Record
 
