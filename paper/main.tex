@@ -577,19 +577,45 @@ quarter of its solve time; a bounded route replay found no hard-vector
 regression among changed actions.  The native interface versions this behavior
 explicitly rather than silently changing the old reduction ABI.
 
-Closed-loop stage fuzzing then revealed why pruning cannot yet be selected by
-synthetic hit count alone.  The generated runtime owns exact future births and
-callbacks, but its campaign passes only delayed current-pool snapshots to the
-local solver.  On a fixed seed, boundary stratification replaces a 1.98-pixel
+Closed-loop stage fuzzing then revealed why pruning could not be selected by
+synthetic hit count alone.  The generated runtime owned exact future births and
+callbacks, but its campaign passed only delayed current-pool snapshots to the
+local solver.  On a fixed seed, boundary stratification replaced a 1.98-pixel
 continuation with a locally safer 6.85-pixel continuation, yet that trajectory
-later meets births withheld from planning.  A much wider historical beam also
-diverges and incurs collisions.  This is an experimental confounder, not a
-license to ignore the hits: the next offline gate must join the same-clock
-current pool and source-known event suffix before search variants are compared.
-It also gives the future-birth work an immediate closed-loop regression rather
-than only a global-policy shadow metric.
+later met births withheld from planning.  A much wider historical beam also
+diverged and incurred collisions.  This was an experimental confounder, not a
+license to ignore the hits.
 
-Development after this diagnosis uses source-driven, complete-stage, and
+The resolved-stage campaign now closes that join.  A source event at frame
+$F$ relative to sensed root $R$ activates at $F-R+1$; direct fires, lasers,
+and callback~12/14 share that clock.  Existing bullets receive an exact
+callback schedule when composable, future births retain only callbacks that
+occur after their allocation, and callback--active-transform interactions use
+a conservative reachable-disc fallback.  Automatic aim ranges over every
+player position reachable from the coherent root.  The resulting versioned
+future is consumed by the delayed prefix, hard preflight, beam expansion,
+terminal score, and final recertification, and incomplete coverage makes the
+fuzzer case fail.
+
+Integration falsified two timing assumptions independent of hazard geometry.
+The old queue paired delayed hazards with the current player and then charged
+snapshot lag again.  It also let the beam change action after two frames while
+the executor held the selected first action until the next eight-frame planner
+tick.  Coherent queued roots and an action hold at least as long as the planner
+cadence remove both fictitious branches.  Source inspection found a geometric
+underbound as well: transform kind~1 begins at a fixed speed of 5 before
+reaching zero, rather than decelerating from descriptor speed.
+
+Across eight fixed quick stages at a matched two-frame cadence, both the
+future-aware and blind controllers complete 3,840 frames without a normalized
+hit or collision frame.  Thus this corpus establishes coverage, not a survival
+advantage.  The future-aware path closes all 1,920 joins but raises the median
+per-case p95 solve time from 17.75 to 77.08 ms, largely through 113,119
+callback/transform object fallbacks.  It is suitable offline but cannot enter
+a 16-ms Wine issue loop.  The next architectural step is a persistent packed
+batch and a denser matched-cadence gate, not a spell-specific policy.
+
+Development after this correction uses source-driven, complete-stage, and
 retained-root differentials as the primary experiment.  Physical Wine trials
 are delayed until submissions, completions, version matching, and producer
 coverage pass offline on the same Stage~5 roots.  This makes engine semantics

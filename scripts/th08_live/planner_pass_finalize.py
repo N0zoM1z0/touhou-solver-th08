@@ -140,6 +140,12 @@ def finalize_planner_pass(
                             : prepared.certificate_horizon
                         ],
                         pipeline_root=actuator.local_pipeline_root,
+                        future_hazard_projection=(
+                            physical.future_hazard_projection
+                        ),
+                        future_projection_offset=(
+                            physical.future_projection_offset
+                        ),
                         timing_accumulator=timing,
                     )
                 )
@@ -355,6 +361,12 @@ def finalize_planner_pass(
                             : prepared.certificate_horizon
                         ],
                         pipeline_root=actuator.local_pipeline_root,
+                        future_hazard_projection=(
+                            physical.future_hazard_projection
+                        ),
+                        future_projection_offset=(
+                            physical.future_projection_offset
+                        ),
                         timing_accumulator=timing,
                     )
                 )

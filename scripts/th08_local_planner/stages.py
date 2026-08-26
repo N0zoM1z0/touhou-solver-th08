@@ -211,6 +211,8 @@ def run_hard_preflight(
                 : prepared.certificate_horizon
             ],
             pipeline_root=actuator.local_pipeline_root,
+            future_hazard_projection=physical.future_hazard_projection,
+            future_projection_offset=physical.future_projection_offset,
             timing_accumulator=timing_accumulator,
         )
 
@@ -289,6 +291,8 @@ def run_hard_preflight(
                     : prepared.certificate_horizon
                 ],
                 pipeline_root=actuator.local_pipeline_root,
+                future_hazard_projection=physical.future_hazard_projection,
+                future_projection_offset=physical.future_projection_offset,
                 timing_accumulator=timing_accumulator,
             )
             locally_safe = tuple(

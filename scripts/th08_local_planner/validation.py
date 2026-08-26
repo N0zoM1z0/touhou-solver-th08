@@ -83,6 +83,34 @@ def validate_local_planner_request(
     physical.time_scale_schedule.require_complete_horizon(
         required_scale_horizon
     )
+    if physical.future_projection_offset < 0:
+        raise ValueError("future hazard projection offset cannot be negative")
+    future_projection = physical.future_hazard_projection
+    if future_projection is None:
+        if physical.future_projection_offset:
+            raise ValueError(
+                "future hazard projection offset requires a projection"
+            )
+    else:
+        if (
+            not future_projection.source_closure_complete
+            or not future_projection.coverage.complete
+            or not (
+                future_projection
+                .current_pool_callback_composition_complete
+            )
+        ):
+            raise ValueError(
+                "local future hazards require complete source and "
+                "current-pool callback coverage"
+            )
+        if (
+            physical.future_projection_offset + required_scale_horizon
+            > future_projection.horizon_frames
+        ):
+            raise ValueError(
+                "future hazard projection does not cover planner horizon"
+            )
     if (
         not math.isfinite(guidance.viability_position_error)
         or guidance.viability_position_error < 0.0

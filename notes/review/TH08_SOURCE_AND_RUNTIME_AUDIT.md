@@ -2498,7 +2498,8 @@ Practice trial rather than spending a Wine run on configuration alone.
 
 ### AUD-086 — Complete-stage solver replay discards generator-known future births
 
-Status: **CONFIRMED OFFLINE INFRA/POLICY GAP; OPEN**
+Status: **IMPLEMENTED AND CLOSED FOR RESOLVED OFFLINE STAGES; PACKED/LIVE
+PROMOTION OPEN**
 
 The stateful stage runtime knows the complete source-ordered producer,
 callback, lifecycle, laser, and phase future, but ``run_closed_loop_stage``
@@ -2518,11 +2519,54 @@ also changed the trajectory and produced two hits; width-256 with the new
 reducer produced one. Search width therefore cannot be ranked by closed-loop
 hit count until every candidate sees the same source-known future.
 
-The next offline authority gate is a clock-matched current-plus-future join for
-the local fuzzer prefix. The existing source event stream and current-pool
-callback composer must be delivered to local planning without Python-object
-expansion in the issue loop. Only after this join should the fixed seeds be
-used as a pruning/survival regression, followed by Easy Final-B Practice.
+The resolved-stage campaign now builds that clock-matched join.  For a sensed
+root $R$, an event executed at source frame $F$ activates at local projection
+frame $F-R+1$.  The bounded suffix includes every due resolved direct-fire
+descriptor, callback 12/14 event, and laser birth.  Automatic aim is the
+circular interval over all player positions reachable from the coherent root.
+Callbacks are attached to bullets already alive at $R$ through the existing
+pool composer, while only strictly later callbacks are attached to a future
+birth because the source callback pass precedes same-frame allocation.
+Callback-bearing active transforms use a finite conservative AABB fallback;
+pool suppression and culling are ignored as a hostile superset.  The local
+request validates source closure, coverage, callback consumption, root offset,
+and the complete control/threat horizon before the future is used by prefix
+certification, beam expansion, terminal threat scoring, and final
+recertification.
+
+This integration exposed three independent campaign defects.  First, delayed
+bullet/laser snapshots were planned against the current player position and
+then charged a second snapshot lag.  Player and hazards now come from one
+stored root and elapsed sensing/issue age is represented once as control
+delay.  Second, the beam was allowed to switch after a two-frame action hold
+while the executor reused its returned first action until the next eight-frame
+planner tick.  The offline action hold is now at least the planner stride.
+Third, an incomplete future join could fall back to current-only planning and
+still be counted as a passing fuzzer case.  Diagnostic replay may continue,
+but an enabled incomplete join now fails the campaign and the fuzzer signature.
+
+Source review during the join found one additional geometric underbound:
+transform kind 1 does not merely decelerate from descriptor speed; its handler
+starts at source-fixed speed 5 and reaches zero over 16 timer steps.  Both
+future-birth and current-pool fallback discs now include that speed, with a
+focused regression.
+
+After these corrections, eight fixed quick seeds at a matched two-frame
+planner cadence completed 3,840 frames with zero normalized hits and zero
+collision frames in both the future-aware and future-blind variants.  The
+future-aware variant completed all 1,920/1,920 joins and exercised 113,119
+callback/transform fallbacks.  Its median per-case p95 solve time was
+77.08 ms, versus 17.75 ms blind.  The zero/zero outcome means this easy corpus
+does not measure a survival gain; it does close the future-delivery confounder.
+An eight-frame cadence remains a deliberately harsh latency workload: once
+the corrected beam is forced to hold its action for the actual eight frames,
+some laser contacts have no collision-free branch.
+
+No Wine path consumes this projection and no physical result is claimed.  The
+object-heavy fallback is far outside a 16-ms issue budget, so the next gate is
+a stronger offline profile plus a packed/persistent representation.  Easy
+Final-B Practice follows only after that gate changes or certifies a meaningful
+losing root.
 
 ## Offline Verification Record
 

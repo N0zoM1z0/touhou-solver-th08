@@ -537,6 +537,27 @@ def _causal_aim_interval(
     return FloatInterval(start, end)
 
 
+def player_aim_interval(
+    *,
+    player_positions: tuple[tuple[float, float], ...],
+    origin_x: FloatInterval,
+    origin_y: FloatInterval,
+) -> FloatInterval:
+    """Public source-safe bound for ``atan2(player - producer)``.
+
+    Stateful-stage generation and causal policy conditioning must share the
+    same circular-interval implementation; otherwise an offline producer can
+    silently disagree with the ordinary ECL future-source analyzer at the
+    angle wrap.
+    """
+
+    return _causal_aim_interval(
+        player_positions=player_positions,
+        origin_x=origin_x,
+        origin_y=origin_y,
+    )
+
+
 def condition_future_hazard_projection_on_player_paths(
     projection: OrdinaryFutureHazardProjection,
     *,
@@ -673,5 +694,6 @@ __all__ = [
     "OrdinaryFutureHazardProjection",
     "condition_future_hazard_projection_on_player_paths",
     "complete_future_hazard_projection",
+    "player_aim_interval",
     "unknown_future_hazard_projection",
 ]

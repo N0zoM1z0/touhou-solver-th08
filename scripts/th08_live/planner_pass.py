@@ -135,6 +135,8 @@ def _run_local_planner_pass(
             )
         ),
         laser_frames=laser_timeline[:control_delay_frames],
+        future_hazard_projection=physical.future_hazard_projection,
+        future_projection_offset=physical.future_projection_offset,
     )
     _certificate_timing_accumulator.control_prefix_ms += (
         time.perf_counter_ns() - control_prefix_started_ns
@@ -254,6 +256,7 @@ def _run_local_planner_pass(
         and not recovery_by_action
         and not safety_value_actions
         and not survival_actions
+        and physical.future_hazard_projection is None
     ):
         return Decision(
             SHOT | FOCUS,
@@ -323,6 +326,8 @@ def _run_local_planner_pass(
         bullet_frames=bullet_frames,
         laser_frames=laser_frames,
         enemy_bodies=enemy_bodies,
+        future_hazard_projection=physical.future_hazard_projection,
+        future_projection_offset=physical.future_projection_offset,
     )
     _certificate_timing_accumulator.terminal_threat_ms += (
         time.perf_counter_ns() - terminal_started_ns

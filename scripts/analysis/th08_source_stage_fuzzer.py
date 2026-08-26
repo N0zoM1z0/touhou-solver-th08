@@ -33,7 +33,9 @@ from th08_semantics.stage_generation import (
 from th08_semantics.stage_shrink import shrink_stage_program
 
 
-REPORT_SCHEMA = "th08-source-stateful-stage-fuzzer-report-v3-callback14"
+REPORT_SCHEMA = (
+    "th08-source-stateful-stage-fuzzer-report-v4-current-plus-future"
+)
 
 
 def _load_program(path: Path) -> StageProgram:
@@ -53,6 +55,21 @@ def _failure_signature(
         return f"source:{source.first_mismatch}"
     if campaign.planner_failures:
         return f"planner:{campaign.planner_failures[0].split(':', 2)[-1]}"
+    if campaign.future_hazards_enabled and (
+        campaign.future_join_attempts != campaign.planner_calls
+        or campaign.future_join_complete != campaign.future_join_attempts
+        or campaign.future_join_incomplete_reasons
+    ):
+        reason = next(
+            iter(sorted(campaign.future_join_incomplete_reasons)),
+            (
+                "coverage="
+                f"{campaign.future_join_complete}/"
+                f"{campaign.future_join_attempts}/"
+                f"{campaign.planner_calls}"
+            ),
+        )
+        return f"future_join:{reason}"
     for label, count in (
         ("bomb", campaign.bomb_policy_violations),
         ("geometry_collision", campaign.geometry_collision_mismatches),
@@ -171,6 +188,16 @@ def _summary(cases: list[dict[str, object]]) -> dict[str, object]:
         "planner_calls": sum(
             int(value["planner_calls"]) for value in campaigns
         ),
+        "future_join_attempts": sum(
+            int(value["future_join_attempts"]) for value in campaigns
+        ),
+        "future_join_complete": sum(
+            int(value["future_join_complete"]) for value in campaigns
+        ),
+        "future_callback_transform_fallbacks": sum(
+            int(value["future_callback_transform_fallbacks"])
+            for value in campaigns
+        ),
         "planner_case_p95_ms_median": (
             statistics.median(solve_p95) if solve_p95 else None
         ),
@@ -198,6 +225,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--geometry-oracle-stride", type=int, default=16)
     parser.add_argument("--geometry-oracle-horizon", type=int, default=3)
     parser.add_argument("--hit-cooldown-frames", type=int, default=8)
+    parser.add_argument(
+        "--no-future-hazards",
+        action="store_true",
+        help="retain the historical future-blind campaign for A/B replay",
+    )
     parser.add_argument("--skip-source-oracle", action="store_true")
     parser.add_argument("--shrink-failures", action="store_true")
     parser.add_argument("--shrink-attempts", type=int, default=96)
@@ -221,6 +253,7 @@ def main(argv: list[str] | None = None) -> int:
         geometry_oracle_stride=args.geometry_oracle_stride,
         geometry_oracle_horizon=args.geometry_oracle_horizon,
         hit_cooldown_frames=args.hit_cooldown_frames,
+        future_hazards_enabled=not args.no_future_hazards,
     )
     programs = (
         (_load_program(args.replay),)

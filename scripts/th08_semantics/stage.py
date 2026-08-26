@@ -161,6 +161,47 @@ class TransformSpec:
         )
 
 
+def pack_transform_specs(transforms: tuple[TransformSpec, ...]) -> bytes:
+    """Encode generated transform specs with the recovered native ABI.
+
+    Keeping this conversion beside ``TransformSpec`` gives both the live-pool
+    snapshot and the offline future-birth projection one authoritative
+    lowering.  Reflection records store their repeat limit in ``int_0``;
+    stop/reaim/snap records store it in ``int_1`` exactly as the retained
+    runtime does.
+    """
+
+    return pack_transform_program(
+        tuple(
+            TransformRecord(
+                index=index,
+                kind=spec.kind,
+                allow_while_active=spec.allow_while_active,
+                int_0=(
+                    spec.repeat_limit
+                    if spec.kind in (
+                        TRANSFORM_REFLECT_ALL,
+                        TRANSFORM_REFLECT_SIDES_TOP,
+                    )
+                    else spec.duration
+                ),
+                int_1=(
+                    spec.repeat_limit
+                    if spec.kind in (
+                        TRANSFORM_STOP_TURN,
+                        TRANSFORM_STOP_REAIM,
+                        TRANSFORM_STOP_SNAP,
+                    )
+                    else 0
+                ),
+                float_0=spec.float_0,
+                float_1=spec.float_1,
+            )
+            for index, spec in enumerate(transforms)
+        )
+    )
+
+
 @dataclass(frozen=True)
 class BulletEmitter:
     """A finite resolved direct-fire descriptor stream."""
@@ -866,35 +907,6 @@ class RuntimeBullet:
     def retained_transform_program_runtime(
         self,
     ) -> BulletTransformProgramRuntime:
-        records = tuple(
-            TransformRecord(
-                index=index,
-                kind=spec.kind,
-                allow_while_active=spec.allow_while_active,
-                int_0=(
-                    spec.repeat_limit
-                    if spec.kind in (
-                        TRANSFORM_REFLECT_ALL,
-                        TRANSFORM_REFLECT_SIDES_TOP,
-                    )
-                    else spec.duration
-                ),
-                int_1=(
-                    spec.repeat_limit
-                    if spec.kind
-                    in (
-                        TRANSFORM_STOP_TURN,
-                        TRANSFORM_STOP_REAIM,
-                        TRANSFORM_STOP_SNAP,
-                    )
-                    else 0
-                ),
-                float_0=spec.float_0,
-                float_1=spec.float_1,
-            )
-            for index, spec in enumerate(self.transforms)
-        )
-
         def one_shared_runtime(kinds: tuple[int, ...]) -> _TransformRuntime | None:
             active = tuple(
                 runtime
@@ -917,7 +929,7 @@ class RuntimeBullet:
             (TRANSFORM_REFLECT_ALL, TRANSFORM_REFLECT_SIDES_TOP)
         )
         return BulletTransformProgramRuntime(
-            program=pack_transform_program(records),
+            program=pack_transform_specs(self.transforms),
             original_flags=self.original_transform_flags,
             queue_cursor=self.transform_cursor,
             cull_suppression_countdown=0,
@@ -1868,5 +1880,6 @@ __all__ = [
     "TRANSFORM_STOP_TURN",
     "TRANSFORM_VECTOR_ACCELERATION",
     "TransformSpec",
+    "pack_transform_specs",
     "run_stage",
 ]

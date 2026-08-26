@@ -12,6 +12,7 @@ import numpy as np
 
 import th08_live_dodge_agent as live
 from th08_live.movement import advance_planner_action
+from th08_semantics.future_hazards import join_stage_future_hazards
 from th08_semantics.stage import StageProgram, StageRuntime
 from th08_time_scale import TH08_UNIT_TIME_SCALE_BITS
 
@@ -28,6 +29,7 @@ class StageCampaignConfig:
     geometry_oracle_stride: int = 16
     geometry_oracle_horizon: int = 3
     hit_cooldown_frames: int = 8
+    future_hazards_enabled: bool = True
 
     def __post_init__(self) -> None:
         if min(
@@ -58,11 +60,23 @@ class StageCampaignResult:
     final_player_x: float
     final_player_y: float
     normalized_hits: int
+    normalized_hit_frames: tuple[int, ...]
+    normalized_hit_contexts: tuple[dict[str, object], ...]
     collision_frames: int
+    collision_frame_indices: tuple[int, ...]
     raw_bullet_collisions: int
     raw_laser_collisions: int
     planner_calls: int
     planner_failures: tuple[str, ...]
+    effective_action_hold_frames: int
+    future_hazards_enabled: bool
+    future_join_attempts: int
+    future_join_complete: int
+    future_join_incomplete_reasons: dict[str, int]
+    future_direct_fire_events: int
+    future_laser_events: int
+    future_tagged_callbacks: int
+    future_callback_transform_fallbacks: int
     bomb_policy_violations: int
     geometry_checks: int
     geometry_collision_mismatches: int
@@ -81,6 +95,14 @@ class StageCampaignResult:
             self.source_closed
             and self.completed
             and not self.planner_failures
+            and (
+                not self.future_hazards_enabled
+                or (
+                    self.future_join_attempts == self.planner_calls
+                    and self.future_join_complete == self.future_join_attempts
+                    and not self.future_join_incomplete_reasons
+                )
+            )
             and self.bomb_policy_violations == 0
             and self.geometry_collision_mismatches == 0
             and self.geometry_clearance_sign_mismatches == 0
@@ -207,21 +229,42 @@ def run_closed_loop_stage(
     current_action = actions["stay"]
     pending_actions: deque[tuple[int, str]] = deque()
     snapshots: deque[
-        tuple[tuple[live.Bullet, ...], tuple[object, ...]]
+        tuple[
+            int,
+            float,
+            float,
+            tuple[live.Bullet, ...],
+            tuple[object, ...],
+        ]
     ] = deque(maxlen=config.sensing_latency_frames + 1)
-    snapshots.append(((), ()))
+    snapshots.append((0, player_x, player_y, (), ()))
     solve_times: list[float] = []
     planner_failures: list[str] = []
     planner_calls = 0
     bomb_violations = 0
+    future_join_attempts = 0
+    future_join_complete = 0
+    future_join_incomplete_reasons: dict[str, int] = {}
+    future_direct_fire_events = 0
+    future_laser_events = 0
+    future_tagged_callbacks = 0
+    future_callback_transform_fallbacks = 0
+    effective_action_hold_frames = max(
+        config.action_hold_frames,
+        config.planner_stride,
+    )
     geometry_checks = 0
     collision_mismatches = 0
     sign_mismatches = 0
     clearance_mismatches = 0
     risk_mismatches = 0
     normalized_hits = 0
+    normalized_hit_frames: list[int] = []
+    normalized_hit_contexts: list[dict[str, object]] = []
     collision_frames = 0
+    collision_frame_indices: list[int] = []
     next_hit_frame = 0
+    decision_history: deque[dict[str, object]] = deque(maxlen=6)
     started = time.perf_counter()
 
     while not runtime.complete:
@@ -240,8 +283,51 @@ def run_closed_loop_stage(
             step.bullet_collision_slots or step.laser_collision_slots
         )
         collision_frames += int(collision)
+        if collision:
+            collision_frame_indices.append(frame)
         if collision and frame >= next_hit_frame:
             normalized_hits += 1
+            normalized_hit_frames.append(frame)
+            normalized_hit_contexts.append(
+                {
+                    "frame": frame,
+                    "player": [player_x, player_y],
+                    "active_action": current_action.name,
+                    "bullet_collision_slots": list(
+                        step.bullet_collision_slots
+                    ),
+                    "bullet_collisions": [
+                        {
+                            "slot": slot,
+                            "source": bullet.source,
+                            "age": bullet.age,
+                            "position": [bullet.x, bullet.y],
+                            "velocity": [
+                                bullet.velocity_x,
+                                bullet.velocity_y,
+                            ],
+                            "half_extents": [
+                                bullet.half_width,
+                                bullet.half_height,
+                            ],
+                            "native_state": bullet.native_state,
+                            "native_state_age": bullet.native_state_age,
+                            "original_flags": (
+                                bullet.original_transform_flags
+                            ),
+                            "active_transform_flags": (
+                                bullet.active_transform_flags
+                            ),
+                            "callback_phase_state": bullet.phase_state,
+                            "callback_aux_state": bullet.collision_aux,
+                        }
+                        for slot in step.bullet_collision_slots
+                        if (bullet := runtime.bullets[slot]) is not None
+                    ],
+                    "laser_collision_slots": list(step.laser_collision_slots),
+                    "recent_decisions": list(decision_history),
+                }
+            )
             next_hit_frame = frame + config.hit_cooldown_frames
 
         geometry_due = (
@@ -255,7 +341,15 @@ def run_closed_loop_stage(
         )
         if config.planner_stride:
             assert snapshot is not None
-            snapshots.append(snapshot)
+            snapshots.append(
+                (
+                    runtime.frame,
+                    player_x,
+                    player_y,
+                    snapshot[0],
+                    snapshot[1],
+                )
+            )
         if geometry_due:
             assert snapshot is not None
             differential = _geometry_differential(
@@ -272,24 +366,70 @@ def run_closed_loop_stage(
             risk_mismatches += differential[4]
 
         if config.planner_stride and frame % config.planner_stride == 0:
-            sensed_bullets, sensed_lasers = snapshots[0]
+            (
+                sensed_root_frame,
+                sensed_player_x,
+                sensed_player_y,
+                sensed_bullets,
+                sensed_lasers,
+            ) = snapshots[0]
+            control_delay_frames = (
+                runtime.frame
+                - sensed_root_frame
+                + config.issue_latency_frames
+            )
             planner_started = time.perf_counter_ns()
+            planning_bullets = sensed_bullets
+            future_projection = None
+            if config.future_hazards_enabled:
+                future_join = join_stage_future_hazards(
+                    program,
+                    root_frame=sensed_root_frame,
+                    root_player_x=sensed_player_x,
+                    root_player_y=sensed_player_y,
+                    bullets=sensed_bullets,
+                    horizon_frames=(
+                        control_delay_frames
+                        + max(
+                            config.planner_threat_horizon,
+                            effective_action_hold_frames,
+                        )
+                    ),
+                )
+                future_join_attempts += 1
+                future_direct_fire_events += (
+                    future_join.direct_fire_event_count
+                )
+                future_laser_events += future_join.future_laser_count
+                future_tagged_callbacks += future_join.tagged_callback_count
+                future_callback_transform_fallbacks += (
+                    future_join.callback_transform_fallback_count
+                )
+                if future_join.complete:
+                    future_join_complete += 1
+                    planning_bullets = tuple(future_join.bullets)
+                    future_projection = future_join.projection
+                else:
+                    reason = future_join.reason or "unknown"
+                    future_join_incomplete_reasons[reason] = (
+                        future_join_incomplete_reasons.get(reason, 0) + 1
+                    )
             try:
                 decision = live.choose_action(
-                    player_x=player_x,
-                    player_y=player_y,
-                    bullets=sensed_bullets,
+                    player_x=sensed_player_x,
+                    player_y=sensed_player_y,
+                    bullets=planning_bullets,
                     lasers=sensed_lasers,
                     previous_direction=current_action.direction,
                     previous_focus=current_action.focused,
                     can_bomb=False,
                     bombs=0.0,
-                    snapshot_lag=config.sensing_latency_frames,
-                    control_delay_frames=max(
-                        1,
-                        config.issue_latency_frames + 1,
-                    ),
-                    action_hold_frames=config.action_hold_frames,
+                    # Player, bullet, and laser values come from one coherent
+                    # sensed root. Their relative lag is zero; elapsed sensing
+                    # and issue time is carried only by control_delay_frames.
+                    snapshot_lag=0,
+                    control_delay_frames=control_delay_frames,
+                    action_hold_frames=effective_action_hold_frames,
                     horizon=config.planner_horizon,
                     threat_horizon=config.planner_threat_horizon,
                     beam_width=config.planner_beam_width,
@@ -298,6 +438,8 @@ def run_closed_loop_stage(
                     target_deadline=config.planner_horizon + 12,
                     recovery_control_reserve=True,
                     preserve_previous_direction_inertia=True,
+                    future_hazard_projection=future_projection,
+                    future_projection_offset=0,
                 )
             except Exception as exc:  # retained as replayable fuzzer failure
                 planner_failures.append(
@@ -313,6 +455,38 @@ def run_closed_loop_stage(
                         f"frame={frame}:unknown_action:{decision.action}"
                     )
                 else:
+                    decision_history.append(
+                        {
+                            "decision_frame": frame,
+                            "sensed_root_frame": sensed_root_frame,
+                            "sensed_player": [
+                                sensed_player_x,
+                                sensed_player_y,
+                            ],
+                            "action": decision.action,
+                            "effective_frame": (
+                                frame + config.issue_latency_frames + 1
+                            ),
+                            "control_delay_frames": control_delay_frames,
+                            "action_hold_frames": (
+                                effective_action_hold_frames
+                            ),
+                            "min_clearance": decision.min_clearance,
+                            "immediate_clearance": (
+                                decision.immediate_clearance
+                            ),
+                            "local_collisions": decision.local_collisions,
+                            "terminal_threat_collisions": (
+                                decision.terminal_threat_collisions
+                            ),
+                            "terminal_threat_min_clearance": (
+                                decision.terminal_threat_min_clearance
+                            ),
+                            "future_join_complete": (
+                                future_projection is not None
+                            ),
+                        }
+                    )
                     pending_actions.append(
                         (
                             frame + config.issue_latency_frames + 1,
@@ -333,11 +507,25 @@ def run_closed_loop_stage(
         final_player_x=player_x,
         final_player_y=player_y,
         normalized_hits=normalized_hits,
+        normalized_hit_frames=tuple(normalized_hit_frames),
+        normalized_hit_contexts=tuple(normalized_hit_contexts),
         collision_frames=collision_frames,
+        collision_frame_indices=tuple(collision_frame_indices),
         raw_bullet_collisions=runtime.metrics.raw_bullet_collisions,
         raw_laser_collisions=runtime.metrics.raw_laser_collisions,
         planner_calls=planner_calls,
         planner_failures=tuple(planner_failures),
+        effective_action_hold_frames=effective_action_hold_frames,
+        future_hazards_enabled=config.future_hazards_enabled,
+        future_join_attempts=future_join_attempts,
+        future_join_complete=future_join_complete,
+        future_join_incomplete_reasons=future_join_incomplete_reasons,
+        future_direct_fire_events=future_direct_fire_events,
+        future_laser_events=future_laser_events,
+        future_tagged_callbacks=future_tagged_callbacks,
+        future_callback_transform_fallbacks=(
+            future_callback_transform_fallbacks
+        ),
         bomb_policy_violations=bomb_violations,
         geometry_checks=geometry_checks,
         geometry_collision_mismatches=collision_mismatches,

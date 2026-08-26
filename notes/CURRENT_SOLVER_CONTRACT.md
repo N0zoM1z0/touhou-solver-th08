@@ -110,9 +110,11 @@ state or globally integrated exact transform execution.
 
 The certificate belongs to the worker's historical bullet snapshot. A later
 local prefix or delayed issue computation over newly sensed bullets may not
-reuse it; that layer requires its own current-frame composition. Until then,
-callback-bearing projections can support their exact global artifact but are
-excluded from local-prefix authority.
+reuse it; that layer requires its own current-frame composition.  The
+source-stateful offline campaign now performs such a join for its resolved
+stage IR and carries it through prefix, beam, terminal, and final local
+certificates.  This does not promote the production Wine path: arbitrary ECL
+coverage and a packed sub-16-ms representation remain absent there.
 
 Every authority labelled exact corridor, ordinary predecessor, constant-hold,
 delayed issue, or continuation lease is non-relaxable by the coarse terminal-

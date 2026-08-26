@@ -49,9 +49,13 @@ KNOWN_DIRECT_FIRE_NONPROGRAM_FLAGS = 0x020F
 KNOWN_TAGGED_CALLBACK_FLAGS = 0xF00000
 _TRANSFORM_PROGRAM_LENGTH = 18
 _TRANSFORM_RECORD_SIZE = 24
+_DECELERATE = 0x0000001
+_DECELERATE_MAXIMUM_SPEED = 5.0
 _VECTOR_ACCELERATION = 0x0000010
 _ANGULAR_VELOCITY = 0x0000020
+_STOP_TURN_REPEAT = 0x0000040
 _STOP_REAIM_REPEAT = 0x0000080
+_STOP_SNAP_REPEAT = 0x0000100
 _REFLECT_ALL_EDGES = 0x0000400
 _REFLECT_SIDES_AND_TOP = 0x0000800
 _SUPPRESS_OFFSCREEN_CULL = 0x0002000
@@ -60,9 +64,12 @@ _TIMED_QUEUE_BARRIER = 0x0020000
 _PLAY_SOUND = 0x0080000
 _SUPPORTED_TRANSFORM_KINDS = frozenset(
     (
+        _DECELERATE,
         _VECTOR_ACCELERATION,
         _ANGULAR_VELOCITY,
+        _STOP_TURN_REPEAT,
         _STOP_REAIM_REPEAT,
+        _STOP_SNAP_REPEAT,
         _REFLECT_ALL_EDGES,
         _REFLECT_SIDES_AND_TOP,
         _SUPPRESS_OFFSCREEN_CULL,
@@ -336,7 +343,8 @@ def _transform_path_profile(
     """Return conservative maximum initial speed and per-step acceleration.
 
     Vector acceleration and angular-velocity records can change the native
-    velocity every update. Reflections and stop/reaim can change direction.
+    velocity every update. Deceleration, reflections, and every shipped
+    stop/restart variant can invalidate the original ray or change direction.
     Treating every such update as immediately active, summing all acceleration
     magnitudes, and ignoring finite durations is a conservative superset of
     the shipped queue. Template, cull, barrier, and sound records do not move
@@ -348,9 +356,12 @@ def _transform_path_profile(
         for record in event.active_transform_records
         if record.kind
         in (
+            _DECELERATE,
             _VECTOR_ACCELERATION,
             _ANGULAR_VELOCITY,
+            _STOP_TURN_REPEAT,
             _STOP_REAIM_REPEAT,
+            _STOP_SNAP_REPEAT,
             _REFLECT_ALL_EDGES,
             _REFLECT_SIDES_AND_TOP,
         )
@@ -376,9 +387,17 @@ def _transform_path_profile(
             abs(callback.callback_speed.upper),
         )
     for record in records:
-        if record.kind in (_VECTOR_ACCELERATION, _ANGULAR_VELOCITY):
+        if record.kind == _DECELERATE:
+            # BulletManager::FUN_00425530 writes
+            # 5 - timer*5/16, independent of the descriptor speed.
+            maximum_speed = max(maximum_speed, _DECELERATE_MAXIMUM_SPEED)
+        elif record.kind in (_VECTOR_ACCELERATION, _ANGULAR_VELOCITY):
             acceleration += abs(record.float_0)
-        elif record.kind == _STOP_REAIM_REPEAT:
+        elif record.kind in (
+            _STOP_TURN_REPEAT,
+            _STOP_REAIM_REPEAT,
+            _STOP_SNAP_REPEAT,
+        ):
             resume_speed = (
                 maximum_speed
                 if record.float_1 <= -999.0

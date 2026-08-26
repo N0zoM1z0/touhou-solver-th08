@@ -31,6 +31,8 @@ class PhysicalHazardSnapshot:
     enemy_bodies: tuple[Any, ...] = ()
     items: tuple[Any, ...] = ()
     snapshot_lag: int = 0
+    future_hazard_projection: Any | None = None
+    future_projection_offset: int = 0
 
 
 @dataclass(frozen=True)

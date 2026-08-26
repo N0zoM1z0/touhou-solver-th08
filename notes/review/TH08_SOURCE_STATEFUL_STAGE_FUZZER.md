@@ -28,14 +28,21 @@ This checkpoint is a strong test generator for a source-supported semantic
 subset. It is not yet an arbitrary TH08 ECL interpreter and is not claimed to
 reproduce a shipped spell from its stage file.
 
-One policy boundary is now explicit: the runtime owns the generated future,
-but the closed-loop campaign currently gives the solver only delayed snapshots
-of already allocated bullets and lasers. Consequently normalized hits are
-valid realized collisions for that campaign but are not yet a fair comparison
-of search/pruning variants that choose different trajectories. A locally safer
-variant can encounter an unseen later birth that the generator knew but the
-planner did not. The fixed quick-seed differential in AUD-086 is the regression
-gate for the pending current-plus-future local join.
+The resolved-stage policy boundary is now executable.  By default the
+closed-loop campaign joins the delayed coherent current root to its complete
+source-known event suffix and passes that versioned projection through every
+local hazard consumer.  `--no-future-hazards` retains the historical blind path
+only for controlled A/B replay.  This is authority for generated resolved IR,
+not arbitrary ECL or the production Wine issue loop.  A requested future that
+cannot close is recorded and makes the case fail; it is never silently treated
+as empty space.
+
+The executor/planner cadence is also part of the model.  Player, bullets, and
+lasers are dequeued from one root; their relative snapshot lag is zero, while
+the elapsed source-to-issue age is charged once as control delay.  Because the
+executor cannot replace a command between planner ticks, the certified action
+hold is at least the planner stride.  Large strides are therefore explicit
+high-latency stress cases, not cheap approximations of a fast controller.
 
 ## Why The Old Stateful Fuzzer Was Insufficient
 
@@ -288,6 +295,21 @@ all eight handlers.
     entries may already have advanced. The Python owner now poisons that batch
     and refuses decode/reuse; fade entries are stable nonlethal terminals for
     the covered prefix instead of invalidating all later entries.
+15. Closed-loop sensing delayed bullets and lasers but paired them with the
+    current player position, then charged `snapshot_lag` again.  The queue now
+    stores the complete player/hazard root and derives one elapsed control
+    delay from its source frame.
+16. The beam assumed it could change direction after two frames even when the
+    campaign invoked it only every eight frames.  The effective action hold is
+    now `max(action_hold_frames, planner_stride)`, so low-cadence laser traps
+    cannot be hidden by fictitious intermediate commands.
+17. Future-join failure was diagnostic only and could leave the case marked
+    passing after current-only fallback.  Enabled future coverage is now a
+    hard campaign/fuzzer pass condition, with incomplete reasons retained.
+18. The first transform-1 future envelope used descriptor speed, but source
+    writes magnitude 5 at timer zero and then subtracts `timer*5/16`.  The
+    future-birth and current-pool fallback bounds now include the fixed 5 px
+    maximum and retain the current root AABB at projection frame zero.
 
 These are source-backed semantic corrections. None is presented as a route
 hit improvement until it changes a complete future projection and passes a
@@ -308,7 +330,7 @@ retain only compact summaries or minimized counterexamples in the repository:
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=scripts .venv/bin/python \
   scripts/analysis/th08_source_stage_fuzzer.py \
   --profile gate --seed 0xce0132 --count 1 \
-  --planner-stride 30 --planner-horizon 12 \
+  --planner-stride 2 --planner-horizon 12 \
   --planner-threat-horizon 16 --planner-beam-width 8 \
   --geometry-oracle-stride 60 --geometry-oracle-horizon 3 \
   --output /tmp/th08_source_stage_fuzzer_gate.json
@@ -319,6 +341,12 @@ file and passing `--replay`. Failed cases can be retained and delta-debugged
 with `--counterexample-dir`, `--shrink-failures`, and `--shrink-attempts`.
 The campaign has no duration-based early termination; completion is the full
 program frame count.
+
+Future hazards are enabled by default.  Add `--no-future-hazards` only to form
+a matched historical A/B control.  At commit time the fixed quick corpus
+`0x841400..0x841407` completed with zero hits/collision frames in both modes;
+the authoritative mode closed 1,920/1,920 joins.  Routine full reports remain
+in `/tmp`; the semantic record is kept in AUD-086 and the research log.
 
 ## Next Coverage Order
 
@@ -333,15 +361,16 @@ Wine. The next work should remain incremental and differential:
 3. retain the measured persistent native batch boundary. Its 1,536-state
    kernel is 0.02446 ms median, while Python encode/decode makes the wrapper
    22.233 ms; do not put the object wrapper in the 16 ms local issue loop;
-4. join the already generated source event suffix to each closed-loop local
-   root at the exact runtime clock, including callbacks over current bullets;
-   rerun the fixed quick seeds before treating normalized hits as a pruning
-   regression;
-5. add template replacement and derived finite-pool child births, then feed
+4. preserve the completed exact-clock local join for resolved births,
+   callback 12/14, lasers, current bullets, action-conditioned aim bounds, and
+   fail-closed request coverage; use the fixed quick corpus as its smoke gate;
+5. replace the callback/active-transform AABB object fallback with a packed,
+   persistent batch and exercise a denser gate at the real two-frame cadence;
+6. add template replacement and derived finite-pool child births, then feed
    only a complete, version-matched current-plus-future horizon into the
    global viability planner in offline shadow mode, with player-relative
    re-aim explicitly action-conditioned or conservatively set-valued;
-6. use focused Practice and Wine only after a same-capsule global-policy
+7. use focused Practice and Wine only after a same-capsule global-policy
    differential changes a losing predecessor into a certified viable one and
    the submission/publication latency is bounded. In parallel, use a full
    Easy Route-2 NMNB attempt as an infrastructure falsifier: any Easy hit is

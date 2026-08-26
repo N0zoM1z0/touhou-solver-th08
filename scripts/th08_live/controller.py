@@ -19,7 +19,7 @@ from collections import deque
 from concurrent.futures import Future
 from dataclasses import replace
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
@@ -1513,6 +1513,63 @@ def _hazards_for_positions_with_future_projection(
     return risk, collisions, minimum
 
 
+def _bind_future_hazard_query(
+    *,
+    future_hazard_projection: OrdinaryFutureHazardProjection | None,
+    future_projection_offset: int,
+    required_horizon: int,
+) -> Callable[..., tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    """Bind one complete future slab to the ordinary local hazard query."""
+
+    if required_horizon < 0:
+        raise ValueError("future hazard query horizon cannot be negative")
+    if future_hazard_projection is None:
+        if future_projection_offset:
+            raise ValueError("future projection offset requires a projection")
+        return _hazards_for_positions
+    if (
+        not future_hazard_projection.source_closure_complete
+        or not future_hazard_projection.coverage.complete
+        or not (
+            future_hazard_projection
+            .current_pool_callback_composition_complete
+        )
+    ):
+        raise ValueError(
+            "local future hazards require complete source and current-pool "
+            "callback coverage"
+        )
+    if future_projection_offset < 0:
+        raise ValueError("future projection cannot start before its root")
+    if (
+        future_projection_offset + required_horizon
+        > future_hazard_projection.horizon_frames
+    ):
+        raise ValueError("future projection does not cover local hazard horizon")
+
+    def hazards_for_positions(
+        positions_x: np.ndarray,
+        positions_y: np.ndarray,
+        *,
+        step: int,
+        bullet_frame: tuple[np.ndarray, ...],
+        lasers: tuple[Laser, ...] | _PackedLaserFrame,
+        enemy_bodies: tuple[EnemyBody, ...],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        return _hazards_for_positions_with_future_projection(
+            positions_x,
+            positions_y,
+            step=step,
+            bullet_frame=bullet_frame,
+            lasers=lasers,
+            enemy_bodies=enemy_bodies,
+            future_hazard_projection=future_hazard_projection,
+            future_projection_offset=future_projection_offset,
+        )
+
+    return hazards_for_positions
+
+
 def _control_prefix_hazards(
     *,
     player_x: float,
@@ -1526,9 +1583,16 @@ def _control_prefix_hazards(
     player_scale_bits: tuple[int, ...],
     laser_scale_bits: tuple[int, ...],
     laser_frames: tuple[_PackedLaserFrame, ...] | None = None,
+    future_hazard_projection: OrdinaryFutureHazardProjection | None = None,
+    future_projection_offset: int = 0,
 ) -> tuple[float, int, float]:
+    hazards_for_positions = _bind_future_hazard_query(
+        future_hazard_projection=future_hazard_projection,
+        future_projection_offset=future_projection_offset,
+        required_horizon=frames,
+    )
     return _control_prefix_hazards_impl(
-        hazards_for_positions=_hazards_for_positions,
+        hazards_for_positions=hazards_for_positions,
         player_x=player_x,
         player_y=player_y,
         input_mask=input_mask,
@@ -1597,54 +1661,13 @@ def _robust_action_certificates(
     future_projection_offset: int = 0,
     timing_accumulator: _LocalCertificateTimingAccumulator | None = None,
 ) -> dict[str, RobustActionCertificate]:
-    hazards_for_positions = _hazards_for_positions
-    if future_hazard_projection is not None:
-        if (
-            not future_hazard_projection.source_closure_complete
-            or not future_hazard_projection.coverage.complete
-            or not (
-                future_hazard_projection
-                .current_pool_callback_composition_complete
-            )
-        ):
-            raise ValueError(
-                "future prefix certificate requires complete source and "
-                "current-pool callback coverage"
-            )
-        if future_projection_offset < 0:
-            raise ValueError(
-                "future prefix projection cannot start before its root"
-            )
-        required_horizon = (
+    hazards_for_positions = _bind_future_hazard_query(
+        future_hazard_projection=future_hazard_projection,
+        future_projection_offset=future_projection_offset,
+        required_horizon=(
             action_hold_frames + max(delay_frames, default=0)
-        )
-        if (
-            future_projection_offset + required_horizon
-            > future_hazard_projection.horizon_frames
-        ):
-            raise ValueError(
-                "future prefix projection does not cover certificate horizon"
-            )
-
-        def hazards_for_positions(
-            positions_x: np.ndarray,
-            positions_y: np.ndarray,
-            *,
-            step: int,
-            bullet_frame: tuple[np.ndarray, ...],
-            lasers: tuple[Laser, ...] | _PackedLaserFrame,
-            enemy_bodies: tuple[EnemyBody, ...],
-        ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-            return _hazards_for_positions_with_future_projection(
-                positions_x,
-                positions_y,
-                step=step,
-                bullet_frame=bullet_frame,
-                lasers=lasers,
-                enemy_bodies=enemy_bodies,
-                future_hazard_projection=future_hazard_projection,
-                future_projection_offset=future_projection_offset,
-            )
+        ),
+    )
 
     return _robust_action_certificates_impl(
         hazards_for_positions=hazards_for_positions,
@@ -2320,10 +2343,17 @@ def _terminal_threat_scores(
     bullet_frames: tuple[tuple[np.ndarray, ...], ...],
     laser_frames: tuple[tuple[Laser, ...], ...],
     enemy_bodies: tuple[EnemyBody, ...],
+    future_hazard_projection: OrdinaryFutureHazardProjection | None = None,
+    future_projection_offset: int = 0,
 ) -> dict[SearchNode, tuple[int, float]]:
+    hazards_for_positions = _bind_future_hazard_query(
+        future_hazard_projection=future_hazard_projection,
+        future_projection_offset=future_projection_offset,
+        required_horizon=control_delay_frames + end_step,
+    )
     return _terminal_threat_scores_impl(
         nodes,
-        hazards_for_positions=_hazards_for_positions,
+        hazards_for_positions=hazards_for_positions,
         start_step=start_step,
         end_step=end_step,
         control_delay_frames=control_delay_frames,
@@ -2378,6 +2408,7 @@ def _planner_pass_dependencies() -> PlannerPassDependencies:
         ),
         boundary_risk=_boundary_risk,
         build_bullet_frames=_build_bullet_frames,
+        bind_future_hazard_query=_bind_future_hazard_query,
         control_prefix_hazards=_control_prefix_hazards,
         directions_opposed=_directions_opposed,
         hazards_for_positions=_hazards_for_positions,
@@ -2618,6 +2649,8 @@ def choose_action(
     relax_stale_viability_contradiction: bool = False,
     enforce_fresh_viability_intersection: bool = True,
     time_scale_schedule: Th08TimeScaleSchedule | None = None,
+    future_hazard_projection: OrdinaryFutureHazardProjection | None = None,
+    future_projection_offset: int = 0,
 ) -> Decision:
     """Compatibility wrapper for callers not yet migrated to grouped input.
 
@@ -2651,6 +2684,8 @@ def choose_action(
                 enemy_bodies=enemy_bodies,
                 items=items,
                 snapshot_lag=snapshot_lag,
+                future_hazard_projection=future_hazard_projection,
+                future_projection_offset=future_projection_offset,
             ),
             actuator=ActuatorPipeline(
                 previous_direction=previous_direction,

@@ -82,6 +82,7 @@ class PlannerPassDependencies:
     boundary_control_reserve_deficit: Callable[..., float]
     boundary_risk: Callable[[float, float], float]
     build_bullet_frames: Callable[..., Any]
+    bind_future_hazard_query: Callable[..., Any]
     control_prefix_hazards: Callable[..., Any]
     directions_opposed: Callable[[int, int], bool]
     hazards_for_positions: Callable[..., Any]

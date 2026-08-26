@@ -146,6 +146,17 @@ def run_baseline_stage(
     prepared = planner_preparation.hazards
     validated = planner_preparation.validated
     started_ns = time.perf_counter_ns()
+    hazard_query = dependencies.bind_future_hazard_query(
+        future_hazard_projection=(
+            request.physical.future_hazard_projection
+        ),
+        future_projection_offset=(
+            request.physical.future_projection_offset
+        ),
+        required_horizon=(
+            actuator.control_delay_frames + config.horizon
+        ),
+    )
     beam = dependencies.run_baseline_beam(
         BaselineBeamContext(
             initial_beam=tuple(initial_beam),
@@ -200,7 +211,7 @@ def run_baseline_stage(
         directions_opposed=dependencies.directions_opposed,
         project_item=dependencies.project_item,
         advance_action=dependencies.advance_planner_action,
-        hazard_query=dependencies.hazards_for_positions,
+        hazard_query=hazard_query,
         pruning_key=pruning_key,
         native_reducer=native_backend.reduce_local_beam,
     )

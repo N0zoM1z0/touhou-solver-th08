@@ -43,16 +43,32 @@ def _h1_event(**updates: object) -> FutureDirectFire:
 
 
 def _stop_reaim_program(*, resume_speed: float = 2.5) -> bytes:
+    return _single_transform_program(
+        kind=0x80,
+        float_1=resume_speed,
+        int_0=50,
+        int_1=1,
+    )
+
+
+def _single_transform_program(
+    *,
+    kind: int,
+    float_0: float = 0.0,
+    float_1: float = 0.0,
+    int_0: int = 0,
+    int_1: int = 0,
+) -> bytes:
     program = bytearray(18 * 24)
     struct.pack_into(
         "<ffiiII",
         program,
         0,
-        0.0,
-        resume_speed,
-        50,
-        1,
-        0x80,
+        float_0,
+        float_1,
+        int_0,
+        int_1,
+        kind,
         0,
     )
     return bytes(program)
@@ -286,6 +302,56 @@ class FutureBirthEnvelopeTests(unittest.TestCase):
         self.assertIsNotNone(sample)
         assert sample is not None
         self.assertGreaterEqual(sample.half_width, 2.0 + 2.5 * 14.0)
+
+    def test_active_deceleration_includes_source_fixed_speed_five(self) -> None:
+        event = _h1_event(
+            transform_program_zero=False,
+            transform_program=_single_transform_program(
+                kind=0x1,
+                float_0=0.05,
+                int_0=30,
+            ),
+        )
+
+        sector = lower_future_direct_fire_sectors(
+            event,
+            horizon_frames=12,
+        )[0].trajectory
+
+        self.assertEqual(
+            (sector.minimum_angle, sector.maximum_angle),
+            (-math.pi, math.pi),
+        )
+        self.assertEqual(sector.minimum_radii[10], 0.0)
+        self.assertEqual(
+            sector.maximum_radii[10],
+            5.0 * 14.0,
+        )
+
+    def test_stop_turn_and_snap_include_resume_speed_in_disc_bound(self) -> None:
+        for kind in (0x40, 0x100):
+            with self.subTest(kind=hex(kind)):
+                event = _h1_event(
+                    original_flags=0x203 | kind,
+                    transform_program_zero=False,
+                    transform_program=_single_transform_program(
+                        kind=kind,
+                        float_1=3.25,
+                        int_0=40,
+                        int_1=1,
+                    ),
+                )
+                sector = lower_future_direct_fire_sectors(
+                    event,
+                    horizon_frames=12,
+                )[0].trajectory
+
+                self.assertEqual(
+                    (sector.minimum_angle, sector.maximum_angle),
+                    (-math.pi, math.pi),
+                )
+                self.assertEqual(sector.minimum_radii[10], 0.0)
+                self.assertEqual(sector.maximum_radii[10], 3.25 * 14.0)
 
     def test_active_angular_velocity_uses_accelerating_disc_bound(self) -> None:
         event = _h1_event(
