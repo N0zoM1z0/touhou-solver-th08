@@ -218,9 +218,31 @@ def run(args: argparse.Namespace) -> int:
             replay_frame_origin = None
             sample_epochs = 0
             terminal_observation = None
+            lives_preserved_attested = None
             for relative_epoch in range(1, args.gameplay_epochs + 1):
                 while True:
                     request = session.bridge.receive()
+                    request_lives_preserved = request.lives_preserved
+                    if lives_preserved_attested is None:
+                        lives_preserved_attested = request_lives_preserved
+                    elif (
+                        lives_preserved_attested
+                        != request_lives_preserved
+                    ):
+                        session.bridge.respond(0)
+                        raise RuntimeError(
+                            "runtime no-life-decrement attestation changed "
+                            "inside one bridge session"
+                        )
+                    if (
+                        args.stop_at_stage_terminal
+                        and not request_lives_preserved
+                    ):
+                        session.bridge.respond(0)
+                        raise RuntimeError(
+                            "stage-terminal authority requires a runtime "
+                            "that attests no-life-decrement parity"
+                        )
                     if relative_epoch == 1:
                         seek_manager_frame = session.reader.u32(
                             ADDR_ENEMY_MANAGER_FRAME
@@ -403,6 +425,7 @@ def run(args: argparse.Namespace) -> int:
                 "sample_epochs": sample_epochs,
                 "maximum_sample_epochs": args.gameplay_epochs,
                 "stop_at_stage_terminal": bool(args.stop_at_stage_terminal),
+                "lives_preserved_attested": lives_preserved_attested,
                 "stage_terminal": terminal_observation,
                 "semantic_spine_sha256": digest.hexdigest(),
                 "rng_calls_origin": rng_calls_origin,

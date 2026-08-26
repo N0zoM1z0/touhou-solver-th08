@@ -10,6 +10,7 @@ from th08_linux.protocol import (
     DOWN,
     FOCUS,
     LEFT,
+    LIVES_PRESERVED,
     REPLAY_TARGET_STAMPED,
     RESPONSE_MAGIC,
     RIGHT,
@@ -30,7 +31,7 @@ def _request(*, epoch: int = 7, paused_milliseconds: int = 1234) -> bytes:
         LEFT | FOCUS,
         RIGHT,
         0x9630,
-        REPLAY_TARGET_STAMPED,
+        REPLAY_TARGET_STAMPED | LIVES_PRESERVED,
         paused_milliseconds,
     )
 
@@ -58,6 +59,7 @@ class LinuxBridgeProtocolTests(unittest.TestCase):
         self.assertEqual(request.rng_seed, 0x9630)
         self.assertEqual(request.paused_milliseconds, 1234)
         self.assertTrue(request.replay_target_stamped)
+        self.assertTrue(request.lives_preserved)
 
     def test_wire_read_completes_fragmented_records(self) -> None:
         payload = _request()
@@ -75,6 +77,13 @@ class LinuxBridgeProtocolTests(unittest.TestCase):
         struct.pack_into("<I", payload, 24, 1 << 31)
         with self.assertRaisesRegex(ValueError, "unknown flags"):
             decode_request(bytes(payload))
+
+    def test_older_request_does_not_attest_preserved_lives(self) -> None:
+        payload = bytearray(_request())
+        struct.pack_into("<I", payload, 24, REPLAY_TARGET_STAMPED)
+        request = decode_request(bytes(payload))
+        self.assertTrue(request.replay_target_stamped)
+        self.assertFalse(request.lives_preserved)
 
     def test_response_is_exact_epoch_and_hard_no_bomb(self) -> None:
         encoded = encode_response(9, LEFT | UP | FOCUS)

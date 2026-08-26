@@ -114,7 +114,7 @@ def validate_semantic_sample(
     fingerprint: dict[str, object],
     *,
     contract: NativeReplayStageContract,
-    expected_replay_frame: int,
+    expected_replay_frame: int | None = None,
 ) -> None:
     mismatch = replay_stage_binding_mismatch(
         fingerprint,
@@ -127,12 +127,27 @@ def validate_semantic_sample(
     replay = fingerprint["replay"]
     if not isinstance(replay, dict):
         raise RuntimeError("retail replay manager is absent at barrier root")
-    if int(replay["frame_counter"]) != expected_replay_frame:
+    if (
+        expected_replay_frame is not None
+        and int(replay["frame_counter"]) != expected_replay_frame
+    ):
         raise RuntimeError(
             "retail replay logical input clock changed: "
             f"expected={expected_replay_frame} "
             f"observed={replay['frame_counter']}"
         )
+
+
+def validate_replay_frame_advance(*, previous: int, observed: int) -> int:
+    """Return a positive replay delta across two observable barrier roots."""
+
+    delta = observed - previous
+    if delta <= 0:
+        raise RuntimeError(
+            "retail replay logical input clock did not advance: "
+            f"previous={previous} observed={observed}"
+        )
+    return delta
 
 
 def _validate_args(args: argparse.Namespace) -> None:
@@ -167,7 +182,7 @@ def _validate_args(args: argparse.Namespace) -> None:
 def run(args: argparse.Namespace) -> int:
     _validate_args(args)
     report: dict[str, object] = {
-        "schema": "th08-windows-replay-semantic-smoke-v4",
+        "schema": "th08-windows-replay-semantic-smoke-v5",
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "status": "failed",
         "scope": "bounded barrier-aligned replay differential; no route claim",
@@ -259,8 +274,11 @@ def run(args: argparse.Namespace) -> int:
         same_manager_input_epochs = 0
         manager_forward_jump_epochs = 0
         manager_frames_skipped = 0
+        replay_forward_jump_epochs = 0
+        replay_frames_skipped = 0
         inactive_gameplay_epochs = 0
         previous_manager_frame = None
+        previous_replay_frame = None
         replay_frame_origin = None
         sample_epochs = 0
         terminal_observation = None
@@ -348,14 +366,19 @@ def run(args: argparse.Namespace) -> int:
             replay_frame = int(replay["frame_counter"])
             if replay_frame_origin is None:
                 replay_frame_origin = replay_frame
-            expected_replay_frame = (
-                replay_frame_origin + relative_epoch - 1
-            )
             validate_semantic_sample(
                 fingerprint,
                 contract=contract,
-                expected_replay_frame=expected_replay_frame,
             )
+            if previous_replay_frame is not None:
+                replay_frame_delta = validate_replay_frame_advance(
+                    previous=previous_replay_frame,
+                    observed=replay_frame,
+                )
+                if replay_frame_delta > 1:
+                    replay_forward_jump_epochs += 1
+                    replay_frames_skipped += replay_frame_delta - 1
+            previous_replay_frame = replay_frame
             if not fingerprint["gameplay_active"]:
                 inactive_gameplay_epochs += 1
             fingerprints.append(fingerprint)
@@ -389,10 +412,16 @@ def run(args: argparse.Namespace) -> int:
                     int(fingerprints[-1]["manager_frame"]),
                 ],
                 "start_replay_frame": replay_frame_origin,
+                "replay_frame_range": [
+                    int(fingerprints[0]["replay"]["frame_counter"]),
+                    int(fingerprints[-1]["replay"]["frame_counter"]),
+                ],
                 "rng_calls_origin": rng_calls_origin,
                 "same_manager_input_epochs": same_manager_input_epochs,
                 "manager_forward_jump_epochs": manager_forward_jump_epochs,
                 "manager_frames_skipped": manager_frames_skipped,
+                "replay_forward_jump_epochs": replay_forward_jump_epochs,
+                "replay_frames_skipped": replay_frames_skipped,
                 "inactive_gameplay_epochs": inactive_gameplay_epochs,
                 "semantic_spine_sha256": digest.hexdigest(),
                 "fingerprint_output": str(args.fingerprint_output),

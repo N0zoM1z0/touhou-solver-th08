@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
 import gzip
+from itertools import chain
 import json
 from pathlib import Path
 from typing import Literal
 
 
 TRACE_COMPARISON_SCHEMA = "th08-semantic-spine-comparison-v1"
+TRACE_REPLAY_ALIGNMENT_SCHEMA = (
+    "th08-semantic-spine-replay-aligned-comparison-v1"
+)
 MANAGER_FRAME_TRANSITION_ADVANCED = "advanced"
 MANAGER_FRAME_TRANSITION_SAME = "same"
 _ABSENT = object()
@@ -146,6 +150,71 @@ def semantic_trace_record(record: dict[str, object]) -> dict[str, object]:
 
     semantic = dict(record)
     semantic.pop("trace_locators", None)
+    return semantic
+
+
+def _replay_frame(
+    record: dict[str, object], *, path: Path, record_index: int
+) -> int:
+    replay = record.get("replay")
+    if not isinstance(replay, dict):
+        raise ValueError(
+            f"semantic trace lacks replay clock at {path}:{record_index}"
+        )
+    frame = replay.get("frame_counter")
+    if not isinstance(frame, int) or isinstance(frame, bool) or frame < 0:
+        raise ValueError(
+            "semantic trace has invalid replay frame at "
+            f"{path}:{record_index}: {frame!r}"
+        )
+    return frame
+
+
+def _strict_replay_records(
+    path: Path,
+) -> Iterator[tuple[int, int, dict[str, object]]]:
+    previous = None
+    for record_index, record in enumerate(read_semantic_trace(path), start=1):
+        frame = _replay_frame(
+            record,
+            path=path,
+            record_index=record_index,
+        )
+        if previous is not None and frame <= previous:
+            raise ValueError(
+                "semantic trace replay frame is not strictly increasing at "
+                f"{path}:{record_index}: previous={previous} observed={frame}"
+            )
+        previous = frame
+        yield record_index, frame, record
+
+
+def _rng_call_count(record: dict[str, object]) -> int | None:
+    rng = record.get("rng")
+    if not isinstance(rng, dict):
+        return None
+    calls = rng.get("calls_since_trace_start")
+    if not isinstance(calls, int) or isinstance(calls, bool):
+        return None
+    return calls
+
+
+def _replay_aligned_record(
+    record: dict[str, object], *, rng_origin: int | None
+) -> dict[str, object]:
+    """Remove sampling locators and normalize the trace-relative RNG count."""
+
+    semantic = semantic_trace_record(record)
+    semantic.pop("relative_epoch", None)
+    calls = _rng_call_count(record)
+    if calls is not None and rng_origin is not None:
+        rng = semantic.get("rng")
+        assert isinstance(rng, dict)
+        normalized_rng = dict(rng)
+        normalized_rng["calls_since_trace_start"] = (
+            calls - rng_origin
+        ) & 0xFFFFFFFF
+        semantic["rng"] = normalized_rng
     return semantic
 
 
@@ -300,12 +369,139 @@ def compare_semantic_traces(
         compared += 1
 
 
+def compare_semantic_traces_by_replay_frame(
+    reference_path: Path,
+    sample_path: Path,
+    *,
+    maximum_field_differences: int = 64,
+) -> dict[str, object]:
+    """Compare a sparse sample against every matching replay frame in a reference.
+
+    The reference may contain additional frames before, between, or after the
+    sample.  Replay frames in both inputs must be strictly increasing.  The
+    trace-relative epoch and RNG-call origins are normalized; all runtime
+    semantic fields, including the manager clock, remain exact.
+    """
+
+    if maximum_field_differences <= 0:
+        raise ValueError("maximum field difference count must be positive")
+    reference_records = _strict_replay_records(reference_path)
+    sample_records = _strict_replay_records(sample_path)
+    reference = next(reference_records, None)
+    first_sample = next(sample_records, None)
+    if first_sample is None:
+        raise ValueError("replay-aligned sample trace is empty")
+    compared = 0
+    reference_scanned = 0
+    reference_rng_origin = None
+    sample_rng_origin = None
+
+    for sample_index, sample_frame, sample in chain(
+        (first_sample,), sample_records
+    ):
+        while reference is not None and reference[1] < sample_frame:
+            reference_scanned = reference[0]
+            reference = next(reference_records, None)
+        if reference is not None:
+            reference_scanned = reference[0]
+        if reference is None or reference[1] > sample_frame:
+            return {
+                "schema": TRACE_REPLAY_ALIGNMENT_SCHEMA,
+                "equal": False,
+                "left": str(reference_path),
+                "right": str(sample_path),
+                "alignment": "replay.frame_counter",
+                "compared_records": compared,
+                "left_records_scanned": reference_scanned,
+                "ignored_fields": ["/trace_locators", "/relative_epoch"],
+                "normalized_fields": ["/rng/calls_since_trace_start"],
+                "first_difference": {
+                    "replay_frame": sample_frame,
+                    "left_record_index": (
+                        None if reference is None else reference[0]
+                    ),
+                    "right_record_index": sample_index,
+                    "left_relative_epoch": (
+                        None
+                        if reference is None
+                        else reference[2].get("relative_epoch")
+                    ),
+                    "right_relative_epoch": sample.get("relative_epoch"),
+                    "field_differences": [
+                        {
+                            "path": "/replay/frame_counter",
+                            "left": (
+                                {"absent": True}
+                                if reference is None
+                                else reference[1]
+                            ),
+                            "right": sample_frame,
+                        }
+                    ],
+                },
+            }
+        reference_index, _reference_frame_value, reference_record = reference
+        if reference_rng_origin is None:
+            reference_rng_origin = _rng_call_count(reference_record)
+            sample_rng_origin = _rng_call_count(sample)
+        reference_semantic = _replay_aligned_record(
+            reference_record,
+            rng_origin=reference_rng_origin,
+        )
+        sample_semantic = _replay_aligned_record(
+            sample,
+            rng_origin=sample_rng_origin,
+        )
+        if reference_semantic != sample_semantic:
+            return {
+                "schema": TRACE_REPLAY_ALIGNMENT_SCHEMA,
+                "equal": False,
+                "left": str(reference_path),
+                "right": str(sample_path),
+                "alignment": "replay.frame_counter",
+                "compared_records": compared,
+                "left_records_scanned": reference_scanned,
+                "ignored_fields": ["/trace_locators", "/relative_epoch"],
+                "normalized_fields": ["/rng/calls_since_trace_start"],
+                "first_difference": {
+                    "replay_frame": sample_frame,
+                    "left_record_index": reference_index,
+                    "right_record_index": sample_index,
+                    "left_relative_epoch": reference_record.get(
+                        "relative_epoch"
+                    ),
+                    "right_relative_epoch": sample.get("relative_epoch"),
+                    "field_differences": _field_differences(
+                        reference_semantic,
+                        sample_semantic,
+                        maximum=maximum_field_differences,
+                    ),
+                },
+            }
+        compared += 1
+
+    return {
+        "schema": TRACE_REPLAY_ALIGNMENT_SCHEMA,
+        "equal": True,
+        "left": str(reference_path),
+        "right": str(sample_path),
+        "alignment": "replay.frame_counter",
+        "compared_records": compared,
+        "left_records_scanned": reference_scanned,
+        "ignored_fields": ["/trace_locators", "/relative_epoch"],
+        "normalized_fields": ["/rng/calls_since_trace_start"],
+        "first_difference": None,
+    }
+
+
 __all__ = (
     "MANAGER_FRAME_TRANSITION_ADVANCED",
     "MANAGER_FRAME_TRANSITION_SAME",
     "TRACE_COMPARISON_SCHEMA",
+    "TRACE_REPLAY_ALIGNMENT_SCHEMA",
     "classify_manager_frame_transition",
     "compare_semantic_traces",
+    "compare_semantic_traces_by_replay_frame",
     "partial_semantic_trace_path",
     "read_semantic_trace",
     "replay_stage_binding_mismatch",

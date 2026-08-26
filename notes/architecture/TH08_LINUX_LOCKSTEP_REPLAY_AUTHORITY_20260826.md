@@ -59,9 +59,10 @@ an integration convenience, not proof of runtime equivalence.
 
 The first implementation checkpoint is now concrete.  The runtime branch
 `solver/linux-lockstep-replay-bridge` contains the bridge commits `8ffe729`
-and `02ca583` plus retail-semantics correction `99c8ba3`; its current verified
-ELF SHA-256 is
-`52b450b9d6ae8ec636e4794d87bbc6427b119798880f50f67794dd093f3c1a04`.
+and `02ca583`, retail-semantics corrections `99c8ba3`, `d031d97`, and
+`35da24c`, plus capability attestation `1269547`; its current verified ELF
+SHA-256 is
+`ec5576d5e6c170964ab4bcb6c88710a231c5df540233f8a5cfb0ce25138c3235`.
 The solver branch contains the protocol/process adapter at `878c3e4` and the
 exact-child session owner at `eaa643a`.  These identities are out-of-band
 configuration and audit evidence; protocol metadata does not substitute for
@@ -240,6 +241,43 @@ trigonometric velocity components can still differ by one ULP, so the next
 gate extends until the first remaining discrete threshold crossing rather than
 declaring float or route equivalence.
 
+## Clock separation, teardown authority, and opcode-148 correction
+
+The extended differential falsified three names that had silently become
+assumptions. `ReplayStage.stored_input_word_count` describes a decoded storage
+extent, not playable stage duration. `relative_epoch` is a collector-local
+sample index, not necessarily the retail replay frame. The fixed-address
+counter at `0x0164D30C` is allowed to jump under source ECL semantics and is
+not a universal input clock.
+
+These clocks now have separate contracts:
+
+- the Linux socket epoch is contiguous because the bridge observes every
+  priority-0 input acquisition;
+- ReplayManager's frame counter is the cross-runtime input identity;
+- Wine barrier samples require strictly increasing replay frames but may be
+  sparse when internal epochs occur between observable outer roots;
+- manager/gameplay clock values are compared semantically at matching replay
+  frames, while nonnegative forward jumps are recorded rather than rejected;
+- a replay storage word count is only a diagnostic guard and never a route or
+  stage-completion certificate.
+
+The first post-parity manager-clock difference was a real reconstructed-source
+defect. Retail ECL opcode 148 adds `0x708` to absolute `0x0164D30C` at
+`0x0041D6C7`; Linux addressed `g_GameManager + 0x3E04` instead of the exact
+`+0x3DE04`. Runtime commit `35da24c` repairs this generic opcode. A physical
+frame-4,525--4,540 replay window then matches retail on all 16 replay-aligned
+semantic roots and reproduces the exact `4530 -> 6331` clock jump.
+
+The earlier Linux teardown at replay frame 7,650 is no longer classified as a
+Stage-5 completion: it followed depletion of all eight lives on a runtime
+without the Wine no-life patch. Commit `d031d97` implements the exact retail
+patch semantics as `AddLives(0)`, retaining anti-tamper maintenance and every
+other death transition. Commit `1269547` advertises this mode on the wire;
+terminal-aware Linux collection fails closed without that attestation. A
+normal completion still requires outcome evidence, and the original
+executable remains the final replay authority.
+
 ## Relationship to the offline fuzzer
 
 The source-stateful stage fuzzer remains the high-volume adversarial laboratory
@@ -264,12 +302,15 @@ Linux runtime, and original replay is a localization tool, not a vote.
    Linux self-repeat with first-divergence tooling.
 6. **In progress:** the retail collector traps the shipped executable at the
    verified pre-calculation callsite, advances through the original frame pump
-   one update at a time, and shares the Linux semantic-spine format. The first
+   as a strictly-forward sparse replay sampler, and shares the Linux
+   semantic-spine format. The first
    discrete split is source-attributed and fixed: callback 7 now uses signed
    RNG, and frames 267--268 agree on the resulting shots, collision, effects,
-   and RNG. Deep projections retain decoded combat, effect/ANM, and ECL state
-   without raw pools and accept exact high-half relocated-image bounds. Extend
-   the retained replay to the next discrete split, then differential a
+   and RNG. Opcode 148 now reproduces the retail 1,800-frame gameplay-clock
+   jump, and a replay-frame-aligned 16-root gate is exact. Deep projections
+   retain decoded combat, effect/ANM, and ECL state without raw pools and
+   accept exact high-half relocated-image bounds. Extend the retained replay
+   with the sparse comparator to the next discrete split, then differential a
    Linux-generated replay in fresh Linux and original-Wine processes.
 7. Only after that gate, connect the generic local planner epoch driver and
    solve Easy practice roots followed by the full Easy route.

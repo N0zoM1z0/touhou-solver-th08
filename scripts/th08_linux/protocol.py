@@ -12,7 +12,8 @@ PROTOCOL_VERSION = 1
 REQUEST_SIZE = 32
 RESPONSE_SIZE = 24
 REPLAY_TARGET_STAMPED = 1 << 0
-KNOWN_REQUEST_FLAGS = REPLAY_TARGET_STAMPED
+LIVES_PRESERVED = 1 << 1
+KNOWN_REQUEST_FLAGS = REPLAY_TARGET_STAMPED | LIVES_PRESERVED
 
 SHOOT = 1 << 0
 BOMB = 1 << 1
@@ -51,6 +52,10 @@ class InputRequest:
     @property
     def replay_target_stamped(self) -> bool:
         return bool(self.flags & REPLAY_TARGET_STAMPED)
+
+    @property
+    def lives_preserved(self) -> bool:
+        return bool(self.flags & LIVES_PRESERVED)
 
 
 def read_exact(connection: ReceivingSocket, size: int) -> bytes:

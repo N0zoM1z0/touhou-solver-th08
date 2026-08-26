@@ -9,6 +9,7 @@ from th08_automation.finalb_replay_observer import NativeReplayStageContract
 from tools.th08_windows_replay_semantic_smoke import (
     build_parser,
     validate_semantic_sample,
+    validate_replay_frame_advance,
 )
 
 
@@ -84,6 +85,18 @@ class WindowsReplaySemanticSmokeTests(unittest.TestCase):
             contract=_contract(),
             expected_replay_frame=600,
         )
+
+    def test_sparse_barrier_sample_accepts_only_forward_replay_jumps(self) -> None:
+        self.assertEqual(
+            validate_replay_frame_advance(previous=10649, observed=10652),
+            3,
+        )
+        for observed in (10649, 10648):
+            with self.assertRaisesRegex(RuntimeError, "did not advance"):
+                validate_replay_frame_advance(
+                    previous=10649,
+                    observed=observed,
+                )
 
     def test_sample_contract_rejects_clock_or_identity_drift(self) -> None:
         fingerprint = _fingerprint()

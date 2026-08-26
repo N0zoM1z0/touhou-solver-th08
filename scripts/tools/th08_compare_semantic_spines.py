@@ -12,7 +12,10 @@ SCRIPTS = Path(__file__).resolve().parents[1]
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from th08_linux.semantic_trace import compare_semantic_traces  # noqa: E402
+from th08_linux.semantic_trace import (  # noqa: E402
+    compare_semantic_traces,
+    compare_semantic_traces_by_replay_frame,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -20,11 +23,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("left", type=Path)
     parser.add_argument("right", type=Path)
     parser.add_argument("--maximum-field-differences", type=int, default=64)
+    parser.add_argument(
+        "--align-replay-frame",
+        action="store_true",
+        help=(
+            "treat left as a dense reference and compare only replay frames "
+            "present in the right-hand sparse sample"
+        ),
+    )
     return parser
 
 
 def run(args: argparse.Namespace) -> int:
-    report = compare_semantic_traces(
+    comparator = (
+        compare_semantic_traces_by_replay_frame
+        if args.align_replay_frame
+        else compare_semantic_traces
+    )
+    report = comparator(
         args.left,
         args.right,
         maximum_field_differences=args.maximum_field_differences,

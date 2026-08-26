@@ -219,6 +219,39 @@ restores the retail frame-268 collision, effect count, and RNG seed.  Several
 trigonometric velocity components still differ by one ULP, so this is a
 discrete semantic repair rather than a full replay-equivalence claim.
 
+The longer replay exposes a more consequential benefit of the native view:
+it makes clocks and teardown causes falsifiable instead of implicit.  The
+decoded Stage~5 input extent contains 33,728 words, but that storage boundary
+is not a playable-duration certificate.  An earlier Linux run without the
+retail no-life patch exhausted its lives and lost the replay binding after
+frame 7,649; treating that teardown as stage completion was therefore wrong.
+The bridge now reproduces the retail patch exactly as
+\code{AddLives(0)}---including anti-tamper maintenance---and advertises that
+capability on the wire.  Terminal-aware collection fails closed without it.
+With parity enabled, gameplay remains active at the former storage guard, so
+the earlier completion claim is withdrawn rather than rationalized.
+
+After this instrumentation parity, the first new discrete difference is
+especially informative.  At replay frame 4,531 the retail gameplay counter
+jumps from 4,530 to 6,331, whereas Linux formerly advanced by one.  Original
+disassembly attributes the $+1800$ transition to ECL opcode~148 at
+$0x0041D6C7$.  The reconstructed handler addressed
+\code{g\_GameManager+0x3E04}; the exact target address requires
+\code{+0x3DE04}.  Correcting this one-digit source error reproduces the jump,
+and all sixteen semantic roots in a surrounding replay window then match the
+original exactly.  This is a generic VM-semantics repair, not a card-specific
+policy.
+
+The experiment also separates observation cadence from game time.  The Linux
+socket observes every priority-zero input acquisition, but the retail outer
+calculation barrier can skip internal replay epochs.  Its trace is therefore
+a strictly increasing sparse sample, not a contiguous replay clock.  The
+streaming differential now joins records by ReplayManager frame, normalizes
+only trace-local epoch and RNG-count origins, and still compares manager time,
+RNG trajectory, input, player, resources, and spell state exactly.  This
+clock separation prevents both false runtime divergences and false completion
+claims before expensive full-route experiments.
+
 The same deep capture corrected a separate portability defect: valid relocated
 ECL pointers in the high half of the i386 address space had been rejected by a
 Win32-specific $0x7fffffff$ bound.  Exact image intervals now validate those

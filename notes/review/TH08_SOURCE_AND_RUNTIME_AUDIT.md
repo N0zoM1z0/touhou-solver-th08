@@ -3366,10 +3366,105 @@ claim follows. Those bounded continuous residuals are now separated from the
 fixed discrete API error; the next differential searches for their first
 threshold crossing or another source-port semantic mismatch.
 
+### AUD-110 — Replay storage extent and replay time were conflated
+
+Status: **REPRODUCED PHYSICAL; FALSE COMPLETION CLAIM WITHDRAWN; GUARD RENAMED**
+
+The Stage-5 record in retained replay `th8_15.rpy` occupies 33,728 stored
+input words. That byte extent is not a source-authoritative playable duration:
+the final stage has no following stage offset, so result/save trailing storage
+can share the same extent. The old collector also treated an inactive root
+whose replay binding disappeared as a normal stage terminal. On the Linux
+runtime without no-life parity, lives fell from 8 to 0 and the last active
+root at replay frame 7,649 had player phase 1; the next teardown was game over,
+not a Stage-5 clear. The former “complete Stage 5” interpretation is therefore
+withdrawn.
+
+After exact no-life parity, the same run remains gameplay-active for all
+33,728 sampled replay frames. Its last root is still Stage 5, spell 115, at
+spell timer 685. The resulting 33,728-record partial trace is 952 KiB gzip and
+has SHA-256
+`b1bdeb2a6d2b47ff5bcf4ab3a631849a2c8e7528bac305455b96541dfd31eedc`.
+Reports now call the replay field `stage_stored_input_word_count`, retain
+partial traces on diagnostic failure, and make no duration or clear claim from
+that number.
+
+Stage-terminal mode additionally requires a wire-level preserved-lives
+attestation from the Linux runtime. Older runtimes fail closed instead of
+promoting game-over teardown. The original-Wine collector already verifies
+the exact `0x0044D0FA` patch byte before capture. A normal route terminal still
+requires explicit outcome evidence; replay-binding loss alone is only a
+teardown observation.
+
+### AUD-111 — Cross-runtime lives differed because only Wine was patched
+
+Status: **SOURCE- AND BINARY-CONFIRMED; FIXED AND VALIDATED PHYSICAL**
+
+The first comparison after the signed-RNG repair differed at replay frame
+3,522 only in lives: Linux decremented from 8 to 7 while Wine retained 8. This
+was not gameplay arithmetic drift. The Wine analysis patch changes byte
+`0x0044D0FA` from `FF` to `00`; retail disassembly shows that byte is the
+immediate operand of `push -1` immediately before `GameManager::AddLives`.
+The patched executable therefore executes `AddLives(0)`, including its
+anti-tamper refresh, rather than skipping the death path.
+
+Linux runtime commit `d031d97` mirrors that exact behavior only while the
+opt-in solver bridge is configured. Interactive Linux play still calls
+`AddLives(-1)`. Commit `1269547` exposes this behavior as the
+`LIVES_PRESERVED` request capability; a physical one-frame replay handshake
+with ELF SHA-256
+`ec5576d5e6c170964ab4bcb6c88710a231c5df540233f8a5cfb0ce25138c3235`
+reports `lives_preserved_attested=true`.
+
+### AUD-112 — ECL opcode 148 wrote a clock through a one-digit-short offset
+
+Status: **ROOT CAUSE FIXED IN LINUX RUNTIME; 16-ROOT RETAIL GATE PASSED**
+
+With lives parity restored, Linux and retail match exactly through replay
+frame 4,530. At frame 4,531, retail changes the sampled manager/gameplay clock
+from 4,530 to 6,331 while old Linux advances to 4,531. The difference is
+exactly 1,800 (`0x708`); input, player, resources, spell state, RNG seed, and
+RNG call trajectory remain equal at that boundary.
+
+Retail `RunEcl` disassembly at `0x0041D6C7..0x0041D6D3` reads absolute
+`0x0164D30C`, adds `0x708`, and stores it back. The jump-table maps that
+handler to ECL opcode 148. Reconstructed `EclRunHigh.inl` had the intended
+operation but addressed `g_GameManager + 0x3E04`; because
+`g_GameManager=0x0160F508`, the target offset is `0x3DE04`. The missing `D`
+both suppressed the clock jump and wrote unrelated GameManager storage.
+
+Runtime commit `35da24c` corrects the generic opcode implementation without a
+stage or spell condition. A fresh Linux frame-4,525--4,540 trace records one
+forward clock jump and exactly 1,800 skipped manager values. Replay-frame
+alignment against the retained Wine trace compares all 16 roots equal after
+normalizing only trace-local epoch and RNG-count origins.
+
+### AUD-113 — The Wine outer barrier is a sparse replay sampler
+
+Status: **IMPLEMENTED AND TESTED OFFLINE; PHYSICAL EXTENSION PENDING**
+
+The Wine calculation-call barrier does not observe every internal
+ReplayManager input epoch. The retained complete-attempt partial trace reached
+10,649 accepted samples, then observed replay frame 10,652 where the old
+collector demanded 10,650. Rejecting every forward gap conflated the barrier's
+sample index with the game's replay clock.
+
+The collector now requires the observed replay frame to advance strictly but
+accepts positive gaps, reporting jump count and skipped replay-frame count.
+Stalls and regressions remain fatal. A streaming comparator treats its left
+trace as a dense reference, matches only replay frames present in the sparse
+right trace, removes trace locators and sample-local relative epochs, and
+normalizes each trace's RNG-call origin at the first matched frame. Manager
+clock, RNG seed/delta, input, player, resources, spell state, and all optional
+deep projections remain exact. Unit tests cover a `10649 -> 10652` gap,
+nonmonotonic rejection, sparse equality, and first nested semantic difference.
+The 16-root physical opcode-148 window passes this aligned comparator; a new
+long Wine capture is still required before any whole-stage claim.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,623 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,649 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 46 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.
