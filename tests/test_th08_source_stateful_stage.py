@@ -11,10 +11,12 @@ import unittest
 
 from th08_semantics.stage import (
     BULLET_POOL_SIZE,
+    CALLBACK14_STAGE_SCHEMA,
     CULL_GEOMETRY_STAGE_SCHEMA,
     STAGE_SCHEMA,
     BulletEmitter,
     Callback12Event,
+    Callback14Event,
     RuntimeBullet,
     StagePhase,
     StageProgram,
@@ -181,7 +183,7 @@ class SourceStatefulStageTests(unittest.TestCase):
         different = generate_stage_program(seed=0xCE0133, profile="quick")
 
         self.assertEqual(first, second)
-        self.assertEqual(first.schema, CULL_GEOMETRY_STAGE_SCHEMA)
+        self.assertEqual(first.schema, CALLBACK14_STAGE_SCHEMA)
         self.assertEqual(first.digest, second.digest)
         self.assertNotEqual(first.digest, different.digest)
         replay = StageProgram.from_payload(
@@ -198,7 +200,7 @@ class SourceStatefulStageTests(unittest.TestCase):
         downgraded = replay.to_payload()
         downgraded.pop("sha256")
         downgraded["schema"] = STAGE_SCHEMA
-        with self.assertRaisesRegex(ValueError, "cull-geometry features"):
+        with self.assertRaisesRegex(ValueError, "callback-14 features"):
             StageProgram.from_payload(downgraded)
 
     def test_tracked_v1_gate_program_remains_parseable_but_not_closed(
@@ -247,6 +249,16 @@ class SourceStatefulStageTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "spawn_lifecycle"):
                     StageProgram.from_payload(payload)
 
+    def test_callback_payload_rejects_noncanonical_layout(self) -> None:
+        program = generate_stage_program(seed=0xCE0132, profile="quick")
+        for malformed in ([1, 2], [1, 2, 3, 4, 5], "1,2,3"):
+            with self.subTest(malformed=malformed):
+                payload = program.to_payload()
+                payload.pop("sha256")
+                payload["phases"][0]["callbacks"][0] = malformed
+                with self.assertRaisesRegex(ValueError, "callback payload"):
+                    StageProgram.from_payload(payload)
+
     def test_complete_quick_stage_exercises_long_transition_history(self) -> None:
         program = generate_stage_program(seed=0xCE0132, profile="quick")
         first = StageRuntime(program)
@@ -260,6 +272,8 @@ class SourceStatefulStageTests(unittest.TestCase):
         self.assertGreater(first.metrics.births_requested, 4000)
         self.assertGreater(first.metrics.max_active_bullets, 1200)
         self.assertGreater(first.metrics.callback_changes, 1000)
+        self.assertGreater(first.metrics.callback12_changes, 0)
+        self.assertGreater(first.metrics.callback14_changes, 0)
         self.assertGreater(first.metrics.spawn_lifecycle_activations, 0)
         self.assertGreater(first.metrics.transform_activations, 500)
         self.assertGreater(first.metrics.laser_spawns, 0)
@@ -277,9 +291,61 @@ class SourceStatefulStageTests(unittest.TestCase):
         self.assertEqual(result.frames_compared, 480)
         self.assertTrue(result.final_rng_state_equal)
         self.assertTrue(result.final_rng_calls_equal)
-        self.assertLess(result.maximum_non_lifecycle_position_error, 1.0e-4)
+        # Repeated callback-14 sinf/cosf replacements lengthen the admitted
+        # one-ULP velocity history; the differential's per-slot propagated
+        # budget remains the authority, not a fixed accumulated-position cap.
+        self.assertLess(result.maximum_non_lifecycle_position_error, 2.0e-4)
+        self.assertLess(result.maximum_callback_velocity_error, 1.0e-6)
         self.assertGreater(result.lifecycle_samples_compared, 0)
         self.assertLessEqual(result.maximum_lifecycle_position_error, 1.0e-5)
+
+    def test_callback14_suppressed_pool_reactivates_before_motion(self) -> None:
+        program = StageProgram(
+            seed=5,
+            profile="callback14-transition-fixture",
+            frame_count=5,
+            gameplay_rng_seed=1,
+            phases=(
+                StagePhase(
+                    name="phase",
+                    start_frame=0,
+                    end_frame=4,
+                    clear_at_start=True,
+                    emitters=(_emitter(),),
+                    callbacks=(
+                        Callback12Event(1, 0x100000, 0.0, 0.0),
+                        Callback12Event(2, 0x100000, 0.0, 0.0),
+                        Callback14Event(3, 0x100000, 0.0),
+                        Callback14Event(4, 0x100000, 0.0),
+                    ),
+                    lasers=(),
+                ),
+            ),
+        )
+        runtime = StageRuntime(program)
+
+        states = []
+        collisions = []
+        reactivations = []
+        for _frame in range(program.frame_count):
+            step = runtime.step(player_x=192.0, player_y=100.0)
+            bullet = next(
+                value for value in runtime.bullets if value is not None
+            )
+            states.append((bullet.phase_state, bullet.collision_aux))
+            collisions.append(step.bullet_collision_slots)
+            reactivations.append(step.callback14_reactivated_slots)
+
+        self.assertEqual(states, [(0, 0), (1, 0), (0, 1), (2, 1), (1, 0)])
+        self.assertTrue(collisions[1])
+        self.assertEqual(collisions[2:4], [(), ()])
+        self.assertTrue(collisions[4])
+        self.assertEqual(reactivations[:4], [(), (), (), ()])
+        self.assertEqual(reactivations[4], collisions[4])
+        self.assertEqual(runtime.metrics.callback14_reactivations, 1)
+        self.assertEqual(runtime.metrics.callback14_reactivation_collisions, 1)
+        differential = compare_stage_with_c_source_oracle(program)
+        self.assertTrue(differential.passed, differential.first_mismatch)
 
     def test_spawn_lifecycle_is_nonlethal_until_same_update_activation(
         self,

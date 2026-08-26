@@ -2,7 +2,7 @@
 
 The stage IR begins at resolved ECL producer events.  It does not pretend to
 execute arbitrary ECL bytecode: every emitter is a finite sequence of native
-bullet descriptors, every callback is an explicit recovered callback-12
+bullet descriptors, every callback is an explicit recovered callback-12/14
 invocation, and every transform is one of the handlers modeled below.  This
 gives offline tests long causal histories without inventing inconsistent
 snapshot fields.
@@ -45,6 +45,7 @@ from th08_semantics.source_primitives import (
     SourcePattern,
     SourcePatternSample,
     apply_callback12,
+    apply_callback14,
     f32,
     normalize_angle,
     pattern_sample,
@@ -57,6 +58,7 @@ LIFECYCLE_STAGE_SCHEMA = "th08-source-stateful-stage-v3-spawn-lifecycle"
 CULL_GEOMETRY_STAGE_SCHEMA = (
     "th08-source-stateful-stage-v4-template-cull-geometry"
 )
+CALLBACK14_STAGE_SCHEMA = "th08-source-stateful-stage-v5-callback14"
 SOURCE_AUTHORITY_COMMIT = "57ee34f"
 BULLET_POOL_SIZE = 0x600
 LASER_POOL_SIZE = 0x100
@@ -491,6 +493,43 @@ class Callback12Event:
 
 
 @dataclass(frozen=True)
+class Callback14Event:
+    frame: int
+    tag_mask: int
+    speed: float
+
+    def __post_init__(self) -> None:
+        if self.frame < 0 or self.tag_mask == 0:
+            raise ValueError("invalid callback-14 event")
+        if not math.isfinite(self.speed):
+            raise ValueError("callback-14 speed must be finite")
+
+    def to_payload(self) -> list[object]:
+        return [self.frame, self.tag_mask, self.speed]
+
+    @classmethod
+    def from_payload(cls, values: list[object]) -> "Callback14Event":
+        return cls(
+            int(values[0]),
+            int(values[1]),
+            float(values[2]),
+        )
+
+
+StageCallbackEvent = Callback12Event | Callback14Event
+
+
+def _callback_event_from_payload(values: object) -> StageCallbackEvent:
+    if not isinstance(values, list):
+        raise ValueError("stage callback payload must be a list")
+    if len(values) == 4:
+        return Callback12Event.from_payload(values)
+    if len(values) == 3:
+        return Callback14Event.from_payload(values)
+    raise ValueError("stage callback payload has a noncanonical layout")
+
+
+@dataclass(frozen=True)
 class LaserSpawnEvent:
     frame: int
     origin_x: float
@@ -575,7 +614,7 @@ class StagePhase:
     end_frame: int
     clear_at_start: bool
     emitters: tuple[BulletEmitter, ...]
-    callbacks: tuple[Callback12Event, ...]
+    callbacks: tuple[StageCallbackEvent, ...]
     lasers: tuple[LaserSpawnEvent, ...]
 
     def __post_init__(self) -> None:
@@ -621,7 +660,7 @@ class StagePhase:
                 for value in payload["emitters"]
             ),
             callbacks=tuple(
-                Callback12Event.from_payload(value)
+                _callback_event_from_payload(value)
                 for value in payload["callbacks"]
             ),
             lasers=tuple(
@@ -670,6 +709,12 @@ class StageProgram:
 
     @property
     def schema(self) -> str:
+        if any(
+            isinstance(event, Callback14Event)
+            for phase in self.phases
+            for event in phase.callbacks
+        ):
+            return CALLBACK14_STAGE_SCHEMA
         if all(
             emitter.cull_half_width is not None
             for phase in self.phases
@@ -725,6 +770,7 @@ class StageProgram:
             RESOLVED_AIM_STAGE_SCHEMA,
             LIFECYCLE_STAGE_SCHEMA,
             CULL_GEOMETRY_STAGE_SCHEMA,
+            CALLBACK14_STAGE_SCHEMA,
         ):
             raise ValueError("unsupported source-stage schema")
         unsigned = dict(payload)
@@ -753,7 +799,7 @@ class StageProgram:
         if program.schema != schema:
             raise ValueError(
                 "source-stage schema does not cover resolved-aim/lifecycle/"
-                "cull-geometry features"
+                "cull-geometry/callback-14 features"
             )
         return program
 
@@ -983,6 +1029,9 @@ class StageStep:
     births_allocated: int
     births_suppressed_by_pool: int
     callback_changes: int
+    callback12_changes: int
+    callback14_changes: int
+    callback14_reactivated_slots: tuple[int, ...]
     spawn_lifecycle_activations: int
     transform_activations: int
     laser_spawns: int
@@ -1000,6 +1049,10 @@ class StageMetrics:
     births_allocated: int = 0
     births_suppressed_by_pool: int = 0
     callback_changes: int = 0
+    callback12_changes: int = 0
+    callback14_changes: int = 0
+    callback14_reactivations: int = 0
+    callback14_reactivation_collisions: int = 0
     spawn_lifecycle_activations: int = 0
     transform_activations: int = 0
     laser_spawns: int = 0
@@ -1018,6 +1071,7 @@ PatternSampler = Callable[
     SourcePatternSample,
 ]
 Callback12Applier = Callable[..., tuple[Callback12State, bool]]
+Callback14Applier = Callable[..., tuple[Callback12State, bool]]
 
 
 def _python_pattern_sampler(
@@ -1043,6 +1097,7 @@ class StageRuntime:
         *,
         pattern_sampler: PatternSampler = _python_pattern_sampler,
         callback12_applier: Callback12Applier = apply_callback12,
+        callback14_applier: Callback14Applier = apply_callback14,
     ) -> None:
         if not program.source_closed:
             raise ValueError(
@@ -1051,6 +1106,7 @@ class StageRuntime:
         self.program = program
         self.pattern_sampler = pattern_sampler
         self.callback12_applier = callback12_applier
+        self.callback14_applier = callback14_applier
         self.rng = Th08Rng(program.gameplay_rng_seed)
         self.frame = 0
         self.bullets: list[RuntimeBullet | None] = [None] * BULLET_POOL_SIZE
@@ -1223,29 +1279,47 @@ class StageRuntime:
                     activations += self._activate_next_transform(bullet)
         return requested, allocation_calls, allocated, activations
 
-    def _apply_callbacks(self) -> int:
+    def _apply_callbacks(self) -> tuple[int, int, int, tuple[int, ...]]:
         changed = 0
+        callback12_changes = 0
+        callback14_changes = 0
+        initial_aux = {
+            bullet.slot: bullet.collision_aux
+            for bullet in self.bullets
+            if bullet is not None
+        }
+        callback14_touched: set[int] = set()
         for event in self._callbacks[self.frame]:
             for bullet in self.bullets:
                 if bullet is None:
                     continue
-                state, applied = self.callback12_applier(
-                    Callback12State(
-                        phase_state=bullet.phase_state,
-                        collision_aux=bullet.collision_aux,
-                        presentation_flags=bullet.presentation_flags,
-                        animation_index=bullet.animation_index,
-                        base_speed=bullet.base_speed,
-                        base_angle=bullet.base_angle,
-                        velocity_x=bullet.velocity_x,
-                        velocity_y=bullet.velocity_y,
-                    ),
-                    bullet_tags=bullet.tag_flags,
-                    selected_tags=event.tag_mask,
-                    callback_angle=event.angle,
-                    callback_speed=event.speed,
-                    time_scale=1.0,
+                callback_state = Callback12State(
+                    phase_state=bullet.phase_state,
+                    collision_aux=bullet.collision_aux,
+                    presentation_flags=bullet.presentation_flags,
+                    animation_index=bullet.animation_index,
+                    base_speed=bullet.base_speed,
+                    base_angle=bullet.base_angle,
+                    velocity_x=bullet.velocity_x,
+                    velocity_y=bullet.velocity_y,
                 )
+                if isinstance(event, Callback12Event):
+                    state, applied = self.callback12_applier(
+                        callback_state,
+                        bullet_tags=bullet.tag_flags,
+                        selected_tags=event.tag_mask,
+                        callback_angle=event.angle,
+                        callback_speed=event.speed,
+                        time_scale=1.0,
+                    )
+                else:
+                    state, applied = self.callback14_applier(
+                        callback_state,
+                        bullet_tags=bullet.tag_flags,
+                        selected_tags=event.tag_mask,
+                        callback_speed=event.speed,
+                        time_scale=1.0,
+                    )
                 if not applied:
                     continue
                 bullet.phase_state = state.phase_state
@@ -1255,7 +1329,25 @@ class StageRuntime:
                 bullet.velocity_x = state.velocity_x
                 bullet.velocity_y = state.velocity_y
                 changed += 1
-        return changed
+                callback12_changes += int(isinstance(event, Callback12Event))
+                callback14_changes += int(isinstance(event, Callback14Event))
+                if isinstance(event, Callback14Event):
+                    callback14_touched.add(bullet.slot)
+        reactivated = tuple(
+            sorted(
+                slot
+                for slot in callback14_touched
+                if initial_aux.get(slot, 0) != 0
+                and self.bullets[slot] is not None
+                and self.bullets[slot].collision_aux == 0
+            )
+        )
+        return (
+            changed,
+            callback12_changes,
+            callback14_changes,
+            reactivated,
+        )
 
     def _apply_transform_handlers(
         self,
@@ -1558,7 +1650,12 @@ class StageRuntime:
             self.bullets = [None] * BULLET_POOL_SIZE
             self.metrics.clear_events += 1
 
-        callback_changes = self._apply_callbacks()
+        (
+            callback_changes,
+            callback12_changes,
+            callback14_changes,
+            callback14_reactivated_slots,
+        ) = self._apply_callbacks()
         requested = 0
         allocation_calls = 0
         allocated = 0
@@ -1609,6 +1706,9 @@ class StageRuntime:
             births_allocated=allocated,
             births_suppressed_by_pool=suppressed,
             callback_changes=callback_changes,
+            callback12_changes=callback12_changes,
+            callback14_changes=callback14_changes,
+            callback14_reactivated_slots=callback14_reactivated_slots,
             spawn_lifecycle_activations=lifecycle_activations,
             transform_activations=activations,
             laser_spawns=laser_spawns,
@@ -1623,6 +1723,14 @@ class StageRuntime:
         self.metrics.births_allocated += allocated
         self.metrics.births_suppressed_by_pool += suppressed
         self.metrics.callback_changes += callback_changes
+        self.metrics.callback12_changes += callback12_changes
+        self.metrics.callback14_changes += callback14_changes
+        self.metrics.callback14_reactivations += len(
+            callback14_reactivated_slots
+        )
+        self.metrics.callback14_reactivation_collisions += len(
+            set(callback14_reactivated_slots).intersection(bullet_collisions)
+        )
         self.metrics.spawn_lifecycle_activations += lifecycle_activations
         self.metrics.transform_activations += activations
         self.metrics.laser_spawns += laser_spawns
@@ -1734,9 +1842,11 @@ def run_stage(
 
 __all__ = [
     "BULLET_POOL_SIZE",
+    "CALLBACK14_STAGE_SCHEMA",
     "CULL_GEOMETRY_STAGE_SCHEMA",
     "BulletEmitter",
     "Callback12Event",
+    "Callback14Event",
     "LASER_POOL_SIZE",
     "LIFECYCLE_STAGE_SCHEMA",
     "LaserSpawnEvent",

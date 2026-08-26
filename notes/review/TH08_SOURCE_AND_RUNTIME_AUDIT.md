@@ -2419,8 +2419,8 @@ difficulty/stage identity; it is not by itself a survival gain.
 
 ### AUD-084 — The first complete Easy route exposes two generic transition failures
 
-Status: **PHYSICAL ROOT CAUSES CONFIRMED; OFFLINE REGRESSIONS AND POLICY
-CORRECTIONS IN PROGRESS**
+Status: **PHYSICAL ROOT CAUSES CONFIRMED; CALLBACK-14 OFFLINE REPRODUCED;
+POLICY CORRECTIONS IN PROGRESS**
 
 The first complete Easy Sakuya/Remilia Route-2 trial at commit ``6f512fe``
 finished continuously from frame 1 through 213262 with 49,325 agent decisions,
@@ -2447,9 +2447,12 @@ changed the pool to collision-enabled state and restored slot 948 to its
 1.2 px/frame base motion; the first usable warning and the hit arrived in the
 same control window. ``FUN_00424c40`` proves that this collision transition is
 performed before that frame's bullet movement. The scalar and current-pool
-callback composers already model it, but the complete-stage fuzzer still
-generates callback 12 only and the live local prefix had no future callback
-stream.
+callback composers already model it. The complete-stage fuzzer now also
+executes callback 14 and independently differentiates every callback against
+the retained C oracle. Its 3,600-frame gate reached 5,212 suppressed-to-lethal
+reactivations, including two same-frame collisions, with no semantic mismatch.
+The remaining defect is therefore narrowed to future callback delivery into
+the live local prefix, not the callback kernel itself.
 
 Finally, the retained dossier reports zero global queries, zero global
 solutions, and zero constrained decisions. This was not a 16 ms solver

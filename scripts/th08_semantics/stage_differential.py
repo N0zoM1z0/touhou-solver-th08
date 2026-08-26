@@ -64,6 +64,7 @@ def compare_stage_with_c_source_oracle(
         program,
         pattern_sampler=native_pattern,
         callback12_applier=native.callback12,
+        callback14_applier=native.callback14,
     )
     first_mismatch: str | None = None
     maximum_position_error = 0.0
@@ -94,6 +95,12 @@ def compare_stage_with_c_source_oracle(
             != candidate_step.births_suppressed_by_pool
             or reference_step.callback_changes
             != candidate_step.callback_changes
+            or reference_step.callback12_changes
+            != candidate_step.callback12_changes
+            or reference_step.callback14_changes
+            != candidate_step.callback14_changes
+            or reference_step.callback14_reactivated_slots
+            != candidate_step.callback14_reactivated_slots
             or reference_step.spawn_lifecycle_activations
             != candidate_step.spawn_lifecycle_activations
             or reference_step.transform_activations

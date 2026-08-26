@@ -10,6 +10,7 @@ from th08_bullet_template_contract import bullet_template_profile
 from th08_semantics.stage import (
     BulletEmitter,
     Callback12Event,
+    Callback14Event,
     LaserSpawnEvent,
     StagePhase,
     StageProgram,
@@ -271,25 +272,45 @@ def generate_stage_program(*, seed: int, profile: str) -> StageProgram:
                 )
             )
 
-        callbacks: list[Callback12Event] = []
-        for tag_index, tag in enumerate(sorted(phase_tags)):
-            first = start + phase_duration * (2 + tag_index) // 7
-            second = start + phase_duration * (5 + tag_index) // 8
+        callbacks: list[Callback12Event | Callback14Event] = []
+        for tag in sorted(phase_tags):
+            first = start + phase_duration * 2 // 10
+            second = start + phase_duration * 4 // 10
+            third = start + phase_duration * 6 // 10
+            fourth = start + phase_duration * 8 // 10
             if second <= first:
                 second = min(end, first + 1)
+            if third <= second:
+                third = min(end, second + 1)
+            if fourth <= third:
+                fourth = min(end, third + 1)
+            first_angle = generator.uniform(-math.pi, math.pi)
+            first_speed = generator.uniform(0.0, 3.8)
+            second_angle = generator.uniform(-math.pi, math.pi)
+            second_speed = generator.uniform(0.0, 5.2)
             callbacks.extend(
                 (
                     Callback12Event(
                         frame=min(end, first),
                         tag_mask=tag,
-                        angle=generator.uniform(-math.pi, math.pi),
-                        speed=generator.uniform(0.0, 3.8),
+                        angle=first_angle,
+                        speed=first_speed,
                     ),
                     Callback12Event(
                         frame=min(end, second),
                         tag_mask=tag,
-                        angle=generator.uniform(-math.pi, math.pi),
-                        speed=generator.uniform(0.0, 5.2),
+                        angle=second_angle,
+                        speed=second_speed,
+                    ),
+                    Callback14Event(
+                        frame=min(end, third),
+                        tag_mask=tag,
+                        speed=first_speed,
+                    ),
+                    Callback14Event(
+                        frame=min(end, fourth),
+                        tag_mask=tag,
+                        speed=second_speed,
                     ),
                 )
             )

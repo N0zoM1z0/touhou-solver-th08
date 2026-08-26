@@ -11,6 +11,13 @@ The stage program, gameplay RNG root, producer schedules, phase clears,
 callback events, transforms, lasers, solver latency assumptions, and result
 are serializable and replayable.
 
+The complete-stage runtime now executes callback 14 as well as callback 12.
+This closes the exact source-ordered transition that caused the physical Easy
+Stage-5 hit: a tagged state-1 bullet may remain present while auxiliary state
+suppresses collision, then become lethal in the callback pass before the same
+frame's movement and collision test. The workload records those reactivations
+explicitly instead of hiding them inside aggregate callback counts.
+
 The recovered source repository was updated with `git pull --ff-only` before
 this checkpoint and was already current at commit `57ee34f`. It remains
 unmodified. The independent reduced C oracle lives in this solver repository
@@ -72,8 +79,10 @@ The runtime currently closes the following source-derived behavior:
 - the same lifecycle inside the real local hazard projector. Live pool
   decoding recovers type from the already-captured normal ANM `scriptIndex`;
   the 21 source rows are one-to-one, so this adds no sensing call;
-- callback 12 selection, phase transition, velocity replacement, and its
-  non-colliding auxiliary state;
+- callback 12 and callback 14 selection, shared phase/auxiliary transition,
+  velocity replacement/restoration, and collision gating. Events are applied
+  in their source order before bullet movement; callback-14 suppressed-to-
+  lethal transitions and same-frame collisions are retained separately;
 - sequential transform queues with the native wait-for-active-clear rule for
   deceleration, vector acceleration, angular velocity, stop-turn, stop-reaim,
   stop-snap, reflect-all, and reflect-sides/top handlers;
@@ -96,7 +105,7 @@ The following remain outside the exactness claim:
 - arbitrary main/auxiliary/child ECL execution and enemy timeline births;
 - general ANM VM execution, and composition of spawn lifecycle with callback
   tags or transform programs; those compositions currently fail closed;
-- callback 14 and other callbacks beyond the modeled callback-12 subset;
+- callbacks other than the modeled callback-12/14 subset;
 - derived child-pattern transform `0x1000000`, complete-stage-runtime wrap
   composition, and unsupported transform kinds (the retained-current scalar/C
   frame now covers wrap itself);
@@ -121,8 +130,9 @@ on the same capsule, but it is not the native route hit counter.
 Seed space is effectively unbounded. Each profile includes all nine fire
 modes over its emitter sequence, odd/even fan counts, moving and oscillating
 origins, all 21 native bullet types and all three spawn-state flag classes,
-tagged callback transitions, transform queues, lasers, phase clears, and pool
-pressure. Lifecycle emitters are isolated from callbacks/transforms until
+tagged callback-12/14 transition cycles, transform queues, lasers, phase
+clears, and pool pressure. Lifecycle emitters are isolated from
+callbacks/transforms until
 their source composition order is closed; the same generated stage still
 contains independent callback and transform histories.
 
@@ -171,6 +181,20 @@ synthetic workload, not comparable route hits. To limit artifacts, the
 and removed after this summary; the older compact v1 gate stays tracked as the
 backward-compatibility fixture.
 
+The callback-14 gate used seed `0x8414` and completed 3,600/3,600 frames with
+the independent C source oracle enabled. It allocated 49,462 of 153,839
+requested births, reached all 1,536 slots, executed 25,889 callback-12 and
+28,064 callback-14 changes, and observed 5,212 auxiliary-suppressed-to-lethal
+reactivations. Two reactivated bullets collided in that same source-ordered
+frame, proving that the long-stage harness reaches the transition seen in the
+physical Stage-5 failure. All 1,220,560 lifecycle samples matched the C oracle
+exactly; callback velocity drift was at most `4.7683716e-7` and accumulated
+non-lifecycle position drift was `0.0010681152 px`. The 450 planner calls,
+hard no-Bomb gate, and complete differential passed. The 120,873-byte report
+was retained only long enough to record SHA-256
+`13e431aff2c1fc1aeda90c1c467a644fee4f7ef1e8a1530f8b50cb6e3dd85e2b`,
+then removed; it is not a tracked artifact.
+
 ## Independent C Differential
 
 `native/th08_source_oracle/th08_source_oracle.c` is a deliberately small,
@@ -182,7 +206,7 @@ from both the Python model and the optimized planner and covers:
 - all 21 type-indexed state-2/3/4 spawn lifecycles;
 - all five generic enemy/linked-child constructor classes `0x5A`--`0x5E`,
   with arbitrary post-bootstrap position and flag state;
-- callback 12;
+- callback 12 and callback 14, including their shared phase/auxiliary state;
 - inclusive bullet/player AABB;
 - the eight motion handlers; and
 - a complete retained-current transform frame covering queue admission,

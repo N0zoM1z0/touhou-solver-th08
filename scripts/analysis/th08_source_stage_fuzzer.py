@@ -33,7 +33,7 @@ from th08_semantics.stage_generation import (
 from th08_semantics.stage_shrink import shrink_stage_program
 
 
-REPORT_SCHEMA = "th08-source-stateful-stage-fuzzer-report-v2-spawn-lifecycle"
+REPORT_SCHEMA = "th08-source-stateful-stage-fuzzer-report-v3-callback14"
 
 
 def _load_program(path: Path) -> StageProgram:
@@ -129,6 +129,26 @@ def _summary(cases: list[dict[str, object]]) -> dict[str, object]:
         ),
         "spawn_lifecycle_activations": sum(
             int(value["runtime_metrics"]["spawn_lifecycle_activations"])
+            for value in campaigns
+        ),
+        "callback12_changes": sum(
+            int(value["runtime_metrics"]["callback12_changes"])
+            for value in campaigns
+        ),
+        "callback14_changes": sum(
+            int(value["runtime_metrics"]["callback14_changes"])
+            for value in campaigns
+        ),
+        "callback14_reactivations": sum(
+            int(value["runtime_metrics"]["callback14_reactivations"])
+            for value in campaigns
+        ),
+        "callback14_reactivation_collisions": sum(
+            int(
+                value["runtime_metrics"][
+                    "callback14_reactivation_collisions"
+                ]
+            )
             for value in campaigns
         ),
         "source_lifecycle_samples_compared": sum(
