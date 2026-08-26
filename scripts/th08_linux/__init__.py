@@ -3,6 +3,7 @@
 from th08_linux.bridge import SolverBridgeClient
 from th08_linux.fingerprint import (
     canonical_fingerprint_bytes,
+    capture_runtime_semantic_spine,
     capture_semantic_spine,
 )
 from th08_linux.process import LinuxProcessReader
@@ -24,6 +25,7 @@ from th08_linux.title import (
 )
 from th08_linux.witness import (
     LockstepMemoryWitness,
+    capture_memory_witness,
     validate_request_memory_witness,
 )
 
@@ -40,7 +42,9 @@ __all__ = (
     "SolverBridgeClient",
     "TitleSnapshot",
     "canonical_fingerprint_bytes",
+    "capture_memory_witness",
     "capture_gameplay_bootstrap",
+    "capture_runtime_semantic_spine",
     "capture_semantic_spine",
     "capture_title_snapshot",
     "compare_semantic_traces",

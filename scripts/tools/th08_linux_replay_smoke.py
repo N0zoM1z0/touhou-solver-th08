@@ -35,6 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--display", required=True)
     parser.add_argument("--replay-name", required=True)
     parser.add_argument("--stage-index", type=int, required=True)
+    parser.add_argument("--start-manager-frame", type=int, default=1)
     parser.add_argument("--gameplay-epochs", type=int, default=300)
     parser.add_argument("--maximum-bootstrap-epochs", type=int, default=4096)
     parser.add_argument("--startup-timeout-seconds", type=float, default=120.0)
@@ -49,6 +50,8 @@ def build_parser() -> argparse.ArgumentParser:
 def run(args: argparse.Namespace) -> int:
     if args.gameplay_epochs <= 0:
         raise ValueError("gameplay fingerprint epoch count must be positive")
+    if args.start_manager_frame <= 0:
+        raise ValueError("starting manager frame must be positive")
     if args.maximum_bootstrap_epochs <= 0:
         raise ValueError("maximum bootstrap epoch count must be positive")
     if args.fingerprint_output is not None and args.fingerprint_output.exists():
@@ -166,6 +169,7 @@ def run(args: argparse.Namespace) -> int:
                 )
 
             assert ready is not None
+            bootstrap_last_epoch = request.epoch
             if (
                 ready.difficulty_index != metadata.difficulty_index
                 or ready.shot_type_index != metadata.route_id
@@ -182,21 +186,39 @@ def run(args: argparse.Namespace) -> int:
             replay_frames: list[int] = []
             fingerprints: list[dict[str, object]] = []
             rng_calls_origin = None
+            skipped_gameplay_epochs = 0
             for relative_epoch in range(1, args.gameplay_epochs + 1):
-                request = session.bridge.receive()
-                fingerprint = capture_semantic_spine(
-                    session.reader,
-                    request,
-                    relative_epoch=relative_epoch,
-                    rng_calls_origin=rng_calls_origin,
-                )
+                while True:
+                    request = session.bridge.receive()
+                    fingerprint = capture_semantic_spine(
+                        session.reader,
+                        request,
+                        relative_epoch=relative_epoch,
+                        rng_calls_origin=rng_calls_origin,
+                    )
+                    manager_frame = int(fingerprint["manager_frame"])
+                    expected_manager_frame = (
+                        args.start_manager_frame + relative_epoch - 1
+                    )
+                    if (
+                        relative_epoch == 1
+                        and manager_frame < expected_manager_frame
+                    ):
+                        session.bridge.respond(0)
+                        skipped_gameplay_epochs += 1
+                        continue
+                    session.bridge.respond(0)
+                    if manager_frame != expected_manager_frame:
+                        raise RuntimeError(
+                            "replay manager-frame alignment changed: "
+                            f"expected={expected_manager_frame} "
+                            f"observed={manager_frame}"
+                        )
+                    break
                 trace_locators = fingerprint["trace_locators"]
                 assert isinstance(trace_locators, dict)
                 if rng_calls_origin is None:
-                    rng_calls_origin = int(
-                        trace_locators["rng_calls_absolute"]
-                    )
-                session.bridge.respond(0)
+                    rng_calls_origin = int(trace_locators["rng_calls_absolute"])
                 if not fingerprint["gameplay_active"]:
                     raise RuntimeError(
                         "replay gameplay became inactive inside the requested sample"
@@ -225,7 +247,7 @@ def run(args: argparse.Namespace) -> int:
                 write_semantic_trace(args.fingerprint_output, fingerprints)
 
             report = {
-                "schema": "th08-linux-replay-semantic-smoke-v3",
+                "schema": "th08-linux-replay-semantic-smoke-v4",
                 "runtime": {
                     "path": str(session.identity.path),
                     "size": session.identity.size,
@@ -240,7 +262,9 @@ def run(args: argparse.Namespace) -> int:
                     "stage_rng_seed": stage.rng_seed,
                     "stage_frame_count": stage.frame_count,
                 },
-                "bootstrap_last_epoch": request.epoch - args.gameplay_epochs,
+                "bootstrap_last_epoch": bootstrap_last_epoch,
+                "skipped_gameplay_epochs": skipped_gameplay_epochs,
+                "start_manager_frame": args.start_manager_frame,
                 "sample_epochs": args.gameplay_epochs,
                 "semantic_spine_sha256": digest.hexdigest(),
                 "rng_calls_origin": rng_calls_origin,

@@ -5,12 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 import struct
-from typing import Protocol
+from typing import Mapping, Protocol
 
 from th08_linux.protocol import InputRequest
 from th08_linux.semantic_trace import semantic_trace_record
 from th08_linux.witness import (
     LockstepMemoryWitness,
+    capture_memory_witness,
     validate_request_memory_witness,
 )
 from th08_runtime.sensing import observe_state
@@ -71,12 +72,12 @@ def capture_replay_clock(
 
 def semantic_spine_from_observation(
     *,
-    request: InputRequest,
     witness: LockstepMemoryWitness,
     state: dict[str, object],
     replay_clock: ReplayClockSnapshot | None,
     relative_epoch: int,
     rng_calls_origin: int | None = None,
+    trace_locators: Mapping[str, int] | None = None,
 ) -> dict[str, object]:
     player = state["player"]
     spell = state["spell"]
@@ -87,6 +88,10 @@ def semantic_spine_from_observation(
     rng_calls_absolute = int(state["rng_calls"])
     if rng_calls_origin is None:
         rng_calls_origin = rng_calls_absolute
+    locators = dict(trace_locators or {})
+    if "rng_calls_absolute" in locators:
+        raise ValueError("RNG-call locator is captured from runtime state")
+    locators["rng_calls_absolute"] = rng_calls_absolute
     return {
         "schema": "th08-semantic-spine-v3",
         "relative_epoch": relative_epoch,
@@ -95,10 +100,7 @@ def semantic_spine_from_observation(
         # setup can therefore leave a variable absolute prefix even when the
         # replay RNG trajectory is identical.  Retain that prefix only as a
         # trace locator and compare the modulo-u32 distance from sample start.
-        "trace_locators": {
-            "bridge_epoch": request.epoch,
-            "rng_calls_absolute": rng_calls_absolute,
-        },
+        "trace_locators": locators,
         "manager_frame": state["enemy_manager_frame"],
         "difficulty_index": state["difficulty_index"],
         "shot_type_index": state["route_id"],
@@ -179,12 +181,31 @@ def capture_semantic_spine(
     state = observe_state(reader)
     replay_clock = capture_replay_clock(reader)
     return semantic_spine_from_observation(
-        request=request,
         witness=witness,
         state=state,
         replay_clock=replay_clock,
         relative_epoch=relative_epoch,
         rng_calls_origin=rng_calls_origin,
+        trace_locators={"bridge_epoch": request.epoch},
+    )
+
+
+def capture_runtime_semantic_spine(
+    reader: FingerprintStateReader,
+    *,
+    relative_epoch: int,
+    rng_calls_origin: int | None = None,
+    trace_locators: Mapping[str, int] | None = None,
+) -> dict[str, object]:
+    """Capture at a caller-proven stable runtime boundary without a wire."""
+
+    return semantic_spine_from_observation(
+        witness=capture_memory_witness(reader),
+        state=observe_state(reader),
+        replay_clock=capture_replay_clock(reader),
+        relative_epoch=relative_epoch,
+        rng_calls_origin=rng_calls_origin,
+        trace_locators=trace_locators,
     )
 
 
@@ -205,6 +226,7 @@ __all__ = (
     "ReplayClockSnapshot",
     "canonical_fingerprint_bytes",
     "capture_replay_clock",
+    "capture_runtime_semantic_spine",
     "capture_semantic_spine",
     "semantic_spine_from_observation",
 )

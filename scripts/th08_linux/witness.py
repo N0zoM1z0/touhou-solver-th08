@@ -24,6 +24,18 @@ class LockstepMemoryWitness:
     rng_seed: int
 
 
+def capture_memory_witness(
+    reader: WireStateReader,
+) -> LockstepMemoryWitness:
+    """Read the source globals shared by Linux and retail fingerprints."""
+
+    return LockstepMemoryWitness(
+        supervisor_current_input=reader.u16(ADDR_RAW_INPUT),
+        supervisor_previous_input=reader.u16(ADDR_LAST_FRAME_INPUT),
+        rng_seed=reader.u16(ADDR_GAMEPLAY_RNG),
+    )
+
+
 def validate_request_memory_witness(
     request: InputRequest,
     reader: WireStateReader,
@@ -32,11 +44,7 @@ def validate_request_memory_witness(
 ) -> LockstepMemoryWitness:
     """Match the wire fields to their exact source globals, or fail closed."""
 
-    witness = LockstepMemoryWitness(
-        supervisor_current_input=reader.u16(ADDR_RAW_INPUT),
-        supervisor_previous_input=reader.u16(ADDR_LAST_FRAME_INPUT),
-        rng_seed=reader.u16(ADDR_GAMEPLAY_RNG),
-    )
+    witness = capture_memory_witness(reader)
     if request.current_input != witness.supervisor_current_input:
         raise RuntimeError(
             "bridge/g_CurFrameInput memory witness mismatch: "
@@ -61,5 +69,6 @@ def validate_request_memory_witness(
 
 __all__ = (
     "LockstepMemoryWitness",
+    "capture_memory_witness",
     "validate_request_memory_witness",
 )
