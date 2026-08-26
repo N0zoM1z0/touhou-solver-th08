@@ -48,6 +48,14 @@ input mask and never writes gameplay/RNG state. Linux/original semantic replay
 differential is required before its generated replay receives candidate
 authority.
 
+The implemented bridge/session currently has only title-boundary integration
+authority.  It verifies one exact ELF and child PID, enforces contiguous wire
+epochs and hard no-Bomb responses, and has matched three blocked input/RNG
+witnesses against fixed-address memory.  It has not yet crossed deterministic
+menu/gameplay replay differential.  In particular, the existing Windows
+continuous-poll/SendInput loop is not silently treated as a zero-delay Linux
+epoch controller.
+
 The Easy execution profile uses no stage or spell policy. It reads native
 enemy slots 0--63 synchronously and retains a complete asynchronous read of
 source slots 0--479. The background pass is one contiguous process-memory

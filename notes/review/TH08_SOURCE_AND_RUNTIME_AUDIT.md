@@ -3018,7 +3018,7 @@ path.
 
 ### AUD-097 — Separate search time from game time, with replay as the authority bridge
 
-Status: **SOURCE-CONFIRMED ARCHITECTURE; IMPLEMENTATION/DETERMINISM PENDING**
+Status: **SOURCE-CONFIRMED ARCHITECTURE; BRIDGE IMPLEMENTED; DETERMINISM PENDING**
 
 The native Linux reconstruction changes the control problem if used at the
 correct boundary. It compiles the shared gameplay, ECL, manager, player, and
@@ -3060,6 +3060,44 @@ divergence risks. Work must stop at the earliest unequal logical epoch and
 localize the field delta before solver policy is blamed. The full protocol is
 tracked in
 `notes/architecture/TH08_LINUX_LOCKSTEP_REPLAY_AUTHORITY_20260826.md`.
+
+### AUD-098 — The Linux bridge reaches a coherent fixed-address input epoch
+
+Status: **OBSERVED LIVE BRIDGE/SENSING COHERENCE; REPLAY AUTHORITY PENDING**
+
+The opt-in runtime bridge is now implemented at commits `8ffe729` and
+`02ca583` on the separate Linux branch.  It blocks inside backend
+`FillKeyboard`, gives every actual DirectInput read a contiguous 64-bit epoch,
+rejects Bomb/unknown/contradictory masks, removes only solver wait from QPC and
+millisecond clocks, and permanently returns neutral after disconnect or a bad
+record.  It does not write gameplay or RNG state.  Bridge mode stamps the
+canonical v1.00d replay size/checksum target.  The verified current ELF has
+SHA-256
+`c773f9cc925350e2c2c3e80c0c7dd30954a2003488fce70dae19c53391ddc61d`.
+
+Solver commits `878c3e4` and `eaa643a` add the symmetric fail-closed protocol,
+allocation-light `/proc/<pid>/mem` reader, and an exact-child session owner.
+The session requires the expected ELF SHA-256, verifies `/proc/<pid>/exe`,
+uses a unique temporary socket, and terminates only its own child on cleanup.
+Its 120-second smoke allowance bounds cold startup only; the route/session
+layer has no duration-based stop.
+
+On Xvfb `:120`, a bounded neutral smoke observed request epochs 1, 2, and 3.
+At every blocked callback, current input, previous input, and RNG seed in the
+wire request exactly matched independent reads of the fixed-address globals;
+the replay-target flag was present.  The first cold callback took roughly 41
+seconds to reach under software rendering, but reported only 1 ms accumulated
+solver pause.  A warm three-epoch run reached completion in roughly 12
+seconds.  Fourteen focused protocol/process/session tests pass and no native
+TH08 process remains.
+
+This closes process ownership, wire symmetry, and title-boundary state
+coherence only.  It does not establish menu correctness, gameplay transition
+equivalence, replay save/load, floating-point parity, original replay
+acceptance, or hit improvement.  The next falsifier is a deterministic menu
+and short gameplay replay with earliest-epoch semantic differential; the old
+Windows continuous-poll/SendInput controller must not be connected without an
+explicit one-epoch observation/decision/response contract.
 
 ## Offline Verification Record
 

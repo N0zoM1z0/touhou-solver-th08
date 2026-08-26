@@ -43,6 +43,14 @@ ordered implementation plan are in
   The protocol, replay-identity caveat, numerical risks, and differential gate
   are specified in
   `notes/architecture/TH08_LINUX_LOCKSTEP_REPLAY_AUTHORITY_20260826.md`.
+  The runtime bridge is now implemented at `8ffe729`/`02ca583`; solver-side
+  protocol, local process access, and exact-child ownership are committed at
+  `878c3e4`/`eaa643a`.  The current ELF SHA-256 is `c773f9cc...c61d`.
+  A live neutral-input probe observed contiguous epochs 1--3 whose request
+  current/previous masks and RNG seed exactly matched fixed-address memory.
+  This is title-boundary bridge coherence only.  The next gate is deterministic
+  menu plus short-gameplay replay/fingerprint differential, not planner
+  promotion or a full Easy route.
 - **Current Easy physical/local checkpoint:** accepted Final-B Practice
   `easy_route2_stage6b_unattended_20260826_051733` remains the best result at
   nine hits and zero Bomb input, versus 18 hits in the paired baseline.  Source and native

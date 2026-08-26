@@ -2,7 +2,7 @@
 
 Date: 2026-08-26
 
-Status: **adopted architecture; implementation and determinism gates pending**
+Status: **bridge and local sensing implemented; replay differential pending**
 
 This note records a deliberate change in viewpoint. The Linux reconstruction
 is not merely a cheaper replacement for Wine process sensing. It can become a
@@ -57,6 +57,15 @@ addresses. Examples include `g_EnemyManager=0x00577f20`,
 process reader without translating the whole state model. Fixed placement is
 an integration convenience, not proof of runtime equivalence.
 
+The first implementation checkpoint is now concrete.  The runtime branch
+`solver/linux-lockstep-replay-bridge` contains commits `8ffe729` and
+`02ca583`; its current verified ELF SHA-256 is
+`c773f9cc925350e2c2c3e80c0c7dd30954a2003488fce70dae19c53391ddc61d`.
+The solver branch contains the protocol/process adapter at `878c3e4` and the
+exact-child session owner at `eaa643a`.  These identities are out-of-band
+configuration and audit evidence; protocol metadata does not substitute for
+binary verification.
+
 The source identifies a narrow generic hook:
 
 - `Supervisor::OnUpdate`, calc priority 0, calls `Controller::GetInput` before
@@ -103,20 +112,23 @@ The runtime change is solver-only, Linux-only, and opt-in through an explicit
 Unix-domain socket path. Normal interactive execution does not open a socket.
 The game is the server and the solver is the client.
 
-At each input epoch the runtime sends a fixed-width little-endian request with:
+Protocol version 1 sends one fixed 32-byte little-endian request containing:
 
-- protocol magic/version and Linux source revision identity;
-- monotonically increasing input-epoch number;
-- current supervisor/game/enemy/replay counters sufficient to detect resets;
+- protocol magic, version, and record size;
+- a monotonically increasing 64-bit input-epoch number;
 - current and previous logical input masks;
-- RNG seed and generation count;
-- bridge flags for gameplay, replay, dialog, pause, and scene state.
+- the current 16-bit gameplay RNG seed;
+- a replay-target-stamped flag; and
+- cumulative milliseconds excluded from the game-visible clock.
 
-The solver reads full state through the local process-memory adapter, computes,
-then returns the request epoch and one complete logical input mask. The runtime
-rejects a stale epoch, unknown bits, diagonal contradictions, or Bomb. EOF,
-timeout policy, protocol mismatch, or peer death releases all solver keys and
-fails closed rather than holding the last direction indefinitely.
+The solver verifies the exact executable separately, reads full state through
+the local process-memory adapter, computes, then returns one fixed 24-byte
+record containing the exact epoch and one complete logical input mask. Both
+ends reject a stale/non-contiguous epoch, unknown flags or input bits,
+diagonal contradictions, and Bomb. There is deliberately no response-duration
+timeout: solver search time may be arbitrarily long. EOF, protocol mismatch,
+or peer death permanently changes the runtime bridge to neutral input rather
+than falling back to SDL or holding the last direction.
 
 The socket is synchronization, not the bulk state ABI. Keeping bulk sensing in
 the solver repo lets existing decoded models and new semantic fingerprints
@@ -163,6 +175,15 @@ some original x87 `fsincos` paths as separate `cosf`/`sinf` calls. Platform
 timing, event, audio, and rendering paths also differ. These are hypotheses to
 test at the earliest divergent epoch, not reasons to assume failure or success.
 
+The first live synchronization probe passes below this stronger gate.  On the
+verified ELF, three consecutive requests were epochs 1, 2, and 3.  At each
+blocked callback, request current/previous input and RNG seed exactly equalled
+independent reads of the fixed-address globals, and the replay target flag was
+set.  The first cold Xvfb callback took roughly 41 seconds to reach, but its
+reported solver pause was only 1 ms; warm startup reached the three-epoch
+probe in roughly 12 seconds.  This is observed socket/memory coherence, not a
+gameplay, replay, numerical-equivalence, or NMNB result.
+
 ## Relationship to the offline fuzzer
 
 The source-stateful stage fuzzer remains the high-volume adversarial laboratory
@@ -174,14 +195,18 @@ Linux runtime, and original replay is a localization tool, not a vote.
 
 ## Ordered implementation
 
-1. Add a read-only local-process adapter and semantic fingerprint schema.
-2. Differential a retained Windows replay before changing game timing.
-3. Add the opt-in backend socket and hard no-Bomb key mapper.
-4. Freeze Linux-visible clocks only across solver waits and verify 60 Hz replay
-   bookkeeping.
-5. Stamp replay target identity explicitly in bridge mode and validate replay
-   load/save round trips.
-6. Solve Easy practice roots in lockstep, then the full Easy route.
+1. **Done:** verify the i386 fixed layout and add a read-only local-process
+   adapter.
+2. **Done:** add the opt-in backend socket, hard no-Bomb mapper, contiguous
+   epoch checks, solver-wait clock compensation, and replay target stamp.
+3. **Done for the title boundary:** verify exact-child ownership and match
+   three live request witnesses against fixed-address input/RNG state.
+4. **Next:** drive deterministic menu and short gameplay input sequences,
+   save ordinary replays, and build the semantic fingerprint at each epoch.
+5. Differential a retained Windows-origin replay in both runtimes, then a
+   Linux-generated replay in fresh Linux and original-Wine processes.
+6. Only after that gate, connect the generic local planner epoch driver and
+   solve Easy practice roots followed by the full Easy route.
 7. Accept success only after the original Wine runtime completes that replay
    NMNB.
 
