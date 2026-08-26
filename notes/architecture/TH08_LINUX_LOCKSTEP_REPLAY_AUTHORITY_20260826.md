@@ -58,9 +58,10 @@ process reader without translating the whole state model. Fixed placement is
 an integration convenience, not proof of runtime equivalence.
 
 The first implementation checkpoint is now concrete.  The runtime branch
-`solver/linux-lockstep-replay-bridge` contains commits `8ffe729` and
-`02ca583`; its current verified ELF SHA-256 is
-`c773f9cc925350e2c2c3e80c0c7dd30954a2003488fce70dae19c53391ddc61d`.
+`solver/linux-lockstep-replay-bridge` contains the bridge commits `8ffe729`
+and `02ca583` plus retail-semantics correction `99c8ba3`; its current verified
+ELF SHA-256 is
+`52b450b9d6ae8ec636e4794d87bbc6427b119798880f50f67794dd093f3c1a04`.
 The solver branch contains the protocol/process adapter at `878c3e4` and the
 exact-child session owner at `eaa643a`.  These identities are out-of-band
 configuration and audit evidence; protocol metadata does not substitute for
@@ -222,6 +223,23 @@ The comparator therefore requires exact RNG seed and exact calls since the
 first blocked gameplay sample while retaining the absolute prefix for
 diagnosis. This is normalization of history origin, not numerical tolerance.
 
+The first retail discrete split at update 267--268 is now closed rather than
+tolerated. Pointer-free effect/ANM and player-damage projections show that old
+Linux created one extra hit-splash effect 5, which consumes exactly four RNG
+words, after focused shot 28 collided with native enemy slot 0. The damage
+projection itself first required a generic correction: the legacy pool base
+is slot 1, whereas source scans slots 0--479.
+
+Retail disassembly then identifies the upstream runtime defect. At
+`FUN_004501B0`, v1.00d calls signed RNG routine `0x0043ED80`; the reconstructed
+Linux source called the unsigned routine. Both consume identical RNG words but
+produce adjacent shot-angle intervals. Runtime commit `99c8ba3` restores the
+signed call. A fresh frame-267/268 differential now agrees on shot angles and
+positions, collision states, effect-ID counts, and RNG seed. Isolated
+trigonometric velocity components can still differ by one ULP, so the next
+gate extends until the first remaining discrete threshold crossing rather than
+declaring float or route equivalence.
+
 ## Relationship to the offline fuzzer
 
 The source-stateful stage fuzzer remains the high-volume adversarial laboratory
@@ -244,15 +262,15 @@ Linux runtime, and original replay is a localization tool, not a vote.
 5. **Done for a retained replay on Linux:** load retail-format replay input,
    construct the pointer-free semantic spine, and prove a 300-epoch exact
    Linux self-repeat with first-divergence tooling.
-6. **In progress:** the retail collector now traps the shipped executable at
-   the verified pre-calculation callsite, advances through the original frame
-   pump one update at a time, and shares the Linux semantic-spine format.
-   Physical roots agree through frame 267; update 267--268 consumes four more
-   RNG words on Linux. The opt-in deep projection now captures decoded combat
-   and ECL state without retaining raw pools, and its exact relocated-image
-   bounds support valid high-half Linux i386 pointers. Classify the first
-   enemy/lifecycle delta at that update; then differential a Linux-generated
-   replay in fresh Linux and original-Wine processes.
+6. **In progress:** the retail collector traps the shipped executable at the
+   verified pre-calculation callsite, advances through the original frame pump
+   one update at a time, and shares the Linux semantic-spine format. The first
+   discrete split is source-attributed and fixed: callback 7 now uses signed
+   RNG, and frames 267--268 agree on the resulting shots, collision, effects,
+   and RNG. Deep projections retain decoded combat, effect/ANM, and ECL state
+   without raw pools and accept exact high-half relocated-image bounds. Extend
+   the retained replay to the next discrete split, then differential a
+   Linux-generated replay in fresh Linux and original-Wine processes.
 7. Only after that gate, connect the generic local planner epoch driver and
    solve Easy practice roots followed by the full Easy route.
 8. Accept success only after the original Wine runtime completes that replay

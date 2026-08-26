@@ -198,16 +198,33 @@ from the first blocked gameplay epoch.  Two subsequent 300-epoch Linux runs
 match at every semantic field.  An aligned retail replay differential then
 matches the current spine through manager frame 267.  During update 267--268
 Linux consumes twenty RNG words and retail sixteen; the four-word displacement
-persists to frame 300 and grows to eight by frame 600 while the other currently
-retained fields remain exact.  This localizes a discrete control-path
-difference, but does not yet attribute it to floating-point behavior.  A
-source-derived deep projection now retains active hazards, enemy
-motion/emission state, main and auxiliary ECL state, and the timeline at the
-same root without writing raw pools.  Its first Linux capture also corrected a
-portability defect: valid relocated ECL pointers in the high half of the i386
-address space had been rejected by a Win32-specific $0x7fffffff$ bound.  Exact
-image intervals now validate those pointers.  Producer attribution, x87 error
-envelopes, Linux replay generation, and complete NMNB authority remain open.
+persists to frame 300 and grows to eight by frame 600 while the other initially
+retained fields remain exact.  Source-derived effect, ANM, shot, and damage
+projections close the causal chain.  Linux creates one extra player-hit effect
+5, whose initializer consumes exactly four RNG words, because focused shot 28
+overlaps native enemy slot 0 while retail misses by about two pixels.  This
+investigation also finds a model bug: the historical enemy-pool address begins
+at slot 1, so a 480-record damage scan omitted executable slot 0 and included
+the failure sentinel.  The corrected projection scans the source-authoritative
+slots 0--479.
+
+The upstream cause is not x87 drift.  Retail disassembly shows that the
+focused random-spread callback calls the signed RNG routine at
+$0x0043ED80$, while the reconstructed Linux source called its unsigned
+counterpart.  Both consume the same two words, but they map those words to
+adjacent angular intervals; for both retained shots the measured relation is
+$a_{\mathrm{retail}}=2a_{\mathrm{linux}}+\pi/2-\pi/48$.  Replacing the call
+with the signed routine makes shot angles and positions exact at frame 267 and
+restores the retail frame-268 collision, effect count, and RNG seed.  Several
+trigonometric velocity components still differ by one ULP, so this is a
+discrete semantic repair rather than a full replay-equivalence claim.
+
+The same deep capture corrected a separate portability defect: valid relocated
+ECL pointers in the high half of the i386 address space had been rejected by a
+Win32-specific $0x7fffffff$ bound.  Exact image intervals now validate those
+pointers.  The next gate extends the differential until the first remaining
+discrete threshold crossing; Linux replay generation and complete NMNB
+authority remain open.
 
 \section{Source-Stateful Offline Laboratory}
 

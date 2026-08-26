@@ -3269,7 +3269,7 @@ replay slot and left the dedicated prefix with no target processes.
 
 ### AUD-106 — Win32 low-half pointer validation hid every Linux ECL VM
 
-Status: **REPRODUCED PHYSICAL; GENERIC BOUNDED FIX IMPLEMENTED; RETAIL DEEP DIFFERENTIAL PENDING**
+Status: **REPRODUCED PHYSICAL; GENERIC BOUNDED FIX IMPLEMENTED; RETAIL DEEP DIFFERENTIAL PASSED**
 
 The first opt-in collision/control fingerprint at Linux Stage-5 frame 267
 found 13 active enemy records but reported all 13 main ECL VMs invalid. Their
@@ -3290,9 +3290,81 @@ A second physical Linux capture recognizes 13/13 valid VMs at frames 267 and
 268, with normalized static PC offsets `2232 x3, 2588 x5, 3008 x5`, zero
 invalid VMs, zero bullets, zero lasers, and 13 stable enemy slots. The deep
 trace writes decoded active rows only: two gzip records consume about 14 KiB;
-the roughly 17 MiB of transient pool reads per root are not retained. The next
-gate is the same two-root projection on retail, followed by pointer
-normalization and the first enemy-field delta.
+the roughly 17 MiB of transient pool reads per root are not retained. The
+matching retail projection subsequently passed the same normalized VM
+inventory. AUD-107 through AUD-109 describe the producer localization and
+runtime correction that followed.
+
+### AUD-107 — The four-word RNG split was one extra player-hit effect
+
+Status: **SOURCE-ATTRIBUTED AND VALIDATED PHYSICAL**
+
+The former combat projection still omitted the effect allocator and complete
+ANM lifecycle, so an RNG delta could be mistaken for a hostile birth. Commit
+`417d909` adds a pointer-free projection over all 653 effect slots. It retains
+allocator order, effect ID/timer/vectors, callback presence, ANM script and
+instruction-relative state, and normalizes heap, loaded-sprite, and draw-list
+pointers rather than hashing addresses. A terminal eight-byte ANM instruction
+with no payload is decoded without reading beyond its instruction.
+
+At root 267 Linux and retail have identical effect inventories. At root 268
+the old Linux runtime has one additional effect ID 5: 20 versus 19, and 34
+versus 33 total active effects. Source maps ID 5 to the player-shot hit splash;
+its initializer performs two `GetRandomF32InRange` calls, hence exactly four
+u16 RNG words. This rejects the earlier hostile/effect-ID-38 hypothesis and
+closes the observed count delta without a timing tolerance.
+
+### AUD-108 — The production damage projection skipped native enemy slot 0
+
+Status: **SOURCE-CONFIRMED MODEL BUG; FIXED AND VALIDATED PHYSICAL**
+
+`EnemyManager::OnUpdate` starts at manager offset `+0x53D0` and scans native
+slots 0 through 479. The historical `ENEMY_POOL_BASE=0x005826C0` instead
+names native slot 1. A 480-record read from that compatibility address therefore
+omits the executable slot 0 and includes the unscanned failure sentinel at
+slot 480. Although AUD-070 had corrected one future-source path, the production
+native-combat decoder still inherited the old range.
+
+Commit `acaf091` makes damage and collision decoding begin at
+`ENEMY_SLOT_ZERO_BASE`, accept exactly the 480 manager-scanned slots, and fail
+closed on the legacy slot-1-only component. Deterministic tests prove that
+slot 0 is included and the failure sentinel excluded. The corrected retail and
+Linux root has 14 active targets, not 13. The extra old-Linux collision is
+specifically shot slot 28 against enemy slot 0: at frame 268 Linux is inside
+the combined horizontal half-extent, while retail misses by about 2.0 pixels.
+
+### AUD-109 — Linux mirrored every focused random-spread shot
+
+Status: **ROOT CAUSE FIXED IN LINUX RUNTIME; RETAIL TWO-ROOT DISCRETE GATE PASSED**
+
+The shot/effect chain localizes the remaining cause before collision. Shot 28
+is born at frame 243 and has no per-frame callback. At root 267 its old-Linux
+angle is `-1.5641225576`, while retail stores `-1.6228985786`; shot 29 shows
+the same transformation. For both retained samples, to binary32 precision,
+
+`retail = 2 * linux + pi / 2 - pi / 48`.
+
+This is the exact relationship between applying the callback formula to a
+signed RNG value in `[-1,1)` and applying it to the corresponding unsigned
+value in `[0,1)`. Direct v1.00d disassembly confirms `FUN_004501B0` calls
+`Rng::GetRandomF32Signed` at `0x0043ED80`. The reconstructed Linux source had
+called `GetRandomF32` instead. Both calls consume the same two u16 words, which
+explains why seed and call count stayed equal while geometry diverged.
+
+Runtime commit `99c8ba3` changes both the production player source and its
+probe mirror to the signed call. The rebuilt i386 ELF has SHA-256
+`52b450b9d6ae8ec636e4794d87bbc6427b119798880f50f67794dd093f3c1a04`.
+A fresh bounded Stage-5 replay reproduces the retail shot-28/29 angle and
+position bits at root 267. At root 268 both runtimes leave shot 28 active,
+transition shot 29 to hit state, retain 19 ID-5 effects, and reach RNG seed
+`7891` after 16 words. The former extra collision and four-word displacement
+are gone.
+
+Several `sinf`/`cosf` velocity components still differ by one ULP, so full
+projection hashes are not byte-identical and no route or replay-acceptance
+claim follows. Those bounded continuous residuals are now separated from the
+fixed discrete API error; the next differential searches for their first
+threshold crossing or another source-port semantic mismatch.
 
 ## Offline Verification Record
 
