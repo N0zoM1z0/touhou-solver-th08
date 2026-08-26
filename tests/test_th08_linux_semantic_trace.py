@@ -9,6 +9,7 @@ from th08_linux.semantic_trace import (
     MANAGER_FRAME_TRANSITION_SAME,
     classify_manager_frame_transition,
     compare_semantic_traces,
+    partial_semantic_trace_path,
     read_semantic_trace,
     replay_stage_binding_mismatch,
     replay_stage_terminal_reason,
@@ -32,6 +33,16 @@ def _record(
 
 
 class LinuxSemanticTraceTests(unittest.TestCase):
+    def test_partial_trace_path_preserves_jsonl_compression_suffix(self) -> None:
+        self.assertEqual(
+            partial_semantic_trace_path(Path("trace.jsonl.gz")),
+            Path("trace.partial.jsonl.gz"),
+        )
+        self.assertEqual(
+            partial_semantic_trace_path(Path("trace.jsonl")),
+            Path("trace.partial.jsonl"),
+        )
+
     def test_replay_terminal_requires_inactive_and_binding_end(self) -> None:
         fingerprint = {
             "gameplay_active": False,
@@ -93,20 +104,20 @@ class LinuxSemanticTraceTests(unittest.TestCase):
             MANAGER_FRAME_TRANSITION_ADVANCED,
         )
         self.assertEqual(
+            classify_manager_frame_transition(previous=4530, observed=6331),
+            MANAGER_FRAME_TRANSITION_ADVANCED,
+        )
+        self.assertEqual(
             classify_manager_frame_transition(previous=7649, observed=7649),
             MANAGER_FRAME_TRANSITION_SAME,
         )
 
-    def test_manager_frame_transition_rejects_regression_or_skip(self) -> None:
-        for observed in (7648, 7651):
-            with self.subTest(observed=observed):
-                with self.assertRaisesRegex(
-                    ValueError, "neither stayed fixed nor advanced"
-                ):
-                    classify_manager_frame_transition(
-                        previous=7649,
-                        observed=observed,
-                    )
+    def test_manager_frame_transition_rejects_regression(self) -> None:
+        with self.assertRaisesRegex(ValueError, "regressed"):
+            classify_manager_frame_transition(
+                previous=7649,
+                observed=7648,
+            )
 
     def test_gzip_round_trip_and_refuse_overwrite(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

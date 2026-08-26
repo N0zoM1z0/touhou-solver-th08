@@ -23,6 +23,7 @@ from th08_linux import (  # noqa: E402
     capture_title_snapshot,
     classify_manager_frame_transition,
     enrich_with_collision_control_projection,
+    partial_semantic_trace_path,
     replay_stage_binding_mismatch,
     replay_stage_terminal_reason,
     validate_request_memory_witness,
@@ -98,6 +99,7 @@ def run(args: argparse.Namespace) -> int:
         stage_index=args.stage_index,
     )
     transitions: list[dict[str, object]] = []
+    fingerprints: list[dict[str, object]] = []
     previous_key: tuple[object, ...] | None = None
     session = LinuxGameSession(
         executable=args.executable,
@@ -206,10 +208,11 @@ def run(args: argparse.Namespace) -> int:
             last = None
             nonzero_gui_epochs = 0
             replay_frames: list[int] = []
-            fingerprints: list[dict[str, object]] = []
             rng_calls_origin = None
             skipped_gameplay_epochs = 0
             same_manager_input_epochs = 0
+            manager_forward_jump_epochs = 0
+            manager_frames_skipped = 0
             inactive_gameplay_epochs = 0
             previous_manager_frame = None
             replay_frame_origin = None
@@ -320,6 +323,9 @@ def run(args: argparse.Namespace) -> int:
                     )
                     if manager_relation == MANAGER_FRAME_TRANSITION_SAME:
                         same_manager_input_epochs += 1
+                    elif manager_frame_delta > 1:
+                        manager_forward_jump_epochs += 1
+                        manager_frames_skipped += manager_frame_delta - 1
                 previous_manager_frame = manager_frame
                 trace_locators = fingerprint["trace_locators"]
                 assert isinstance(trace_locators, dict)
@@ -389,6 +395,8 @@ def run(args: argparse.Namespace) -> int:
                 "bootstrap_last_epoch": bootstrap_last_epoch,
                 "skipped_gameplay_epochs": skipped_gameplay_epochs,
                 "same_manager_input_epochs": same_manager_input_epochs,
+                "manager_forward_jump_epochs": manager_forward_jump_epochs,
+                "manager_frames_skipped": manager_frames_skipped,
                 "inactive_gameplay_epochs": inactive_gameplay_epochs,
                 "start_manager_frame": args.start_manager_frame,
                 "start_replay_frame": replay_frame_origin,
@@ -420,6 +428,20 @@ def run(args: argparse.Namespace) -> int:
             }
             print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     except BaseException:
+        if (
+            args.fingerprint_output is not None
+            and fingerprints
+            and not args.fingerprint_output.exists()
+        ):
+            partial_path = partial_semantic_trace_path(
+                args.fingerprint_output
+            )
+            if not partial_path.exists():
+                write_semantic_trace(partial_path, fingerprints)
+                print(
+                    f"partial semantic trace: {partial_path}",
+                    file=sys.stderr,
+                )
         if session.runtime_log_tail:
             print("runtime log tail:", file=sys.stderr)
             print(session.runtime_log_tail, file=sys.stderr)

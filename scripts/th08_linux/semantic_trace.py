@@ -23,18 +23,18 @@ def classify_manager_frame_transition(
     """Classify the non-universal manager clock across input epochs.
 
     Every calculation-chain restart is a real logical input epoch. The enemy
-    manager clock may stay frozen at that boundary, but it must not regress or
-    jump over an update inside one ordered replay stage.
+    manager clock may stay frozen or jump forward at that boundary, but it
+    must not regress inside one ordered replay stage.
     """
 
     if previous < 0 or observed < 0:
         raise ValueError("manager frames must be nonnegative")
     if observed == previous:
         return MANAGER_FRAME_TRANSITION_SAME
-    if observed == previous + 1:
+    if observed > previous:
         return MANAGER_FRAME_TRANSITION_ADVANCED
     raise ValueError(
-        "manager frame neither stayed fixed nor advanced by one input epoch: "
+        "manager frame regressed across an input epoch: "
         f"previous={previous} observed={observed}"
     )
 
@@ -88,6 +88,18 @@ def _open_text(path: Path, mode: str):
     if path.suffix == ".gz":
         return gzip.open(path, mode, encoding="utf-8", newline="")
     return path.open(mode, encoding="utf-8", newline="")
+
+
+def partial_semantic_trace_path(path: Path) -> Path:
+    """Derive a non-overwriting partial-evidence sibling name."""
+
+    name = path.name
+    for suffix in (".jsonl.gz", ".jsonl"):
+        if name.endswith(suffix):
+            return path.with_name(
+                f"{name[:-len(suffix)]}.partial{suffix}"
+            )
+    return path.with_name(f"{name}.partial")
 
 
 def write_semantic_trace(
@@ -294,6 +306,7 @@ __all__ = (
     "TRACE_COMPARISON_SCHEMA",
     "classify_manager_frame_transition",
     "compare_semantic_traces",
+    "partial_semantic_trace_path",
     "read_semantic_trace",
     "replay_stage_binding_mismatch",
     "replay_stage_terminal_reason",

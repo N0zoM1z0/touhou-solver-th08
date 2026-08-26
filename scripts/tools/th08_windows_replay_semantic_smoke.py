@@ -33,6 +33,7 @@ from th08_linux import (
     capture_runtime_semantic_spine,
     classify_manager_frame_transition,
     enrich_with_collision_control_projection,
+    partial_semantic_trace_path,
     replay_stage_binding_mismatch,
     replay_stage_terminal_reason,
     write_semantic_trace,
@@ -91,6 +92,22 @@ def _sha256(path: Path) -> str:
         for block in iter(lambda: source.read(1 << 20), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def _compact_root(fingerprint: dict[str, object]) -> dict[str, object]:
+    replay = fingerprint.get("replay")
+    return {
+        "relative_epoch": fingerprint.get("relative_epoch"),
+        "manager_frame": fingerprint.get("manager_frame"),
+        "replay_frame": (
+            replay.get("frame_counter") if isinstance(replay, dict) else None
+        ),
+        "gameplay_active": fingerprint.get("gameplay_active"),
+        "game_manager_flags": fingerprint.get("game_manager_flags"),
+        "difficulty_index": fingerprint.get("difficulty_index"),
+        "shot_type_index": fingerprint.get("shot_type_index"),
+        "stage_index": fingerprint.get("stage_index"),
+    }
 
 
 def validate_semantic_sample(
@@ -163,6 +180,8 @@ def run(args: argparse.Namespace) -> int:
     batch_log = None
     result_code = 78
     expected_exe = args.game_dir.resolve() / TARGET_EXE
+    fingerprints: list[dict[str, object]] = []
+    failure_fingerprint: dict[str, object] | None = None
     try:
         if os.name != "nt":
             raise RuntimeError("retail replay capture requires Windows Python")
@@ -235,10 +254,11 @@ def run(args: argparse.Namespace) -> int:
         if root.root_manager_frame != args.start_manager_frame:
             raise RuntimeError("retail barrier trapped the wrong manager frame")
 
-        fingerprints: list[dict[str, object]] = []
         digest = hashlib.sha256()
         rng_calls_origin = None
         same_manager_input_epochs = 0
+        manager_forward_jump_epochs = 0
+        manager_frames_skipped = 0
         inactive_gameplay_epochs = 0
         previous_manager_frame = None
         replay_frame_origin = None
@@ -261,6 +281,7 @@ def run(args: argparse.Namespace) -> int:
                     ),
                 },
             )
+            failure_fingerprint = fingerprint
             if args.collision_control_projection:
                 fingerprint = enrich_with_collision_control_projection(
                     reader,
@@ -306,6 +327,9 @@ def run(args: argparse.Namespace) -> int:
                     ) from error
                 if manager_relation == MANAGER_FRAME_TRANSITION_SAME:
                     same_manager_input_epochs += 1
+                elif manager_frame_delta > 1:
+                    manager_forward_jump_epochs += 1
+                    manager_frames_skipped += manager_frame_delta - 1
             previous_manager_frame = manager_frame
             locators = fingerprint["trace_locators"]
             assert isinstance(locators, dict)
@@ -335,6 +359,7 @@ def run(args: argparse.Namespace) -> int:
             if not fingerprint["gameplay_active"]:
                 inactive_gameplay_epochs += 1
             fingerprints.append(fingerprint)
+            failure_fingerprint = None
             sample_epochs += 1
             digest.update(canonical_fingerprint_bytes(fingerprint))
             digest.update(b"\n")
@@ -366,6 +391,8 @@ def run(args: argparse.Namespace) -> int:
                 "start_replay_frame": replay_frame_origin,
                 "rng_calls_origin": rng_calls_origin,
                 "same_manager_input_epochs": same_manager_input_epochs,
+                "manager_forward_jump_epochs": manager_forward_jump_epochs,
+                "manager_frames_skipped": manager_frames_skipped,
                 "inactive_gameplay_epochs": inactive_gameplay_epochs,
                 "semantic_spine_sha256": digest.hexdigest(),
                 "fingerprint_output": str(args.fingerprint_output),
@@ -383,6 +410,24 @@ def run(args: argparse.Namespace) -> int:
         result_code = 0
     except BaseException as error:
         report["error"] = f"{type(error).__name__}: {error}"
+        report["partial_sample_epochs"] = len(fingerprints)
+        if failure_fingerprint is not None:
+            report["failure_root"] = _compact_root(failure_fingerprint)
+        if fingerprints and not args.fingerprint_output.exists():
+            partial_path = partial_semantic_trace_path(
+                args.fingerprint_output
+            )
+            try:
+                if not partial_path.exists():
+                    write_semantic_trace(partial_path, fingerprints)
+                report["partial_fingerprint_output"] = str(partial_path)
+                report["partial_fingerprint_output_sha256"] = _sha256(
+                    partial_path
+                )
+            except BaseException as partial_error:
+                report["partial_fingerprint_error"] = (
+                    f"{type(partial_error).__name__}: {partial_error}"
+                )
         if isinstance(error, KeyboardInterrupt):
             result_code = 130
     finally:
