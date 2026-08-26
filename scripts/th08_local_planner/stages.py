@@ -200,6 +200,9 @@ def run_hard_preflight(
             lasers=physical.lasers,
             enemy_bodies=physical.enemy_bodies,
             snapshot_lag=physical.snapshot_lag,
+            bullet_snapshot_age_support=(
+                physical.bullet_snapshot_age_support
+            ),
             player_scale_bits=(
                 physical.time_scale_schedule.require_player_horizon(
                     prepared.certificate_horizon
@@ -280,6 +283,9 @@ def run_hard_preflight(
                 lasers=physical.lasers,
                 enemy_bodies=physical.enemy_bodies,
                 snapshot_lag=physical.snapshot_lag,
+                bullet_snapshot_age_support=(
+                    physical.bullet_snapshot_age_support
+                ),
                 player_scale_bits=(
                     physical.time_scale_schedule.require_player_horizon(
                         prepared.certificate_horizon

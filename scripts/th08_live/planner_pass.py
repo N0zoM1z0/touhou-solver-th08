@@ -123,6 +123,9 @@ def _run_local_planner_pass(
         lasers=lasers,
         enemy_bodies=enemy_bodies,
         snapshot_lag=snapshot_lag,
+        bullet_snapshot_age_support=(
+            physical.bullet_snapshot_age_support
+        ),
         frames=control_delay_frames,
         player_scale_bits=(
             physical.time_scale_schedule.require_player_horizon(
@@ -156,10 +159,15 @@ def _run_local_planner_pass(
     bullet_frames = _build_bullet_frames(
         bullets,
         horizon=effective_threat_horizon,
-        snapshot_lag=max(
-            0,
-            control_delay_frames - max(0, snapshot_lag),
+        snapshot_lag=(
+            control_delay_frames
+            if physical.bullet_snapshot_age_support is not None
+            else max(
+                0,
+                control_delay_frames - max(0, snapshot_lag),
+            )
         ),
+        snapshot_age_support=physical.bullet_snapshot_age_support,
     )
     _certificate_timing_accumulator.planning_bullet_projection_ms += (
         time.perf_counter_ns() - planning_projection_started_ns

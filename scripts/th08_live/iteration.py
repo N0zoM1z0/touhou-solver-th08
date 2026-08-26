@@ -61,6 +61,7 @@ class CapturedIteration:
     snapshot_lag: int
     player_to_hazard_lag: int
     hazard_snapshot_age: int
+    bullet_snapshot_age_support: tuple[int, ...]
     delay_estimate: DelayEstimate
     control_delay_frames: int
     context_changed: bool
@@ -103,6 +104,16 @@ class CapturedIteration:
             raise ValueError("player-to-hazard lag does not match alignment")
         if self.hazard_snapshot_age != self.hazard_alignment.hazard_age:
             raise ValueError("hazard age does not match alignment")
+        if (
+            not self.bullet_snapshot_age_support
+            or tuple(sorted(set(self.bullet_snapshot_age_support)))
+            != self.bullet_snapshot_age_support
+            or self.bullet_snapshot_age_support[0] < 0
+        ):
+            raise ValueError(
+                "bullet snapshot age support must be sorted, unique, and "
+                "nonnegative"
+            )
         if self.control_delay_frames != self.delay_estimate.nominal:
             raise ValueError("control delay does not match its estimate")
         if not self.delay_estimate.support:

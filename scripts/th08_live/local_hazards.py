@@ -229,7 +229,45 @@ def _build_bullet_frames(
     *,
     horizon: int,
     snapshot_lag: int,
+    snapshot_age_support: tuple[int, ...] | None = None,
 ) -> tuple[tuple[np.ndarray, ...], ...]:
+    if snapshot_age_support is not None:
+        if (
+            not snapshot_age_support
+            or tuple(sorted(set(snapshot_age_support)))
+            != snapshot_age_support
+            or snapshot_age_support[0] < 0
+            or snapshot_lag < 0
+        ):
+            raise ValueError(
+                "snapshot age support must be sorted, unique, nonnegative, "
+                "and use a nonnegative projection offset"
+            )
+        supported = tuple(
+            _build_bullet_frames(
+                bullets,
+                horizon=horizon,
+                snapshot_lag=snapshot_lag + age,
+            )
+            for age in snapshot_age_support
+        )
+        if len(supported) == 1:
+            return supported[0]
+        return tuple(
+            tuple(
+                np.ascontiguousarray(
+                    np.concatenate(
+                        tuple(
+                            projection[step][field]
+                            for projection in supported
+                        )
+                    )
+                )
+                for field in range(len(supported[0][step]))
+            )
+            for step in range(horizon)
+        )
+
     frames: list[tuple[np.ndarray, ...]] = []
     if isinstance(bullets, PackedBulletSnapshot):
         base_x = bullets.x

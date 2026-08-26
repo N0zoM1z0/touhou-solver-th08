@@ -27,6 +27,7 @@ class IssueRequest:
     enemy_bodies: tuple[Any, ...]
     snapshot_lag: int
     time_scale_schedule: Th08TimeScaleSchedule
+    bullet_snapshot_age_support: tuple[int, ...] | None = None
     pipeline_root: Any | None = None
     allowed_first_actions: tuple[str, ...] | None = None
     allowed_action_authority: str | None = None
@@ -134,6 +135,9 @@ class IssueTransaction:
                 lasers=request.lasers,
                 enemy_bodies=request.enemy_bodies,
                 snapshot_lag=request.snapshot_lag,
+                bullet_snapshot_age_support=(
+                    request.bullet_snapshot_age_support
+                ),
                 player_scale_bits=(
                     request.time_scale_schedule.require_player_horizon(
                         certificate_horizon

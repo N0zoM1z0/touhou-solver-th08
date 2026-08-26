@@ -22,6 +22,7 @@ class HazardEpochAlignmentTests(unittest.TestCase):
         )
         self.assertEqual(alignment.source_to_hazard_lag, 5)
         self.assertEqual(alignment.hazard_age, 1)
+        self.assertEqual(alignment.hazard_age_support, (1, 2))
         self.assertEqual(alignment.event_frame_offset, 1)
         self.assertEqual(alignment.event_frame_uncertainty, 2)
         self.assertEqual(alignment.total_frame_extent, 6)
@@ -35,6 +36,7 @@ class HazardEpochAlignmentTests(unittest.TestCase):
             event_window=FrameWindow(205, 205),
         )
         self.assertEqual(alignment.hazard_age, 0)
+        self.assertEqual(alignment.hazard_age_support, (0,))
         self.assertEqual(alignment.event_frame_offset, 0)
         self.assertEqual(alignment.event_frame_uncertainty, 0)
 

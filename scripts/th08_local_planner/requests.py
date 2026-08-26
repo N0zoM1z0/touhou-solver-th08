@@ -31,6 +31,7 @@ class PhysicalHazardSnapshot:
     enemy_bodies: tuple[Any, ...] = ()
     items: tuple[Any, ...] = ()
     snapshot_lag: int = 0
+    bullet_snapshot_age_support: tuple[int, ...] | None = None
     future_hazard_projection: Any | None = None
     future_projection_offset: int = 0
 

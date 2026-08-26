@@ -136,6 +136,9 @@ def finalize_planner_pass(
                         lasers=physical.lasers,
                         enemy_bodies=physical.enemy_bodies,
                         snapshot_lag=physical.snapshot_lag,
+                        bullet_snapshot_age_support=(
+                            physical.bullet_snapshot_age_support
+                        ),
                         laser_frames=context.laser_timeline[
                             : prepared.certificate_horizon
                         ],
@@ -357,6 +360,9 @@ def finalize_planner_pass(
                         lasers=physical.lasers,
                         enemy_bodies=physical.enemy_bodies,
                         snapshot_lag=physical.snapshot_lag,
+                        bullet_snapshot_age_support=(
+                            physical.bullet_snapshot_age_support
+                        ),
                         laser_frames=context.laser_timeline[
                             : prepared.certificate_horizon
                         ],

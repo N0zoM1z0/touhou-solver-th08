@@ -188,6 +188,7 @@ class SensingTraceTests(unittest.TestCase):
             enemy_prefix_snapshot=enemy_prefix,
             enemy_prefix_bodies=(active_body, dormant_body),
             bullet_capture_span=1,
+            bullet_snapshot_age_support=(2, 3),
             hazard_snapshot_age=2,
             player_to_hazard_lag=3,
             ecl_frame_before=100,
@@ -307,6 +308,10 @@ class SensingTraceTests(unittest.TestCase):
         )
         self.assertEqual(fields["enemy_body_contact_enabled_count"], 1)
         self.assertEqual(fields["enemy_body_dormant_count"], 1)
+        self.assertEqual(
+            fields["hazard_alignment"]["bullet_snapshot_age_support"],
+            [2, 3],
+        )
         self.assertEqual(fields["enemy_body_snapshot_age"], 4)
         self.assertEqual(
             fields["issue_time_enemy_guard"]["action_after_guard"],

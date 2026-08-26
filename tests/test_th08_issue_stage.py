@@ -119,6 +119,7 @@ class IssueStageTests(unittest.TestCase):
             snapshot_lag=2,
             player_to_hazard_lag=1,
             hazard_snapshot_age=1,
+            bullet_snapshot_age_support=(1, 2),
             delay_estimate=DelayEstimate(
                 nominal=2,
                 support=(1, 2, 3),

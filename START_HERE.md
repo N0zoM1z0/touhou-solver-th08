@@ -1,6 +1,6 @@
 # Touhou Solver Current Handoff
 
-Last updated: 2026-08-25.
+Last updated: 2026-08-26.
 
 This is the only volatile entrypoint. Read `AGENTS.md`, `GOAL.MD`, then this
 file, `STRATEGY.md`, and the focused task card in
@@ -28,6 +28,22 @@ ordered implementation plan are in
 ## Checkpoint
 
 - Branch: `codex/th08-lunatic-source-audit`.
+- **Current Easy physical/local checkpoint:** accepted Final-B Practice
+  `easy_route2_stage6b_unattended_20260826_051733` completed with nine hits and
+  zero Bomb input, versus 18 hits in the paired baseline.  Source and native
+  state-5 evidence then closed the two apparent sensing gaps: existing bullet
+  slots 1156 and 340 were under-advanced because the controller merged their
+  pool clock with newer boss/ECL reads and negated an unrelated source offset.
+  The implemented generic fix carries the bullet bracket's full discrete age
+  support through local prefix, preflight, beam, delayed, and issue
+  certificates.  Exact pre-hit replay rejects the actually issued action at
+  frames 11412 and 53730 while alternatives still exist.  AUD-093/CE-0267
+  retain the proof.  Offline tests pass; a fresh Easy Final-B Practice run is
+  the next physical falsifier, not a full route or a global-planner run.  The
+  complete Linux suite passes 1,568 tests with five conditional skips.  A
+  3,600-frame saturated source-stateful gate also passes 120/120 future joins,
+  180/180 geometry checks, and 1,414,390 lifecycle samples against the C
+  oracle with zero lifecycle-position error.
 - **Current offline source-stateful checkpoint:** the replayable complete-stage
   laboratory still covers 480--12,000-frame programs, finite 1,536-bullet and
   480-enemy pools, hard no-Bomb campaigns, source/C lockstep, geometry
@@ -723,21 +739,19 @@ and explicit `STRATEGY.md` decision.
 
 ## Next Implementation Gate
 
-TH08 work is active. The next promotion extends the new offline laboratory;
-do not run another route merely to sample a different RNG root:
+TH08 work is active.  Easy is the current diagnostic ladder; do not pay for a
+full route or re-enable non-authoritative global work yet:
 
-1. preserve the completed generic 21-type ANM lifecycle and source-order
-   binary32 geometry differentials; do not replace them with a global age or
-   fixed numeric guard;
-2. preserve the completed child/timeline birth, callback-14, current-pool
-   composition, and projection/bullet/policy clock join; never reuse a worker-
-   root join for a later local bullet snapshot;
-3. run the retained Stage-5 future through the global worker offline and close
-   only the first reached producer/transform boundary that prevents useful
-   coverage or makes the conservative future destroy every viable state;
-4. require a same-capsule losing-to-viable global-policy change, zero oracle
-   disagreement, and bounded latency before one focused Practice gate. Run a
-   full route only after that integrated gain.
+1. preserve the bullet-specific discrete age support and its two physical-root
+   regressions; do not collapse a straddled read to one endpoint;
+2. run one fresh Easy Final-B Practice falsifier after the complete offline and
+   source-stateful gates, retaining exact hit/Bomb/timing evidence;
+3. if the two targeted contacts disappear, audit the remaining first losing
+   prefix and add only a cheap generic local viable-continuation improvement;
+   if either repeats, stop at its first clock/geometry mismatch;
+4. require a clean Final-B Practice before a complete Easy Route-2 NMNB
+   attempt.  The source-current-plus-future global worker remains preserved
+   for later Hard/Lunatic work, not inserted into Easy without evidence.
 
 Never unblock corridor action authority by provenance alone. The current
 active-spell request can omit future births, so scale, complete reached-source

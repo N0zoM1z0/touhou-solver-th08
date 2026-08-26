@@ -1239,6 +1239,7 @@ def commit_local_proposal_for_fresh_hazards(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     pipeline_root: LocalPipelineRoot | None = None,
     allowed_first_actions: tuple[str, ...] | None = None,
     allowed_action_authority: str | None = None,
@@ -1271,6 +1272,7 @@ def commit_local_proposal_for_fresh_hazards(
             lasers=lasers,
             enemy_bodies=enemy_bodies,
             snapshot_lag=snapshot_lag,
+            bullet_snapshot_age_support=bullet_snapshot_age_support,
             time_scale_schedule=time_scale_schedule,
             pipeline_root=pipeline_root,
             allowed_first_actions=allowed_first_actions,
@@ -1308,6 +1310,7 @@ def issue_transaction_for_fresh_hazards(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     pipeline_root: LocalPipelineRoot | None = None,
     allowed_first_actions: tuple[str, ...] | None = None,
     allowed_action_authority: str | None = None,
@@ -1333,6 +1336,7 @@ def issue_transaction_for_fresh_hazards(
         lasers=lasers,
         enemy_bodies=enemy_bodies,
         snapshot_lag=snapshot_lag,
+        bullet_snapshot_age_support=bullet_snapshot_age_support,
         pipeline_root=pipeline_root,
         allowed_first_actions=allowed_first_actions,
         allowed_action_authority=allowed_action_authority,
@@ -1359,6 +1363,7 @@ def recertify_action_for_fresh_hazards(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     pipeline_root: LocalPipelineRoot | None = None,
     allowed_first_actions: tuple[str, ...] | None = None,
     viability_repair_volumes: tuple[tuple[str, int], ...] = (),
@@ -1382,6 +1387,7 @@ def recertify_action_for_fresh_hazards(
         lasers=lasers,
         enemy_bodies=enemy_bodies,
         snapshot_lag=snapshot_lag,
+        bullet_snapshot_age_support=bullet_snapshot_age_support,
         pipeline_root=pipeline_root,
         allowed_first_actions=allowed_first_actions,
         viability_repair_volumes=viability_repair_volumes,
@@ -1579,6 +1585,7 @@ def _control_prefix_hazards(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     frames: int,
     player_scale_bits: tuple[int, ...],
     laser_scale_bits: tuple[int, ...],
@@ -1600,6 +1607,7 @@ def _control_prefix_hazards(
         lasers=lasers,
         enemy_bodies=enemy_bodies,
         snapshot_lag=snapshot_lag,
+        bullet_snapshot_age_support=bullet_snapshot_age_support,
         frames=frames,
         player_scale_bits=player_scale_bits,
         laser_scale_bits=laser_scale_bits,
@@ -1619,6 +1627,7 @@ def _legacy_robust_action_certificates(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     player_scale_bits: tuple[int, ...],
     laser_scale_bits: tuple[int, ...],
     laser_frames: tuple[_PackedLaserFrame, ...] | None = None,
@@ -1635,6 +1644,7 @@ def _legacy_robust_action_certificates(
         lasers=lasers,
         enemy_bodies=enemy_bodies,
         snapshot_lag=snapshot_lag,
+        bullet_snapshot_age_support=bullet_snapshot_age_support,
         player_scale_bits=player_scale_bits,
         laser_scale_bits=laser_scale_bits,
         laser_frames=laser_frames,
@@ -1653,6 +1663,7 @@ def _robust_action_certificates(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     player_scale_bits: tuple[int, ...],
     laser_scale_bits: tuple[int, ...],
     laser_frames: tuple[_PackedLaserFrame, ...] | None = None,
@@ -1681,6 +1692,7 @@ def _robust_action_certificates(
         lasers=lasers,
         enemy_bodies=enemy_bodies,
         snapshot_lag=snapshot_lag,
+        bullet_snapshot_age_support=bullet_snapshot_age_support,
         player_scale_bits=player_scale_bits,
         laser_scale_bits=laser_scale_bits,
         laser_frames=laser_frames,
@@ -1848,6 +1860,7 @@ def _delayed_issue_action_certificates(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     player_scale_bits: tuple[int, ...],
     laser_scale_bits: tuple[int, ...],
     future_hazard_projection: OrdinaryFutureHazardProjection,
@@ -1885,7 +1898,12 @@ def _delayed_issue_action_certificates(
     bullet_frames = _build_bullet_frames(
         bullets,
         horizon=horizon_frames,
-        snapshot_lag=-max(0, snapshot_lag),
+        snapshot_lag=(
+            0
+            if bullet_snapshot_age_support is not None
+            else -max(0, snapshot_lag)
+        ),
+        snapshot_age_support=bullet_snapshot_age_support,
     )
     laser_frames = _build_packed_laser_collision_frames(
         lasers,
@@ -1954,6 +1972,9 @@ def _delayed_issue_action_certificates(
                 lasers=lasers,
                 enemy_bodies=enemy_bodies,
                 snapshot_lag=snapshot_lag,
+                bullet_snapshot_age_support=(
+                    bullet_snapshot_age_support
+                ),
                 player_scale_bits=player_scale_bits,
                 laser_scale_bits=laser_scale_bits,
                 pipeline_root=root,
@@ -2241,6 +2262,7 @@ def _direct_root_certificate_shadow(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     player_scale_bits: tuple[int, ...],
     laser_scale_bits: tuple[int, ...],
     authoritative_certificates: tuple[
@@ -2263,6 +2285,7 @@ def _direct_root_certificate_shadow(
         lasers=lasers,
         enemy_bodies=enemy_bodies,
         snapshot_lag=snapshot_lag,
+        bullet_snapshot_age_support=bullet_snapshot_age_support,
         player_scale_bits=player_scale_bits,
         laser_scale_bits=laser_scale_bits,
         pipeline_root=root,
@@ -2542,6 +2565,9 @@ def _local_planner_request_from_capture(
             enemy_bodies=capture.enemy_bodies,
             items=capture.items,
             snapshot_lag=capture.player_to_hazard_lag,
+            bullet_snapshot_age_support=(
+                capture.bullet_snapshot_age_support
+            ),
         ),
         actuator=ActuatorPipeline(
             previous_direction=capture.previous_direction,
@@ -4561,6 +4587,22 @@ def _run_live_session(
                     else None
                 ),
             )
+            bullet_alignment = HazardEpochAlignment(
+                source_frame=int(state["enemy_manager_frame"]),
+                hazard_window=FrameWindow(
+                    bullet_frame_before,
+                    bullet_frame_after,
+                ),
+                current_frame=counter_after_read,
+                event_window=(
+                    FrameWindow(ecl_frame_before, ecl_frame_after)
+                    if (
+                        ecl_frame_before is not None
+                        and ecl_frame_after is not None
+                    )
+                    else None
+                ),
+            )
             if not hazard_alignment.fits_epoch(
                 maximum_extent=MAX_SENSOR_EPOCH_EXTENT_FRAMES
             ):
@@ -4629,15 +4671,18 @@ def _run_live_session(
                 hazard_alignment.source_to_hazard_lag
             )
             hazard_snapshot_age = hazard_alignment.hazard_age
-            bullet_capture_span = hazard_alignment.hazard_window.span
+            bullet_snapshot_age_support = (
+                bullet_alignment.hazard_age_support
+            )
+            bullet_capture_span = bullet_alignment.hazard_window.span
             ecl_event_frame_offset: int | None = None
             ecl_event_frame_uncertainty: int | None = None
             if ecl_vm_snapshot is not None:
                 ecl_event_frame_offset = (
-                    hazard_alignment.event_frame_offset
+                    bullet_alignment.event_frame_offset
                 )
                 ecl_event_frame_uncertainty = (
-                    hazard_alignment.event_frame_uncertainty
+                    bullet_alignment.event_frame_uncertainty
                 )
             decode_started = time.perf_counter()
             bullet_decode_started = decode_started
@@ -4909,6 +4954,9 @@ def _run_live_session(
                 snapshot_lag=snapshot_lag,
                 player_to_hazard_lag=player_to_hazard_lag,
                 hazard_snapshot_age=hazard_snapshot_age,
+                bullet_snapshot_age_support=(
+                    bullet_snapshot_age_support
+                ),
                 delay_estimate=delay_estimate,
                 control_delay_frames=control_delay_frames,
                 context_changed=corridor_context_changed,
@@ -5858,6 +5906,9 @@ def _run_live_session(
                                     lasers=lasers,
                                     enemy_bodies=exact_contact_enemy_bodies,
                                     snapshot_lag=player_to_hazard_lag,
+                                    bullet_snapshot_age_support=(
+                                        bullet_snapshot_age_support
+                                    ),
                                     player_scale_bits=(
                                         captured_iteration
                                         .time_scale_schedule
@@ -6218,6 +6269,9 @@ def _run_live_session(
                             lasers=lasers,
                             enemy_bodies=exact_contact_enemy_bodies,
                             snapshot_lag=player_to_hazard_lag,
+                            bullet_snapshot_age_support=(
+                                bullet_snapshot_age_support
+                            ),
                             player_scale_bits=causal_player_scale_bits,
                             laser_scale_bits=(
                                 captured_iteration.time_scale_schedule
@@ -6492,6 +6546,9 @@ def _run_live_session(
                                     lasers=lasers,
                                     enemy_bodies=exact_contact_enemy_bodies,
                                     snapshot_lag=player_to_hazard_lag,
+                                    bullet_snapshot_age_support=(
+                                        bullet_snapshot_age_support
+                                    ),
                                     player_scale_bits=(
                                         causal_player_scale_bits
                                     ),
@@ -6738,6 +6795,10 @@ def _run_live_session(
                         snapshot_lag=(
                             published_guidance.capture.player_to_hazard_lag
                         ),
+                        bullet_snapshot_age_support=(
+                            published_guidance.capture
+                            .bullet_snapshot_age_support
+                        ),
                     ),
                     actuator=ActuatorPipeline(
                         previous_direction=(
@@ -6901,6 +6962,9 @@ def _run_live_session(
                         lasers=lasers,
                         enemy_bodies=fresh_enemy_bodies,
                         snapshot_lag=player_to_hazard_lag,
+                        bullet_snapshot_age_support=(
+                            bullet_snapshot_age_support
+                        ),
                         pipeline_root=observed_local_pipeline_root,
                         allowed_first_actions=(
                             actionable_policy_guidance.allowed_first_actions
@@ -7833,6 +7897,9 @@ def _run_live_session(
                             lasers=lasers,
                             enemy_bodies=issue_enemy_bodies_for_shadow,
                             snapshot_lag=player_to_hazard_lag,
+                            bullet_snapshot_age_support=(
+                                bullet_snapshot_age_support
+                            ),
                             player_scale_bits=(
                                 captured_iteration.time_scale_schedule
                                 .require_player_horizon(
@@ -7942,6 +8009,9 @@ def _run_live_session(
                         enemy_prefix_snapshot=enemy_prefix_snapshot,
                         enemy_prefix_bodies=enemy_prefix_bodies,
                         bullet_capture_span=bullet_capture_span,
+                        bullet_snapshot_age_support=(
+                            bullet_snapshot_age_support
+                        ),
                         hazard_snapshot_age=hazard_snapshot_age,
                         player_to_hazard_lag=player_to_hazard_lag,
                         ecl_frame_before=ecl_frame_before,

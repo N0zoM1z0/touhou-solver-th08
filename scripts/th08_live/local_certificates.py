@@ -51,6 +51,7 @@ def control_prefix_hazards(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     frames: int,
     player_scale_bits: tuple[int, ...],
     laser_scale_bits: tuple[int, ...],
@@ -67,7 +68,12 @@ def control_prefix_hazards(
     bullet_frames = _build_bullet_frames(
         bullets,
         horizon=frames,
-        snapshot_lag=-max(0, snapshot_lag),
+        snapshot_lag=(
+            0
+            if bullet_snapshot_age_support is not None
+            else -max(0, snapshot_lag)
+        ),
+        snapshot_age_support=bullet_snapshot_age_support,
     )
     if laser_frames is None:
         laser_frames = _build_packed_laser_collision_frames(
@@ -117,6 +123,7 @@ def legacy_robust_action_certificates(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     player_scale_bits: tuple[int, ...],
     laser_scale_bits: tuple[int, ...],
     laser_frames: tuple[_PackedLaserFrame, ...] | None = None,
@@ -136,7 +143,12 @@ def legacy_robust_action_certificates(
     bullet_frames = _build_bullet_frames(
         bullets,
         horizon=maximum_step,
-        snapshot_lag=-max(0, snapshot_lag),
+        snapshot_lag=(
+            0
+            if bullet_snapshot_age_support is not None
+            else -max(0, snapshot_lag)
+        ),
+        snapshot_age_support=bullet_snapshot_age_support,
     )
     if laser_frames is None:
         laser_frames = _build_packed_laser_collision_frames(
@@ -277,6 +289,7 @@ def robust_action_certificates(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     player_scale_bits: tuple[int, ...],
     laser_scale_bits: tuple[int, ...],
     laser_frames: tuple[_PackedLaserFrame, ...] | None = None,
@@ -328,7 +341,12 @@ def robust_action_certificates(
     bullet_frames = _build_bullet_frames(
         bullets,
         horizon=maximum_step,
-        snapshot_lag=-max(0, snapshot_lag),
+        snapshot_lag=(
+            0
+            if bullet_snapshot_age_support is not None
+            else -max(0, snapshot_lag)
+        ),
+        snapshot_age_support=bullet_snapshot_age_support,
     )
     if laser_frames is None:
         laser_frames = _build_packed_laser_collision_frames(
@@ -561,6 +579,7 @@ def delayed_issue_action_certificates(
     lasers: tuple[Laser, ...],
     enemy_bodies: tuple[EnemyBody, ...],
     snapshot_lag: int,
+    bullet_snapshot_age_support: tuple[int, ...] | None = None,
     player_scale_bits: tuple[int, ...],
     laser_scale_bits: tuple[int, ...],
     pipeline_root: LocalPipelineRoot,
@@ -659,7 +678,12 @@ def delayed_issue_action_certificates(
         bullet_frames = _build_bullet_frames(
             bullets,
             horizon=horizon_frames,
-            snapshot_lag=-max(0, snapshot_lag),
+            snapshot_lag=(
+                0
+                if bullet_snapshot_age_support is not None
+                else -max(0, snapshot_lag)
+            ),
+            snapshot_age_support=bullet_snapshot_age_support,
         )
     if laser_frames is None:
         laser_frames = _build_packed_laser_collision_frames(

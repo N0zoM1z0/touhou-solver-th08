@@ -85,6 +85,16 @@ def validate_local_planner_request(
     )
     if physical.future_projection_offset < 0:
         raise ValueError("future hazard projection offset cannot be negative")
+    bullet_age_support = physical.bullet_snapshot_age_support
+    if bullet_age_support is not None and (
+        not bullet_age_support
+        or tuple(sorted(set(bullet_age_support))) != bullet_age_support
+        or bullet_age_support[0] < 0
+    ):
+        raise ValueError(
+            "bullet snapshot age support must be sorted, unique, and "
+            "nonnegative"
+        )
     future_projection = physical.future_hazard_projection
     if future_projection is None:
         if physical.future_projection_offset:

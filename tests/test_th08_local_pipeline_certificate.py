@@ -63,6 +63,95 @@ def _unit_scale_bits(horizon: int) -> tuple[int, ...]:
 
 
 class Th08LocalPipelineCertificateTests(unittest.TestCase):
+    def test_easy_finalb_physical_contacts_require_bullet_age_support(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "f11417-slot1156",
+                "down_right_fast",
+                15.319308280944824,
+                414.62530517578125,
+                Bullet(
+                    25.505125045776367,
+                    414.4982604980469,
+                    -2.6906185150146484,
+                    1.326865315437317,
+                    2.0,
+                    2.0,
+                    slot=1156,
+                    native_state=1,
+                    native_state_timer_elapsed=17,
+                    bullet_type=2,
+                ),
+                (0, 1),
+            ),
+            (
+                "f53738-slot340",
+                "up_fast",
+                16.131729125976562,
+                363.64691162109375,
+                Bullet(
+                    21.59866714477539,
+                    358.9141540527344,
+                    -1.2406195402145386,
+                    0.6487398743629456,
+                    2.0,
+                    2.0,
+                    slot=340,
+                    native_state=1,
+                    native_state_timer_elapsed=415,
+                    bullet_type=2,
+                ),
+                (1,),
+            ),
+        )
+        for (
+            label,
+            action_name,
+            player_x,
+            player_y,
+            bullet,
+            age_support,
+        ) in cases:
+            with self.subTest(label=label):
+                action = next(
+                    candidate
+                    for candidate in _PLANNER_ACTIONS
+                    if candidate.name == action_name
+                )
+                arguments = {
+                    "player_x": player_x,
+                    "player_y": player_y,
+                    "previous_mask": 0,
+                    "actions": (action,),
+                    "delay_frames": (0,),
+                    "action_hold_frames": 1,
+                    "bullets": (bullet,),
+                    "lasers": (),
+                    "enemy_bodies": (),
+                    "snapshot_lag": 1,
+                    "player_scale_bits": _unit_scale_bits(1),
+                    "laser_scale_bits": _unit_scale_bits(1),
+                    "pipeline_root": LocalPipelineRoot(
+                        action_name,
+                        action_name,
+                        input_publication_to_motion_lag_frames=1,
+                    ),
+                }
+                legacy = _robust_action_certificates(**arguments)[
+                    action_name
+                ]
+                aligned = _robust_action_certificates(
+                    **arguments,
+                    bullet_snapshot_age_support=age_support,
+                )[action_name]
+
+                self.assertEqual(legacy.worst_collisions, 0)
+                self.assertGreater(legacy.min_clearance, 0.0)
+                self.assertGreater(aligned.worst_collisions, 0)
+                self.assertLess(aligned.min_clearance, 0.0)
+
     def test_retained_stage3_f566_held_path_hits_observed_slot_one(
         self,
     ) -> None:

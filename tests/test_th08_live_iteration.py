@@ -77,6 +77,7 @@ class LiveIterationContractTests(unittest.TestCase):
             snapshot_lag=2,
             player_to_hazard_lag=1,
             hazard_snapshot_age=1,
+            bullet_snapshot_age_support=(1, 2),
             delay_estimate=delay,
             control_delay_frames=2,
             context_changed=False,

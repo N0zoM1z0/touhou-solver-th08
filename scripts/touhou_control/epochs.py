@@ -47,6 +47,22 @@ class HazardEpochAlignment:
         return max(0, self.current_frame - self.hazard_window.after)
 
     @property
+    def hazard_age_support(self) -> tuple[int, ...]:
+        """All snapshot ages allowed by a possibly straddled bulk read.
+
+        A bulk pool read bracketed by two frame-counter observations can
+        contain records from either endpoint (and every integer frame in
+        between).  Relative to the final planning root, each such record is
+        therefore between ``current-after`` and ``current-before`` updates
+        old.  Keeping the complete discrete support avoids silently choosing
+        either endpoint as though the read were atomic.
+        """
+
+        youngest = max(0, self.current_frame - self.hazard_window.after)
+        oldest = max(0, self.current_frame - self.hazard_window.before)
+        return tuple(range(youngest, oldest + 1))
+
+    @property
     def event_frame_offset(self) -> int:
         """Rebase event-relative frames to the hazard coordinate epoch."""
 

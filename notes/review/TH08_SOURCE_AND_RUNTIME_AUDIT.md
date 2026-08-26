@@ -2723,7 +2723,7 @@ gate pass.
 
 ### AUD-092 — Easy Final-B paired rerun halves hits but leaves two failure classes
 
-Status: **PHYSICALLY VALIDATED IMPROVEMENT; RESIDUAL ROOT CAUSES OPEN**
+Status: **PHYSICALLY VALIDATED IMPROVEMENT; TWO SENSOR ROOTS CLOSED OFFLINE**
 
 The isolated Practice run
 `easy_route2_stage6b_unattended_20260826_051733` at commit `90da0ca` completed
@@ -2765,10 +2765,90 @@ contact roots and (2) improve cheap local viable-continuation ordering early
 enough to use the measured warning lead.  No stage, spell, or difficulty
 branch is authorized by this evidence.
 
+AUD-093 subsequently identifies both unresolved contacts as existing bullets
+whose bulk-read epochs were aligned in the wrong direction.  That correction
+is source-backed and passes offline causal regressions, but the nine-hit
+physical count remains the current accepted result until a fresh Practice
+falsifier completes.
+
+### AUD-093 — Local certificates reversed bullet-to-player epoch alignment
+
+Status: **ROOT CAUSE CONFIRMED; GENERIC FIX PASSES OFFLINE; PHYSICAL GATE PENDING**
+
+The two AUD-092 sensing residuals are not future births.  On the frame-11417
+capture, bullet slot 1156 is retained at
+`(25.505125, 414.498260)` with velocity
+`(-2.690619, 1.326865)`, native state 1, and a bullet read bracket of
+11413..11414.  The stable player control root is frame 11414.  On the
+frame-53738 capture, slot 340 is retained at
+`(21.598667, 358.914154)` with velocity
+`(-1.240620, 0.648740)`, native state 1, while the bullet bracket is the
+point 53735 and the player root is frame 53736.  In both cases the first
+post-hit state-5 position is exactly two binary32 bullet updates from the
+retained position, while the hit-contact player AABB is one movement update
+from the retained player root.  The resulting source AABBs overlap, strongly
+for slot 1156 and by roughly 0.014 pixels on the limiting axis for slot 340.
+
+The shipped order explains those coordinates.  `Player::FUN_0044aec0` runs in
+the priority-9 chain and writes the cached lethal AABB after movement;
+`BulletManager::OnUpdate` runs at priority 14, advances a state-1 bullet,
+calls `Player::FUN_0044a230`, and changes a contacting bullet to state 5.
+`Chain::RunCalcChain` traverses the ascending priorities.  The collision test
+is an inclusive AABB comparison against the updated player cache.  Therefore
+the first future comparison from a final player root requires every bullet
+update needed to bring its independently bracketed pool record to that root,
+followed by the next native bullet update.
+
+The controller instead formed one combined hazard window from the bullet,
+enemy, boss-guard, and ECL reads.  It assigned
+`player_to_hazard_lag = source_to_hazard_lag`, then local certificates negated
+that scalar before bullet projection.  This conflated (1) the initial state to
+hazard offset used for event rebasing with (2) the age of a bullet record
+relative to the final player root.  At frame 53738 the newer boss/ECL frame
+53736 even made the combined `hazard_snapshot_age` zero although the bullet
+pool was one update old.  A straddled bulk read also cannot soundly choose only
+one endpoint: each slot may belong to any integer age in
+`current-after .. current-before`.
+
+The generic correction builds a bullet-specific alignment and retains that
+complete discrete age support.  Every local prefix, robust preflight, beam
+projection, delayed certificate, and issue recertification evaluates the
+union of source-faithful bullet trajectories for those ages.  ECL callback
+events attached to current bullets are now rebased against the bullet window,
+not the unrelated combined window.  Scalar historical callers keep their old
+compatibility behavior; new live captures carry the explicit support and
+trace it.  There is no difficulty, stage, spell, slot, or coordinate branch.
+
+The two physical roots are deterministic regressions.  The old projection
+reports slot 1156 as zero collisions with +4.157 pixels clearance and slot 340
+as zero collisions with +2.267 pixels.  Supports `{0,1}` and `{1}` change them
+to one collision with -1.224 and -0.214 pixels respectively.  More
+importantly, replay before contact exposes actionable differences: at frame
+11412 the actually issued `down_right_fast` changes from +0.967 pixels safe to
+-1.471 pixels/collision while `down_fast` and `down_left_fast` remain safe; at
+frame 53730 the issued `up_fast` changes from +1.834 pixels safe to
+-0.647 pixels/collision while thirteen alternatives remain safe.  Frame 53734
+then becomes correctly exhausted.  Thus the fix can alter input before both
+contacts rather than merely relabel the hit row.
+
+Across the retained 12,394-decision trace, 9,802 bullet reads have one age,
+2,591 have two, and one has three.  A 400-bullet, nine-frame, 17-action
+certificate microbenchmark rises from 3.46 ms median to 4.89 ms for a
+two-age support; singleton support is 3.55 ms.  This bounded cost is paid only
+when the physical bracket requires it.  Focused tests and the complete Linux
+suite pass: 1,568 tests with five conditional skips.  The source-stateful gate
+at seed `0xce0132` completes all 3,600 frames with 120/120 future joins,
+180 geometry checks and zero mismatches, 85 saturated-pool frames, and
+1,414,390 source/C lifecycle samples with zero lifecycle-position error and
+identical final RNG state/call count.  Its 90 normalized hits are intentional
+pressure, not a pass criterion.  Laser and asynchronously merged enemy-body
+epoch supports remain separate open audits; this bullet evidence does not
+silently claim them fixed.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,567 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,568 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 45 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

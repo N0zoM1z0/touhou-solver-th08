@@ -179,6 +179,7 @@ class SensingTraceInput:
     enemy_prefix_snapshot: Any
     enemy_prefix_bodies: Sequence[Any]
     bullet_capture_span: int
+    bullet_snapshot_age_support: Sequence[int]
     hazard_snapshot_age: int
     player_to_hazard_lag: int
     ecl_frame_before: int | None
@@ -472,6 +473,9 @@ def build_sensing_trace_fields(
             "enemy_prefix_dormant_count": len(dormant),
             "enemy_prefix_attempts": enemy_prefix.attempts,
             "bullet_capture_span": trace_input.bullet_capture_span,
+            "bullet_snapshot_age_support": list(
+                trace_input.bullet_snapshot_age_support
+            ),
             "hazard_snapshot_age": trace_input.hazard_snapshot_age,
             "player_to_hazard_lag": trace_input.player_to_hazard_lag,
             "ecl_frame_before": trace_input.ecl_frame_before,
