@@ -2,7 +2,7 @@
 
 Date: 2026-08-26
 
-Status: **bridge and local sensing implemented; replay differential pending**
+Status: **bridge, local sensing, and route bootstrap implemented; replay differential pending**
 
 This note records a deliberate change in viewpoint. The Linux reconstruction
 is not merely a cheaper replacement for Wine process sensing. It can become a
@@ -175,6 +175,19 @@ some original x87 `fsincos` paths as separate `cosf`/`sinf` calls. Platform
 timing, event, audio, and rendering paths also differ. These are hypotheses to
 test at the earliest divergent epoch, not reasons to assume failure or success.
 
+Numerical comparison has two deliberately different contracts. Discrete
+semantics must remain exact: input masks, RNG seed and call count, ECL program
+counter, pool occupancy and lifecycle, callback/transform selection,
+collision/culling decisions, hit edges, and replay synchronization may not be
+accepted under a tolerance. Continuous coordinates, velocities, and angles
+may initially use a recorded absolute/ULP envelope to localize expected x87
+versus modern-runtime drift. That envelope is diagnostic only and must be
+derived from the operation chain and elapsed horizon; a global epsilon may not
+hide a threshold crossing or the first discrete divergence. The eventual
+compatibility target is therefore not necessarily byte-identical float state,
+but an identical ordered discrete trajectory with bounded, measured
+continuous error through the replay horizon.
+
 The first live synchronization probe passes below this stronger gate.  On the
 verified ELF, three consecutive requests were epochs 1, 2, and 3.  At each
 blocked callback, request current/previous input and RNG seed exactly equalled
@@ -183,6 +196,15 @@ set.  The first cold Xvfb callback took roughly 41 seconds to reach, but its
 reported solver pause was only 1 ms; warm startup reached the three-epoch
 probe in roughly 12 seconds.  This is observed socket/memory coherence, not a
 gameplay, replay, numerical-equivalence, or NMNB result.
+
+The next live probe now crosses the title-to-game transition.  Source-derived
+cursor feedback selected Start, Easy, and Sakuya/Remilia with explicit
+press/release edges; two independent launches completed gameplay loading at
+epochs 140 and 138 and observed difficulty 0, shot type 2, and Stage-1 route
+index 0.  This also found that `TitleScreen::DeletedCallback` leaves
+`g_TitleScreen` dangling, so the release/handoff epoch no longer dereferences
+that global.  The result establishes deterministic menu and lifecycle
+integration, not replay or numerical authority.
 
 ## Relationship to the offline fuzzer
 
@@ -201,13 +223,15 @@ Linux runtime, and original replay is a localization tool, not a vote.
    epoch checks, solver-wait clock compensation, and replay target stamp.
 3. **Done for the title boundary:** verify exact-child ownership and match
    three live request witnesses against fixed-address input/RNG state.
-4. **Next:** drive deterministic menu and short gameplay input sequences,
-   save ordinary replays, and build the semantic fingerprint at each epoch.
-5. Differential a retained Windows-origin replay in both runtimes, then a
+4. **Done for route selection:** drive the source-observed Start, Easy, and
+   Sakuya/Remilia menus and wait for completed Stage-1 gameplay loading.
+5. **Next:** drive a short gameplay input sequence, save an ordinary replay,
+   and build the semantic fingerprint at each epoch.
+6. Differential a retained Windows-origin replay in both runtimes, then a
    Linux-generated replay in fresh Linux and original-Wine processes.
-6. Only after that gate, connect the generic local planner epoch driver and
+7. Only after that gate, connect the generic local planner epoch driver and
    solve Easy practice roots followed by the full Easy route.
-7. Accept success only after the original Wine runtime completes that replay
+8. Accept success only after the original Wine runtime completes that replay
    NMNB.
 
 This architecture is generic across stages and spells. Specific policies may

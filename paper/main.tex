@@ -163,14 +163,26 @@ integrity, without representing the ELF as the original binary.  Divergence is
 localized at the first unequal epoch rather than hidden behind a terminal hit
 count.
 
-The first implementation checkpoint validates only the synchronization seam.
+The numerical gate separates continuous approximation from discrete
+semantics.  Coordinates, velocities, and angles may initially carry a measured
+absolute/ULP envelope that localizes x87 versus modern-runtime drift.  Input,
+RNG calls, ECL and lifecycle state, pool occupancy, collision and culling
+booleans, hit edges, and replay synchronization remain exact.  A tolerance may
+therefore describe harmless continuous drift, but may never hide its first
+threshold crossing or a changed discrete trajectory.
+
+The first implementation checkpoint validates the synchronization seam and
+the title-to-game lifecycle, but not replay equivalence.
 An opt-in fixed-record Unix socket, an exact-child local-memory reader, and
 solver-wait clock compensation are active.  In a live title-boundary probe,
 three contiguous input epochs carried current input, previous input, and RNG
 seed values identical to independent fixed-address reads.  The cold software-
-rendered startup delay did not enter the bridge pause counter.  This witness
-does not promote Linux gameplay: deterministic menu/gameplay replay and the
-cross-runtime semantic differential remain the next gates.
+rendered startup delay did not enter the bridge pause counter.  A subsequent
+source-feedback controller emitted only observed press/release edges and twice
+reached completed Stage~1 loading for Easy Sakuya/Remilia.  It also exposed a
+dangling title global during handoff, which is now never dereferenced on the
+release epoch.  These witnesses do not promote Linux gameplay: ordinary replay
+recording and the cross-runtime semantic differential remain the next gates.
 
 \section{Source-Stateful Offline Laboratory}
 

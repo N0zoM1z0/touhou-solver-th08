@@ -559,6 +559,12 @@ ordered implementation plan are in
   rejected reserve set is no longer an eligibility source; exact ordinary
   viable membership and fresh issue safety are required before another live
   gate.
+- **Linux route bootstrap is live:** commit `4aa6e69` reads source-defined
+  title state and emits press/release edges to select Start, Easy, and
+  Sakuya/Remilia.  Two isolated native launches reached completed Stage-1
+  loading with difficulty 0 and shot type 2 at epochs 140 and 138.  This is
+  menu/lifecycle authority only; replay and numerical differentials remain
+  open.
 - `audits/` and `archive/` are untracked/local. Never stage them.
 
 ## Current Outcome
@@ -797,26 +803,23 @@ and explicit `STRATEGY.md` decision.
 
 ## Next Implementation Gate
 
-TH08 work is active.  Easy is the current diagnostic ladder; do not pay for a
+TH08 work is active. Easy is the current diagnostic ladder; do not pay for a
 full route or re-enable non-authoritative global work yet:
 
-1. preserve the bullet-specific discrete age support and its two physical-root
-   regressions; do not collapse a straddled read to one endpoint or count one
-   slot's mutually exclusive ages as simultaneous bullets;
-2. preserve the implemented outward-rounded per-slot age hull, exact contact
-   regressions, and atomic/straddled native differential;
-3. preserve the evidence-backed rejection of an unconditional 32-frame
-   constant-action tail.  It is not a substitute for global viability and
-   must remain conditional; when invoked it must use the exact player
-   time-scale schedule and native movement recurrence;
-4. move backward from the boundary-associated physical exhaustion roots and
-   determine whether the first avoidable loss is beam pruning, receding-policy
-   reversal, or already-committed input.  Reproduce that loss offline before
-   changing horizon, focus, or boundary weights;
-5. rotate one focused Final-B Practice only after same-root/fuzzer evidence;
-   require a clean Final-B Practice before a complete Easy Route-2 NMNB
-   attempt.  The source-current-plus-future global worker remains preserved
-   for later Hard/Lunatic work, not inserted into Easy without evidence.
+1. retain the source-driven Linux title/bootstrap state machine and its exact-
+   child/no-duration contract; never dereference the dangling title global on
+   the post-confirm release epoch;
+2. record a short ordinary Linux gameplay sequence and save its replay without
+   writing gameplay or RNG state;
+3. define a compact semantic fingerprint with exact discrete fields and
+   separately reported absolute/ULP float drift; stop on the first discrete
+   divergence or threshold crossing;
+4. replay a retained Windows-origin sample in both runtimes, then perform the
+   mandatory reverse Linux-generated replay in a fresh Linux process and the
+   original v1.00d Wine process;
+5. only after that compatibility gate, connect a generic one-epoch Easy local
+   planner.  Practice and full-route runs remain milestone validations rather
+   than the development loop.
 
 Never unblock corridor action authority by provenance alone. The current
 active-spell request can omit future births, so scale, complete reached-source

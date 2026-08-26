@@ -48,13 +48,21 @@ input mask and never writes gameplay/RNG state. Linux/original semantic replay
 differential is required before its generated replay receives candidate
 authority.
 
-The implemented bridge/session currently has only title-boundary integration
-authority.  It verifies one exact ELF and child PID, enforces contiguous wire
-epochs and hard no-Bomb responses, and has matched three blocked input/RNG
-witnesses against fixed-address memory.  It has not yet crossed deterministic
-menu/gameplay replay differential.  In particular, the existing Windows
-continuous-poll/SendInput loop is not silently treated as a zero-delay Linux
-epoch controller.
+The implemented bridge/session now has route-bootstrap integration authority.
+It verifies one exact ELF and child PID, enforces contiguous wire epochs and
+hard no-Bomb responses, and has matched blocked input/RNG witnesses against
+fixed-address memory.  Its source-driven feedback controller has twice
+selected Start, Easy, and Sakuya/Remilia and reached completed Stage-1 loading
+with difficulty 0 and shot type 2.  It has not yet crossed replay or numerical
+differential.  In particular, the existing Windows continuous-poll/SendInput
+loop is not silently treated as a zero-delay Linux epoch controller.
+
+Cross-runtime float comparison may temporarily retain explicit absolute/ULP
+error for coordinates, velocities, and angles, but discrete semantics remain
+exact.  RNG calls, ECL/callback/lifecycle state, slot occupancy, collision and
+culling decisions, hit edges, and replay synchronization cannot be excused by
+a tolerance.  Any continuous error that crosses such a boundary is the first
+real divergence and fails the gate.
 
 The Easy execution profile uses no stage or spell policy. It reads native
 enemy slots 0--63 synchronously and retains a complete asynchronous read of

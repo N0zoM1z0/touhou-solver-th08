@@ -3099,6 +3099,41 @@ and short gameplay replay with earliest-epoch semantic differential; the old
 Windows continuous-poll/SendInput controller must not be connected without an
 explicit one-epoch observation/decision/response contract.
 
+### AUD-099 — Source-driven Linux bootstrap reaches Easy Sakuya/Remilia gameplay
+
+Status: **OBSERVED LIVE ROUTE-SELECTION TRANSITION; REPLAY DIFFERENTIAL PENDING**
+
+Commit `4aa6e69` adds a generic title driver that reads the title object rather
+than relying on sleeps, screenshots, or menu-specific epoch counts.  The
+source fixes the route as Start cursor 0, Easy difficulty cursor 0, and
+`SHOT_SAKUYA_REMILIA` cursor 2.  It also proves that all three confirmations
+use `WAS_PRESSED`; the driver therefore emits one press followed by one
+neutral release and advances only after observing the resulting cursor or
+screen state.  The `TitleScreen` member offsets were independently checked
+with debugger type information from the pinned i386 ELF.
+
+Two live launches on isolated Xvfb `:121` reached a completed gameplay load.
+The first reached ready epoch 140 after correcting the persisted default
+difficulty from Hard cursor 3 to Easy; the second reached ready epoch 138 with
+Easy already persisted.  Both independently reported difficulty 0, shot type
+2, and Stage-1 route index 0 from fixed-address game state.  Twenty-one
+focused protocol/process/session/title tests pass, and each smoke cleaned up
+only its exact native child.
+
+The first run also exposed a source lifecycle hazard: `TitleScreen` deletion
+frees the object but does not clear `g_TitleScreen`.  The post-character-
+confirm release epoch had therefore read a dangling object.  The retained
+driver now releases every nonzero prior mask without dereferencing title
+state, then hands off when the statically allocated GameManager calc-chain
+callback becomes observable.  This is an infrastructure correction, not a
+gameplay or policy special case.
+
+This closes deterministic source-driven route selection and the title-to-game
+handoff only.  It does not establish replay recording, Linux/original numeric
+agreement, collision equivalence, route completion, or NMNB.  The next hard
+gate is a short recorded input sequence plus an earliest-divergence semantic
+fingerprint in both runtimes.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
