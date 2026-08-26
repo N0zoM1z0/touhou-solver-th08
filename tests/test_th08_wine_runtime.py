@@ -188,6 +188,7 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertEqual(args.replay_stage_index, 5)
         self.assertEqual(args.replay_start_manager_frame, 600)
         self.assertEqual(args.replay_gameplay_epochs, 300)
+        self.assertEqual(args.replay_root_timeout, 300.0)
 
     def test_pty_bridge_provides_console_handles_and_propagates_status(
         self,
@@ -417,6 +418,7 @@ class Th08WineRunnerTests(unittest.TestCase):
                 replay_stage_index=5,
                 replay_start_manager_frame=700,
                 replay_gameplay_epochs=123,
+                replay_root_timeout=456.0,
                 replay_collision_control_projection=True,
             )
 
@@ -433,6 +435,10 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertEqual(
             command[command.index("--gameplay-epochs") + 1],
             "123",
+        )
+        self.assertEqual(
+            command[command.index("--root-timeout") + 1],
+            "456.0",
         )
         self.assertIn("--collision-control-projection", command)
         self.assertNotIn("--agent-duration", command)

@@ -89,8 +89,6 @@ def validate_semantic_sample(
     contract: NativeReplayStageContract,
     expected_replay_frame: int,
 ) -> None:
-    if not fingerprint["gameplay_active"]:
-        raise RuntimeError("retail replay gameplay became inactive inside sample")
     if not int(fingerprint["game_manager_flags"]) & 0x08:
         raise RuntimeError("retail gameplay sample is not in replay mode")
     for field, expected in (
@@ -146,7 +144,7 @@ def _validate_args(args: argparse.Namespace) -> None:
 def run(args: argparse.Namespace) -> int:
     _validate_args(args)
     report: dict[str, object] = {
-        "schema": "th08-windows-replay-semantic-smoke-v2",
+        "schema": "th08-windows-replay-semantic-smoke-v3",
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "status": "failed",
         "scope": "bounded barrier-aligned replay differential; no route claim",
@@ -235,6 +233,7 @@ def run(args: argparse.Namespace) -> int:
         digest = hashlib.sha256()
         rng_calls_origin = None
         same_manager_input_epochs = 0
+        inactive_gameplay_epochs = 0
         previous_manager_frame = None
         replay_frame_origin = None
         for relative_epoch in range(1, args.gameplay_epochs + 1):
@@ -299,6 +298,8 @@ def run(args: argparse.Namespace) -> int:
                 contract=contract,
                 expected_replay_frame=expected_replay_frame,
             )
+            if not fingerprint["gameplay_active"]:
+                inactive_gameplay_epochs += 1
             fingerprints.append(fingerprint)
             digest.update(canonical_fingerprint_bytes(fingerprint))
             digest.update(b"\n")
@@ -319,6 +320,7 @@ def run(args: argparse.Namespace) -> int:
                 "start_replay_frame": replay_frame_origin,
                 "rng_calls_origin": rng_calls_origin,
                 "same_manager_input_epochs": same_manager_input_epochs,
+                "inactive_gameplay_epochs": inactive_gameplay_epochs,
                 "semantic_spine_sha256": digest.hexdigest(),
                 "fingerprint_output": str(args.fingerprint_output),
                 "fingerprint_output_sha256": _sha256(

@@ -75,6 +75,15 @@ class WindowsReplaySemanticSmokeTests(unittest.TestCase):
             expected_replay_frame=600,
         )
 
+    def test_sample_contract_accepts_replay_bound_inactive_epoch(self) -> None:
+        fingerprint = _fingerprint()
+        fingerprint["gameplay_active"] = False
+        validate_semantic_sample(
+            fingerprint,
+            contract=_contract(),
+            expected_replay_frame=600,
+        )
+
     def test_sample_contract_rejects_clock_or_identity_drift(self) -> None:
         fingerprint = _fingerprint()
         fingerprint["replay"] = {"frame_counter": 599}

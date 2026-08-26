@@ -327,6 +327,7 @@ def build_windows_controller_command(
     replay_stage_index: int = 5,
     replay_start_manager_frame: int = 600,
     replay_gameplay_epochs: int = 300,
+    replay_root_timeout: float = 300.0,
     replay_collision_control_projection: bool = False,
 ) -> list[str]:
     if difficulty not in {"easy", "normal", "hard", "lunatic"}:
@@ -423,6 +424,8 @@ def build_windows_controller_command(
             str(replay_start_manager_frame),
             "--gameplay-epochs",
             str(replay_gameplay_epochs),
+            "--root-timeout",
+            str(replay_root_timeout),
         ]
         if replay_collision_control_projection:
             command.append("--collision-control-projection")
@@ -542,6 +545,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--replay-stage-index", type=int, default=5)
     parser.add_argument("--replay-start-manager-frame", type=int, default=600)
     parser.add_argument("--replay-gameplay-epochs", type=int, default=300)
+    parser.add_argument("--replay-root-timeout", type=float, default=300.0)
     parser.add_argument(
         "--replay-collision-control-projection",
         action="store_true",
@@ -624,6 +628,7 @@ def run(args: argparse.Namespace) -> int:
         "replay_stage_index": args.replay_stage_index,
         "replay_start_manager_frame": args.replay_start_manager_frame,
         "replay_gameplay_epochs": args.replay_gameplay_epochs,
+        "replay_root_timeout_seconds": args.replay_root_timeout,
         "replay_collision_control_projection": bool(
             args.replay_collision_control_projection
         ),
@@ -698,6 +703,8 @@ def run(args: argparse.Namespace) -> int:
                 raise ValueError("replay start manager frame must be positive")
             if args.replay_gameplay_epochs <= 0:
                 raise ValueError("replay gameplay epochs must be positive")
+            if args.replay_root_timeout <= 0.0:
+                raise ValueError("replay root timeout must be positive")
             replay_input = args.replay_input.resolve(strict=True)
             replay_sha256 = args.expected_replay_sha256.lower()
             if len(replay_sha256) != 64:
@@ -1032,6 +1039,7 @@ def run(args: argparse.Namespace) -> int:
             replay_stage_index=args.replay_stage_index,
             replay_start_manager_frame=args.replay_start_manager_frame,
             replay_gameplay_epochs=args.replay_gameplay_epochs,
+            replay_root_timeout=args.replay_root_timeout,
             replay_collision_control_projection=(
                 args.replay_collision_control_projection
             ),

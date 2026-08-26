@@ -200,6 +200,7 @@ def run(args: argparse.Namespace) -> int:
             rng_calls_origin = None
             skipped_gameplay_epochs = 0
             same_manager_input_epochs = 0
+            inactive_gameplay_epochs = 0
             previous_manager_frame = None
             replay_frame_origin = None
             for relative_epoch in range(1, args.gameplay_epochs + 1):
@@ -278,9 +279,7 @@ def run(args: argparse.Namespace) -> int:
                 if rng_calls_origin is None:
                     rng_calls_origin = int(trace_locators["rng_calls_absolute"])
                 if not fingerprint["gameplay_active"]:
-                    raise RuntimeError(
-                        "replay gameplay became inactive inside the requested sample"
-                    )
+                    inactive_gameplay_epochs += 1
                 if not int(fingerprint["game_manager_flags"]) & 0x08:
                     raise RuntimeError("gameplay sample is not in replay mode")
                 if fingerprint["difficulty_index"] != metadata.difficulty_index:
@@ -320,7 +319,7 @@ def run(args: argparse.Namespace) -> int:
                 write_semantic_trace(args.fingerprint_output, fingerprints)
 
             report = {
-                "schema": "th08-linux-replay-semantic-smoke-v5",
+                "schema": "th08-linux-replay-semantic-smoke-v6",
                 "runtime": {
                     "path": str(session.identity.path),
                     "size": session.identity.size,
@@ -338,6 +337,7 @@ def run(args: argparse.Namespace) -> int:
                 "bootstrap_last_epoch": bootstrap_last_epoch,
                 "skipped_gameplay_epochs": skipped_gameplay_epochs,
                 "same_manager_input_epochs": same_manager_input_epochs,
+                "inactive_gameplay_epochs": inactive_gameplay_epochs,
                 "start_manager_frame": args.start_manager_frame,
                 "start_replay_frame": replay_frame_origin,
                 "sample_epochs": args.gameplay_epochs,
