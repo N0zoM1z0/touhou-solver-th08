@@ -2568,6 +2568,24 @@ a stronger offline profile plus a packed/persistent representation.  Easy
 Final-B Practice follows only after that gate changes or certifies a meaningful
 losing root.
 
+### AUD-087 — Boundary-stratification and schema tests were stale at HEAD
+
+Status: **CONFIRMED PRE-EXISTING TEST DEBT; CORRECTED**
+
+The first complete-suite run after AUD-086 reported four failures.  An isolated
+detached worktree at clean commit `12f151a` reproduced the identical four, so
+none was caused by the future join.  Three local-planner fixtures still pinned
+first actions or an exact reserve scalar from the pre-stratification beam even
+though `12f151a` intentionally preserves one boundary leader per first-action
+family.  Their hard safety outcomes remained zero-collision and their intended
+properties still held: longer terminal search improved clearance, explicit
+relaxation was visible, the best exact repair was not replaced, and reserve
+guidance reached zero.  The tests now assert those semantic invariants and the
+new deterministic actions.  A fourth test expected an older cull-only schema
+error substring after callback-14 had joined the same feature gate; its regex
+now names the current combined gate.  No planner implementation changed for
+this cleanup.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this

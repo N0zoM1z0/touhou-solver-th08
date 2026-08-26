@@ -115,7 +115,7 @@ class RetainedEventStreamTests(unittest.TestCase):
         downgraded["schema"] = STAGE_SCHEMA
         with self.assertRaisesRegex(
             ValueError,
-            "cull-geometry features",
+            "cull-geometry/callback-14 features",
         ):
             StageProgram.from_payload(downgraded)
 
