@@ -150,6 +150,27 @@ class Th08WineRunnerTests(unittest.TestCase):
         self.assertGreater(args.trial_timeout, args.agent_duration)
         self.assertTrue(args.authority_only_corridor)
         self.assertFalse(args.trace_items)
+        self.assertEqual(args.cpu_list, "auto")
+
+    def test_auto_cpu_list_tracks_effective_affinity_after_resize(self) -> None:
+        self.assertEqual(
+            runner.select_cpu_list(
+                "auto",
+                available_cpus=set(range(16)),
+            ),
+            "8-15",
+        )
+        self.assertEqual(
+            runner.select_cpu_list(
+                "auto",
+                available_cpus={2, 4, 6, 8, 10, 12},
+            ),
+            "8,10,12",
+        )
+        self.assertEqual(
+            runner.select_cpu_list("3-5", available_cpus=set(range(16))),
+            "3-5",
+        )
 
     def test_wine_practice_defaults_to_nonbinding_stage5_gate(self) -> None:
         args = runner.build_parser().parse_args(["--mode", "practice"])

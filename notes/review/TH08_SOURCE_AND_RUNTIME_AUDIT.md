@@ -2461,6 +2461,21 @@ claim Stage-5 source authority until stage-indexed runtime ECL identity is
 wired. These are distinct configuration/identity gaps and must not be hidden
 by tuning local boundary penalties.
 
+### AUD-085 — Fixed Wine CPU affinity became invalid after VPS resizing
+
+Status: **CONFIRMED HOST-CONFIGURATION BUG; FIXED OFFLINE**
+
+The isolated runner defaulted to the literal taskset ``24-47`` that matched
+the earlier 48-vCPU host. The resized VPS exposes only CPUs ``0-15``; every new
+trial would therefore fail before Wine launch. The default is now ``auto``.
+It reads the launching process's effective affinity and selects its upper
+half, preserving the original lower-half reservation without assuming global
+CPU numbering. On this host it resolves to ``8-15``. Explicit taskset
+expressions remain supported, and successful reports retain both the requested
+and resolved values. Focused tests cover contiguous, sparse, singleton, and
+explicit affinity inputs. Physical validation is deferred to the next useful
+Practice trial rather than spending a Wine run on configuration alone.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this

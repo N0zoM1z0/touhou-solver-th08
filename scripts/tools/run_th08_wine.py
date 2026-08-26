@@ -192,6 +192,50 @@ def validate_cpu_list(value: str) -> None:
         raise ValueError(f"invalid taskset CPU list: {value}")
 
 
+def _format_cpu_list(cpus: tuple[int, ...]) -> str:
+    if not cpus:
+        raise ValueError("CPU affinity cannot be empty")
+    ranges: list[str] = []
+    start = previous = cpus[0]
+    for cpu in cpus[1:]:
+        if cpu == previous + 1:
+            previous = cpu
+            continue
+        ranges.append(str(start) if start == previous else f"{start}-{previous}")
+        start = previous = cpu
+    ranges.append(str(start) if start == previous else f"{start}-{previous}")
+    return ",".join(ranges)
+
+
+def select_cpu_list(
+    requested: str,
+    *,
+    available_cpus: set[int] | frozenset[int] | None = None,
+) -> str:
+    """Resolve ``auto`` inside the host's effective affinity boundary.
+
+    Historical trials reserved the lower half of a 48-vCPU host and ran TH08
+    on 24-47.  Preserve that isolation policy after VPS resizing by selecting
+    the upper half of the CPUs this process is actually allowed to use.  An
+    explicit taskset expression remains untouched and is validated by the
+    caller.
+    """
+
+    if requested != "auto":
+        return requested
+    allowed = tuple(
+        sorted(
+            os.sched_getaffinity(0)
+            if available_cpus is None
+            else available_cpus
+        )
+    )
+    if not allowed:
+        raise RuntimeError("host exposes no CPUs in the effective affinity")
+    selected = allowed[len(allowed) // 2 :] if len(allowed) > 1 else allowed
+    return _format_cpu_list(selected)
+
+
 def validate_prefix_target(prefix: Path) -> None:
     resolved = prefix.resolve()
     forbidden = {Path("/"), Path.home().resolve(), ROOT.resolve()}
@@ -362,7 +406,14 @@ def build_parser() -> argparse.ArgumentParser:
         default=REFERENCE / "wine-prefixes" / "th08-retail",
     )
     parser.add_argument("--display", default="auto")
-    parser.add_argument("--cpu-list", default="24-47")
+    parser.add_argument(
+        "--cpu-list",
+        default="auto",
+        help=(
+            "taskset CPU expression, or 'auto' for the upper half of the "
+            "host's effective affinity"
+        ),
+    )
     parser.add_argument(
         "--wine",
         type=Path,
@@ -425,6 +476,7 @@ def run(args: argparse.Namespace) -> int:
     )
     artifact_dir.mkdir(parents=True, exist_ok=False)
     report_path = artifact_dir / "report.json"
+    resolved_cpu_list: str | None = None
     report: dict[str, Any] = {
         "schema": "th08-isolated-wine-run-v1",
         "started_utc": datetime.now(timezone.utc).isoformat(),
@@ -433,7 +485,8 @@ def run(args: argparse.Namespace) -> int:
         "practice_stage": args.practice_stage if args.mode == "practice" else None,
         "artifact_dir": str(artifact_dir),
         "display_requested": args.display,
-        "cpu_list": args.cpu_list,
+        "cpu_list_requested": args.cpu_list,
+        "cpu_list": None,
         "agent_duration_seconds": args.agent_duration,
         "trial_timeout_seconds": args.trial_timeout,
         "authority_only_corridor": args.authority_only_corridor,
@@ -469,7 +522,9 @@ def run(args: argparse.Namespace) -> int:
     result_code = 78
     try:
         validate_prefix_target(prefix)
-        validate_cpu_list(args.cpu_list)
+        resolved_cpu_list = select_cpu_list(args.cpu_list)
+        validate_cpu_list(resolved_cpu_list)
+        report["cpu_list"] = resolved_cpu_list
         if args.timeout is not None and args.timeout <= 0.0:
             raise ValueError("timeout must be positive")
         if args.mode != "smoke" and args.agent_duration <= 0.0:
@@ -735,7 +790,7 @@ def run(args: argparse.Namespace) -> int:
         host_command = [
             "taskset",
             "-c",
-            args.cpu_list,
+            resolved_cpu_list,
             sys.executable,
             str(ROOT / "scripts" / "tools" / "exec_with_pty.py"),
             "--",
