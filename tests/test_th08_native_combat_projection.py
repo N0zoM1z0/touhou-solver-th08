@@ -7,8 +7,8 @@ from types import SimpleNamespace
 
 from th08_live.enemy_sensor import (
     ENEMY_FLAGS_OFFSET,
-    ENEMY_POOL_BASE,
     ENEMY_POOL_SIZE,
+    ENEMY_SLOT_ZERO_BASE,
     ENEMY_STRIDE,
 )
 from th08_runtime.game_state import (
@@ -58,6 +58,7 @@ from th08_runtime.native_combat_projection import (
     capture_native_combat_projection,
     capture_player_damage_region_state,
     capture_player_shot_combat_state,
+    decode_enemy_damage_targets,
     decode_player_shot_pool,
 )
 from th08_runtime.route2_sht_provenance import (
@@ -246,7 +247,7 @@ def _install_enemy(
     hitbox: tuple[float, float] = (24.0, 16.0),
     hitpoints: int = 100,
 ) -> None:
-    base = (slot + 1) * ENEMY_STRIDE
+    base = slot * ENEMY_STRIDE
     struct.pack_into("<I", component, base + ENEMY_FLAGS_OFFSET, flags)
     struct.pack_into("<I", component, base + ENEMY_FLAGS2_OFFSET, 0)
     struct.pack_into(
@@ -277,7 +278,7 @@ def _native_root(enemy_component: bytes) -> object:
             SimpleNamespace(
                 spec=SimpleNamespace(
                     name="ordinary_enemy_template_and_pool",
-                    address=ENEMY_POOL_BASE - ENEMY_STRIDE,
+                    address=ENEMY_SLOT_ZERO_BASE,
                 ),
                 data=enemy_component,
             ),
@@ -429,6 +430,39 @@ class NativeCombatProjectionTests(unittest.TestCase):
         self.assertEqual(right_slots, ())
         self.assertNotEqual(bytes(left), bytes(right))
 
+    def test_damage_targets_include_slot_zero_and_exclude_failure_sentinel(
+        self,
+    ) -> None:
+        component = bytearray((ENEMY_POOL_SIZE + 1) * ENEMY_STRIDE)
+        _install_enemy(component, 0)
+        struct.pack_into(
+            "<I",
+            component,
+            ENEMY_POOL_SIZE * ENEMY_STRIDE + ENEMY_FLAGS_OFFSET,
+            1,
+        )
+
+        targets = decode_enemy_damage_targets(_native_root(bytes(component)))
+
+        self.assertEqual([target.slot for target in targets], [0])
+        self.assertEqual(targets[0].enemy_pointer, ENEMY_SLOT_ZERO_BASE)
+
+    def test_legacy_slot_one_pool_is_not_damage_authority(self) -> None:
+        legacy_root = SimpleNamespace(
+            components=(
+                SimpleNamespace(
+                    spec=SimpleNamespace(
+                        name="ordinary_enemy_template_and_pool",
+                        address=ENEMY_SLOT_ZERO_BASE + ENEMY_STRIDE,
+                    ),
+                    data=bytes(ENEMY_POOL_SIZE * ENEMY_STRIDE),
+                ),
+            )
+        )
+
+        with self.assertRaisesRegex(ValueError, "legacy slot-1 pool"):
+            decode_enemy_damage_targets(legacy_root)
+
     def test_projection_exposes_supported_and_unresolved_native_passes(
         self,
     ) -> None:
@@ -447,7 +481,7 @@ class NativeCombatProjectionTests(unittest.TestCase):
         )
 
         enemy_component = bytearray((ENEMY_POOL_SIZE + 1) * ENEMY_STRIDE)
-        base = ENEMY_STRIDE
+        base = 0
         struct.pack_into("<I", enemy_component, base + ENEMY_FLAGS_OFFSET, 0x49)
         struct.pack_into("<I", enemy_component, base + ENEMY_FLAGS2_OFFSET, 0)
         struct.pack_into(

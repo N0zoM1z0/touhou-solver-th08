@@ -30,8 +30,8 @@ from th08_enemy_damage_model import (
 from th08_live.enemy_sensor import (
     ENEMY_ACTIVE_FLAG,
     ENEMY_FLAGS_OFFSET,
-    ENEMY_POOL_BASE,
-    ENEMY_POOL_SIZE,
+    ENEMY_MANAGER_SCANNED_SLOT_COUNT,
+    ENEMY_SLOT_ZERO_BASE,
     ENEMY_STRIDE,
 )
 from th08_runtime.game_state import (
@@ -65,10 +65,10 @@ from th08_runtime.route2_sht_provenance import (
 from th08_runtime.sensing import decode_spell_state
 
 
-NATIVE_COMBAT_PROJECTION_SCHEMA = "th08-native-combat-root-projection-v7"
+NATIVE_COMBAT_PROJECTION_SCHEMA = "th08-native-combat-root-projection-v8"
 PLAYER_SHOT_COMBAT_STATE_SCHEMA = "th08-player-shot-combat-state-v1"
 PLAYER_DAMAGE_REGION_STATE_SCHEMA = "th08-player-damage-region-state-v1"
-ENEMY_DAMAGE_TARGET_STATE_SCHEMA = "th08-enemy-damage-target-state-v1"
+ENEMY_DAMAGE_TARGET_STATE_SCHEMA = "th08-enemy-damage-target-state-v2"
 SUPPORTED_SHOT_PASS_SCHEMA = "th08-supported-ordinary-shot-pass-v2"
 SUPPORTED_DAMAGE_REGION_PASS_SCHEMA = "th08-supported-damage-region-pass-v1"
 
@@ -613,9 +613,12 @@ class EnemyDamageTarget:
     causal_tail_sha256: str
 
     def __post_init__(self) -> None:
-        if not 0 <= self.slot < ENEMY_POOL_SIZE:
-            raise ValueError("enemy damage target slot is outside the pool")
-        if self.enemy_pointer != ENEMY_POOL_BASE + self.slot * ENEMY_STRIDE:
+        if not 0 <= self.slot < ENEMY_MANAGER_SCANNED_SLOT_COUNT:
+            raise ValueError("enemy damage target slot is outside manager scan")
+        if (
+            self.enemy_pointer
+            != ENEMY_SLOT_ZERO_BASE + self.slot * ENEMY_STRIDE
+        ):
             raise ValueError("enemy damage target pointer/slot disagree")
         if not self.flags & ENEMY_ACTIVE_FLAG:
             raise ValueError("enemy damage target is inactive")
@@ -697,25 +700,21 @@ def decode_enemy_damage_targets(
     )
     spec = getattr(component, "spec")
     data = bytes(getattr(component, "data"))
-    expected_pool_size = ENEMY_POOL_SIZE * ENEMY_STRIDE
+    expected_pool_size = ENEMY_MANAGER_SCANNED_SLOT_COUNT * ENEMY_STRIDE
     if (
-        int(getattr(spec, "address")) == ENEMY_POOL_BASE
-        and len(data) == expected_pool_size
+        int(getattr(spec, "address")) == ENEMY_SLOT_ZERO_BASE
+        and len(data) in (expected_pool_size, expected_pool_size + ENEMY_STRIDE)
     ):
         pool_offset = 0
-    elif (
-        int(getattr(spec, "address")) + ENEMY_STRIDE == ENEMY_POOL_BASE
-        and len(data) == expected_pool_size + ENEMY_STRIDE
-    ):
-        pool_offset = ENEMY_STRIDE
     else:
         raise ValueError(
-            "native combat enemy component is not the exact pool or "
-            "template-plus-pool layout"
+            "native combat requires the source-authoritative manager scan "
+            "beginning at enemy slot zero; the legacy slot-1 pool omits an "
+            "executable target"
         )
 
     targets: list[EnemyDamageTarget] = []
-    for slot in range(ENEMY_POOL_SIZE):
+    for slot in range(ENEMY_MANAGER_SCANNED_SLOT_COUNT):
         base = pool_offset + slot * ENEMY_STRIDE
         flags = struct.unpack_from("<I", data, base + ENEMY_FLAGS_OFFSET)[0]
         if not flags & ENEMY_ACTIVE_FLAG:
@@ -734,7 +733,7 @@ def decode_enemy_damage_targets(
         targets.append(
             EnemyDamageTarget(
                 slot=slot,
-                enemy_pointer=ENEMY_POOL_BASE + slot * ENEMY_STRIDE,
+                enemy_pointer=ENEMY_SLOT_ZERO_BASE + slot * ENEMY_STRIDE,
                 hitpoints=struct.unpack_from(
                     "<i",
                     data,
@@ -1263,7 +1262,8 @@ def capture_native_combat_projection(
         "enemy_manager_processing_order": {
             "kind": "ascending_pool_slot",
             "slots": [target.slot for target in targets],
-            "pool_size": ENEMY_POOL_SIZE,
+            "slot_zero_base": ENEMY_SLOT_ZERO_BASE,
+            "pool_size": ENEMY_MANAGER_SCANNED_SLOT_COUNT,
             "slot_stride": ENEMY_STRIDE,
         },
         "enemy_targets": target_records,

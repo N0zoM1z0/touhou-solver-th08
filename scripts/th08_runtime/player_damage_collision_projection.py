@@ -17,8 +17,8 @@ from typing import Any
 from th08_live.enemy_sensor import (
     ENEMY_ACTIVE_FLAG,
     ENEMY_FLAGS_OFFSET,
-    ENEMY_POOL_BASE,
-    ENEMY_POOL_SIZE,
+    ENEMY_MANAGER_SCANNED_SLOT_COUNT,
+    ENEMY_SLOT_ZERO_BASE,
     ENEMY_STRIDE,
 )
 from th08_runtime.native_combat_projection import (
@@ -35,7 +35,7 @@ from th08_runtime.native_combat_projection import (
 )
 
 
-PLAYER_DAMAGE_COLLISION_SCHEMA = "th08-player-damage-collision-projection-v1"
+PLAYER_DAMAGE_COLLISION_SCHEMA = "th08-player-damage-collision-projection-v2"
 
 
 def _canonical_digest(value: object) -> str:
@@ -89,14 +89,14 @@ def _player_shot_records(shot_state: Any) -> list[dict[str, object]]:
 
 
 def _enemy_target_records(blob: bytes) -> list[dict[str, object]]:
-    expected_size = ENEMY_POOL_SIZE * ENEMY_STRIDE
+    expected_size = ENEMY_MANAGER_SCANNED_SLOT_COUNT * ENEMY_STRIDE
     if len(blob) != expected_size:
         raise ValueError(
             "enemy damage-collision pool requires "
             f"{expected_size:#x} exact bytes"
         )
     rows: list[dict[str, object]] = []
-    for slot in range(ENEMY_POOL_SIZE):
+    for slot in range(ENEMY_MANAGER_SCANNED_SLOT_COUNT):
         base = slot * ENEMY_STRIDE
         flags = struct.unpack_from("<I", blob, base + ENEMY_FLAGS_OFFSET)[0]
         if not flags & ENEMY_ACTIVE_FLAG:
@@ -190,8 +190,8 @@ def capture_player_damage_collision_projection(
 
     shot_state = capture_player_shot_combat_state(reader)
     enemy_blob = reader.read(
-        ENEMY_POOL_BASE,
-        ENEMY_POOL_SIZE * ENEMY_STRIDE,
+        ENEMY_SLOT_ZERO_BASE,
+        ENEMY_MANAGER_SCANNED_SLOT_COUNT * ENEMY_STRIDE,
     )
     player_shot_rows = _player_shot_records(shot_state)
     enemy_target_rows = _enemy_target_records(enemy_blob)

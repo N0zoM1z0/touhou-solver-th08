@@ -6,8 +6,8 @@ import unittest
 from th08_live.enemy_sensor import (
     ENEMY_ACTIVE_FLAG,
     ENEMY_FLAGS_OFFSET,
-    ENEMY_POOL_BASE,
-    ENEMY_POOL_SIZE,
+    ENEMY_MANAGER_SCANNED_SLOT_COUNT,
+    ENEMY_SLOT_ZERO_BASE,
     ENEMY_STRIDE,
 )
 from th08_runtime.game_state import (
@@ -63,7 +63,7 @@ class _Reader:
             ADDR_PLAYER + PLAYER_DAMAGE_TIMER_OFFSET: struct.pack(
                 "<iIi", 10, 0, 11
             ),
-            ENEMY_POOL_BASE: enemy_pool,
+            ENEMY_SLOT_ZERO_BASE: enemy_pool,
         }
 
     def read(self, address: int, size: int) -> bytes:
@@ -108,7 +108,7 @@ def _shot_pool(*, pointer_root: int) -> bytes:
 
 
 def _enemy_pool() -> bytes:
-    pool = bytearray(ENEMY_POOL_SIZE * ENEMY_STRIDE)
+    pool = bytearray(ENEMY_MANAGER_SCANNED_SLOT_COUNT * ENEMY_STRIDE)
     base = 7 * ENEMY_STRIDE
     struct.pack_into("<I", pool, base + ENEMY_FLAGS_OFFSET, ENEMY_ACTIVE_FLAG)
     struct.pack_into("<I", pool, base + ENEMY_FLAGS2_OFFSET, 0x82)
