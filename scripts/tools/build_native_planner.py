@@ -71,7 +71,16 @@ def _build(
             "-fno-omit-frame-pointer",
         )
     if windows:
-        command.extend(("-static", "-static-libgcc", "-static-libstdc++"))
+        command.extend(
+            (
+                "-static",
+                "-static-libgcc",
+                "-static-libstdc++",
+                # PE timestamps otherwise make an identical source/toolchain
+                # rebuild fail the Wine runner's exact binary attestation.
+                "-Wl,--no-insert-timestamp",
+            )
+        )
     else:
         command[2:2] = (
             "-fvisibility=hidden",

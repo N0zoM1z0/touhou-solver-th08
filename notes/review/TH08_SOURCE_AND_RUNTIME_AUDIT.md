@@ -140,7 +140,7 @@ host's `i686-w64-mingw32-g++` and writes
 `native/build/windows-x86/touhou_viability.dll`. The loader selects x86 or
 x86-64 by the controlling Python process's pointer width while preserving the
 existing Linux and `--target windows` paths. The host produced a PE32 i386 DLL
-whose 45 exports match the checked-in manifest. The 2026-08-23 Wine smoke ran
+whose then-current 45 exports matched the checked-in manifest. The 2026-08-23 Wine smoke ran
 under 32-bit Windows Python, loaded that exact DLL (SHA-256
 `4c8c3a34485ec22437224d0fa8a5ad631d3d64f952d66bc9e621147cedf41603`),
 and successfully applied its native worker-limit ABI call.
@@ -3237,12 +3237,29 @@ bounded diagnostic watchdog, not a route-duration limit.  No Linux/original
 agreement or x87 error bound is claimed until the physical capture and
 first-divergence comparison complete.
 
+### AUD-105 — Native planner attestation was tied to PE wall-clock time
+
+Status: **REPRODUCED AND FIXED OFFLINE; PHYSICAL REVALIDATION PENDING**
+
+The first retail-differential preflight failed before starting Wine because
+the current Win32 planner did not match the runner's pinned SHA-256.  Rebuilding
+the same source twice produced two more hashes.  PE inspection localized the
+changing input to a real linker timestamp, so the attestation represented one
+build instant rather than reproducible source/toolchain content.
+
+Windows planner builds now pass GNU ld `--no-insert-timestamp`.  Two
+consecutive i686 release builds produced identical SHA-256
+`aaa39cdc3768ba1c2c2c93e2d6fa715e4e15fd550c7aba75a1aff8c673a4e43f`,
+with both PE timestamp fields zero.  The binary remains PE32 i386 and all 46
+manifest exports pass the ABI gate.  The runner now pins this reproducible
+identity; it does not weaken or dynamically accept the hash check.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,577 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,623 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
-45 manifest exports. These offline/build gates are supplemented by the Wine
+46 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.
 
 ### AUD-005 — TH08 lacks a prefix-scoped Wine host runner

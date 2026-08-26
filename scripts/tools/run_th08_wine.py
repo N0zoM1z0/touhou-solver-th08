@@ -53,7 +53,7 @@ NATIVE_LIBRARY = (
     / "touhou_viability.dll"
 )
 NATIVE_LIBRARY_SHA256 = (
-    "a14e90bfdd6c6934b32067f3a1cd65d228d8871c738705267e6732715bfaebb0"
+    "aaa39cdc3768ba1c2c2c93e2d6fa715e4e15fd550c7aba75a1aff8c673a4e43f"
 )
 PREFIX_MARKER = ".th08-wine-win32-ready-v1.json"
 WINE_FULL_ROUTE_AGENT_DURATION_SECONDS = 86_400.0

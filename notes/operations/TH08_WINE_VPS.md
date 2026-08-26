@@ -13,7 +13,9 @@ material only and is not built by this workflow.
 - NumPy: 1.26.4 CPython 3.11 Win32 wheel, pinned by SHA-256.
 - Native planner: locally built PE32 i386
   `native/build/windows-x86/touhou_viability.dll`, SHA-256
-  `637f4e18fb306eb40cc11c73343ee7927fd9af76460575f7d8302f77559c4628`.
+  `aaa39cdc3768ba1c2c2c93e2d6fa715e4e15fd550c7aba75a1aff8c673a4e43f`.
+  The build passes `--no-insert-timestamp`; two consecutive rebuilds must
+  retain this identity before physical use.
 - Runtime game, Python, prefix, raw Wine logs, and large traces are ignored.
 
 The prepared `th08.cfg` changes display/audio operation only: windowed mode,
