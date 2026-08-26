@@ -175,6 +175,10 @@ class LinuxSemanticFingerprintTests(unittest.TestCase):
             def record(self, *, include_model_payload: bool) -> dict[str, object]:
                 return {"payload_included": include_model_payload}
 
+        class EffectProjection:
+            def record(self, *, include_payload: bool) -> dict[str, object]:
+                return {"payload_included": include_payload}
+
         fingerprint = {
             "manager_frame": 267,
             "time_scale_bits": 0x3F800000,
@@ -192,10 +196,16 @@ class LinuxSemanticFingerprintTests(unittest.TestCase):
             "resources": {"power_bits": 0x43000000},
             "spell": {"active": False, "spell_id": 0},
         }
-        with mock.patch(
-            "th08_linux.fingerprint._capture_collision_control_projection",
-            return_value=Projection(),
-        ) as capture:
+        with (
+            mock.patch(
+                "th08_linux.fingerprint._capture_collision_control_projection",
+                return_value=Projection(),
+            ) as capture,
+            mock.patch(
+                "th08_linux.fingerprint._capture_effect_lifecycle_projection",
+                return_value=EffectProjection(),
+            ),
+        ):
             enriched = enrich_with_collision_control_projection(
                 object(), fingerprint
             )
@@ -208,6 +218,9 @@ class LinuxSemanticFingerprintTests(unittest.TestCase):
         self.assertNotIn("collision_control_projection", fingerprint)
         self.assertTrue(
             enriched["collision_control_projection"]["payload_included"]
+        )
+        self.assertTrue(
+            enriched["effect_lifecycle_projection"]["payload_included"]
         )
 
     def test_absolute_bridge_epoch_is_a_locator_not_replay_semantics(self) -> None:

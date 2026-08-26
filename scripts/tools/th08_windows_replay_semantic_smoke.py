@@ -66,8 +66,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--collision-control-projection",
         action="store_true",
         help=(
-            "attach decoded bullet/laser/enemy/ECL state at every sampled "
-            "root; intended only for short differential windows"
+            "attach decoded bullet/laser/enemy/ECL plus effect/ANM lifecycle "
+            "state at every sampled root; intended only for short windows"
         ),
     )
     return parser

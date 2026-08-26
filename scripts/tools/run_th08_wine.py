@@ -546,8 +546,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--replay-collision-control-projection",
         action="store_true",
         help=(
-            "capture decoded combat/ECL state for short replay-differential "
-            "windows"
+            "capture decoded combat/ECL and effect/ANM lifecycle state for "
+            "short replay-differential windows"
         ),
     )
     parser.add_argument(

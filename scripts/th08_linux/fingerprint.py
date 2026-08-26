@@ -233,6 +233,18 @@ def _capture_collision_control_projection(
     )
 
 
+def _capture_effect_lifecycle_projection(
+    reader: FingerprintStateReader,
+) -> object:
+    # Effect/ANM decoding is another opt-in deep diagnostic.  Keep the
+    # ordinary replay spine independent of this half-megabyte pool read.
+    from th08_runtime.effect_projection import (
+        capture_effect_lifecycle_projection,
+    )
+
+    return capture_effect_lifecycle_projection(reader)
+
+
 def enrich_with_collision_control_projection(
     reader: FingerprintStateReader,
     fingerprint: dict[str, object],
@@ -243,8 +255,11 @@ def enrich_with_collision_control_projection(
     native pools are transient inputs and never enter the semantic trace.
     """
 
-    if "collision_control_projection" in fingerprint:
-        raise ValueError("semantic spine already has a collision projection")
+    if (
+        "collision_control_projection" in fingerprint
+        or "effect_lifecycle_projection" in fingerprint
+    ):
+        raise ValueError("semantic spine already has a deep projection")
     player = fingerprint["player"]
     resources = fingerprint["resources"]
     spell = fingerprint["spell"]
@@ -284,9 +299,13 @@ def enrich_with_collision_control_projection(
         reader,
         compact_state=compact_state,
     )
+    effect_projection = _capture_effect_lifecycle_projection(reader)
     enriched = dict(fingerprint)
     enriched["collision_control_projection"] = projection.record(
         include_model_payload=True
+    )
+    enriched["effect_lifecycle_projection"] = effect_projection.record(
+        include_payload=True
     )
     return enriched
 
