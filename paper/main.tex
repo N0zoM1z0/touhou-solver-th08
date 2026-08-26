@@ -564,6 +564,31 @@ foreground-versus-thread/process benchmark is needed before assigning causal
 latency, but the implementation does not yet provide the process and affinity
 isolation assumed by our parallel-search design.
 
+The first complete Easy route also supplied a clean beam-pruning falsifier.
+Near the Stage~4 bottom-right boundary, width 24 spent every slot on minor
+continuations of the wrong first actions, although a collision-free
+\texttt{left\_fast} family survived at width 256.  Label-aware deduplication
+alone did not recover it.  The corrected reducer reserves one leader per first
+action inside the best non-tradeable hard class, but activates this diversity
+only when one held action can consume the remaining boundary distance.
+Interior roots therefore keep ordinary global top-$k$.  At the two causal
+roots, the gated width-24 search matches width 256 while requiring roughly one
+quarter of its solve time; a bounded route replay found no hard-vector
+regression among changed actions.  The native interface versions this behavior
+explicitly rather than silently changing the old reduction ABI.
+
+Closed-loop stage fuzzing then revealed why pruning cannot yet be selected by
+synthetic hit count alone.  The generated runtime owns exact future births and
+callbacks, but its campaign passes only delayed current-pool snapshots to the
+local solver.  On a fixed seed, boundary stratification replaces a 1.98-pixel
+continuation with a locally safer 6.85-pixel continuation, yet that trajectory
+later meets births withheld from planning.  A much wider historical beam also
+diverges and incurs collisions.  This is an experimental confounder, not a
+license to ignore the hits: the next offline gate must join the same-clock
+current pool and source-known event suffix before search variants are compared.
+It also gives the future-birth work an immediate closed-loop regression rather
+than only a global-policy shadow metric.
+
 Development after this diagnosis uses source-driven, complete-stage, and
 retained-root differentials as the primary experiment.  Physical Wine trials
 are delayed until submissions, completions, version matching, and producer

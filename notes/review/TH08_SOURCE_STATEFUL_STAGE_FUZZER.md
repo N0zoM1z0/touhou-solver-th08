@@ -28,6 +28,15 @@ This checkpoint is a strong test generator for a source-supported semantic
 subset. It is not yet an arbitrary TH08 ECL interpreter and is not claimed to
 reproduce a shipped spell from its stage file.
 
+One policy boundary is now explicit: the runtime owns the generated future,
+but the closed-loop campaign currently gives the solver only delayed snapshots
+of already allocated bullets and lasers. Consequently normalized hits are
+valid realized collisions for that campaign but are not yet a fair comparison
+of search/pruning variants that choose different trajectories. A locally safer
+variant can encounter an unseen later birth that the generator knew but the
+planner did not. The fixed quick-seed differential in AUD-086 is the regression
+gate for the pending current-plus-future local join.
+
 ## Why The Old Stateful Fuzzer Was Insufficient
 
 Snapshot mutation can make individually plausible bullets while violating the
@@ -324,11 +333,15 @@ Wine. The next work should remain incremental and differential:
 3. retain the measured persistent native batch boundary. Its 1,536-state
    kernel is 0.02446 ms median, while Python encode/decode makes the wrapper
    22.233 ms; do not put the object wrapper in the 16 ms local issue loop;
-4. add template replacement and derived finite-pool child births, then feed
+4. join the already generated source event suffix to each closed-loop local
+   root at the exact runtime clock, including callbacks over current bullets;
+   rerun the fixed quick seeds before treating normalized hits as a pruning
+   regression;
+5. add template replacement and derived finite-pool child births, then feed
    only a complete, version-matched current-plus-future horizon into the
    global viability planner in offline shadow mode, with player-relative
    re-aim explicitly action-conditioned or conservatively set-valued;
-5. use focused Practice and Wine only after a same-capsule global-policy
+6. use focused Practice and Wine only after a same-capsule global-policy
    differential changes a losing predecessor into a certified viable one and
    the submission/publication latency is bounded. In parallel, use a full
    Easy Route-2 NMNB attempt as an infrastructure falsifier: any Easy hit is

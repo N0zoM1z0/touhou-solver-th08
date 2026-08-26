@@ -64,7 +64,7 @@ int touhou_native_impl_decode_bullet_pool_v1(
     std::int32_t* output_count
 );
 
-int touhou_native_impl_local_beam_reduce_v1(
+int touhou_native_impl_local_beam_reduce_v2(
     const double* draft_x,
     const double* draft_y,
     const std::int32_t* first_action,
@@ -96,6 +96,7 @@ int touhou_native_impl_local_beam_reduce_v1(
     const std::uint8_t* safety_preferred,
     const double* recovery_distance,
     int action_count,
+    int preserve_first_action_strata,
     std::int32_t* output_indices,
     std::int32_t* output_count
 );

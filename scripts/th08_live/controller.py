@@ -3516,7 +3516,7 @@ def _run_live_session(
                     ),
                     "local_beam_reducer": args.local_beam_reducer,
                     "local_beam_reducer_authority": (
-                        "parity_gated_native_quantized_reduction"
+                        "parity_gated_native_boundary_action_stratified_reduction"
                         if args.local_beam_reducer == "native"
                         else "explicit_python_reference_rollback"
                     ),

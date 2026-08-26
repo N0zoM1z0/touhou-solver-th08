@@ -15,14 +15,14 @@ from .library import (
 
 
 def _load_local_beam_reduce_function():
-    cached = cached_function("touhou_local_beam_reduce_v1")
+    cached = cached_function("touhou_local_beam_reduce_v2")
     if cached is not None:
         return cached
     library = _load_library()
     if library is None:
         return None
     try:
-        function = library.touhou_local_beam_reduce_v1
+        function = library.touhou_local_beam_reduce_v2
     except AttributeError:
         return None
     double_pointer = ctypes.POINTER(ctypes.c_double)
@@ -60,11 +60,12 @@ def _load_local_beam_reduce_function():
         uint8_pointer,
         double_pointer,
         ctypes.c_int,
+        ctypes.c_int,
         int32_pointer,
         int32_pointer,
     ]
     function.restype = ctypes.c_int
-    return cache_function("touhou_local_beam_reduce_v1", function)
+    return cache_function("touhou_local_beam_reduce_v2", function)
 
 
 
@@ -98,6 +99,7 @@ def reduce_local_beam(
     survival_preferred: np.ndarray,
     safety_preferred: np.ndarray,
     recovery_distance: np.ndarray,
+    preserve_first_action_strata: bool,
 ) -> np.ndarray | None:
     """Return exact retained draft indices for the quantized beam reducer."""
 
@@ -177,6 +179,7 @@ def reduce_local_beam(
         action_fields[3].ctypes.data_as(uint8_pointer),
         action_fields[4].ctypes.data_as(double_pointer),
         action_count,
+        int(preserve_first_action_strata),
         retained.ctypes.data_as(int32_pointer),
         ctypes.byref(retained_count),
     )

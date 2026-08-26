@@ -270,6 +270,43 @@ TOUHOU_ABI int touhou_decode_bullet_pool_v1(
     int32_t* output_count
 );
 
+TOUHOU_ABI int touhou_local_beam_reduce_v2(
+    const double* draft_x,
+    const double* draft_y,
+    const int32_t* first_action,
+    const int32_t* last_direction,
+    const uint8_t* last_focused,
+    const uint32_t* collected_mask,
+    const double* risk,
+    const int32_t* collisions,
+    const double* minimum_clearance,
+    int draft_count,
+    int step,
+    int beam_width,
+    double position_quantization,
+    int target_enabled,
+    double target_x,
+    double target_y,
+    int target_deadline,
+    double item_safety_clearance,
+    double playfield_left,
+    double playfield_right,
+    double playfield_top,
+    double playfield_bottom,
+    double reserve_distance,
+    double diagonal_speed,
+    double cardinal_speed,
+    const int32_t* certificate_collisions,
+    const double* certificate_minimum,
+    const uint8_t* survival_preferred,
+    const uint8_t* safety_preferred,
+    const double* recovery_distance,
+    int action_count,
+    int preserve_first_action_strata,
+    int32_t* output_indices,
+    int32_t* output_count
+);
+
 TOUHOU_ABI int touhou_local_beam_reduce_v1(
     const double* draft_x,
     const double* draft_y,

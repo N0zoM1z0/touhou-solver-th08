@@ -129,6 +129,80 @@ TOUHOU_EXPORT int touhou_decode_bullet_pool_v1(
     );
 }
 
+TOUHOU_EXPORT int touhou_local_beam_reduce_v2(
+    const double* draft_x,
+    const double* draft_y,
+    const std::int32_t* first_action,
+    const std::int32_t* last_direction,
+    const std::uint8_t* last_focused,
+    const std::uint32_t* collected_mask,
+    const double* risk,
+    const std::int32_t* collisions,
+    const double* minimum_clearance,
+    int draft_count,
+    int step,
+    int beam_width,
+    double position_quantization,
+    int target_enabled,
+    double target_x,
+    double target_y,
+    int target_deadline,
+    double item_safety_clearance,
+    double playfield_left,
+    double playfield_right,
+    double playfield_top,
+    double playfield_bottom,
+    double reserve_distance,
+    double diagonal_speed,
+    double cardinal_speed,
+    const std::int32_t* certificate_collisions,
+    const double* certificate_minimum,
+    const std::uint8_t* survival_preferred,
+    const std::uint8_t* safety_preferred,
+    const double* recovery_distance,
+    int action_count,
+    int preserve_first_action_strata,
+    std::int32_t* output_indices,
+    std::int32_t* output_count
+) {
+    return touhou_native_impl_local_beam_reduce_v2(
+        draft_x,
+        draft_y,
+        first_action,
+        last_direction,
+        last_focused,
+        collected_mask,
+        risk,
+        collisions,
+        minimum_clearance,
+        draft_count,
+        step,
+        beam_width,
+        position_quantization,
+        target_enabled,
+        target_x,
+        target_y,
+        target_deadline,
+        item_safety_clearance,
+        playfield_left,
+        playfield_right,
+        playfield_top,
+        playfield_bottom,
+        reserve_distance,
+        diagonal_speed,
+        cardinal_speed,
+        certificate_collisions,
+        certificate_minimum,
+        survival_preferred,
+        safety_preferred,
+        recovery_distance,
+        action_count,
+        preserve_first_action_strata,
+        output_indices,
+        output_count
+    );
+}
+
 TOUHOU_EXPORT int touhou_local_beam_reduce_v1(
     const double* draft_x,
     const double* draft_y,
@@ -164,7 +238,7 @@ TOUHOU_EXPORT int touhou_local_beam_reduce_v1(
     std::int32_t* output_indices,
     std::int32_t* output_count
 ) {
-    return touhou_native_impl_local_beam_reduce_v1(
+    return touhou_native_impl_local_beam_reduce_v2(
         draft_x,
         draft_y,
         first_action,
@@ -196,6 +270,7 @@ TOUHOU_EXPORT int touhou_local_beam_reduce_v1(
         safety_preferred,
         recovery_distance,
         action_count,
+        0,
         output_indices,
         output_count
     );

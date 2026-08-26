@@ -122,6 +122,20 @@ def _hard_vector(decision) -> tuple[int, float, int, float, float]:
     )
 
 
+def _recorded_hard_vector(
+    row: dict[str, object],
+) -> tuple[int, float, int, float, float]:
+    robust = row["robust_control"]
+    terminal = row["terminal_threat"]
+    return (
+        int(robust["worst_collisions"]),
+        max(-float(robust["min_clearance"]), 0.0),
+        int(terminal["collisions"]),
+        max(-float(terminal["min_clearance"]), 0.0),
+        max(-float(row["minimum_clearance"]), 0.0),
+    )
+
+
 def _decision(
     root: ReconstructedRoot,
     *,
@@ -370,6 +384,13 @@ def _audit_trace(
     label_matches_wide = 0
     baseline_matches_recorded = 0
     label_matches_recorded = 0
+    baseline_hard_better_than_recorded = 0
+    baseline_hard_equal_to_recorded = 0
+    baseline_hard_worse_than_recorded = 0
+    changed_action_hard_better = 0
+    changed_action_hard_equal = 0
+    changed_action_hard_worse = 0
+    same_action_hard_change = 0
     baseline_hard_nonzero = 0
     critical_roots: list[ReconstructedRoot] = []
     by_context = {
@@ -382,6 +403,8 @@ def _audit_trace(
         for name in ("boolean_losing", "prehit_240f", "pending")
     }
     examples = []
+    recorded_changes = []
+    recorded_hard_changes = []
 
     for index, root in enumerate(sampled):
         variants = (
@@ -427,6 +450,49 @@ def _audit_trace(
         exact = decisions["exact_first_action"]
         wide = decisions["wide_reference"]
         baseline_hard = _hard_vector(baseline)
+        recorded_hard = _recorded_hard_vector(root.row)
+        recorded_action = str(root.row["action"]).split("+", 1)[0]
+        baseline_hard_better_than_recorded += int(
+            baseline_hard < recorded_hard
+        )
+        baseline_hard_equal_to_recorded += int(
+            baseline_hard == recorded_hard
+        )
+        baseline_hard_worse_than_recorded += int(
+            baseline_hard > recorded_hard
+        )
+        if baseline.action != recorded_action:
+            changed_action_hard_better += int(
+                baseline_hard < recorded_hard
+            )
+            changed_action_hard_equal += int(
+                baseline_hard == recorded_hard
+            )
+            changed_action_hard_worse += int(
+                baseline_hard > recorded_hard
+            )
+        else:
+            same_action_hard_change += int(
+                baseline_hard != recorded_hard
+            )
+        if (
+            baseline_hard != recorded_hard
+            and len(recorded_hard_changes) < 20
+        ):
+            recorded_hard_changes.append(
+                {
+                    "frame": int(root.row["frame"]),
+                    "gameplay_epoch": int(
+                        root.row.get("gameplay_epoch", 0)
+                    ),
+                    "recorded_action": str(root.row["action"]).split(
+                        "+", 1
+                    )[0],
+                    "replayed_action": baseline.action,
+                    "recorded_hard_vector": recorded_hard,
+                    "replayed_hard_vector": baseline_hard,
+                }
+            )
         if baseline_hard != (0, 0.0, 0, 0.0, 0.0):
             baseline_hard_nonzero += 1
             critical_roots.append(root)
@@ -447,9 +513,24 @@ def _audit_trace(
             hard_worse[name] += int(worse)
         wide_changes += int(baseline.action != wide.action)
         label_matches_wide += int(exact.action == wide.action)
-        recorded_action = str(root.row["action"]).split("+", 1)[0]
         baseline_matches_recorded += int(baseline.action == recorded_action)
         label_matches_recorded += int(labeled.action == recorded_action)
+        if (
+            baseline.action != recorded_action
+            and len(recorded_changes) < 20
+        ):
+            recorded_changes.append(
+                {
+                    "frame": int(root.row["frame"]),
+                    "gameplay_epoch": int(
+                        root.row.get("gameplay_epoch", 0)
+                    ),
+                    "recorded_action": recorded_action,
+                    "replayed_action": baseline.action,
+                    "recorded_hard_vector": recorded_hard,
+                    "replayed_hard_vector": baseline_hard,
+                }
+            )
 
         corridor = root.row.get("corridor") or {}
         viability = corridor.get("viability") or {}
@@ -545,6 +626,25 @@ def _audit_trace(
             "first_action_labels_match_recorded_action": (
                 label_matches_recorded
             ),
+            "baseline_hard_better_than_recorded": (
+                baseline_hard_better_than_recorded
+            ),
+            "baseline_hard_equal_to_recorded": (
+                baseline_hard_equal_to_recorded
+            ),
+            "baseline_hard_worse_than_recorded": (
+                baseline_hard_worse_than_recorded
+            ),
+            "changed_action_hard_better_than_recorded": (
+                changed_action_hard_better
+            ),
+            "changed_action_hard_equal_to_recorded": (
+                changed_action_hard_equal
+            ),
+            "changed_action_hard_worse_than_recorded": (
+                changed_action_hard_worse
+            ),
+            "same_action_hard_change_count": same_action_hard_change,
             "baseline_hard_nonzero_count": baseline_hard_nonzero,
             "by_context": by_context,
         },
@@ -553,6 +653,8 @@ def _audit_trace(
             for name, values in timings.items()
         },
         "examples": examples,
+        "recorded_action_changes": recorded_changes,
+        "recorded_hard_changes": recorded_hard_changes,
         "first_action_partition": _partition_first_actions(
             critical_roots or roots,
             count=partition_roots,
@@ -576,12 +678,15 @@ def main() -> int:
         raise SystemExit("--partition-roots must be positive")
 
     artifact = {
-        "schema": "th08-local-beam-stability-audit-v1",
-        "generated_at": "2026-07-26",
+        "schema": "th08-local-beam-stability-audit-v3-boundary-action-strata",
+        "generated_at": "2026-08-26",
         "scope": (
-            "Offline shadow replay only. First-action identity is added to "
-            "quantized beam deduplication; the global width remains fixed. "
-            "The wide beam is a sensitivity reference, not an oracle."
+            "Offline shadow replay only. Quantized beam reduction retains "
+            "first-action identity and one leader per first action in the "
+            "best hard class only when one held action can consume the "
+            "nearest boundary reserve; interior roots retain ordinary global "
+            "top-k reduction. The wide beam is a sensitivity reference, not "
+            "an oracle."
         ),
         "evidence_labels": {
             "observed": (

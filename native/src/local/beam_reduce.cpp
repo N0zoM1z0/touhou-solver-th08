@@ -21,6 +21,7 @@ namespace {
 struct LocalBeamQuantizedKey {
     std::int64_t quantized_x;
     std::int64_t quantized_y;
+    std::int32_t first_action;
     std::int32_t last_direction;
     std::uint8_t last_focused;
     std::uint32_t collected_mask;
@@ -29,6 +30,7 @@ struct LocalBeamQuantizedKey {
         return (
             quantized_x == other.quantized_x
             && quantized_y == other.quantized_y
+            && first_action == other.first_action
             && last_direction == other.last_direction
             && last_focused == other.last_focused
             && collected_mask == other.collected_mask
@@ -50,6 +52,7 @@ struct LocalBeamQuantizedKeyHash {
             );
         };
         combine(std::hash<std::int64_t>{}(key.quantized_y));
+        combine(std::hash<std::int32_t>{}(key.first_action));
         combine(std::hash<std::int32_t>{}(key.last_direction));
         combine(std::hash<std::uint8_t>{}(key.last_focused));
         combine(std::hash<std::uint32_t>{}(key.collected_mask));
@@ -91,7 +94,7 @@ inline bool local_beam_key_less(
 
 }  // namespace
 
-int touhou_native_impl_local_beam_reduce_v1(
+int touhou_native_impl_local_beam_reduce_v2(
     const double* draft_x,
     const double* draft_y,
     const std::int32_t* first_action,
@@ -123,6 +126,7 @@ int touhou_native_impl_local_beam_reduce_v1(
     const std::uint8_t* safety_preferred,
     const double* recovery_distance,
     int action_count,
+    int preserve_first_action_strata,
     std::int32_t* output_indices,
     std::int32_t* output_count
 ) {
@@ -162,6 +166,10 @@ int touhou_native_impl_local_beam_reduce_v1(
         || diagonal_speed <= 0.0
         || !std::isfinite(cardinal_speed)
         || cardinal_speed <= 0.0
+        || (
+            preserve_first_action_strata != 0
+            && preserve_first_action_strata != 1
+        )
         || (target_enabled != 0 && target_enabled != 1)
         || (
             target_enabled != 0
@@ -283,6 +291,9 @@ int touhou_native_impl_local_beam_reduce_v1(
         const LocalBeamQuantizedKey quantized{
             round_half_even(draft_x[draft] * position_quantization),
             round_half_even(draft_y[draft] * position_quantization),
+            preserve_first_action_strata != 0
+                ? first_action[draft]
+                : -1,
             last_direction[draft],
             last_focused[draft],
             collected_mask[draft],
@@ -317,13 +328,84 @@ int touhou_native_impl_local_beam_reduce_v1(
             );
         }
     );
-    const int retained_count = std::min(
+    const int retained_limit = std::min(
         beam_width,
         static_cast<int>(winners.size())
     );
-    for (int index = 0; index < retained_count; ++index) {
-        output_indices[index] = winners[static_cast<std::size_t>(index)];
+    if (preserve_first_action_strata == 0) {
+        for (int index = 0; index < retained_limit; ++index) {
+            output_indices[index] = winners[static_cast<std::size_t>(index)];
+        }
+        *output_count = retained_limit;
+        return 0;
     }
-    *output_count = retained_count;
+
+    // At an irreversible boundary window, preserve the best continuation of
+    // every first action that remains in the globally best non-tradeable
+    // safety/route class.  This prevents minor variations of one action from
+    // evicting the sole safe escape direction without taxing interior beams.
+    std::vector<std::int32_t> action_leaders(
+        static_cast<std::size_t>(action_count),
+        -1
+    );
+    for (const std::int32_t winner : winners) {
+        const auto action = static_cast<std::size_t>(first_action[winner]);
+        if (action_leaders[action] < 0) {
+            action_leaders[action] = winner;
+        }
+    }
+    const auto same_best_hard_class = [&](std::int32_t winner) {
+        for (std::size_t component = 0; component < 6; ++component) {
+            if (
+                keys[static_cast<std::size_t>(winner)][component]
+                != keys[static_cast<std::size_t>(winners.front())][component]
+            ) {
+                return false;
+            }
+        }
+        return true;
+    };
+    std::vector<std::int32_t> retained;
+    retained.reserve(static_cast<std::size_t>(retained_limit));
+    std::vector<std::uint8_t> selected(
+        static_cast<std::size_t>(draft_count),
+        0
+    );
+    for (const std::int32_t winner : winners) {
+        if (static_cast<int>(retained.size()) >= retained_limit) {
+            break;
+        }
+        const auto action = static_cast<std::size_t>(first_action[winner]);
+        if (
+            action_leaders[action] == winner
+            && same_best_hard_class(winner)
+        ) {
+            retained.push_back(winner);
+            selected[static_cast<std::size_t>(winner)] = 1;
+        }
+    }
+    for (const std::int32_t winner : winners) {
+        if (static_cast<int>(retained.size()) >= retained_limit) {
+            break;
+        }
+        if (selected[static_cast<std::size_t>(winner)] == 0) {
+            retained.push_back(winner);
+            selected[static_cast<std::size_t>(winner)] = 1;
+        }
+    }
+    std::stable_sort(
+        retained.begin(),
+        retained.end(),
+        [&](std::int32_t left, std::int32_t right) {
+            return local_beam_key_less(
+                keys[static_cast<std::size_t>(left)],
+                keys[static_cast<std::size_t>(right)]
+            );
+        }
+    );
+    for (int index = 0; index < retained_limit; ++index) {
+        output_indices[index] = retained[static_cast<std::size_t>(index)];
+    }
+    *output_count = retained_limit;
     return 0;
 }

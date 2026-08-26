@@ -2419,8 +2419,8 @@ difficulty/stage identity; it is not by itself a survival gain.
 
 ### AUD-084 — The first complete Easy route exposes two generic transition failures
 
-Status: **PHYSICAL ROOT CAUSES CONFIRMED; CALLBACK-14 OFFLINE REPRODUCED;
-POLICY CORRECTIONS IN PROGRESS**
+Status: **PHYSICAL ROOT CAUSES CONFIRMED; BOUNDARY PRUNING FIXED OFFLINE;
+CALLBACK-14 DELIVERY OPEN**
 
 The first complete Easy Sakuya/Remilia Route-2 trial at commit ``6f512fe``
 finished continuously from frame 1 through 213262 with 49,325 agent decisions,
@@ -2438,6 +2438,23 @@ with shrinking positive reserve; the fresh safe-action set became empty at
 generic terminal-position/escape-width failure, not evidence for a Reimu
 waypoint. Boundary and fast labels remain correlates; the correction must rank
 future viable volume within the same collision certificate.
+
+Exact same-root replay localizes that Stage-4 failure further. At frame 67882,
+ordinary quantized width-24 pruning selected ``down_right`` with 1.60 px
+minimum clearance, while an independent width-256 reference retained
+``left_fast`` with 8.35 px. At frame 67885 the retained action was ``right``
+with -6.00 px clearance even though an independently forced ``left_fast``
+continuation remained collision-free at 4.40 px. Merely adding the first-action
+label to quantized deduplication did not recover it: global top-k had already
+spent the beam on minor continuations of other actions. The generic correction
+therefore reserves one leader per first action, but only when the root is less
+than one non-preemptible action-hold displacement from a boundary, and only in
+the globally best collision/clearance/survival/route class. Interior roots keep
+ordinary global top-k. Width 24 then exactly matches the width-256 action and
+hard vector at both witnesses in 18--22 ms instead of 84--97 ms. A 96-root
+bounded route audit changed five actions, all with an identical all-zero hard
+vector; there were no changed-action hard regressions. Native ABI v2 exposes
+the gate explicitly while ABI v1 retains its historical reduction contract.
 
 The Stage-5 hit at frame 139187 is a separate source-semantic transition. At
 139182 all 437 live bullets were native state 1 but callback-aux suppressed,
@@ -2478,6 +2495,34 @@ expressions remain supported, and successful reports retain both the requested
 and resolved values. Focused tests cover contiguous, sparse, singleton, and
 explicit affinity inputs. Physical validation is deferred to the next useful
 Practice trial rather than spending a Wine run on configuration alone.
+
+### AUD-086 — Complete-stage solver replay discards generator-known future births
+
+Status: **CONFIRMED OFFLINE INFRA/POLICY GAP; OPEN**
+
+The stateful stage runtime knows the complete source-ordered producer,
+callback, lifecycle, laser, and phase future, but ``run_closed_loop_stage``
+passes only a delayed ``live_snapshot()`` of already allocated hazards to
+``choose_action``. Thus it tests current-pool geometry and latency while
+silently withholding the exact future that the same fuzzer generated.
+
+The boundary-pruning differential made this omission observable. Across eight
+fixed quick-profile seeds, the historical future-blind beam recorded one
+normalized hit, unconditional action stratification recorded seven, and the
+boundary-gated correction recorded three. This is not evidence that the old
+pruning was safer. On seed ``0x841401`` the first gated divergence occurred at
+the bottom boundary: the corrected action improved the modeled minimum
+clearance from 1.98 px to 6.85 px and reduced score, yet later collided with
+births absent from its planning horizon. Increasing the historical beam to 256
+also changed the trajectory and produced two hits; width-256 with the new
+reducer produced one. Search width therefore cannot be ranked by closed-loop
+hit count until every candidate sees the same source-known future.
+
+The next offline authority gate is a clock-matched current-plus-future join for
+the local fuzzer prefix. The existing source event stream and current-pool
+callback composer must be delivered to local planning without Python-object
+expansion in the issue loop. Only after this join should the fixed seeds be
+used as a pruning/survival regression, followed by Easy Final-B Practice.
 
 ## Offline Verification Record
 

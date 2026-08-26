@@ -49,6 +49,109 @@ class BaselineBeamContext:
     player_scale_bits: tuple[int, ...]
 
 
+def _within_held_action_boundary_window(
+    *,
+    x: float,
+    y: float,
+    playfield_left: float,
+    playfield_right: float,
+    playfield_top: float,
+    playfield_bottom: float,
+    cardinal_speed: float,
+    action_hold_frames: int,
+) -> bool:
+    """Return whether one held action can consume the nearest edge reserve."""
+
+    hold_escape_distance = cardinal_speed * action_hold_frames
+    return hold_escape_distance > 0.0 and min(
+        x - playfield_left,
+        playfield_right - x,
+        y - playfield_top,
+        playfield_bottom - y,
+    ) < hold_escape_distance
+
+
+def _boundary_action_strata_required(
+    context: BaselineBeamContext,
+) -> bool:
+    """Activate action diversity only in an irreversible boundary window.
+
+    Action-family diversity is valuable at a boundary, where pruning the sole
+    escape direction can be irreversible, but it is not free: reserving every
+    action everywhere displaces globally better continuations.  Use the
+    physical distance covered by one non-preemptible action hold as the
+    generic activation window.
+    """
+
+    if not context.initial_beam:
+        return False
+    return any(
+        _within_held_action_boundary_window(
+            x=node.x,
+            y=node.y,
+            playfield_left=context.playfield_left,
+            playfield_right=context.playfield_right,
+            playfield_top=context.playfield_top,
+            playfield_bottom=context.playfield_bottom,
+            cardinal_speed=context.cardinal_speed,
+            action_hold_frames=context.action_hold_frames,
+        )
+        for node in context.initial_beam
+    )
+
+
+def _retain_first_action_strata(
+    nodes: list[SearchNode],
+    *,
+    step: int,
+    beam_width: int,
+    pruning_key: Callable[..., tuple[object, ...]],
+) -> list[SearchNode]:
+    """Keep one continuation per first action in the best hard class.
+
+    A globally truncated beam can otherwise spend every slot on minor
+    variations of one first action and discard a still-safe escape action.
+    The first six pruning components are the non-tradeable collision,
+    clearance, survival, and route-gate class.  Stratification never reserves
+    an action from a worse hard class; remaining capacity is filled by the
+    ordinary global ordering.
+    """
+
+    ranked = sorted(
+        (
+            (node, pruning_key(node, step=step))
+            for node in nodes
+        ),
+        key=lambda value: value[1],
+    )
+    if len(ranked) <= beam_width:
+        return [node for node, _key in ranked]
+
+    best_hard_class = ranked[0][1][:6]
+    leaders: dict[str, SearchNode] = {}
+    for node, _key in ranked:
+        leaders.setdefault(node.first_action.name, node)
+
+    retained = [
+        node
+        for node, key in ranked
+        if leaders[node.first_action.name] is node
+        and key[:6] == best_hard_class
+    ][:beam_width]
+    retained_ids = {id(node) for node in retained}
+    for node, _key in ranked:
+        if len(retained) >= beam_width:
+            break
+        if id(node) in retained_ids:
+            continue
+        retained.append(node)
+        retained_ids.add(id(node))
+    return sorted(
+        retained,
+        key=lambda node: pruning_key(node, step=step),
+    )
+
+
 def run_baseline_beam(
     context: BaselineBeamContext,
     *,
@@ -61,6 +164,9 @@ def run_baseline_beam(
     native_reducer: Callable[..., np.ndarray | None],
 ) -> list[SearchNode]:
     beam = list(context.initial_beam)
+    preserve_boundary_action_strata = _boundary_action_strata_required(
+        context
+    )
     for step in range(1, context.horizon + 1):
         drafts: list[
             tuple[SearchNode, PlannerAction, float, float, float, int, float]
@@ -258,6 +364,9 @@ def run_baseline_beam(
                 survival_preferred=context.native_survival_preferred,
                 safety_preferred=context.native_safety_preferred,
                 recovery_distance=context.native_recovery_distance,
+                preserve_first_action_strata=(
+                    preserve_boundary_action_strata
+                ),
             )
             if retained_indices is not None:
                 retained_beam: list[SearchNode] = []
@@ -349,7 +458,10 @@ def run_baseline_beam(
                 action.focused,
                 collected_mask,
             )
-            if context.beam_dedup_mode == "first_action":
+            if (
+                context.beam_dedup_mode == "first_action"
+                or preserve_boundary_action_strata
+            ):
                 quantized = (*quantized, first_action.name)
             elif context.beam_dedup_mode == "exact_first_action":
                 quantized = (
@@ -368,8 +480,16 @@ def run_baseline_beam(
                 candidates[quantized] = candidate
         if not candidates:
             break
-        beam = sorted(
-            candidates.values(),
-            key=lambda node: pruning_key(node, step=step),
-        )[: context.beam_width]
+        if preserve_boundary_action_strata:
+            beam = _retain_first_action_strata(
+                list(candidates.values()),
+                step=step,
+                beam_width=context.beam_width,
+                pruning_key=pruning_key,
+            )
+        else:
+            beam = sorted(
+                candidates.values(),
+                key=lambda node: pruning_key(node, step=step),
+            )[: context.beam_width]
     return beam
