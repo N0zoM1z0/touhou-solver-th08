@@ -2773,7 +2773,7 @@ falsifier completes.
 
 ### AUD-093 — Local certificates reversed bullet-to-player epoch alignment
 
-Status: **ROOT CAUSE CONFIRMED; GENERIC FIX PASSES OFFLINE; PHYSICAL GATE PENDING**
+Status: **ROOT CAUSE CONFIRMED; GENERIC FIX PASSES OFFLINE; PHYSICALLY OBSERVABLE**
 
 The two AUD-092 sensing residuals are not future births.  On the frame-11417
 capture, bullet slot 1156 is retained at
@@ -2844,6 +2844,52 @@ identical final RNG state/call count.  Its 90 normalized hits are intentional
 pressure, not a pass criterion.  Laser and asynchronously merged enemy-body
 epoch supports remain separate open audits; this bullet evidence does not
 silently claim them fixed.
+
+The focused physical falsifier
+`easy_route2_stage6b_unattended_20260826_063823` completed frames 2..74364
+with 13,083 decisions, 11 native hit edges, zero Bomb input, normal
+`route_complete`, and exact-prefix cleanup.  It does not improve the accepted
+nine-hit checkpoint.  It does validate the intended observability change:
+the generated causal dossier contains no `sensor_gap_or_unmodeled_hazard`
+case.  All eleven contacts are observed bullet/laser overlaps or modeled
+committed-prefix collisions.  This is physical evidence that the clock fix is
+active, not evidence that the resulting policy is better.
+
+### AUD-094 — Exact age support was aggregated as simultaneous bullets while the local threat tail stayed dormant
+
+Status: **MODEL/CONFIGURATION DEFECTS CONFIRMED; POLICY EFFECT REQUIRES OFFLINE DIFFERENTIAL**
+
+The AUD-093 implementation concatenates every supported projection before the
+local hazard kernel.  A slot captured across a frame bracket has one unknown
+age, not one physical copy at every age.  Concatenation preserves the
+collision-safe zero set, but it can count one slot multiple times and adds the
+danger potential from mutually exclusive positions.  That is not the robust
+objective: collision, clearance, and risk must be reduced across ages for one
+slot before contributions from different slots are accumulated.  It also
+doubles the geometry width on a two-age read.
+
+The physical timing data exposes the cost.  Of 13,083 decisions, 10,460 have
+one age, 2,622 have two, and one has three.  Single-age local plans take
+31.23/43.81 ms median/p95; two-age plans take 42.25/72.06 ms.  The gap remains
+within equal 100-bullet-count bands and reaches 20--35 ms in dense bands.
+Spell 147, where 31.7 percent of reads have multiple ages, moves from the
+previous run's 59.07 ms plan p95 to 82.25 ms.  The route-wide plan p95 rises
+47.30 to 51.68 ms even though its median falls.  This is sufficient evidence
+to replace concatenation with a bounded per-slot representation before
+claiming the clock fix is production-ready.
+
+Independently, ten of eleven contacts reach robust action-set exhaustion
+before collision, with warning leads `[5,8,8,0,7,11,11,48,10,6,4]`.  Six are
+boundary-associated.  Yet the trace reports terminal-threat horizons only
+zero or ten and zero terminal warnings.  Code inspection confirms why:
+`prepare_local_hazards` uses the configured 32-frame `threat_horizon` only
+for a global-viability relaxation or a stale-guidance degeneracy; with no
+global query it silently sets `potential_threat_horizon = config.horizon`
+(ten).  Therefore the supposedly cheap 10..32 constant-tail projection is
+dead throughout this Easy run.  Enabling that generic local tail is the next
+viable-continuation hypothesis, after correcting age aggregation and measuring
+its cost offline.  Neither finding authorizes a difficulty, stage, spell, or
+coordinate branch, and neither justifies re-enabling global work for Easy.
 
 ## Offline Verification Record
 

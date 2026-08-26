@@ -698,9 +698,12 @@ it.
    has a 9-hit Final-B checkpoint.  AUD-093 source-confirms that two residuals
    are existing bullets whose pool ages were reversed relative to the final
    player root; exact pre-hit replay excludes the issued actions while other
-   actions remain.  Run the corrected Final-B Practice after offline/fuzzer
-   closure.  If those contacts disappear, continue with the earliest generic
-   local losing-prefix counterexample and require a clean Final-B Practice
+   actions remain.  The corrected physical falsifier completes with 11 hits,
+   but every contact is now observed or modeled; ten reach short-horizon
+   action-set exhaustion.  AUD-094 shows that supported ages are incorrectly
+   counted as simultaneous bullets and that the configured 32-frame local
+   threat tail is silently reduced to ten without global guidance.  Correct
+   those generic local defects offline, then require a clean Final-B Practice
    before one complete Easy Route-2 NMNB attempt.  Then close
    template/derived births, connect a complete current-plus-future horizon to
    global shadow, take one fresh v2 Stage-5 root, and require a same-root

@@ -29,8 +29,8 @@ ordered implementation plan are in
 
 - Branch: `codex/th08-lunatic-source-audit`.
 - **Current Easy physical/local checkpoint:** accepted Final-B Practice
-  `easy_route2_stage6b_unattended_20260826_051733` completed with nine hits and
-  zero Bomb input, versus 18 hits in the paired baseline.  Source and native
+  `easy_route2_stage6b_unattended_20260826_051733` remains the best result at
+  nine hits and zero Bomb input, versus 18 hits in the paired baseline.  Source and native
   state-5 evidence then closed the two apparent sensing gaps: existing bullet
   slots 1156 and 340 were under-advanced because the controller merged their
   pool clock with newer boss/ECL reads and negated an unrelated source offset.
@@ -38,8 +38,15 @@ ordered implementation plan are in
   support through local prefix, preflight, beam, delayed, and issue
   certificates.  Exact pre-hit replay rejects the actually issued action at
   frames 11412 and 53730 while alternatives still exist.  AUD-093/CE-0267
-  retain the proof.  Offline tests pass; a fresh Easy Final-B Practice run is
-  the next physical falsifier, not a full route or a global-planner run.  The
+  retain the proof.  The fresh physical falsifier
+  `easy_route2_stage6b_unattended_20260826_063823` completed normally with
+  11 hits and zero Bomb input, so it is not a survival promotion.  It did
+  remove the residual observability class: all 11 contacts now have observed
+  bullet/laser or modeled committed-prefix evidence, and ten reach robust
+  action-set exhaustion before contact.  AUD-094/CE-0268 retain this split.
+  The next gate is offline correction of the mutually exclusive age
+  aggregation and the dormant 32-frame local threat tail, not a full route or
+  a global-planner run.  The
   complete Linux suite passes 1,568 tests with five conditional skips.  A
   3,600-frame saturated source-stateful gate also passes 120/120 future joins,
   180/180 geometry checks, and 1,414,390 lifecycle samples against the C
@@ -743,13 +750,17 @@ TH08 work is active.  Easy is the current diagnostic ladder; do not pay for a
 full route or re-enable non-authoritative global work yet:
 
 1. preserve the bullet-specific discrete age support and its two physical-root
-   regressions; do not collapse a straddled read to one endpoint;
-2. run one fresh Easy Final-B Practice falsifier after the complete offline and
-   source-stateful gates, retaining exact hit/Bomb/timing evidence;
-3. if the two targeted contacts disappear, audit the remaining first losing
-   prefix and add only a cheap generic local viable-continuation improvement;
-   if either repeats, stop at its first clock/geometry mismatch;
-4. require a clean Final-B Practice before a complete Easy Route-2 NMNB
+   regressions; do not collapse a straddled read to one endpoint or count one
+   slot's mutually exclusive ages as simultaneous bullets;
+2. replace the current concatenated age trajectories with a bounded per-slot
+   robust representation and require the exact contact regressions plus lower
+   dense-root latency offline;
+3. expose the configured 32-frame local threat tail without enabling global
+   guidance.  The current preparation path silently collapses it to the
+   10-frame beam whenever global viability is absent, even though ten of
+   eleven physical contacts exhaust the short robust action set first;
+4. rotate one focused Final-B Practice only after same-root/fuzzer evidence;
+   require a clean Final-B Practice before a complete Easy Route-2 NMNB
    attempt.  The source-current-plus-future global worker remains preserved
    for later Hard/Lunatic work, not inserted into Easy without evidence.
 

@@ -674,6 +674,21 @@ bounded work instead of another global solve.  Physical hit reduction remains
 an experiment, and laser and asynchronously merged enemy epochs are not
 claimed by the bullet result.
 
+The physical falsifier separates observability from policy quality.  It
+finishes the same Easy Final-B scope with eleven hits and zero Bomb input,
+worse than the nine-hit checkpoint, but no contact remains classified as an
+unmodeled sensing gap.  Ten contacts instead reach short-horizon robust-action
+exhaustion before impact.  Two implementation facts explain why this is not
+yet a satisfactory robust controller.  First, concatenating age projections
+treats one slot's mutually exclusive coordinates as simultaneous bullets,
+which duplicates danger cost and raises two-age local-plan latency from
+31.23/43.81 to 42.25/72.06 ms median/p95.  Second, the configured 32-frame
+local threat tail is silently collapsed to the ten-frame beam whenever global
+guidance is absent, so this Easy run records no long-tail warning despite
+leads as large as 48 frames at eventual contact.  The next experiment is thus
+per-slot uncertainty reduction followed by a bounded constant-tail local
+lookahead, not global search or a card-specific rule.
+
 Development after this correction uses source-driven, complete-stage, and
 retained-root differentials as the primary experiment.  Physical Wine trials
 are delayed until submissions, completions, version matching, and producer
