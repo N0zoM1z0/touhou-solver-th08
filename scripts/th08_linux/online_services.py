@@ -15,6 +15,7 @@ from th08_linux.online_authority import (
     OnlineAuthorityResult,
     TH08_ONLINE_AUTHORITY_CONFIG,
 )
+from th08_linux.immutable_snapshot import PublishedSnapshotRoot
 from th08_linux.online_clock import (
     OnlineClockAssessment,
     OnlineClockObservation,
@@ -112,10 +113,11 @@ class LinuxOnlineServiceUpdate:
     gameplay_epoch: int
     context: tuple[int, int, int | None]
     runtime_ecl_version: RuntimeEclAcceptedVersion | None
+    runtime_identity_status: str
     scale_status: str
     future_status: str
     corridor_status: str
-    native_epoch_current: bool
+    root_version_current: bool
     clock_status: str
     clock_certified: bool
     clock_generation: int
@@ -140,8 +142,28 @@ class _StageBinding:
 class _TaggedFutureCapture:
     context: tuple[int, int, int | None]
     submitted_input_epoch: int
+    root_generation: int
     clock_generation: int
     work: Future[OrdinaryFutureSourceCaptureResult]
+
+
+@dataclass(frozen=True, slots=True)
+class _TaggedRuntimeIdentity:
+    stage_context: tuple[int, int]
+    binding: _StageBinding
+    submitted_input_epoch: int
+    root_generation: int
+    work: Future[tuple[RuntimeEclAcceptedVersion | None, str]]
+
+
+@dataclass(frozen=True, slots=True)
+class _TaggedScaleResolve:
+    context: tuple[int, int, int | None]
+    binding: _StageBinding
+    submitted_input_epoch: int
+    root_generation: int
+    clock_generation: int
+    work: Future[tuple[Th08TimeScaleSchedule | None, str]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,19 +195,13 @@ class LinuxOnlineFutureGlobalService:
     def __init__(
         self,
         *,
-        reader: object,
-        input_epoch_address: int,
         decoded_ecl_directory: Path | str,
         route_id: int,
         difficulty_index: int,
         config: LinuxOnlineServiceConfig = LinuxOnlineServiceConfig(),
     ) -> None:
-        if input_epoch_address <= 0:
-            raise ValueError("online input epoch address must be positive")
         if route_id < 0 or difficulty_index < 0:
             raise ValueError("route and difficulty cannot be negative")
-        self._reader = reader
-        self._input_epoch_address = input_epoch_address
         self._decoded_ecl_directory = Path(decoded_ecl_directory).resolve(strict=True)
         if not self._decoded_ecl_directory.is_dir():
             raise ValueError("decoded ECL directory is not a directory")
@@ -205,15 +221,24 @@ class LinuxOnlineFutureGlobalService:
             max_workers=1,
             thread_name_prefix="th08-linux-online-future",
         )
+        self._scale_executor = ThreadPoolExecutor(
+            max_workers=1,
+            thread_name_prefix="th08-linux-online-scale",
+        )
         self._corridor_executor = ThreadPoolExecutor(
             max_workers=1,
             thread_name_prefix="th08-linux-online-corridor",
         )
         self._future_work: _TaggedFutureCapture | None = None
+        self._runtime_identity_work: _TaggedRuntimeIdentity | None = None
+        self._scale_work: _TaggedScaleResolve | None = None
         self._corridor_work: _TaggedCorridorSolve | None = None
         self._future_result: OrdinaryFutureSourceCaptureResult | None = None
+        self._future_result_root_generation: int | None = None
         self._future_result_clock_generation: int | None = None
         self._last_future_submit_epoch = -10**9
+        self._last_runtime_identity_submit_epoch = -10**9
+        self._last_scale_submit_epoch = -10**9
         self._last_corridor_submit_epoch = -10**9
         self._clock_authority = OnlineUnitCadenceAuthority()
         self._lead = AsyncPolicyLead(
@@ -231,21 +256,23 @@ class LinuxOnlineFutureGlobalService:
         self.future_submissions = 0
         self.future_completions = 0
         self.future_rejections = 0
+        self.scale_submissions = 0
+        self.scale_completions = 0
+        self.scale_rejections = 0
+        self._scale_certified = False
+        self._scale_last_status = "idle"
         self.corridor_submissions = 0
         self.corridor_completions = 0
         self.corridor_rejections = 0
         self.runtime_identity_attempts = 0
         self.runtime_identity_acceptances = 0
+        self.runtime_identity_rejections = 0
+        self._runtime_identity_last_status = "idle"
         self._closed = False
 
     @property
     def action_authority(self) -> OnlineActionAuthority:
         return self._authority
-
-    def _native_epoch_matches(self, source_epoch: int) -> bool:
-        return self._reader.u32(self._input_epoch_address) == (
-            source_epoch & 0xFFFFFFFF
-        )
 
     def _assess_physical_clock(
         self,
@@ -331,76 +358,172 @@ class LinuxOnlineFutureGlobalService:
         stage_route_index: int,
         spell_id: int | None,
     ) -> tuple[int, int, int | None]:
+        previous_binding = self._binding
         if stage_route_index != self._stage_route_index:
             self._stage_route_index = stage_route_index
             self._gameplay_epoch += 1
             self._binding = self._load_stage(stage_route_index)
             self._previous_player_phase = None
             self._future_result = None
+            self._future_result_root_generation = None
             self._future_result_clock_generation = None
             self._last_future_submit_epoch = -10**9
+            self._last_runtime_identity_submit_epoch = -10**9
+            self._last_scale_submit_epoch = -10**9
             self._last_corridor_submit_epoch = -10**9
+            self._scale_certified = False
+            self._scale_last_status = "stage-reset"
+            self._runtime_identity_last_status = "stage-reset"
         context = (self._gameplay_epoch, stage_route_index, spell_id)
         if context != self._context:
+            previous_context = self._context
             self._context = context
             self._future_result = None
+            self._future_result_root_generation = None
             self._future_result_clock_generation = None
             self._authority.reset(context)
+            reset_binding = (
+                previous_binding
+                if previous_binding is not None
+                else self._binding
+            )
+            if previous_context is not None and reset_binding is not None:
+                scale_authority = reset_binding.scale_authority
+                scale_worker_owns_authority = bool(
+                    self._scale_work is not None
+                    and self._scale_work.binding is reset_binding
+                )
+                if (
+                    isinstance(
+                        scale_authority,
+                        FinalBScaleScheduleAuthority,
+                    )
+                    and not scale_worker_owns_authority
+                ):
+                    scale_authority.reset()
+                    self._scale_certified = False
+                    self._scale_last_status = "finalb-context-reset"
         return context
 
-    def _establish_runtime_identity(
-        self,
+    @staticmethod
+    def _background_runtime_identity(
+        reader: object,
+        binding: _StageBinding,
         *,
-        source_epoch: int,
+        route_id: int,
+        difficulty_index: int,
         snapshot_frame: int,
-        context: tuple[int, int, int | None],
-    ) -> str:
-        binding = self._binding
-        if binding is None:
-            return "stage-ecl-unsupported"
-        if binding.runtime_version is not None:
-            return "exact-runtime-ecl"
-        if not self._native_epoch_matches(source_epoch):
-            return "source-epoch-expired"
-        self.runtime_identity_attempts += 1
+        stage_context: tuple[int, int],
+    ) -> tuple[RuntimeEclAcceptedVersion | None, str]:
+        lower_current_thread_priority()
         try:
-            capture = capture_runtime_ecl_image(self._reader)
+            capture = capture_runtime_ecl_image(reader)
             identity = compare_runtime_ecl_image(
                 capture,
                 binding.static_image,
             )
         except (OSError, RuntimeError, TypeError, ValueError):
-            return "runtime-ecl-capture-unavailable"
-        if not self._native_epoch_matches(source_epoch):
-            return "runtime-ecl-capture-crossed-input-epoch"
+            return None, "runtime-ecl-capture-unavailable"
         if not identity.exact_match:
-            return "runtime-ecl-byte-mismatch"
+            return None, "runtime-ecl-byte-mismatch"
         version = RuntimeEclAcceptedVersion(
             runtime_base=capture.runtime_base,
             image_length=capture.image_length,
             relocated_sha256=capture.relocated_sha256,
             normalized_sha256=capture.normalized_sha256,
             static_sha256=identity.static_sha256,
-            route_id=self._route_id,
-            difficulty_index=self._difficulty_index,
-            stage_route_index=context[1],
-            gameplay_epoch=context[0],
+            route_id=route_id,
+            difficulty_index=difficulty_index,
+            stage_route_index=stage_context[1],
+            gameplay_epoch=stage_context[0],
             decision_frame=snapshot_frame,
             snapshot_frame=snapshot_frame,
         )
-        self._binding = replace(binding, runtime_version=version)
-        self.runtime_identity_acceptances += 1
-        return "exact-runtime-ecl"
+        return version, "exact-runtime-ecl"
 
-    def _scale_schedule(
+    def _poll_runtime_identity(
         self,
+        *,
+        stage_context: tuple[int, int],
+    ) -> str:
+        tagged = self._runtime_identity_work
+        if tagged is None:
+            return self._runtime_identity_last_status
+        if not tagged.work.done():
+            return "running-immutable-root-identity"
+        self._runtime_identity_work = None
+        try:
+            version, status = tagged.work.result()
+        except (OSError, RuntimeError, TypeError, ValueError):
+            self.runtime_identity_rejections += 1
+            self._runtime_identity_last_status = "background-identity-error"
+            return self._runtime_identity_last_status
+        if (
+            tagged.stage_context != stage_context
+            or self._binding is not tagged.binding
+        ):
+            self.runtime_identity_rejections += 1
+            self._runtime_identity_last_status = "stale-runtime-identity-root"
+            return self._runtime_identity_last_status
+        if version is None:
+            self.runtime_identity_rejections += 1
+            self._runtime_identity_last_status = status
+            return status
+        self._binding = replace(tagged.binding, runtime_version=version)
+        self.runtime_identity_acceptances += 1
+        self._runtime_identity_last_status = status
+        return status
+
+    def _submit_runtime_identity_if_due(
+        self,
+        reader: object,
+        *,
+        source_input_epoch: int,
+        root_generation: int,
+        stage_context: tuple[int, int],
+        snapshot_frame: int,
+    ) -> bool:
+        binding = self._binding
+        if (
+            binding is None
+            or binding.runtime_version is not None
+            or self._runtime_identity_work is not None
+            or self._future_work is not None
+            or source_input_epoch - self._last_runtime_identity_submit_epoch
+            < self.config.future_capture_interval_frames
+        ):
+            return False
+        work = self._future_executor.submit(
+            self._background_runtime_identity,
+            reader,
+            binding,
+            route_id=self._route_id,
+            difficulty_index=self._difficulty_index,
+            snapshot_frame=snapshot_frame,
+            stage_context=stage_context,
+        )
+        self._runtime_identity_work = _TaggedRuntimeIdentity(
+            stage_context,
+            binding,
+            source_input_epoch,
+            root_generation,
+            work,
+        )
+        self._last_runtime_identity_submit_epoch = source_input_epoch
+        self.runtime_identity_attempts += 1
+        return True
+
+    def _scale_schedule_for_binding(
+        self,
+        binding: _StageBinding,
+        reader: object,
         snapshot: LinuxPlannerSnapshot,
         state: Mapping[str, object],
         *,
         context: tuple[int, int, int | None],
+        hit_started: bool,
     ) -> tuple[Th08TimeScaleSchedule | None, str]:
-        binding = self._binding
-        if binding is None or binding.runtime_version is None:
+        if binding.runtime_version is None:
             return None, "runtime-ecl-unavailable"
         authority = binding.scale_authority
         if authority is None:
@@ -410,7 +533,7 @@ class LinuxOnlineFutureGlobalService:
             return None, "player-state-unavailable"
         if isinstance(authority, NoScaleWriterScheduleAuthority):
             resolution = authority.resolve(
-                self._reader,
+                reader,
                 runtime_version=binding.runtime_version,
                 source_frame=snapshot.frame,
                 expected_manager_frame=snapshot.frame,
@@ -424,7 +547,7 @@ class LinuxOnlineFutureGlobalService:
         else:
             phase = int(player["phase"])
             resolution = authority.resolve(
-                self._reader,
+                reader,
                 decision_frame=snapshot.frame,
                 source_frame=snapshot.frame,
                 gameplay_epoch=context[0],
@@ -436,15 +559,132 @@ class LinuxOnlineFutureGlobalService:
                 observed_player_bomb_active=int(player["bomb_active"]),
                 player_phase=phase,
                 player_predeath_counter=int(player["predeath_counter"]),
-                hit_started=(
-                    phase == 2 and self._previous_player_phase != 2
-                ),
+                hit_started=hit_started,
             )
-            self._previous_player_phase = phase
         return (
             resolution.schedule if resolution.planner_scale_authority else None,
             resolution.status,
         )
+
+    def _scale_schedule(
+        self,
+        reader: object,
+        snapshot: LinuxPlannerSnapshot,
+        state: Mapping[str, object],
+        *,
+        context: tuple[int, int, int | None],
+        hit_started: bool,
+    ) -> tuple[Th08TimeScaleSchedule | None, str]:
+        binding = self._binding
+        if binding is None:
+            return None, "stage-ecl-unsupported"
+        return self._scale_schedule_for_binding(
+            binding,
+            reader,
+            snapshot,
+            state,
+            context=context,
+            hit_started=hit_started,
+        )
+
+    def _background_scale_schedule(
+        self,
+        binding: _StageBinding,
+        reader: object,
+        snapshot: LinuxPlannerSnapshot,
+        state: Mapping[str, object],
+        *,
+        context: tuple[int, int, int | None],
+        hit_started: bool,
+    ) -> tuple[Th08TimeScaleSchedule | None, str]:
+        lower_current_thread_priority()
+        return self._scale_schedule_for_binding(
+            binding,
+            reader,
+            snapshot,
+            state,
+            context=context,
+            hit_started=hit_started,
+        )
+
+    def _poll_scale(
+        self,
+        *,
+        context: tuple[int, int, int | None],
+        clock: OnlineClockAssessment,
+    ) -> str:
+        tagged = self._scale_work
+        if tagged is None:
+            return self._scale_last_status
+        if not tagged.work.done():
+            return "running-immutable-root-bind"
+        self._scale_work = None
+        try:
+            schedule, status = tagged.work.result()
+        except (OSError, RuntimeError, TypeError, ValueError):
+            authority = tagged.binding.scale_authority
+            if authority is not None:
+                authority.reset()
+            self.scale_rejections += 1
+            self._scale_certified = False
+            self._scale_last_status = "background-scale-error"
+            return self._scale_last_status
+        if tagged.context != context or tagged.clock_generation != clock.generation:
+            authority = tagged.binding.scale_authority
+            if authority is not None:
+                authority.reset()
+            self.scale_rejections += 1
+            self._scale_certified = False
+            self._scale_last_status = "stale-scale-root"
+            return self._scale_last_status
+        self.scale_completions += 1
+        self._scale_certified = schedule is not None
+        self._scale_last_status = status
+        return status
+
+    def _submit_scale_if_due(
+        self,
+        reader: object,
+        snapshot: LinuxPlannerSnapshot,
+        state: Mapping[str, object],
+        *,
+        source_input_epoch: int,
+        root_generation: int,
+        context: tuple[int, int, int | None],
+        clock_generation: int,
+        hit_started: bool,
+    ) -> bool:
+        binding = self._binding
+        if (
+            binding is None
+            or binding.runtime_version is None
+            or binding.scale_authority is None
+            or self._scale_certified
+            or self._scale_work is not None
+            or source_input_epoch - self._last_scale_submit_epoch
+            < self.config.future_capture_interval_frames
+        ):
+            return False
+        work = self._scale_executor.submit(
+            self._background_scale_schedule,
+            binding,
+            reader,
+            snapshot,
+            state,
+            context=context,
+            hit_started=hit_started,
+        )
+        self._scale_work = _TaggedScaleResolve(
+            context,
+            binding,
+            source_input_epoch,
+            root_generation,
+            clock_generation,
+            work,
+        )
+        self._last_scale_submit_epoch = source_input_epoch
+        self.scale_submissions += 1
+        return True
 
     @staticmethod
     def _future_matches_context(
@@ -515,6 +755,9 @@ class LinuxOnlineFutureGlobalService:
                         )
                     ):
                         self._future_result = result
+                        self._future_result_root_generation = (
+                            tagged.root_generation
+                        )
                         self._future_result_clock_generation = clock.generation
                         self.future_completions += 1
                         future_status = "fresh-complete"
@@ -570,8 +813,10 @@ class LinuxOnlineFutureGlobalService:
 
     def _submit_future_if_due(
         self,
+        reader: object,
         *,
         source_input_epoch: int,
+        root_generation: int,
         context: tuple[int, int, int | None],
         clock_generation: int,
     ) -> bool:
@@ -586,13 +831,14 @@ class LinuxOnlineFutureGlobalService:
             return False
         work = self._future_executor.submit(
             _capture_future_sources,
-            self._reader,
+            reader,
             binding.ecl,
             self.config.future_horizon_frames,
         )
         self._future_work = _TaggedFutureCapture(
             context,
             source_input_epoch,
+            root_generation,
             clock_generation,
             work,
         )
@@ -722,6 +968,7 @@ class LinuxOnlineFutureGlobalService:
         self,
         snapshot: LinuxPlannerSnapshot,
         state: Mapping[str, object],
+        root: PublishedSnapshotRoot,
         *,
         source_epoch: int,
         current_input: int,
@@ -733,9 +980,14 @@ class LinuxOnlineFutureGlobalService:
             stage_route_index=stage,
             spell_id=self._spell_id(state),
         )
-        if not self._native_epoch_matches(source_epoch):
+        root_version_current = bool(
+            root.source_epoch == source_epoch
+            and snapshot.source_input_epoch == source_epoch
+            and snapshot.root_generation == root.generation
+        )
+        if not root_version_current:
             return LinuxOnlineServiceUpdate(
-                authority=self._withheld(reason="source-epoch-expired"),
+                authority=self._withheld(reason="immutable-root-version-mismatch"),
                 gameplay_epoch=context[0],
                 context=context,
                 runtime_ecl_version=(
@@ -743,11 +995,12 @@ class LinuxOnlineFutureGlobalService:
                     if self._binding is not None
                     else None
                 ),
+                runtime_identity_status="not-polled-root-version-mismatch",
                 scale_status="not-queried",
                 future_status="not-polled",
                 corridor_status="not-polled",
-                native_epoch_current=False,
-                clock_status="not-observed-source-epoch-expired",
+                root_version_current=False,
+                clock_status="not-observed-root-version-mismatch",
                 clock_certified=False,
                 clock_generation=self._clock_authority.generation,
             )
@@ -759,26 +1012,69 @@ class LinuxOnlineFutureGlobalService:
         )
         if not clock.allowed:
             self._future_result = None
+            self._future_result_root_generation = None
             self._future_result_clock_generation = None
             self._authority.reset(context)
-        self._establish_runtime_identity(
-            source_epoch=source_epoch,
-            snapshot_frame=snapshot.frame,
-            context=context,
+        stage_context = (context[0], context[1])
+        runtime_identity_status = self._poll_runtime_identity(
+            stage_context=stage_context,
         )
+        binding = self._binding
+        if binding is None:
+            runtime_identity_status = "stage-ecl-unsupported"
+        elif binding.runtime_version is not None:
+            runtime_identity_status = "exact-runtime-ecl"
+        elif self._submit_runtime_identity_if_due(
+            root.reader,
+            source_input_epoch=source_epoch,
+            root_generation=root.generation,
+            stage_context=stage_context,
+            snapshot_frame=snapshot.frame,
+        ):
+            runtime_identity_status = "submitted-immutable-root-identity"
         future_status, corridor_status = self._poll_background(
             current_frame=snapshot.frame,
             current_input_epoch=source_epoch,
             context=context,
             clock=clock,
         )
-        schedule, scale_status = self._scale_schedule(
+        player = state.get("player")
+        if not isinstance(player, Mapping):
+            raise RuntimeError("immutable scale root omitted player state")
+        phase = int(player["phase"])
+        hit_started = phase == 2 and self._previous_player_phase != 2
+        self._previous_player_phase = phase
+        scale_status = self._poll_scale(context=context, clock=clock)
+        schedule = None
+        binding = self._binding
+        if binding is None or binding.runtime_version is None:
+            scale_status = "runtime-ecl-unavailable"
+        elif self._scale_certified:
+            schedule, scale_status = self._scale_schedule(
+                root.reader,
+                snapshot,
+                state,
+                context=context,
+                hit_started=hit_started,
+            )
+            if schedule is None:
+                self._scale_certified = False
+            self._scale_last_status = scale_status
+        elif self._submit_scale_if_due(
+            root.reader,
             snapshot,
             state,
-            context=context,
-        )
-        if clock.allowed and self._submit_future_if_due(
             source_input_epoch=source_epoch,
+            root_generation=root.generation,
+            context=context,
+            clock_generation=clock.generation,
+            hit_started=hit_started,
+        ):
+            scale_status = "submitted-immutable-root-bind"
+        if clock.allowed and self._submit_future_if_due(
+            root.reader,
+            source_input_epoch=source_epoch,
+            root_generation=root.generation,
             context=context,
             clock_generation=clock.generation,
         ):
@@ -793,15 +1089,9 @@ class LinuxOnlineFutureGlobalService:
         ):
             corridor_status = "submitted"
 
-        native_epoch_current = self._native_epoch_matches(source_epoch)
         binding = self._binding
         if schedule is None:
             authority = self._withheld(reason=scale_status)
-        elif not native_epoch_current:
-            authority = self._withheld(
-                reason="service-work-crossed-input-epoch",
-                schedule=schedule,
-            )
         elif not clock.allowed:
             authority = self._withheld(
                 reason=clock.reason,
@@ -825,10 +1115,11 @@ class LinuxOnlineFutureGlobalService:
             runtime_ecl_version=(
                 binding.runtime_version if binding is not None else None
             ),
+            runtime_identity_status=runtime_identity_status,
             scale_status=scale_status,
             future_status=future_status,
             corridor_status=corridor_status,
-            native_epoch_current=native_epoch_current,
+            root_version_current=True,
             clock_status=clock.reason,
             clock_certified=clock.allowed,
             clock_generation=clock.generation,
@@ -838,9 +1129,21 @@ class LinuxOnlineFutureGlobalService:
         return {
             "runtime_identity_attempts": self.runtime_identity_attempts,
             "runtime_identity_acceptances": self.runtime_identity_acceptances,
+            "runtime_identity_rejections": self.runtime_identity_rejections,
+            "runtime_identity_last_status": (
+                self._runtime_identity_last_status
+            ),
             "future_submissions": self.future_submissions,
             "future_completions": self.future_completions,
             "future_rejections": self.future_rejections,
+            "future_result_root_generation": (
+                self._future_result_root_generation
+            ),
+            "scale_submissions": self.scale_submissions,
+            "scale_completions": self.scale_completions,
+            "scale_rejections": self.scale_rejections,
+            "scale_certified": self._scale_certified,
+            "scale_last_status": self._scale_last_status,
             "corridor_submissions": self.corridor_submissions,
             "corridor_completions": self.corridor_completions,
             "corridor_rejections": self.corridor_rejections,
@@ -867,9 +1170,14 @@ class LinuxOnlineFutureGlobalService:
         self._closed = True
         if self._future_work is not None:
             self._future_work.work.cancel()
+        if self._runtime_identity_work is not None:
+            self._runtime_identity_work.work.cancel()
+        if self._scale_work is not None:
+            self._scale_work.work.cancel()
         if self._corridor_work is not None:
             self._corridor_work.work.cancel()
         self._future_executor.shutdown(wait=True, cancel_futures=True)
+        self._scale_executor.shutdown(wait=True, cancel_futures=True)
         self._corridor_executor.shutdown(wait=True, cancel_futures=True)
 
     def __enter__(self) -> "LinuxOnlineFutureGlobalService":

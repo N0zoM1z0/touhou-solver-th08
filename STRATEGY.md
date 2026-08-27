@@ -33,11 +33,15 @@ cost is not an adequate explanation for an Easy hit without profiler evidence.
 
 The active route solver runs at the original input cadence. No solver path may
 block the game thread, freeze a virtual clock, or subtract computation from a
-game-visible timer. A completed-update epoch notification brackets coherent
-`/proc` capture for an explicit next input epoch. The solver checks content and
-policy versions before sending; the runtime wire accepts only an exact-epoch
-complete mask. Late results are discarded and connected deadline misses retain
-the held no-write mask. Hard no-Bomb validation applies at publication and
+game-visible timer. Protocol v3 publishes a leased runtime-owned packed root
+at the completed-update seam for an explicit next input epoch. The solver
+copies that slot once, validates its generation certificate, and gives the
+same local immutable reader to immediate and background consumers. The
+immediate path decodes packed active records directly; the retired large live
+`/proc` bracket has no route authority. The solver checks content and policy
+versions before sending; the runtime accepts only an exact-epoch complete
+mask. Late results are discarded and connected deadline misses retain the
+held no-write mask. Hard no-Bomb validation applies at publication and
 sampling.
 
 Local safety is the per-epoch consumer. Future-birth coverage and global
@@ -46,9 +50,12 @@ in the live transaction before further local objective tuning is promoted.
 The implemented transitional policy uses a 4px lower lattice and one physical
 frame per control layer. A named winning set is hard: local evidence may
 narrow it but cannot silently relax it. Stages 1--5 and Final-B bind their
-respective exact scale authorities. This is test-observed integration, not yet
-physical delivery evidence; the first online trace must show nonzero complete
-future joins, global publications, queries, and constrained issued actions.
+respective exact scale authorities. Runtime identity, initial scale-source
+inventory, future closure, and corridor work now run outside the foreground
+deadline over the submitted immutable generation. This is test-observed
+integration, not yet physical delivery evidence; the next authorized online
+trace must show nonzero complete future joins, global publications, queries,
+and constrained issued actions.
 The earliest pending future policy is preserved until activation so faster
 newer solves cannot starve it. Retained foreground timing is 17.72/32.17 ms
 mean/p95, and the current one-frame action edge does not certify an arbitrary
@@ -63,8 +70,11 @@ generation. Dialogue, scripted freeze, manager skip-update, player/Bomb gate,
 context change, or unequal delta revokes all older async work. This closes the
 known wrong-clock authority bug but remains transitional until the shared
 source-order kernel models those lifecycle transitions directly.
-The former blocking Linux bridge is offline semantic-differential evidence
-only.
+Slot-full/build failure drops snapshot authority without pacing the game. The
+current runtime packing cost and 60 Hz delivery rate are unmeasured, and the
+held-fallback safety gap remains. The former blocking Linux bridge is offline
+semantic-differential evidence only. See
+`notes/architecture/TH08_LINUX_IMMUTABLE_ROOT_20260827.md`.
 
 ### L1 — Robust no-Bomb survival
 
@@ -578,16 +588,19 @@ solves currently take roughly 0.34--0.52 seconds with 100--400 moving AABBs,
 so this belongs in the rolling background tier rather than the 16.67ms input
 deadline.
 
-The first physical Linux online Gate 1 **rejects this transition baseline as a
-live producer**. On 3,600 coherent Easy Stage-1 observations, the dual clock
+The first physical Linux online Gate 1 **rejects the protocol-v2 transition
+baseline as a live producer**. On 3,600 coherent Easy Stage-1 observations, the dual clock
 certified 2,866 roots but all 574 future captures failed; corridor submission,
 query, and constrained-action counts were zero. The foreground scale inventory
 also stayed unknown, contributing to 1,205 stale captures, 2,424 stale plans,
-and 4,341 native deadline misses. CE-0273 is the current authority. Retire
-unchanged-frame large `/proc` capture from the online design: next build the
-runtime-owned immutable packed source publication and keep the foreground to a
-small lookup/shield transaction. This is a producer-boundary correction, not
-permission to stop time or tune the corridor.
+and 4,341 native deadline misses. CE-0273 remains the physical authority.
+Protocol v3 now replaces the unchanged-frame live scan with a runtime-owned
+leased packed publication, direct active-record immediate decode, and one
+shared immutable reader for background producers. This closes the structural
+defect in code only: no physical rerun or 60 Hz capacity claim exists yet.
+The next measurement keeps lead/grid/beam/objectives unchanged and retains
+root size/count/drop, producer, deadline, and held-fallback telemetry. This is
+not permission to stop time or tune the corridor.
 
 ## Offline Native Authority
 

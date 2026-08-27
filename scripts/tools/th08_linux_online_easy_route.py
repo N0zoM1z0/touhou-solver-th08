@@ -120,6 +120,10 @@ def _request_record(request: object) -> dict[str, int | float]:
         "deadline_misses": request.deadline_misses,
         "late_responses": request.late_responses,
         "dropped_requests": request.dropped_requests,
+        "dropped_snapshots": request.dropped_snapshots,
+        "snapshot_generation": request.snapshot_generation,
+        "snapshot_size": request.snapshot_size,
+        "snapshot_entry_count": request.snapshot_entry_count,
     }
 
 
@@ -201,6 +205,7 @@ def run(args: argparse.Namespace) -> int:
     precursor: deque[dict[str, object]] = deque(maxlen=12)
     timings: dict[str, list[float]] = {
         "publication_age": [],
+        "snapshot_copy": [],
         "pool_read": [],
         "decode": [],
         "planning": [],
@@ -210,11 +215,13 @@ def run(args: argparse.Namespace) -> int:
     gameplay_epochs = 0
     coherent_gameplay_captures = 0
     stale_capture_abandons = 0
+    missing_snapshot_abandons = 0
     stale_plan_abandons = 0
     response_queue_drops = 0
     response_packets_sent = 0
     bridge_drained_publications = 0
     bridge_observed_epoch_gaps = 0
+    bridge_snapshot_releases_sent = 0
     hit_count = 0
     previous_player_phase: int | None = None
     first_request_counters: dict[str, int] | None = None
@@ -232,6 +239,7 @@ def run(args: argparse.Namespace) -> int:
             "deadline_misses": request.deadline_misses,
             "late_responses": request.late_responses,
             "dropped_requests": request.dropped_requests,
+            "dropped_snapshots": request.dropped_snapshots,
         }
         if first_request_counters is None:
             first_request_counters = counters
@@ -281,8 +289,6 @@ def run(args: argparse.Namespace) -> int:
             )
             planner = LinuxOneEpochPlanner(config=planner_config)
             service = LinuxOnlineFutureGlobalService(
-                reader=session.reader,
-                input_epoch_address=session.input_epoch_address,
                 decoded_ecl_directory=decoded_ecl_directory,
                 route_id=SAKUYA_REMILIA_SHOT_TYPE,
                 difficulty_index=EASY_DIFFICULTY,
@@ -308,13 +314,26 @@ def run(args: argparse.Namespace) -> int:
                     gameplay = capture_gameplay_bootstrap(session.reader)
                     if gameplay.ready:
                         decision_started = time.perf_counter()
+                        if not request.snapshot_present:
+                            session.bridge.abandon()
+                            missing_snapshot_abandons += 1
+                            continue
                         try:
-                            state, snapshot = capture.capture_transaction(
+                            root = session.bridge.capture_snapshot(
+                                session.reader,
                                 request,
-                                observe=lambda: observe_state(session.reader),
                             )
-                        except RuntimeError as error:
-                            if "epoch" not in str(error) and "root changed" not in str(error):
+                            state, snapshot = capture.capture_published_root(
+                                request,
+                                root,
+                                observe=observe_state,
+                            )
+                        except (OSError, RuntimeError, ValueError) as error:
+                            if (
+                                "epoch" not in str(error)
+                                and "root" not in str(error)
+                                and "snapshot" not in str(error)
+                            ):
                                 raise
                             session.bridge.abandon()
                             stale_capture_abandons += 1
@@ -351,6 +370,7 @@ def run(args: argparse.Namespace) -> int:
                         update = service.update(
                             snapshot,
                             state,
+                            root,
                             source_epoch=request.source_epoch,
                             current_input=request.current_input,
                         )
@@ -375,6 +395,18 @@ def run(args: argparse.Namespace) -> int:
                             "source_epoch": request.source_epoch,
                             "target_epoch": request.target_epoch,
                             "frame": snapshot.frame,
+                            "root_generation": root.generation,
+                            "root_packed_size": root.packed_size,
+                            "root_entry_count": len(root.ranges),
+                            "root_active_records": {
+                                "bullets": root.bullet_record_count,
+                                "lasers": root.laser_record_count,
+                                "enemies": root.enemy_record_count,
+                                "items": root.item_record_count,
+                                "auxiliary_contexts": (
+                                    root.auxiliary_context_count
+                                ),
+                            },
                             "stage_route_index": stage,
                             "spell_id": _spell_id(state),
                             "action": plan.action,
@@ -388,6 +420,9 @@ def run(args: argparse.Namespace) -> int:
                             "future_local": (
                                 update.authority
                                 .future_projection_applied_locally
+                            ),
+                            "runtime_identity_status": (
+                                update.runtime_identity_status
                             ),
                             "scale_status": update.scale_status,
                             "future_status": update.future_status,
@@ -409,6 +444,7 @@ def run(args: argparse.Namespace) -> int:
                         ):
                             authority_witnesses.append(record)
                         timings["pool_read"].append(snapshot.pool_read_ms)
+                        timings["snapshot_copy"].append(root.process_copy_ms)
                         timings["decode"].append(snapshot.decode_ms)
                         timings["planning"].append(plan.planning_ms)
                         timings["decision_total"].append(
@@ -458,6 +494,9 @@ def run(args: argparse.Namespace) -> int:
                 service.close()
             bridge_drained_publications = session.bridge.drained_publications
             bridge_observed_epoch_gaps = session.bridge.observed_epoch_gaps
+            bridge_snapshot_releases_sent = (
+                session.bridge.snapshot_releases_sent
+            )
     except BaseException as error:
         finish_reason = "error"
         failure = {"type": type(error).__name__, "message": str(error)}
@@ -489,10 +528,15 @@ def run(args: argparse.Namespace) -> int:
             and last_request_counters is not None
             else 0
         )
-        for key in ("deadline_misses", "late_responses", "dropped_requests")
+        for key in (
+            "deadline_misses",
+            "late_responses",
+            "dropped_requests",
+            "dropped_snapshots",
+        )
     }
     report = {
-        "schema": "th08-linux-online-easy-route-v1",
+        "schema": "th08-linux-online-easy-route-v2-immutable-root",
         "runtime": runtime_record,
         "target": {
             "difficulty_index": EASY_DIFFICULTY,
@@ -504,6 +548,10 @@ def run(args: argparse.Namespace) -> int:
             "game_waits_for_solver": False,
             "solver_time_removed_from_game_clock": False,
             "publication": "post-update source epoch",
+            "observation_root": (
+                "runtime-owned leased packed snapshot copied once; immediate "
+                "and background consumers share its generation"
+            ),
             "response": "exact next input epoch or discard",
             "fallback": (
                 "connected deadline miss holds complete input mask; "
@@ -525,11 +573,13 @@ def run(args: argparse.Namespace) -> int:
         "bridge_observed_epoch_gaps": (
             bridge_observed_epoch_gaps
         ),
+        "bridge_snapshot_releases_sent": bridge_snapshot_releases_sent,
         "runtime_counter_delta": counter_delta,
         "response_packets_sent": response_packets_sent,
         "response_queue_drops": response_queue_drops,
         "coherent_gameplay_captures": coherent_gameplay_captures,
         "stale_capture_abandons": stale_capture_abandons,
+        "missing_snapshot_abandons": missing_snapshot_abandons,
         "stale_plan_abandons": stale_plan_abandons,
         "gameplay_epochs": gameplay_epochs,
         "hit_count": hit_count,

@@ -13,7 +13,7 @@ INPUT_EPOCH_SYMBOL = "th08_solver_input_epoch"
 
 
 class LinuxOnlineGameSession(LinuxGameSession):
-    """Use protocol v2 and expose its native input-epoch capture bracket."""
+    """Use protocol v3 and expose the native final-delivery epoch check."""
 
     temporary_prefix = "th08-linux-online-"
 

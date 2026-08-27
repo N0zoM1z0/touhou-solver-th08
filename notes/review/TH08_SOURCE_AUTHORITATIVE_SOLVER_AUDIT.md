@@ -1,9 +1,23 @@
 # TH08 Source-Authoritative Solver Audit
 
-Last updated: 2026-08-25.
+Last updated: 2026-08-27.
 
 Status: **AUDIT ACTIVE; RETAINED BIRTH/CALLBACK GLOBAL JOIN CLOSED OFFLINE,
 PRODUCER COVERAGE AND SAME-ROOT POLICY EFFECT OPEN**
+
+## 2026-08-27 Online Implementation Override
+
+The older sequence below remains source-analysis history. The current ordered
+implementation gate is the strictly online native-Linux path. Protocol v3 now
+publishes a runtime-owned leased packed post-update root; the immediate shield
+decodes active records directly, while runtime identity, initial scale binding,
+future closure, and the global worker consume that same immutable generation
+in background threads. No game time is stopped or subtracted. This closes the
+protocol-v2 producer wiring defect in code, not physically: the next unchanged-
+parameter evidence must measure root packing/copy/decode/deadline behavior and
+nonzero future/global action authority. Do not restore the older offline-first
+or stopped-root ordering. See
+`notes/architecture/TH08_LINUX_IMMUTABLE_ROOT_20260827.md` and CE-0274.
 
 ## Scope And Verdict
 

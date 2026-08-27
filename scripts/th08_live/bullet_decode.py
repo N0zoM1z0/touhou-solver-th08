@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import struct
 from dataclasses import replace
+from typing import Sequence
 
 import numpy as np
 
@@ -455,14 +456,37 @@ def decode_bullets(
     blob: bytes,
     *,
     retain_transform_runtime: bool = True,
+    record_slots: Sequence[int] | None = None,
 ) -> tuple[Bullet, ...]:
     """Decode active bullets with optional diagnostic queue state."""
 
     if not retain_transform_runtime:
+        if record_slots is not None:
+            raise ValueError(
+                "compact bullet records require transform-runtime decoding"
+            )
         return decode_planning_bullets(blob)
+    slots = (
+        tuple(range(BULLET_POOL_SIZE))
+        if record_slots is None
+        else tuple(record_slots)
+    )
+    required_size = len(slots) * BULLET_STRIDE
+    if (
+        len(blob) < required_size
+        or (record_slots is not None and len(blob) != required_size)
+    ):
+        raise ValueError(
+            f"bullet records require {required_size} bytes"
+        )
+    if (
+        any(type(slot) is not int or not 0 <= slot < BULLET_POOL_SIZE for slot in slots)
+        or len(set(slots)) != len(slots)
+    ):
+        raise ValueError("bullet record slots are invalid or duplicated")
     bullets: list[Bullet] = []
-    for index in range(BULLET_POOL_SIZE):
-        base = index * BULLET_STRIDE
+    for record_index, slot in enumerate(slots):
+        base = record_index * BULLET_STRIDE
         state = struct.unpack_from(
             "<H",
             blob,
@@ -718,7 +742,7 @@ def decode_bullets(
                 half_width=half_width,
                 half_height=half_height,
                 transform_flags=transform_flags,
-                slot=index,
+                slot=slot,
                 speed=speed if math.isfinite(speed) else None,
                 angle=angle if math.isfinite(angle) else None,
                 transform_runtime=transform_runtime,

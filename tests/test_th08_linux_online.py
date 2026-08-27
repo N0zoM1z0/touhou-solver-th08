@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from types import SimpleNamespace
 from pathlib import Path
 import socket
 import struct
+import threading
 import unittest
+from unittest.mock import patch
 
+import th08_linux.online_services as online_services
 from th08_global_authority import GlobalActionAuthorityAssessment
 from th08_corridor_runtime import solve_corridor
 from th08_future_hazard_projection import complete_future_hazard_projection
@@ -30,6 +34,7 @@ from th08_linux.online_protocol import (
     encode_online_response,
 )
 from th08_linux.planner import (
+    LinuxHazardCapture,
     LinuxOnlineHazardCapture,
     LinuxOneEpochPlanner,
     LinuxPlannerGuidance,
@@ -59,21 +64,26 @@ from tools.th08_linux_online_easy_route import RESULT_UPDATE_SYMBOL
 
 def _request(source_epoch: int, *, published_us: int = 123_000) -> bytes:
     return struct.pack(
-        "<IHHQQHHHHIIIIQ",
+        "<IHHQQHHHHIIIIQQIIII",
         0x51523854,
-        2,
+        3,
         REQUEST_SIZE,
         source_epoch,
         source_epoch + 1,
         SHOOT | FOCUS,
         SHOOT | FOCUS | LEFT,
         0x9630,
-        0,
+        0xFFFF,
         REPLAY_TARGET_STAMPED | LIVES_PRESERVED,
         4,
         2,
         1,
         published_us,
+        0,
+        0,
+        0,
+        0,
+        0,
     )
 
 
@@ -140,7 +150,7 @@ class LinuxOnlineProtocolTests(unittest.TestCase):
         )
         self.assertEqual(
             struct.unpack("<IHHQQHHI", payload),
-            (RESPONSE_MAGIC, 2, 32, 7, 8, SHOOT | FOCUS | LEFT, 0, 0),
+            (RESPONSE_MAGIC, 3, 32, 7, 8, SHOOT | FOCUS | LEFT, 0, 0),
         )
         with self.assertRaisesRegex(ValueError, "exactly source epoch"):
             encode_online_response(
@@ -221,6 +231,52 @@ class LinuxOnlineAuthorityTests(unittest.TestCase):
         self.assertEqual(snapshot.source_input_epoch, 7)
         self.assertFalse(snapshot.dialogue_active)
         self.assertFalse(snapshot.scripted_update_freeze)
+
+    def test_immutable_foreground_decodes_only_packed_active_records(self) -> None:
+        class PackedOnlyReader:
+            @staticmethod
+            def allocate_buffer(size: int) -> bytearray:
+                return bytearray(size)
+
+            @staticmethod
+            def packed_pool_records(_kind: int) -> tuple[object, ...]:
+                return ()
+
+            @staticmethod
+            def u32(_address: int) -> int:
+                return 123
+
+            @staticmethod
+            def read_into(_address: int, _buffer: object) -> None:
+                raise AssertionError("foreground attempted a full-pool read")
+
+        reader = PackedOnlyReader()
+        capture = LinuxHazardCapture(reader, capture_items=False)
+        player_root = SimpleNamespace(
+            stable=True,
+            x_after=192.0,
+            y_after=400.0,
+            scale_bits=TH08_UNIT_TIME_SCALE_BITS,
+            frame_before=123,
+            frame_after=123,
+        )
+        state = {
+            "gameplay_active": True,
+            "enemy_manager_frame": 123,
+            "time_scale_bits": TH08_UNIT_TIME_SCALE_BITS,
+            "player": {"phase": 0, "x": 192.0, "y": 400.0},
+            "resources": {"power": 64.0, "bombs": 3.0},
+        }
+        with patch(
+            "th08_linux.planner.capture_player_control_root",
+            return_value=player_root,
+        ):
+            snapshot = capture.capture(state, reader=reader)
+
+        self.assertEqual(snapshot.frame, 123)
+        self.assertEqual(snapshot.bullets, ())
+        self.assertEqual(snapshot.lasers, ())
+        self.assertEqual(snapshot.enemy_bodies, ())
 
     def test_hard_authority_uses_one_physical_frame_layers(self) -> None:
         self.assertEqual(TH08_ONLINE_AUTHORITY_CONFIG.frames_per_layer, 1)
@@ -634,8 +690,6 @@ class LinuxOnlineAuthorityTests(unittest.TestCase):
     def test_final_b_uses_the_existing_exact_scale_source_authority(self) -> None:
         decoded = Path(__file__).resolve().parents[1] / "artifacts" / "decoded"
         service = LinuxOnlineFutureGlobalService(
-            reader=SimpleNamespace(),
-            input_epoch_address=0x1234,
             decoded_ecl_directory=decoded,
             route_id=2,
             difficulty_index=0,
@@ -650,6 +704,220 @@ class LinuxOnlineAuthorityTests(unittest.TestCase):
             binding.scale_authority,  # type: ignore[union-attr]
             FinalBScaleScheduleAuthority,
         )
+
+    def test_initial_scale_inventory_runs_only_on_background_root_worker(self) -> None:
+        decoded = Path(__file__).resolve().parents[1] / "artifacts" / "decoded"
+        service = LinuxOnlineFutureGlobalService(
+            decoded_ecl_directory=decoded,
+            route_id=2,
+            difficulty_index=0,
+            config=LinuxOnlineServiceConfig(native_viability_workers=1),
+        )
+        self.addCleanup(service.close)
+        binding = service._load_stage(0)
+        self.assertIsNotNone(binding)
+        service._binding = replace(  # type: ignore[arg-type]
+            binding,
+            runtime_version=SimpleNamespace(),
+        )
+        threads: list[str] = []
+
+        def resolve(
+            _binding: object,
+            _reader: object,
+            snapshot: LinuxPlannerSnapshot,
+            _state: object,
+            *,
+            context: object,
+            hit_started: bool,
+        ) -> tuple[Th08TimeScaleSchedule, str]:
+            self.assertEqual(context, (1, 0, None))
+            self.assertFalse(hit_started)
+            threads.append(threading.current_thread().name)
+            return (
+                Th08TimeScaleSchedule.constant(
+                    TH08_UNIT_TIME_SCALE_BITS,
+                    horizon=32,
+                    source_frame=snapshot.frame,
+                    provenance="test-background-scale-root",
+                ),
+                "complete-test-background-scale-root",
+            )
+
+        service._scale_schedule_for_binding = resolve  # type: ignore[method-assign]
+        submitted = service._submit_scale_if_due(
+            SimpleNamespace(),
+            _snapshot(),
+            {"player": {"phase": 0}},
+            source_input_epoch=7,
+            root_generation=11,
+            context=(1, 0, None),
+            clock_generation=3,
+            hit_started=False,
+        )
+        self.assertTrue(submitted)
+        assert service._scale_work is not None
+        service._scale_work.work.result(timeout=2.0)
+        status = service._poll_scale(
+            context=(1, 0, None),
+            clock=SimpleNamespace(generation=3),  # type: ignore[arg-type]
+        )
+
+        self.assertEqual(status, "complete-test-background-scale-root")
+        self.assertTrue(service._scale_certified)
+        self.assertEqual(len(threads), 1)
+        self.assertTrue(threads[0].startswith("th08-linux-online-scale"))
+
+    def test_failed_background_scale_bind_resets_its_captured_authority(self) -> None:
+        decoded = Path(__file__).resolve().parents[1] / "artifacts" / "decoded"
+        service = LinuxOnlineFutureGlobalService(
+            decoded_ecl_directory=decoded,
+            route_id=2,
+            difficulty_index=0,
+            config=LinuxOnlineServiceConfig(native_viability_workers=1),
+        )
+        self.addCleanup(service.close)
+
+        class Authority:
+            def __init__(self) -> None:
+                self.reset_count = 0
+
+            def reset(self) -> None:
+                self.reset_count += 1
+
+        authority = Authority()
+        binding = service._load_stage(0)
+        self.assertIsNotNone(binding)
+        service._binding = replace(  # type: ignore[arg-type]
+            binding,
+            runtime_version=SimpleNamespace(),
+            scale_authority=authority,
+        )
+
+        def fail(*_args: object, **_kwargs: object) -> object:
+            raise ValueError("partial scale bind")
+
+        service._scale_schedule_for_binding = fail  # type: ignore[method-assign]
+        self.assertTrue(
+            service._submit_scale_if_due(
+                SimpleNamespace(),
+                _snapshot(),
+                {"player": {"phase": 0}},
+                source_input_epoch=7,
+                root_generation=11,
+                context=(1, 0, None),
+                clock_generation=3,
+                hit_started=False,
+            )
+        )
+        assert service._scale_work is not None
+        with self.assertRaisesRegex(ValueError, "partial scale bind"):
+            service._scale_work.work.result(timeout=2.0)
+        status = service._poll_scale(
+            context=(1, 0, None),
+            clock=SimpleNamespace(generation=3),  # type: ignore[arg-type]
+        )
+
+        self.assertEqual(status, "background-scale-error")
+        self.assertEqual(authority.reset_count, 1)
+        self.assertFalse(service._scale_certified)
+
+    def test_runtime_ecl_identity_runs_only_on_background_root_worker(self) -> None:
+        decoded = Path(__file__).resolve().parents[1] / "artifacts" / "decoded"
+        service = LinuxOnlineFutureGlobalService(
+            decoded_ecl_directory=decoded,
+            route_id=2,
+            difficulty_index=0,
+            config=LinuxOnlineServiceConfig(native_viability_workers=1),
+        )
+        self.addCleanup(service.close)
+        binding = service._load_stage(0)
+        self.assertIsNotNone(binding)
+        service._binding = binding
+        accepted = SimpleNamespace(static_sha256="test")
+        threads: list[str] = []
+
+        def identify(
+            _reader: object,
+            observed_binding: object,
+            *,
+            route_id: int,
+            difficulty_index: int,
+            snapshot_frame: int,
+            stage_context: tuple[int, int],
+        ) -> tuple[object, str]:
+            self.assertIs(observed_binding, binding)
+            self.assertEqual((route_id, difficulty_index), (2, 0))
+            self.assertEqual(snapshot_frame, 123)
+            self.assertEqual(stage_context, (1, 0))
+            threads.append(threading.current_thread().name)
+            return accepted, "exact-runtime-ecl"
+
+        service._background_runtime_identity = identify  # type: ignore[method-assign]
+        submitted = service._submit_runtime_identity_if_due(
+            SimpleNamespace(),
+            source_input_epoch=7,
+            root_generation=11,
+            stage_context=(1, 0),
+            snapshot_frame=123,
+        )
+        self.assertTrue(submitted)
+        assert service._runtime_identity_work is not None
+        service._runtime_identity_work.work.result(timeout=2.0)
+        status = service._poll_runtime_identity(stage_context=(1, 0))
+
+        self.assertEqual(status, "exact-runtime-ecl")
+        assert service._binding is not None
+        self.assertIs(service._binding.runtime_version, accepted)
+        self.assertEqual(len(threads), 1)
+        self.assertTrue(threads[0].startswith("th08-linux-online-future"))
+
+    def test_future_graph_receives_the_published_root_reader(self) -> None:
+        decoded = Path(__file__).resolve().parents[1] / "artifacts" / "decoded"
+        service = LinuxOnlineFutureGlobalService(
+            decoded_ecl_directory=decoded,
+            route_id=2,
+            difficulty_index=0,
+            config=LinuxOnlineServiceConfig(native_viability_workers=1),
+        )
+        self.addCleanup(service.close)
+        binding = service._load_stage(0)
+        self.assertIsNotNone(binding)
+        service._binding = replace(  # type: ignore[arg-type]
+            binding,
+            runtime_version=SimpleNamespace(),
+        )
+        root_reader = SimpleNamespace(name="immutable-generation-11")
+        observed: list[tuple[object, str]] = []
+        result = SimpleNamespace()
+
+        def capture_from_root(
+            reader: object,
+            _ecl: object,
+            _horizon: int,
+        ) -> object:
+            observed.append((reader, threading.current_thread().name))
+            return result
+
+        with patch.object(
+            online_services,
+            "_capture_future_sources",
+            capture_from_root,
+        ):
+            submitted = service._submit_future_if_due(
+                root_reader,
+                source_input_epoch=7,
+                root_generation=11,
+                context=(1, 0, None),
+                clock_generation=3,
+            )
+            self.assertTrue(submitted)
+            assert service._future_work is not None
+            self.assertIs(service._future_work.work.result(timeout=2.0), result)
+
+        self.assertEqual(len(observed), 1)
+        self.assertIs(observed[0][0], root_reader)
+        self.assertTrue(observed[0][1].startswith("th08-linux-online-future"))
 
 
 if __name__ == "__main__":

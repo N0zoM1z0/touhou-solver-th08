@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+from collections import deque
 from pathlib import Path
 import socket
+from typing import Any
 
+from th08_linux.immutable_snapshot import PublishedSnapshotRoot
 from th08_linux.online_protocol import (
     REQUEST_SIZE,
     OnlineInputRequest,
     decode_online_request,
     encode_online_response,
+    encode_snapshot_release,
 )
 
 
@@ -27,9 +31,12 @@ class OnlineSolverBridgeClient:
         self._connection: socket.socket | None = connection
         self._pending: OnlineInputRequest | None = None
         self._last_source_epoch: int | None = None
+        self._snapshot_leases: set[tuple[int, int]] = set()
+        self._pending_releases: deque[bytes] = deque()
         self.drained_publications = 0
         self.observed_epoch_gaps = 0
         self.local_response_drops = 0
+        self.snapshot_releases_sent = 0
 
     @classmethod
     def connect(cls, path: Path | str) -> "OnlineSolverBridgeClient":
@@ -46,6 +53,8 @@ class OnlineSolverBridgeClient:
             self._connection.close()
             self._connection = None
         self._pending = None
+        self._snapshot_leases.clear()
+        self._pending_releases.clear()
 
     def _receive_packet(self, flags: int = 0) -> OnlineInputRequest:
         if self._connection is None:
@@ -71,6 +80,44 @@ class OnlineSolverBridgeClient:
                 )
             self.observed_epoch_gaps += request.source_epoch - previous - 1
         self._last_source_epoch = request.source_epoch
+        if request.snapshot_present:
+            lease = (request.snapshot_generation, request.snapshot_slot)
+            if lease in self._snapshot_leases:
+                raise RuntimeError("duplicate immutable snapshot lease")
+            self._snapshot_leases.add(lease)
+
+    def _queue_snapshot_release(self, request: OnlineInputRequest) -> None:
+        if not request.snapshot_present:
+            return
+        lease = (request.snapshot_generation, request.snapshot_slot)
+        if lease not in self._snapshot_leases:
+            return
+        self._snapshot_leases.remove(lease)
+        self._pending_releases.append(
+            encode_snapshot_release(
+                generation=request.snapshot_generation,
+                slot=request.snapshot_slot,
+            )
+        )
+
+    def _flush_snapshot_releases(self) -> None:
+        if self._connection is None:
+            return
+        while self._pending_releases:
+            try:
+                written = self._connection.send(
+                    self._pending_releases[0],
+                    socket.MSG_DONTWAIT | getattr(socket, "MSG_NOSIGNAL", 0),
+                )
+            except BlockingIOError:
+                return
+            if written != len(self._pending_releases[0]):
+                self.close()
+                raise RuntimeError(
+                    "snapshot release was not sent as one complete packet"
+                )
+            self._pending_releases.popleft()
+            self.snapshot_releases_sent += 1
 
     def receive(self) -> OnlineInputRequest:
         if self._pending is not None:
@@ -78,6 +125,7 @@ class OnlineSolverBridgeClient:
                 f"target epoch {self._pending.target_epoch} still needs an "
                 "explicit response or abandon"
             )
+        self._flush_snapshot_releases()
         newest = self._receive_packet()
         self._accept_epoch(newest)
         while True:
@@ -86,10 +134,33 @@ class OnlineSolverBridgeClient:
             except BlockingIOError:
                 break
             self._accept_epoch(candidate)
+            self._queue_snapshot_release(newest)
             newest = candidate
             self.drained_publications += 1
         self._pending = newest
         return newest
+
+    def capture_snapshot(
+        self,
+        process_reader: Any,
+        request: OnlineInputRequest,
+    ) -> PublishedSnapshotRoot:
+        """Copy and release the pending runtime slot exactly once.
+
+        The returned root owns local immutable bytes.  Releasing the game-side
+        slot does not change them and therefore does not shorten background
+        graph work.
+        """
+
+        if self._pending is not request:
+            raise RuntimeError("immutable snapshot request is not pending")
+        lease = (request.snapshot_generation, request.snapshot_slot)
+        if lease not in self._snapshot_leases:
+            raise RuntimeError("immutable snapshot lease was already released")
+        try:
+            return PublishedSnapshotRoot.capture(process_reader, request)
+        finally:
+            self._queue_snapshot_release(request)
 
     def respond(self, input_mask: int) -> bool:
         if self._connection is None:
@@ -103,6 +174,10 @@ class OnlineSolverBridgeClient:
             input_mask=input_mask,
         )
         self._pending = None
+        # Queue ownership transfer before the deadline-sensitive send, but
+        # send the input response first so release traffic cannot consume its
+        # socket capacity.
+        self._queue_snapshot_release(request)
         try:
             written = self._connection.send(
                 response,
@@ -114,6 +189,7 @@ class OnlineSolverBridgeClient:
         if written != len(response):
             self.close()
             raise RuntimeError("online response was not sent as one complete packet")
+        self._flush_snapshot_releases()
         return True
 
     def abandon(self) -> None:
@@ -121,7 +197,10 @@ class OnlineSolverBridgeClient:
 
         if self._pending is None:
             raise RuntimeError("no pending online input target")
+        request = self._pending
         self._pending = None
+        self._queue_snapshot_release(request)
+        self._flush_snapshot_releases()
 
     def __enter__(self) -> "OnlineSolverBridgeClient":
         return self

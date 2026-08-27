@@ -62,20 +62,29 @@ ordered implementation plan are in
   misses, seven hits, and zero Bomb. Only 1,176 gameplay actions were delivered
   on time, all `stay`; this is deadline selection, not policy evidence. CE-0273
   and `notes/runs/easy_linux_online_gate1_20260827.md` retain the failure.
-  Do not tune lead, grid, beam, or objectives and do not repeat the physical
-  gate. The next implementation is a runtime-owned immutable packed post-
-  update source root/certificate (or equivalent double buffer), with no large
-  source inventory in the foreground action deadline. The one-frame action
-  proof also still does not certify a connected held fallback. The
+  Protocol v3 now implements the required runtime-owned immutable packed post-
+  update root: two bounded generation-leased slots, one solver copy, exact
+  release, direct active-record foreground decode, and the same local root for
+  background runtime identity, scale, future, and global work. No complete
+  pool or large live source scan remains in the action deadline. This is
+  build/test evidence only; no game was run, so 60 Hz capacity and physical
+  authority remain unobserved. Do not tune lead, grid, beam, or objectives and
+  do not repeat the physical gate without explicit authorization. The next
+  unchanged-parameter evidence must retain packed-root size/count/drop,
+  producer, deadline, and held-fallback telemetry. The one-frame action proof
+  also still does not certify a connected held fallback. The
   compact execution contract is
   `notes/architecture/TH08_LINUX_ONLINE_AUTHORITY_20260827.md`; the authored-
   source architecture decision is
-  `notes/architecture/TH08_SOURCE_DRIVEN_ONLINE_SOLVER_20260827.md`. The source
-  runtime checkpoint is `e0c181e` on `solver/linux-online-authority`; its
+  `notes/architecture/TH08_SOURCE_DRIVEN_ONLINE_SOLVER_20260827.md`; the packed
+  root decision is
+  `notes/architecture/TH08_LINUX_IMMUTABLE_ROOT_20260827.md`. The source
+  runtime checkpoint is `5f31fd5` on `solver/linux-online-authority`; its
   verified i386 ELF SHA-256 is
-  `141cb3b69040626cf51e1837acad4600a409f332acd8ccfe1ae8cca5396c2995`.
-  Complete post-clock Linux discovery passes 1,686 tests with five conditional
-  skips; the focused route-symbol correction passes 17 online tests.
+  `3f4ed29e60c024e9bf97b7f9eb7672bdf3f3f595b63545cbdcfdd0cb646fa561`.
+  Complete Linux discovery passes 1,696 tests with five conditional skips;
+  immutable/online focused suites pass 4/22 tests. The authored source build,
+  fixed-layout verifier, and target-independent CI pass.
 - **Pre-pivot checkpoint:** `main` and annotated tag
   `pre-linux-native-pivot-20260826` point to `d7a66c5`. The Linux runtime is a
   separate clone at source revision `4cffb2afa8d4a62083a5afc4a1968f51e96ac2cf`

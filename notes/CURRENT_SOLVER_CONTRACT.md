@@ -48,10 +48,17 @@ The promoted live path is:
 The Linux online path replaces cross-process Wine sensing and actuation, but
 not the logical transition contract. Every `Controller::GetInput` sample,
 including callback-chain restarts, is a distinct ordered input epoch. The
-runtime publishes the latest coherent completed-update snapshot without
-waiting. At the next input epoch it atomically consumes only an action tagged
-for that exact epoch; otherwise it retains the held complete mask. The bridge
-supplies only input and observation data and never writes gameplay/RNG state.
+runtime publishes a leased immutable packed completed-update root without
+waiting. Two bounded slots carry a monotonic generation, source input epoch,
+manager frame, update serial, exact fixed/dynamic ranges, and typed active
+records. The solver copies one slot once, validates its certificate, releases
+that exact lease, and gives one local immutable reader to both immediate and
+background consumers. The immediate path decodes packed active records
+directly; no full-pool or unchanged-frame live scan belongs to its action
+deadline. At the next input epoch the runtime atomically consumes only an
+action tagged for that exact epoch; otherwise it retains the held complete
+mask. The bridge supplies only input and observation data and never writes
+gameplay/RNG state.
 Linux/original semantic replay differential is required before its generated
 replay receives candidate authority.
 
@@ -69,7 +76,8 @@ is deferred until the route trace demonstrates nonzero fresh future/global
 action constraints. The first physical delivery trace did not: all 574 future
 captures failed and no corridor/query/constraint existed despite 2,866 clock-
 certified roots. The transitional producer therefore has no live authority
-and must not be described as physically connected.
+and must not be described as physically connected. Protocol v3 corrects that
+producer boundary in code, but has not yet been physically measured.
 
 The transitional online global policy uses a 4px continuous-position lower
 lattice with its 2.828px half-diagonal consumed as clearance and exactly one
@@ -79,14 +87,18 @@ contract and cannot authorize a controller that chooses again next frame. Any
 named hard action set may be intersected with fresher local safety but may not
 be relaxed. The Stage 1--5 no-writer and Final-B dynamic scale authorities are
 both wired into this exact-version join in code. Physical Gate 1 showed that
-neither producer can currently reach that join: the future capture still
-requires a large unchanged-frame observation and the no-writer source
-inventory remains synchronous in the foreground. The next implementation must
-publish a runtime-owned immutable packed root/certificate and perform no large
-source inventory inside the action deadline. The earliest completed future
+protocol v2 could not reach that join. Protocol v3 now moves runtime ECL
+identity, initial no-writer/dynamic scale-source binding, and future capture to
+background workers over the same immutable root generation. Its immediate
+tier enumerates packed active records rather than reconstructing complete
+pools. Compatibility full-pool reconstruction required by the historical
+future-source decoder occurs only against local immutable bytes in its
+background worker. The earliest completed future
 policy is preserved while pending and blocks newer submissions until
 activation; otherwise fast solves continually advance the pending source epoch
-and starve action authority.
+and starve action authority. Missing/corrupt roots, full slots, stale context
+or clock generations, unsupported sources, and timeout all fail closed. See
+`architecture/TH08_LINUX_IMMUTABLE_ROOT_20260827.md`.
 
 Manager-frame policy time has no standalone online authority. Each coherent
 Linux root also carries its source input epoch, dialogue predicate, and
@@ -105,8 +117,10 @@ and 32.17 ms p95 for complete read, decode, and plan. This is **observed**
 capacity evidence that the present Python foreground cannot be assumed to
 publish at 60 Hz. The online route therefore uses `8/12/8` only as its
 transitional immediate tier while the H80/4px global worker supplies depth.
-Meeting the hard deadline requires the proposed packed-root/shared native
-transition shield or an explicitly modeled finite fallback lease; increasing
+The packed-root foreground boundary is implemented, but meeting the hard
+deadline remains a hypothesis until its runtime pack, copy, compact decode,
+plan, and send distribution is measured. A shared native transition shield or
+an explicitly modeled finite fallback lease may still be required; increasing
 the Python beam is not an accepted remedy.
 
 Authored update order also limits what this transitional policy can prove.

@@ -175,16 +175,24 @@ problem.
 
 ### 1. Runtime-owned packed observation ring
 
-The Linux runtime should eventually publish an immutable packed root rather
-than require Python to reconstruct large object graphs from many scalar
-reads. The ring contains raw binary32/native fields and a monotonically
-versioned update epoch. The solver remains a separate process, and the runtime
-does not accept gameplay/RNG writes.
+This boundary is **implemented and deterministically verified, but not yet
+physically promoted**. Protocol v3 publishes one of two leased 32 MiB packed
+roots with a monotonic generation and exact source epoch. The solver copies
+the slot once, validates and releases the lease, and uses local immutable
+bytes thereafter. Immediate sensing decodes only typed active records; the
+historical full-slab compatibility view exists only for background consumers.
+The solver remains a separate process, and the runtime does not accept
+gameplay/RNG writes.
 
-This is **proposed**, not yet implemented. Its falsifier is measurable frame
-perturbation or semantic drift versus the current native state and replay
-differential. Until it passes, `/proc/<pid>/mem` coherent capture remains the
-authority.
+Runtime ECL identity, initial scale-source inventory, and future closure now
+receive the exact same root reader as the immediate tier. Their work may
+outlive the native epoch because the local root cannot change. Details and the
+lease/drop falsifiers are in `TH08_LINUX_IMMUTABLE_ROOT_20260827.md`.
+
+Its physical falsifier remains measurable frame perturbation, slot starvation,
+deadline regression, semantic drift, or a mismatch against replay/runtime
+evidence. No gameplay was run at this checkpoint, so 60 Hz capacity is still
+hypothesized.
 
 ### 2. Compiled source event tape
 

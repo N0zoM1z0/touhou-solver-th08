@@ -8,10 +8,11 @@ be used only by an explicitly bounded semantic differential test and cannot
 produce route-search or performance authority.
 
 Physical Gate 1 on 2026-08-27 validated the non-blocking wire and cadence gate
-but falsified the `/proc` future/source producer: 574/574 future submissions
-failed and no corridor, query, or constrained action existed. CE-0273 is the
-current implementation authority. The packed immutable runtime publication
-below is now required before another physical delivery gate.
+but falsified the protocol-v2 `/proc` future/source producer: 574/574 future
+submissions failed and no corridor, query, or constrained action existed.
+CE-0273 remains the physical authority. Protocol v3 now implements the packed
+immutable runtime publication below. It is build/test observed and has not yet
+received a physical delivery or 60 Hz performance claim.
 
 ## Physical objective and hard constraints
 
@@ -29,17 +30,23 @@ The runtime owns a contiguous `input_epoch` incremented for every
 `Controller::GetInput` sample. It is not `enemy_manager_frame`; the manager
 clock may freeze while held input still moves the player.
 
-After a completed logical update, the runtime publishes a small source/target
-epoch notification. The solver may then capture player/control/resource state,
-actual held input, complete current hazards, relevant enemy/ECL producer state,
-and time-scale state through `/proc/<pid>/mem`. Reads receive observation
-authority only when the exported input epoch equals the notification both
-before and after the complete capture; otherwise they are abandoned. A policy
-may use only that coherent observation and older retained artifacts. This
-bracket remains valid for small current-state reads, but Gate 1 proved it is
-not a workable producer for the large future/source root. A packed immutable
-runtime-owned snapshot ring or equivalent double buffer is required and not
-yet implemented.
+After a completed logical update, the runtime scans native active flags and
+packs the exact state needed by current and future consumers into a free
+runtime-owned slot. The protocol publication binds slot, generation, source
+epoch, packed size, and range count. The solver performs one logical `/proc`
+copy while the slot is leased, validates the inner certificate, queues an
+exact release, and never reads native gameplay state for model authority from
+that publication again. A policy may use only that immutable root and older
+retained artifacts.
+
+The immediate tier enumerates packed active bullet/laser/item/enemy records
+directly and preserves original slot indices. Runtime ECL identity, first
+scale-source binding, and future/global work receive the same root reader in
+background workers. The historical future decoder may synthesize complete
+zero-filled inactive slabs locally, but no such full-pool reconstruction or
+large live scan remains in the foreground action path. Small live bootstrap,
+result-screen, and final input-epoch deadline reads are lifecycle/delivery
+checks, not model roots. See `TH08_LINUX_IMMUTABLE_ROOT_20260827.md`.
 
 ### Dual-clock admission decision
 
@@ -84,10 +91,12 @@ Inside the solver, an action record is a complete no-Bomb mask tagged with:
 - publication timestamp and expiry;
 - authority source and fallback provenance.
 
-Protocol v2 sends only source epoch, target epoch, and the complete mask back
-to the game. Content/model/policy versions are checked before that send and
-retained in solver telemetry; the runtime enforces epoch and mask validity but
-does not independently decode those solver versions.
+Protocol v3 sends source epoch, target epoch, and the complete mask back to the
+game. Content/model/policy versions are checked before that send and retained
+in solver telemetry; the runtime enforces epoch and mask validity but does not
+independently decode those solver versions. A separate `T8RL` record releases
+only the exact `(slot, generation)` lease. The client sends the action packet
+before release traffic.
 
 At an input sample the runtime performs one non-blocking mailbox lookup. An
 exact-target valid action is sampled. Otherwise the held complete mask remains
@@ -126,11 +135,13 @@ state all match. Manager-frame policy time must additionally carry the exact
 input-epoch binding and current unit-cadence generation above. It intersects
 the global winning action set with the fresh local safe set. A missing or stale
 global result cannot widen local safety and cannot be reported as a global
-decision. The first integration gate requires nonzero complete future joins,
+decision. The physical integration gate requires nonzero complete future joins,
 fresh global queries, globally constrained issued actions, and nonzero
-clock-certified observations in an online trace. The first trace produced
+clock-certified observations in an online trace. The protocol-v2 trace produced
 2,866 certified roots but zero joins/queries/constraints, so this planner
-authority remains code-only and failed physical admission.
+authority remains code-only and failed physical admission. Protocol v3 closes
+the known immutable-observation wiring defect in code; it does not
+retroactively promote that trace.
 
 This future/corridor composition is the connected transition baseline, not a
 presumption that its world representation is optimal. Authored source shows

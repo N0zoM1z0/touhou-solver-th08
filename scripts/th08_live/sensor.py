@@ -62,24 +62,25 @@ class Sensor:
         self._laser_blob = memoryview(self._laser_buffer).cast("B")
         self._item_blob = memoryview(self._item_buffer).cast("B")
 
-    def capture_raw_pools(self) -> RawPoolCapture:
-        bullet_frame_before = self._reader.u32(
+    def capture_raw_pools(self, *, reader: Any | None = None) -> RawPoolCapture:
+        source = self._reader if reader is None else reader
+        bullet_frame_before = source.u32(
             ENEMY_MANAGER_FRAME_ADDRESS
         )
         started = self._clock()
-        self._reader.read_into(BULLET_POOL_BASE, self._bullet_buffer)
+        source.read_into(BULLET_POOL_BASE, self._bullet_buffer)
         bullet_pool_read_ms = (self._clock() - started) * 1000.0
-        bullet_frame_after = self._reader.u32(
+        bullet_frame_after = source.u32(
             ENEMY_MANAGER_FRAME_ADDRESS
         )
 
         started = self._clock()
-        self._reader.read_into(LASER_POOL_BASE, self._laser_buffer)
+        source.read_into(LASER_POOL_BASE, self._laser_buffer)
         laser_pool_read_ms = (self._clock() - started) * 1000.0
 
         if self._capture_items:
             started = self._clock()
-            self._reader.read_into(ITEM_MANAGER_BASE, self._item_buffer)
+            source.read_into(ITEM_MANAGER_BASE, self._item_buffer)
             item_pool_read_ms = (self._clock() - started) * 1000.0
         else:
             item_pool_read_ms = 0.0

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import struct
+from typing import Sequence
 
 from th08_laser_model import LaserPhase, LaserState
 from th08_laser_runtime import Laser
@@ -43,10 +44,30 @@ ITEM_MOTION_STATE_OFFSET = 0x02D7
 ITEM_FULL_VALUE_OFFSET = 0x02D8
 
 
-def decode_lasers(blob: bytes) -> tuple[Laser, ...]:
+def decode_lasers(
+    blob: bytes,
+    *,
+    record_slots: Sequence[int] | None = None,
+) -> tuple[Laser, ...]:
+    slots = (
+        tuple(range(LASER_POOL_SIZE))
+        if record_slots is None
+        else tuple(record_slots)
+    )
+    required_size = len(slots) * LASER_STRIDE
+    if (
+        len(blob) < required_size
+        or (record_slots is not None and len(blob) != required_size)
+    ):
+        raise ValueError(f"laser records require {required_size} bytes")
+    if (
+        any(type(slot) is not int or not 0 <= slot < LASER_POOL_SIZE for slot in slots)
+        or len(set(slots)) != len(slots)
+    ):
+        raise ValueError("laser record slots are invalid or duplicated")
     lasers: list[Laser] = []
-    for index in range(LASER_POOL_SIZE):
-        base = index * LASER_STRIDE
+    for record_index, slot in enumerate(slots):
+        base = record_index * LASER_STRIDE
         if not struct.unpack_from("<I", blob, base + LASER_ACTIVE_OFFSET)[0]:
             continue
         origin_x, origin_y = struct.unpack_from(
@@ -141,7 +162,7 @@ def decode_lasers(blob: bytes) -> tuple[Laser, ...]:
                 head,
                 min(abs(width) * 0.25, 64.0),
                 state,
-                index,
+                slot,
                 collision_flag,
                 0.75,
                 0.0,
@@ -150,10 +171,30 @@ def decode_lasers(blob: bytes) -> tuple[Laser, ...]:
     return tuple(lasers)
 
 
-def decode_items(blob: bytes) -> tuple[Item, ...]:
+def decode_items(
+    blob: bytes,
+    *,
+    record_slots: Sequence[int] | None = None,
+) -> tuple[Item, ...]:
+    slots = (
+        tuple(range(ITEM_POOL_SIZE))
+        if record_slots is None
+        else tuple(record_slots)
+    )
+    required_size = len(slots) * ITEM_STRIDE
+    if (
+        len(blob) < required_size
+        or (record_slots is not None and len(blob) != required_size)
+    ):
+        raise ValueError(f"item records require {required_size} bytes")
+    if (
+        any(type(slot) is not int or not 0 <= slot < ITEM_POOL_SIZE for slot in slots)
+        or len(set(slots)) != len(slots)
+    ):
+        raise ValueError("item record slots are invalid or duplicated")
     items: list[Item] = []
-    for index in range(ITEM_POOL_SIZE):
-        base = index * ITEM_STRIDE
+    for record_index, slot in enumerate(slots):
+        base = record_index * ITEM_STRIDE
         if not blob[base + ITEM_ACTIVE_OFFSET]:
             continue
         x, y = struct.unpack_from("<ff", blob, base + ITEM_POSITION_OFFSET)
@@ -162,7 +203,7 @@ def decode_items(blob: bytes) -> tuple[Item, ...]:
             continue
         items.append(
             Item(
-                slot=index,
+                slot=slot,
                 x=x,
                 y=y,
                 vx=vx,

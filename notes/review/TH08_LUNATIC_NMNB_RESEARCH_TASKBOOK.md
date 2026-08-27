@@ -234,11 +234,16 @@ certificate and matching async generation; dialogue/freeze/skip/mismatch
 revokes them. The authorized short Easy delivery trace has now failed this
 gate: 2,866 roots were clock-certified, but 574/574 future submissions failed
 and publication/query/constraint counts were zero. CE-0273 is the authority.
-Do not tune objectives, lead, grid, or beam and do not repeat the physical
-trace until a runtime-owned immutable packed source root/certificate replaces
-unchanged-frame `/proc` capture and the foreground owns no large source scan.
+Do not tune objectives, lead, grid, or beam. Protocol v3 now implements the
+required runtime-owned leased packed source root, direct active-record
+immediate decode, and one shared immutable reader for runtime identity, scale,
+future, and global workers. The foreground owns no full-pool or large live
+source scan. This is deterministic implementation evidence only; do not repeat
+the physical trace until the unchanged configuration can retain packed-root,
+producer, deadline, and held-fallback telemetry and a physical run is
+explicitly authorized.
 
-That trace is not yet a hard-safety promotion gate. Retained foreground timing
+That trace is not yet a hard-safety promotion gate. Retained protocol-v2 foreground timing
 is 17.72/32.17 ms mean/p95, and the current one-frame edge does not certify
 repeating a held direction across missed deadlines. The parallel nonphysical
 research gate is an H32 all-17-action source factorization that measures the

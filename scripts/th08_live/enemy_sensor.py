@@ -5,6 +5,7 @@ from __future__ import annotations
 import struct
 import time
 from dataclasses import replace
+from typing import Sequence
 
 from th08_enemy_collision import enemy_contact_size_to_lethal_half_extent
 from th08_live.bullet_decode import finite
@@ -180,17 +181,31 @@ def decode_enemy_bodies(
     pool_base: int = ENEMY_POOL_BASE,
     pool_size: int = ENEMY_POOL_SIZE,
     include_contact_disabled: bool = False,
+    record_slots: Sequence[int] | None = None,
 ) -> tuple[EnemyBody, ...]:
     """Decode ordinary enemy collision geometry from a contiguous pool."""
 
     if not 0 <= pool_size <= ENEMY_POOL_SIZE:
         raise ValueError("enemy pool size must belong to the native pool")
-    expected_size = pool_size * ENEMY_STRIDE
-    if len(blob) < expected_size:
-        raise ValueError(f"enemy pool requires {expected_size} bytes")
+    slots = (
+        tuple(range(pool_size))
+        if record_slots is None
+        else tuple(record_slots)
+    )
+    expected_size = len(slots) * ENEMY_STRIDE
+    if (
+        len(blob) < expected_size
+        or (record_slots is not None and len(blob) != expected_size)
+    ):
+        raise ValueError(f"enemy records require {expected_size} bytes")
+    if (
+        any(type(slot) is not int or not 0 <= slot < pool_size for slot in slots)
+        or len(set(slots)) != len(slots)
+    ):
+        raise ValueError("enemy record slots are invalid or duplicated")
     bodies: list[EnemyBody] = []
-    for slot in range(pool_size):
-        base = slot * ENEMY_STRIDE
+    for record_index, slot in enumerate(slots):
+        base = record_index * ENEMY_STRIDE
         flags = struct.unpack_from(
             "<I",
             blob,

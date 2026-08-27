@@ -13,6 +13,9 @@ REQUEST_SIZE = 32
 RESPONSE_SIZE = 24
 REPLAY_TARGET_STAMPED = 1 << 0
 LIVES_PRESERVED = 1 << 1
+IMMUTABLE_SNAPSHOT_PRESENT = 1 << 2
+# Version 1 has no immutable-root fields.  Its strict decoder must therefore
+# continue to reject the version-3-only flag.
 KNOWN_REQUEST_FLAGS = REPLAY_TARGET_STAMPED | LIVES_PRESERVED
 
 SHOOT = 1 << 0
