@@ -39,9 +39,9 @@ UNCONTROLLABLE_PLAYER_PHASES = frozenset((1, 2))
 class LinuxPlannerConfig:
     """Small generic local-planner contract for one blocked input epoch."""
 
-    horizon: int = 10
-    threat_horizon: int = 16
-    beam_width: int = 24
+    horizon: int = 8
+    threat_horizon: int = 12
+    beam_width: int = 8
     capture_items: bool = False
 
     def __post_init__(self) -> None:
@@ -138,6 +138,14 @@ class LinuxHazardCapture:
         )
         if not player_root.stable:
             raise RuntimeError("player control root changed while game was blocked")
+        if (
+            player_root.x_after != float(player["x"])
+            or player_root.y_after != float(player["y"])
+            or player_root.scale_bits != int(state["time_scale_bits"])
+        ):
+            raise RuntimeError(
+                "player/control state disagreed inside one blocked root"
+            )
         raw = self._sensor.capture_raw_pools()
         enemies = capture_enemy_pool_snapshot_contiguous(
             self._reader,

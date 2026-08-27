@@ -315,9 +315,11 @@ Linux runtime, and original replay is a localization tool, not a vote.
    unpatched original v1.00d both consume it through manager/replay frame 2,162
    and terminate naturally; all 2,063 aligned roots from frame 100 are exact
    after excluding only sampler-address provenance.
-7. **In progress:** connect the generic local planner epoch driver with zero
-   game-visible solver delay, then solve Easy practice roots followed by the
-   full Easy route.
+7. **Done for a nontrivial native prefix:** the generic local planner epoch
+   driver uses zero snapshot/pickup delay, one-epoch hold, and complete current
+   pools. A normal-start 3,600-gameplay-epoch Easy smoke has zero hit, Bomb, or
+   input-echo mismatch and exercises focused/fast motion. The next gate is the
+   uncapped full Easy route.
 8. Accept success only after the original Wine runtime completes that replay
    NMNB.
 

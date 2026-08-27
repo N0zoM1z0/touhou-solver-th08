@@ -3564,7 +3564,7 @@ continuous floating-point identity outside this trajectory.
 
 ### AUD-116 — The Linux epoch seam removes the asynchronous actuator model
 
-Status: **MINIMAL GENERIC ADAPTER PASSES OFFLINE; PHYSICAL SMOKE PENDING**
+Status: **GENERIC ADAPTER PASSES OFFLINE AND 3,600-EPOCH PHYSICAL SMOKE**
 
 The historical Wine controller observes and publishes from different polling
 epochs, so its local request legitimately carries snapshot lag, command pickup
@@ -3591,6 +3591,31 @@ ECL time-scale transition. Five focused tests cover the zero-delay contract,
 root coherence, death/respawn fallback, hard Bomb rejection, and one real
 incoming-bullet planner decision. Native pool capture and physical input remain
 the next falsifiers.
+
+The first native bootstrap exposed one additional measurement-origin bug before
+gameplay. The new route driver initially compared the request RNG against fixed
+memory while GameManager was registered but still loading. Setup can reseed
+between those two origins, exactly as the earlier replay driver records; input
+remains comparable, RNG does not. Restoring the source-backed
+`not registered or loading_state == 0` RNG-witness gate fixes bootstrap and all
+later stage-loading transitions without weakening gameplay checks.
+
+The corrected native smoke then completed 3,600 gameplay epochs from a normal
+Easy Sakuya/Remilia start. It made 3,739 wire/memory checks and 3,600 synchronous
+plans with zero input-echo mismatch, zero Bomb bit, and zero native hit edge.
+The action distribution includes every focused cardinal/diagonal direction and
+multiple fast directions: 337 epochs are non-stay decisions, so this is not an
+empty-field interface test. Full-pool read, decode, and plan total 26.68 ms mean
+and 33.39 ms p95; all solver wait is excluded from game-visible time.
+
+Seven independent 480-frame source-stateful cases also pass with the matching
+zero-latency, one-epoch-hold contract. Each performs 480 planner calls and
+complete future joins; the cohort reaches 1,069 simultaneously active bullets,
+has zero source/C lifecycle-position error, and records no collision, hit, or
+Bomb. A same-seed reduction from horizon/threat/beam `10/16/24` to `8/12/8`
+preserves that outcome while reducing planner p95 from 220.87 ms to 108.59 ms;
+six further seeds pass at the smaller configuration. The smaller generic
+configuration is therefore the Easy route default, not a stage/spell branch.
 
 ## Offline Verification Record
 

@@ -54,9 +54,13 @@ ordered implementation plan are in
   in both a fresh Linux process and the unpatched canonical v1.00d executable.
   From manager/replay frame 100 through 2,162, all 2,063 aligned semantic roots
   are exact after excluding only sampler-address provenance. This closes the
-  reverse-replay compatibility gate for the retained trajectory. The next
-  implementation step is a small synchronous one-epoch generic local-planner
-  driver; do not port the historical asynchronous Wine loop wholesale.
+  reverse-replay compatibility gate for the retained trajectory. A small
+  synchronous one-epoch generic local-planner driver is now active: zero
+  snapshot lag, zero pickup delay, one-epoch hold, complete current pools, and
+  no historical Wine pending/no-write transaction model. A normal-start
+  3,600-epoch Easy smoke completed with zero hit/Bomb/input-echo mismatch and
+  337 non-stay focused/fast decisions. The next physical gate is one uncapped
+  full Easy route; do not port the historical asynchronous Wine loop wholesale.
 - **Current Easy physical/local checkpoint:** accepted Final-B Practice
   `easy_route2_stage6b_unattended_20260826_051733` remains the best result at
   nine hits and zero Bomb input, versus 18 hits in the paired baseline.  Source and native
@@ -829,9 +833,9 @@ full route or re-enable non-authoritative global work yet:
    sample in both runtimes, then replay a normally saved Linux-origin file in a
    fresh Linux process and the original v1.00d Wine process. The aligned
    reverse trace is exact through natural game over;
-5. **In progress:** connect a generic one-epoch Easy local planner. Practice
-   and full-route runs remain milestone validations rather than the development
-   loop.
+5. **Done for a nontrivial Stage-1 prefix:** connect a generic one-epoch Easy
+   local planner and pass a 3,600-gameplay-epoch native smoke. The next gate is
+   one full Easy route with no gameplay-duration cap.
 
 Never unblock corridor action authority by provenance alone. The current
 active-spell request can omit future births, so scale, complete reached-source

@@ -7,7 +7,6 @@ import argparse
 from dataclasses import asdict
 import json
 from pathlib import Path
-import subprocess
 import sys
 
 SCRIPTS = Path(__file__).resolve().parents[1]
@@ -30,6 +29,7 @@ from th08_linux import (  # noqa: E402
     validate_request_memory_witness,
 )
 from th08_replay import decode_replay  # noqa: E402
+from th08_linux.elf import resolve_defined_symbol  # noqa: E402
 
 
 RESULT_UPDATE_SYMBOL = "_ZN4th0812ResultScreen8OnUpdateEPS0_"
@@ -46,26 +46,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--maximum-bootstrap-epochs", type=int, default=4096)
     parser.add_argument("--startup-timeout-seconds", type=float, default=120.0)
     return parser
-
-
-def _resolve_defined_symbol(executable: Path, symbol: str) -> int:
-    completed = subprocess.run(
-        ["nm", "-P", "--defined-only", str(executable)],
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    matches = []
-    for line in completed.stdout.splitlines():
-        fields = line.split()
-        if len(fields) >= 3 and fields[0] == symbol:
-            matches.append(int(fields[2], 16))
-    if len(matches) != 1:
-        raise RuntimeError(
-            f"expected one defined ELF symbol {symbol}, found {len(matches)}"
-        )
-    return matches[0]
 
 
 def _transition(
@@ -108,7 +88,7 @@ def run(args: argparse.Namespace) -> int:
             f"diagnostic replay slot must be empty: {replay_path}"
         )
 
-    result_callback = _resolve_defined_symbol(executable, RESULT_UPDATE_SYMBOL)
+    result_callback = resolve_defined_symbol(executable, RESULT_UPDATE_SYMBOL)
     title_driver = RouteTitleDriver(
         difficulty_index=EASY_DIFFICULTY,
         shot_type_index=SAKUYA_REMILIA_SHOT_TYPE,

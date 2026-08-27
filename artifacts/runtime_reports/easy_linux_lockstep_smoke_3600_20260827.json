@@ -1,0 +1,261 @@
+{
+  "action_counts": {
+    "down": 47,
+    "down_fast": 1,
+    "down_left": 33,
+    "down_left_fast": 2,
+    "down_right": 44,
+    "left": 48,
+    "left_fast": 3,
+    "right": 38,
+    "right_fast": 8,
+    "stay": 3263,
+    "up": 21,
+    "up_fast": 9,
+    "up_left": 34,
+    "up_left_fast": 4,
+    "up_right": 42,
+    "up_right_fast": 3
+  },
+  "bomb_policy_violations": 0,
+  "bridge_epochs": 3739,
+  "contract": {
+    "action_hold_frames": 1,
+    "control_delay_frames": [
+      0
+    ],
+    "diagnostic_gameplay_epoch_cap": 3600,
+    "future_birth_authority": false,
+    "gameplay_duration_limit": null,
+    "snapshot_lag_frames": 0,
+    "time_scale": "root constant-horizon assumption, replanned each epoch"
+  },
+  "elapsed_wall_seconds": 168.0804550180037,
+  "failure": null,
+  "finish_reason": "diagnostic-gameplay-epoch-cap",
+  "first_gameplay_frame": 1,
+  "gameplay_epochs": 3600,
+  "gameplay_ready_epoch": 139,
+  "hit_count": 0,
+  "hits": [],
+  "input_echo_mismatches": [],
+  "last_gameplay_frame": 3600,
+  "observed_stage_route_indices": [
+    0
+  ],
+  "planned_epochs": 3600,
+  "planner": {
+    "beam_width": 8,
+    "capture_items": false,
+    "horizon": 8,
+    "threat_horizon": 12
+  },
+  "replay": null,
+  "replay_bomb_frames": [],
+  "replay_output": null,
+  "replay_source": null,
+  "result_update_address": 135100268,
+  "result_update_symbol": "_ZN4th0812ResultScreen8OnUpdateEPS0_",
+  "route_completion_observed": false,
+  "runtime": {
+    "path": "/home/yann/yann/touhou/th08-research/th08-linux-solver-runtime/build/modern-linux/th08-modern",
+    "sha256": "0bd9685c8c1a7cc57a4aaee9c1a449485b8539c9a6272bcb22d70c7a9fe9f1f1",
+    "size": 3948452
+  },
+  "runtime_log_tail": null,
+  "schema": "th08-linux-easy-lockstep-route-v1",
+  "stage_hit_counts": {},
+  "target": {
+    "difficulty_index": 0,
+    "hard_no_bomb": true,
+    "lives_preserved": true,
+    "shot_type_index": 2
+  },
+  "timings": {
+    "decode": {
+      "count": 3600,
+      "max_ms": 5.67077100276947,
+      "mean_ms": 0.6933057221936502,
+      "p95_ms": 1.3820300082443282
+    },
+    "planning": {
+      "count": 3600,
+      "max_ms": 32.93797200603876,
+      "mean_ms": 18.940927846698386,
+      "p95_ms": 24.88090099359397
+    },
+    "pool_read": {
+      "count": 3600,
+      "max_ms": 14.247661005356349,
+      "mean_ms": 7.048161515259482,
+      "p95_ms": 7.858950993977487
+    },
+    "total_solver": {
+      "count": 3600,
+      "max_ms": 41.3119719887618,
+      "mean_ms": 26.68239508415152,
+      "p95_ms": 33.39344101550523
+    }
+  },
+  "transitions": [
+    {
+      "action": "wait-title-root",
+      "cursor": null,
+      "epoch": 1,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "wait-title-lifecycle",
+      "cursor": 0,
+      "epoch": 2,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": 0
+    },
+    {
+      "action": "wait-screen-ready",
+      "cursor": 0,
+      "epoch": 38,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": 0
+    },
+    {
+      "action": "wait-start-confirm-gate",
+      "cursor": 0,
+      "epoch": 48,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": 0
+    },
+    {
+      "action": "confirm-start",
+      "cursor": 0,
+      "epoch": 57,
+      "input_mask": 1,
+      "phase": "title",
+      "screen": 0
+    },
+    {
+      "action": "release",
+      "cursor": null,
+      "epoch": 58,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "wait-screen-ready",
+      "cursor": 0,
+      "epoch": 59,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": 4
+    },
+    {
+      "action": "confirm-difficulty",
+      "cursor": 0,
+      "epoch": 67,
+      "input_mask": 1,
+      "phase": "title",
+      "screen": 4
+    },
+    {
+      "action": "release",
+      "cursor": null,
+      "epoch": 68,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "wait-screen-ready",
+      "cursor": 0,
+      "epoch": 69,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": 5
+    },
+    {
+      "action": "select-shot-type",
+      "cursor": 0,
+      "epoch": 77,
+      "input_mask": 128,
+      "phase": "title",
+      "screen": 5
+    },
+    {
+      "action": "release",
+      "cursor": null,
+      "epoch": 78,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "select-shot-type",
+      "cursor": 1,
+      "epoch": 79,
+      "input_mask": 128,
+      "phase": "title",
+      "screen": 5
+    },
+    {
+      "action": "release",
+      "cursor": null,
+      "epoch": 80,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "confirm-shot-type",
+      "cursor": 2,
+      "epoch": 81,
+      "input_mask": 1,
+      "phase": "title",
+      "screen": 5
+    },
+    {
+      "action": "release",
+      "cursor": null,
+      "epoch": 82,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "wait-gameplay-load",
+      "epoch": 83,
+      "loading_state": 1,
+      "phase": "gameplay-load",
+      "stage_route_index": 0
+    },
+    {
+      "action": "gameplay-ready",
+      "epoch": 139,
+      "loading_state": 0,
+      "phase": "gameplay-load",
+      "stage_route_index": 0
+    },
+    {
+      "action_reason": "local-current-hazard-plan",
+      "epoch": 140,
+      "frame": 1,
+      "phase": "gameplay",
+      "player_phase": 3,
+      "stage_route_index": 0
+    },
+    {
+      "action_reason": "local-current-hazard-plan",
+      "epoch": 379,
+      "frame": 240,
+      "phase": "gameplay",
+      "player_phase": 0,
+      "stage_route_index": 0
+    }
+  ],
+  "wire_memory_checks": 3739
+}
