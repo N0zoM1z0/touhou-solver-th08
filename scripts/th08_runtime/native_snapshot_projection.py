@@ -60,11 +60,17 @@ from th08_native_future_body_root import (
     TH08_ENEMY_MANAGER_TEMPLATE_BASE,
     TH08_TIMELINE_RUNTIME_BASE,
 )
+from th08_runtime.effect_projection import (
+    EFFECT_MANAGER_BASE,
+    EFFECT_POOL_OFFSET,
+    EFFECT_SLOT_COUNT,
+    EFFECT_SLOT_STRIDE,
+)
 from th08_runtime.game_state import ADDR_PLAYER
 
 
 COLLISION_CONTROL_PROJECTION_SCHEMA = (
-    "th08-native-snapshot-collision-control-projection-v14"
+    "th08-native-snapshot-collision-control-projection-v15"
 )
 
 # Revalidated in bullet_manager_update (0x00431240).  These two adjacent
@@ -128,6 +134,16 @@ ENEMY_HEALTH_TRANSITION_COUNT = 4
 ENEMY_HEALTH_TRANSITION_SUCCESSORS_OFFSET = 0x3368
 ENEMY_TIMEOUT_TRANSITION_FRAME_OFFSET = 0x3378
 ENEMY_TIMEOUT_TRANSITION_SUBROUTINE_OFFSET = 0x337C
+
+# ECL opcode 128 appends one EffectManager pointer to this fixed 24-entry
+# enemy-local registry. Boss unregistration and enemy retirement consume the
+# same count/pointers in Enemy::FUN_0042a820 (retail 0x0042A820). Normalize
+# pointers to allocator slots so Wine and native Linux can be compared without
+# retaining process addresses.
+ENEMY_ATTACHED_EFFECT_POINTERS_OFFSET = 0x5360
+ENEMY_ATTACHED_EFFECT_POINTER_CAPACITY = 24
+ENEMY_ATTACHED_EFFECT_COUNT_OFFSET = 0x53C0
+EFFECT_POOL_BASE = EFFECT_MANAGER_BASE + EFFECT_POOL_OFFSET
 
 # Revalidated in enemy_ecl_vm_step (0x004184B0), enemy_motion_update
 # (0x00422C40), and the internal-position integrator (0x0042DEB0).
@@ -536,6 +552,12 @@ def _enemy_source_record(
             enemy_blob,
             inventory,
         ),
+        "attached_effect_owners": _enemy_attached_effect_records(
+            enemy_blob,
+            pool_base=pool_base,
+            pool_size=pool_size,
+            source_role=source_role,
+        ),
         "auxiliary_ecl_contexts": _enemy_auxiliary_ecl_context_records(
             reader,
             inventory,
@@ -749,6 +771,95 @@ def _enemy_phase_transition_state_records(
             "integer_phase_timer_timeout_registry_for_bounded_transition_"
             "reachability"
         ),
+        "rows": rows,
+    }
+
+
+def _effect_slot_for_pointer(pointer: int) -> int | None:
+    if pointer < EFFECT_POOL_BASE:
+        return None
+    relative = pointer - EFFECT_POOL_BASE
+    if relative % EFFECT_SLOT_STRIDE:
+        return None
+    slot = relative // EFFECT_SLOT_STRIDE
+    if not 0 <= slot < EFFECT_SLOT_COUNT:
+        return None
+    return slot
+
+
+def _enemy_attached_effect_records(
+    enemy_blob: bytes,
+    *,
+    pool_base: int = ENEMY_POOL_BASE,
+    pool_size: int = ENEMY_POOL_SIZE,
+    source_role: str = "ordinary_enemy_pool",
+) -> dict[str, object]:
+    """Decode the opcode-128 owner registry consumed by boss cleanup."""
+
+    expected_size = pool_size * ENEMY_STRIDE
+    if len(enemy_blob) < expected_size:
+        raise ValueError(
+            f"enemy attached-effect registry requires {expected_size} bytes"
+        )
+
+    rows: list[dict[str, object]] = []
+    for slot in range(pool_size):
+        base = slot * ENEMY_STRIDE
+        flags = struct.unpack_from(
+            "<I",
+            enemy_blob,
+            base + ENEMY_FLAGS_OFFSET,
+        )[0]
+        count = struct.unpack_from(
+            "<i",
+            enemy_blob,
+            base + ENEMY_ATTACHED_EFFECT_COUNT_OFFSET,
+        )[0]
+        active = bool(flags & ENEMY_ACTIVE_FLAG)
+        if not active and count == 0:
+            continue
+
+        count_valid = 0 <= count <= ENEMY_ATTACHED_EFFECT_POINTER_CAPACITY
+        references: list[dict[str, object]] = []
+        if count_valid:
+            pointers = struct.unpack_from(
+                f"<{count}I",
+                enemy_blob,
+                base + ENEMY_ATTACHED_EFFECT_POINTERS_OFFSET,
+            ) if count else ()
+            for reference_index, pointer in enumerate(pointers):
+                effect_slot = _effect_slot_for_pointer(pointer)
+                references.append(
+                    {
+                        "reference_index": reference_index,
+                        "present": pointer != 0,
+                        "effect_slot": effect_slot,
+                        "points_to_effect_pool_slot": effect_slot is not None,
+                    }
+                )
+
+        rows.append(
+            {
+                "slot": slot,
+                "enemy_pointer": pool_base + base,
+                "active": active,
+                "boss": bool(flags & 2),
+                "attached_effect_count": count,
+                "count_valid": count_valid,
+                "references": references,
+            }
+        )
+
+    return {
+        "schema": "th08-enemy-attached-effect-owner-registry-v1",
+        "source_role": source_role,
+        "scope": (
+            "active_or_nonzero_owner_count_and_pointer_to_effect_slot_"
+            "normalization"
+        ),
+        "pointer_exclusions": [
+            "effect_addresses_replaced_by_allocator_slot_identity"
+        ],
         "rows": rows,
     }
 
@@ -1566,6 +1677,9 @@ def capture_collision_control_projection(
                 enemy_ecl_inventory,
             )
         ),
+        "enemy_attached_effect_owners": _enemy_attached_effect_records(
+            enemy_blob,
+        ),
         "enemy_auxiliary_ecl_contexts": (
             _enemy_auxiliary_ecl_context_records(
                 reader,
@@ -1592,6 +1706,22 @@ def capture_collision_control_projection(
         "active_enemy_periodic_emitter_count": sum(
             bool(row["enabled"])
             for row in payload["enemy_periodic_emission_state"]["rows"]
+        ),
+        "enemy_attached_effect_owner_count": len(
+            payload["enemy_attached_effect_owners"]["rows"]
+        ) + len(
+            manager_template_source["attached_effect_owners"]["rows"]
+        ),
+        "enemy_attached_effect_reference_count": sum(
+            int(row["attached_effect_count"])
+            for row in payload["enemy_attached_effect_owners"]["rows"]
+            if bool(row["count_valid"])
+        ) + sum(
+            int(row["attached_effect_count"])
+            for row in manager_template_source["attached_effect_owners"][
+                "rows"
+            ]
+            if bool(row["count_valid"])
         ),
         "active_enemy_installed_callback_count": (
             sum(

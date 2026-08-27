@@ -39,7 +39,11 @@ from th08_runtime.native_snapshot_projection import (
     CollisionControlProjection,
     ECL_DIFFICULTY_MASK_ADDRESS,
     ECL_FILE_CONTEXT_ADDRESS,
+    EFFECT_POOL_BASE,
+    EFFECT_SLOT_STRIDE,
     ENEMY_ANM_PREFIX_SIZE,
+    ENEMY_ATTACHED_EFFECT_COUNT_OFFSET,
+    ENEMY_ATTACHED_EFFECT_POINTERS_OFFSET,
     ENEMY_HITPOINTS_OFFSET,
     ENEMY_MAX_HITPOINTS_OFFSET,
     ENEMY_MOTION_DURATION_OFFSET,
@@ -69,6 +73,7 @@ from th08_runtime.native_snapshot_projection import (
     _bullet_lifecycle_records,
     _bullet_template_geometry_record,
     _enemy_auxiliary_ecl_context_records,
+    _enemy_attached_effect_records,
     _enemy_current_instruction_records,
     _enemy_main_ecl_callback_records,
     _enemy_main_ecl_inventory_record,
@@ -89,6 +94,49 @@ def _component(name: str, data: bytes) -> object:
 
 
 class NativeSnapshotProjectionTests(unittest.TestCase):
+    def test_enemy_attached_effect_registry_normalizes_allocator_slots(
+        self,
+    ) -> None:
+        enemy_blob = bytearray(ENEMY_POOL_SIZE * ENEMY_STRIDE)
+        struct.pack_into(
+            "<I",
+            enemy_blob,
+            ENEMY_FLAGS_OFFSET,
+            ENEMY_ACTIVE_FLAG | 2,
+        )
+        struct.pack_into(
+            "<i",
+            enemy_blob,
+            ENEMY_ATTACHED_EFFECT_COUNT_OFFSET,
+            4,
+        )
+        struct.pack_into(
+            "<4I",
+            enemy_blob,
+            ENEMY_ATTACHED_EFFECT_POINTERS_OFFSET,
+            EFFECT_POOL_BASE + 7 * EFFECT_SLOT_STRIDE,
+            0,
+            EFFECT_POOL_BASE + 511 * EFFECT_SLOT_STRIDE,
+            EFFECT_POOL_BASE + 1,
+        )
+
+        result = _enemy_attached_effect_records(bytes(enemy_blob))
+
+        self.assertEqual(len(result["rows"]), 1)
+        row = result["rows"][0]
+        self.assertTrue(row["active"])
+        self.assertTrue(row["boss"])
+        self.assertEqual(row["attached_effect_count"], 4)
+        self.assertTrue(row["count_valid"])
+        self.assertEqual(
+            [reference["effect_slot"] for reference in row["references"]],
+            [7, None, 511, None],
+        )
+        self.assertEqual(
+            [reference["present"] for reference in row["references"]],
+            [True, False, True, True],
+        )
+
     def test_enemy_state2_retains_causal_timed_motion_root(self) -> None:
         enemy_blob = bytearray(ENEMY_STRIDE)
         flags = ENEMY_ACTIVE_FLAG | (2 << 12) | (5 << 14)
