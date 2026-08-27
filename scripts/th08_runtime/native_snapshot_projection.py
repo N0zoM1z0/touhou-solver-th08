@@ -143,6 +143,8 @@ ENEMY_TIMEOUT_TRANSITION_SUBROUTINE_OFFSET = 0x337C
 ENEMY_ATTACHED_EFFECT_POINTERS_OFFSET = 0x5360
 ENEMY_ATTACHED_EFFECT_POINTER_CAPACITY = 24
 ENEMY_ATTACHED_EFFECT_COUNT_OFFSET = 0x53C0
+ENEMY_DEATH_CALLBACK_SUBROUTINE_OFFSET = 0x2CEE
+ENEMY_SECONDARY_FLAGS_OFFSET = 0x3328
 EFFECT_POOL_BASE = EFFECT_MANAGER_BASE + EFFECT_POOL_OFFSET
 
 # Revalidated in enemy_ecl_vm_step (0x004184B0), enemy_motion_update
@@ -810,6 +812,16 @@ def _enemy_attached_effect_records(
             enemy_blob,
             base + ENEMY_FLAGS_OFFSET,
         )[0]
+        secondary_flags = struct.unpack_from(
+            "<I",
+            enemy_blob,
+            base + ENEMY_SECONDARY_FLAGS_OFFSET,
+        )[0]
+        death_callback_subroutine = struct.unpack_from(
+            "<h",
+            enemy_blob,
+            base + ENEMY_DEATH_CALLBACK_SUBROUTINE_OFFSET,
+        )[0]
         count = struct.unpack_from(
             "<i",
             enemy_blob,
@@ -844,6 +856,12 @@ def _enemy_attached_effect_records(
                 "enemy_pointer": pool_base + base,
                 "active": active,
                 "boss": bool(flags & 2),
+                "primary_flags": flags,
+                "secondary_flags": secondary_flags,
+                "death_mode": (flags >> 20) & 7,
+                "death_latch": bool(secondary_flags & (1 << 3)),
+                "no_death": bool(secondary_flags & (1 << 6)),
+                "death_callback_subroutine": death_callback_subroutine,
                 "attached_effect_count": count,
                 "count_valid": count_valid,
                 "references": references,
@@ -851,7 +869,7 @@ def _enemy_attached_effect_records(
         )
 
     return {
-        "schema": "th08-enemy-attached-effect-owner-registry-v1",
+        "schema": "th08-enemy-attached-effect-owner-registry-v2",
         "source_role": source_role,
         "scope": (
             "active_or_nonzero_owner_count_and_pointer_to_effect_slot_"

@@ -44,6 +44,7 @@ from th08_runtime.native_snapshot_projection import (
     ENEMY_ANM_PREFIX_SIZE,
     ENEMY_ATTACHED_EFFECT_COUNT_OFFSET,
     ENEMY_ATTACHED_EFFECT_POINTERS_OFFSET,
+    ENEMY_DEATH_CALLBACK_SUBROUTINE_OFFSET,
     ENEMY_HITPOINTS_OFFSET,
     ENEMY_MAX_HITPOINTS_OFFSET,
     ENEMY_MOTION_DURATION_OFFSET,
@@ -57,6 +58,7 @@ from th08_runtime.native_snapshot_projection import (
     ENEMY_PERIODIC_EMISSION_DESCRIPTOR_OFFSET,
     ENEMY_PERIODIC_EMISSION_PERIOD_OFFSET,
     ENEMY_PERIODIC_EMISSION_TIMER_OFFSET,
+    ENEMY_SECONDARY_FLAGS_OFFSET,
     ENEMY_TIMEOUT_TRANSITION_FRAME_OFFSET,
     ENEMY_TIMEOUT_TRANSITION_SUBROUTINE_OFFSET,
     FRSCREEN_INNER_POINTER_OFFSET,
@@ -119,6 +121,18 @@ class NativeSnapshotProjectionTests(unittest.TestCase):
             EFFECT_POOL_BASE + 511 * EFFECT_SLOT_STRIDE,
             EFFECT_POOL_BASE + 1,
         )
+        struct.pack_into(
+            "<I",
+            enemy_blob,
+            ENEMY_SECONDARY_FLAGS_OFFSET,
+            (1 << 3) | (1 << 6),
+        )
+        struct.pack_into(
+            "<h",
+            enemy_blob,
+            ENEMY_DEATH_CALLBACK_SUBROUTINE_OFFSET,
+            45,
+        )
 
         result = _enemy_attached_effect_records(bytes(enemy_blob))
 
@@ -126,6 +140,10 @@ class NativeSnapshotProjectionTests(unittest.TestCase):
         row = result["rows"][0]
         self.assertTrue(row["active"])
         self.assertTrue(row["boss"])
+        self.assertEqual(row["death_mode"], 0)
+        self.assertTrue(row["death_latch"])
+        self.assertTrue(row["no_death"])
+        self.assertEqual(row["death_callback_subroutine"], 45)
         self.assertEqual(row["attached_effect_count"], 4)
         self.assertTrue(row["count_valid"])
         self.assertEqual(
