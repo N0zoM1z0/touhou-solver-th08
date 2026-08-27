@@ -21,9 +21,9 @@ from th08_linux.protocol import (
 )
 
 
-PROTOCOL_VERSION = 3
-REQUEST_SIZE = 80
-RESPONSE_SIZE = 32
+PROTOCOL_VERSION = 4
+REQUEST_SIZE = 104
+RESPONSE_SIZE = 40
 SNAPSHOT_RELEASE_SIZE = 24
 SNAPSHOT_RELEASE_MAGIC = 0x4C523854  # "T8RL" as little endian.
 NO_SNAPSHOT_SLOT = 0xFFFF
@@ -34,8 +34,8 @@ KNOWN_ONLINE_REQUEST_FLAGS = (
     | IMMUTABLE_SNAPSHOT_PRESENT
 )
 
-_REQUEST = struct.Struct("<IHHQQHHHHIIIIQQIIII")
-_RESPONSE = struct.Struct("<IHHQQHHI")
+_REQUEST = struct.Struct("<IHHQQHHHHIIIIQQIIIIIIIIII")
+_RESPONSE = struct.Struct("<IHHQQHHQI")
 _SNAPSHOT_RELEASE = struct.Struct("<IHHQHHI")
 
 
@@ -57,6 +57,12 @@ class OnlineInputRequest:
     snapshot_size: int
     snapshot_entry_count: int
     dropped_snapshots: int
+    snapshot_pack_us: int
+    certified_fallbacks: int
+    uncertified_fallbacks: int
+    consecutive_fallbacks: int
+    maximum_consecutive_fallbacks: int
+    lease_revocations: int
 
     @property
     def epoch(self) -> int:
@@ -107,6 +113,12 @@ def decode_online_request(data: bytes) -> OnlineInputRequest:
         snapshot_size,
         snapshot_entry_count,
         dropped_snapshots,
+        snapshot_pack_us,
+        certified_fallbacks,
+        uncertified_fallbacks,
+        consecutive_fallbacks,
+        maximum_consecutive_fallbacks,
+        lease_revocations,
     ) = _REQUEST.unpack(data)
     if magic != REQUEST_MAGIC:
         raise ValueError(f"unknown online request magic {magic:#010x}")
@@ -144,6 +156,8 @@ def decode_online_request(data: bytes) -> OnlineInputRequest:
         or snapshot_entry_count != 0
     ):
         raise ValueError("snapshot metadata is present without its request flag")
+    if consecutive_fallbacks > maximum_consecutive_fallbacks:
+        raise ValueError("online fallback counters are inconsistent")
     return OnlineInputRequest(
         source_epoch=source_epoch,
         target_epoch=target_epoch,
@@ -161,6 +175,12 @@ def decode_online_request(data: bytes) -> OnlineInputRequest:
         snapshot_size=snapshot_size,
         snapshot_entry_count=snapshot_entry_count,
         dropped_snapshots=dropped_snapshots,
+        snapshot_pack_us=snapshot_pack_us,
+        certified_fallbacks=certified_fallbacks,
+        uncertified_fallbacks=uncertified_fallbacks,
+        consecutive_fallbacks=consecutive_fallbacks,
+        maximum_consecutive_fallbacks=maximum_consecutive_fallbacks,
+        lease_revocations=lease_revocations,
     )
 
 
@@ -169,11 +189,24 @@ def encode_online_response(
     source_epoch: int,
     target_epoch: int,
     input_mask: int,
+    continuation_frames: int = 0,
+    snapshot_generation: int = 0,
 ) -> bytes:
     if source_epoch <= 0 or source_epoch > 0xFFFFFFFFFFFFFFFF:
         raise ValueError("source epoch must be a positive unsigned 64-bit value")
     if target_epoch != source_epoch + 1 or target_epoch > 0xFFFFFFFFFFFFFFFF:
         raise ValueError("response must target exactly source epoch + 1")
+    if not 0 <= continuation_frames <= 8:
+        raise ValueError("continuation lease must contain at most eight frames")
+    if continuation_frames:
+        if snapshot_generation <= 0 or snapshot_generation > 0xFFFFFFFFFFFFFFFF:
+            raise ValueError(
+                "continuation lease requires a positive snapshot generation"
+            )
+    elif snapshot_generation != 0:
+        raise ValueError(
+            "snapshot generation is invalid without a continuation lease"
+        )
     mask = validate_hard_no_bomb_mask(input_mask)
     return _RESPONSE.pack(
         RESPONSE_MAGIC,
@@ -182,7 +215,8 @@ def encode_online_response(
         source_epoch,
         target_epoch,
         mask,
-        0,
+        continuation_frames,
+        snapshot_generation,
         0,
     )
 

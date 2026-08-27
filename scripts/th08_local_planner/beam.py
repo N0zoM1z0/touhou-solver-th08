@@ -152,6 +152,348 @@ def _retain_first_action_strata(
     )
 
 
+def _vectorized_boundary_risk(
+    positions_x: np.ndarray,
+    positions_y: np.ndarray,
+    *,
+    context: BaselineBeamContext,
+) -> np.ndarray:
+    """Evaluate the scalar boundary objective in the same operation order."""
+
+    x = positions_x.astype(np.float64, copy=False)
+    y = positions_y.astype(np.float64, copy=False)
+    horizontal = np.minimum(
+        x - context.playfield_left,
+        context.playfield_right - x,
+    )
+    vertical = np.minimum(
+        y - context.playfield_top,
+        context.playfield_bottom - y,
+    )
+    risk = np.zeros(len(x), dtype=np.float64)
+    horizontal_near = horizontal < 12.0
+    if np.any(horizontal_near):
+        distance = 12.0 - horizontal[horizontal_near]
+        risk[horizontal_near] += 2.0 * distance * distance
+    vertical_near = vertical < 12.0
+    if np.any(vertical_near):
+        distance = 12.0 - vertical[vertical_near]
+        risk[vertical_near] += 3.0 * distance * distance
+    corner_near = (horizontal < 20.0) & (vertical < 20.0)
+    if np.any(corner_near):
+        risk[corner_near] += (
+            (20.0 - horizontal[corner_near])
+            * (20.0 - vertical[corner_near])
+        )
+    return risk
+
+
+def _run_native_vectorized_beam(
+    context: BaselineBeamContext,
+    *,
+    directions_opposed: Callable[[int, int], bool],
+    hazard_query: Callable[..., tuple[np.ndarray, np.ndarray, np.ndarray]],
+    native_reducer: Callable[..., np.ndarray | None],
+) -> list[SearchNode] | None:
+    """Run the parity-gated no-item beam without per-draft Python objects.
+
+    The native reducer historically received arrays only after Python had
+    expanded every parent/action pair, executed scalar movement, and rebuilt
+    the same arrays with ``fromiter``.  Online play does not capture items, so
+    that conversion dominated the small 8/12/8 deadline path.  Keep the exact
+    reducer/ranking contract and binary32 movement boundaries, but retain the
+    beam as structure-of-arrays until the at-most-``beam_width`` survivors of
+    each layer are known.
+    """
+
+    if not context.native_beam_enabled or context.selected_items:
+        return None
+    action_count = len(context.actions)
+    if action_count <= 0 or len(context.initial_beam) <= 0:
+        return []
+    mapping = context.planner_action_indices
+    if set(mapping) != {action.name for action in context.actions}:
+        raise ValueError("native beam action mapping is incomplete")
+    if set(mapping.values()) != set(range(action_count)):
+        raise ValueError("native beam action mapping is noncanonical")
+
+    action_by_index: list[PlannerAction | None] = [None] * action_count
+    for action in context.actions:
+        action_by_index[mapping[action.name]] = action
+    if any(action is None for action in action_by_index):
+        raise ValueError("native beam action mapping contains a hole")
+    actions = tuple(
+        action for action in action_by_index if action is not None
+    )
+    action_dx = np.asarray(
+        [action.dx for action in actions],
+        dtype=np.float32,
+    )
+    action_dy = np.asarray(
+        [action.dy for action in actions],
+        dtype=np.float32,
+    )
+    action_direction = np.asarray(
+        [action.direction for action in actions],
+        dtype=np.int32,
+    )
+    action_focused = np.asarray(
+        [action.focused for action in actions],
+        dtype=np.uint8,
+    )
+    opposed = np.asarray(
+        [
+            [
+                directions_opposed(current.direction, previous.direction)
+                for previous in actions
+            ]
+            for current in actions
+        ],
+        dtype=np.bool_,
+    )
+    opposed_to_previous = np.asarray(
+        [
+            directions_opposed(action.direction, context.previous_direction)
+            for action in actions
+        ],
+        dtype=np.bool_,
+    )
+    all_action_indices = np.arange(action_count, dtype=np.int32)
+    first_action_indices = all_action_indices
+    if context.effective_allowed_first_actions is not None:
+        allowed = set(context.effective_allowed_first_actions)
+        first_action_indices = np.asarray(
+            [
+                mapping[action.name]
+                for action in context.actions
+                if action.name in allowed
+            ],
+            dtype=np.int32,
+        )
+    if len(first_action_indices) == 0:
+        return []
+
+    preserve_boundary_action_strata = _boundary_action_strata_required(
+        context
+    )
+    beam = list(context.initial_beam)
+    for step in range(1, context.horizon + 1):
+        parent_count = len(beam)
+        if parent_count == 0:
+            break
+        parent_x = np.fromiter(
+            (node.x for node in beam),
+            dtype=np.float64,
+            count=parent_count,
+        )
+        parent_y = np.fromiter(
+            (node.y for node in beam),
+            dtype=np.float64,
+            count=parent_count,
+        )
+        parent_risk = np.fromiter(
+            (node.risk for node in beam),
+            dtype=np.float64,
+            count=parent_count,
+        )
+        parent_collisions = np.fromiter(
+            (node.collisions for node in beam),
+            dtype=np.int32,
+            count=parent_count,
+        )
+        parent_minimum = np.fromiter(
+            (node.min_clearance for node in beam),
+            dtype=np.float64,
+            count=parent_count,
+        )
+        parent_immediate = np.fromiter(
+            (node.immediate_clearance for node in beam),
+            dtype=np.float64,
+            count=parent_count,
+        )
+        parent_collected = np.fromiter(
+            (node.collected_mask for node in beam),
+            dtype=np.uint32,
+            count=parent_count,
+        )
+        parent_item_utility = np.fromiter(
+            (node.item_utility for node in beam),
+            dtype=np.float64,
+            count=parent_count,
+        )
+        parent_first_action = np.fromiter(
+            (mapping[node.first_action.name] for node in beam),
+            dtype=np.int32,
+            count=parent_count,
+        )
+        parent_last_action = np.fromiter(
+            (mapping[node.last_action.name] for node in beam),
+            dtype=np.int32,
+            count=parent_count,
+        )
+
+        if (step - 1) % context.action_hold_frames == 0:
+            step_actions = (
+                first_action_indices if step == 1 else all_action_indices
+            )
+            parent_indices = np.repeat(
+                np.arange(parent_count, dtype=np.int32),
+                len(step_actions),
+            )
+            action_indices = np.tile(step_actions, parent_count)
+        else:
+            parent_indices = np.arange(parent_count, dtype=np.int32)
+            action_indices = parent_last_action.copy()
+        if len(action_indices) == 0:
+            break
+
+        scale = np.asarray(
+            [context.player_scale_bits[step - 1]],
+            dtype=np.uint32,
+        ).view(np.float32)[0]
+        velocity_x = (
+            action_dx[action_indices] * scale
+        ).astype(np.float32, copy=False)
+        velocity_y = (
+            action_dy[action_indices] * scale
+        ).astype(np.float32, copy=False)
+        positions_x = (
+            parent_x[parent_indices] + velocity_x.astype(np.float64)
+        ).astype(np.float32)
+        positions_y = (
+            parent_y[parent_indices] + velocity_y.astype(np.float64)
+        ).astype(np.float32)
+        np.clip(
+            positions_x,
+            context.playfield_left,
+            context.playfield_right,
+            out=positions_x,
+        )
+        np.clip(
+            positions_y,
+            context.playfield_top,
+            context.playfield_bottom,
+            out=positions_y,
+        )
+
+        transition_risk = _vectorized_boundary_risk(
+            positions_x,
+            positions_y,
+            context=context,
+        )
+        previous_actions = parent_last_action[parent_indices]
+        changed_direction = (
+            action_direction[action_indices]
+            != action_direction[previous_actions]
+        )
+        transition_risk[changed_direction] += 0.08
+        transition_risk[
+            opposed[action_indices, previous_actions]
+        ] += 24.0
+        changed_focus = (
+            action_focused[action_indices]
+            != action_focused[previous_actions]
+        )
+        transition_risk[changed_focus] += 0.12
+        if step == 1 and context.preserve_previous_direction_inertia:
+            changed_from_observed = (
+                action_direction[action_indices]
+                != context.previous_direction
+            )
+            transition_risk[changed_from_observed] += 0.08
+            transition_risk[
+                opposed_to_previous[action_indices]
+            ] += 24.0
+            changed_observed_focus = (
+                action_focused[action_indices]
+                != int(context.previous_focus)
+            )
+            transition_risk[changed_observed_focus] += 0.12
+
+        hazard_risk, hazard_collisions, hazard_clearance = hazard_query(
+            positions_x,
+            positions_y,
+            step=context.control_delay_frames + step,
+            bullet_frame=context.bullet_frames[step - 1],
+            lasers=context.laser_frames[step - 1],
+            enemy_bodies=context.enemy_bodies,
+        )
+        candidate_risk = parent_risk[parent_indices] + transition_risk
+        candidate_risk += hazard_risk
+        candidate_collisions = (
+            parent_collisions[parent_indices] + hazard_collisions
+        ).astype(np.int32, copy=False)
+        candidate_minimum = np.minimum(
+            parent_minimum[parent_indices],
+            hazard_clearance,
+        )
+        candidate_immediate = (
+            np.minimum(
+                parent_immediate[parent_indices],
+                hazard_clearance,
+            )
+            if step == 1
+            else parent_immediate[parent_indices]
+        )
+        candidate_first_action = (
+            action_indices.copy()
+            if step == 1
+            else parent_first_action[parent_indices]
+        )
+        candidate_collected = parent_collected[parent_indices]
+        candidate_item_utility = parent_item_utility[parent_indices]
+
+        retained_indices = native_reducer(
+            draft_x=positions_x.astype(np.float64),
+            draft_y=positions_y.astype(np.float64),
+            first_action=candidate_first_action,
+            last_direction=action_direction[action_indices],
+            last_focused=action_focused[action_indices],
+            collected_mask=candidate_collected,
+            risk=candidate_risk,
+            collisions=candidate_collisions,
+            minimum_clearance=candidate_minimum,
+            step=step,
+            beam_width=context.beam_width,
+            position_quantization=0.5,
+            target_x=context.target_x,
+            target_y=context.target_y,
+            target_deadline=context.target_deadline,
+            item_safety_clearance=context.item_safety_clearance,
+            playfield_left=context.playfield_left,
+            playfield_right=context.playfield_right,
+            playfield_top=context.playfield_top,
+            playfield_bottom=context.playfield_bottom,
+            reserve_distance=context.recovery_reserve_distance,
+            diagonal_speed=context.diagonal_speed,
+            cardinal_speed=context.cardinal_speed,
+            certificate_collisions=context.native_certificate_collisions,
+            certificate_minimum=context.native_certificate_minimum,
+            survival_preferred=context.native_survival_preferred,
+            safety_preferred=context.native_safety_preferred,
+            recovery_distance=context.native_recovery_distance,
+            preserve_first_action_strata=preserve_boundary_action_strata,
+        )
+        if retained_indices is None:
+            return None
+        beam = [
+            SearchNode(
+                x=float(positions_x[index]),
+                y=float(positions_y[index]),
+                first_action=actions[int(candidate_first_action[index])],
+                last_action=actions[int(action_indices[index])],
+                risk=float(candidate_risk[index]),
+                collisions=int(candidate_collisions[index]),
+                min_clearance=float(candidate_minimum[index]),
+                immediate_clearance=float(candidate_immediate[index]),
+                collected_mask=int(candidate_collected[index]),
+                item_utility=float(candidate_item_utility[index]),
+            )
+            for index in (int(value) for value in retained_indices)
+        ]
+    return beam
+
+
 def run_baseline_beam(
     context: BaselineBeamContext,
     *,
@@ -163,6 +505,14 @@ def run_baseline_beam(
     pruning_key: Callable[..., tuple[object, ...]],
     native_reducer: Callable[..., np.ndarray | None],
 ) -> list[SearchNode]:
+    vectorized = _run_native_vectorized_beam(
+        context,
+        directions_opposed=directions_opposed,
+        hazard_query=hazard_query,
+        native_reducer=native_reducer,
+    )
+    if vectorized is not None:
+        return vectorized
     beam = list(context.initial_beam)
     preserve_boundary_action_strata = _boundary_action_strata_required(
         context

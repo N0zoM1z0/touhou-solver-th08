@@ -33,16 +33,17 @@ cost is not an adequate explanation for an Easy hit without profiler evidence.
 
 The active route solver runs at the original input cadence. No solver path may
 block the game thread, freeze a virtual clock, or subtract computation from a
-game-visible timer. Protocol v3 publishes a leased runtime-owned packed root
+game-visible timer. Protocol v4 publishes a leased runtime-owned packed root
 at the completed-update seam for an explicit next input epoch. The solver
 copies that slot once, validates its generation certificate, and gives the
 same local immutable reader to immediate and background consumers. The
 immediate path decodes packed active records directly; the retired large live
 `/proc` bracket has no route authority. The solver checks content and policy
 versions before sending; the runtime accepts only an exact-epoch complete
-mask. Late results are discarded and connected deadline misses retain the
-held no-write mask. Hard no-Bomb validation applies at publication and
-sampling.
+mask. Late results are discarded. An unresolved miss is neutral Shot+Focus
+unless an exact-generation finite continuation lease still applies; the live
+route currently publishes no such lease because the second global predecessor
+has not been proved. Hard no-Bomb validation applies at publication and sampling.
 
 Local safety is the per-epoch consumer. Future-birth coverage and global
 viability run ahead asynchronously and must produce nonzero fresh constraints
@@ -57,9 +58,10 @@ integration, not yet physical delivery evidence; the next authorized online
 trace must show nonzero complete future joins, global publications, queries,
 and constrained issued actions.
 The earliest pending future policy is preserved until activation so faster
-newer solves cannot starve it. Retained foreground timing is 17.72/32.17 ms
-mean/p95, and the current one-frame action edge does not certify an arbitrary
-run of held deadline misses. A miss-bearing trace is therefore integration
+newer solves cannot starve it. The required native/structure-of-arrays
+foreground reduced synthetic 800-bullet 8/12/8 p95 planning from 17.545 to
+10.362 ms, but end-to-end 60 Hz capacity is still unobserved. A miss-bearing
+trace is therefore integration
 telemetry rather than L0 hard-safety promotion until a finite fallback lease or
 always-on immediate shield closes that boundary.
 
@@ -594,12 +596,12 @@ certified 2,866 roots but all 574 future captures failed; corridor submission,
 query, and constrained-action counts were zero. The foreground scale inventory
 also stayed unknown, contributing to 1,205 stale captures, 2,424 stale plans,
 and 4,341 native deadline misses. CE-0273 remains the physical authority.
-Protocol v3 now replaces the unchanged-frame live scan with a runtime-owned
+Protocol v4 now replaces the unchanged-frame live scan with a runtime-owned
 leased packed publication, direct active-record immediate decode, and one
 shared immutable reader for background producers. This closes the structural
 defect in code only: no physical rerun or 60 Hz capacity claim exists yet.
 The next measurement keeps lead/grid/beam/objectives unchanged and retains
-root size/count/drop, producer, deadline, and held-fallback telemetry. This is
+root size/count/drop, producer, deadline, and finite/neutral-fallback telemetry. This is
 not permission to stop time or tune the corridor.
 
 ## Offline Native Authority

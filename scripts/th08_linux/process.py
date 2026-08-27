@@ -74,9 +74,28 @@ class LinuxProcessReader:
         return destination
 
     def read(self, address: int, size: int) -> bytes:
-        destination = self.allocate_buffer(size)
-        self.read_into(address, destination)
-        return bytes(destination)
+        if address < 0:
+            raise ValueError("process read address cannot be negative")
+        if size <= 0:
+            raise ValueError("process read buffer size must be positive")
+        file = self._require_open()
+        # ``pread`` returns an owned immutable ``bytes`` object directly.
+        # The old read-into-bytearray-then-bytes path copied every packed
+        # online root a second time in the foreground deadline.
+        chunks: list[bytes] = []
+        completed = 0
+        while completed < size:
+            chunk = os.pread(file, size - completed, address + completed)
+            if not chunk:
+                raise RuntimeError(
+                    "short process memory read at "
+                    f"{address:#x}: {completed}/{size} bytes"
+                )
+            if completed == 0 and len(chunk) == size:
+                return chunk
+            chunks.append(chunk)
+            completed += len(chunk)
+        return b"".join(chunks)
 
     def image_path(self) -> Path:
         self._require_open()

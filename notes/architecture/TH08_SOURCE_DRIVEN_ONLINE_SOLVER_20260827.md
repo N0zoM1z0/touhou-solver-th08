@@ -38,8 +38,10 @@ stopped time. The existing exact collision, ECL, lifecycle, scale, and global
 viability components also cover the necessary kinds of state.
 
 That is not a completion claim. No physical online trace has yet shown that
-the new authority is both queried and delivered at useful frequency, and the
-current held fallback can outlive its one-frame witness. Lunatic feasibility
+the new authority is both queried and delivered at useful frequency. Protocol
+v4 permits a finite versioned continuation lease, but the route withholds it
+until repeating the action is also a second-layer global predecessor; current
+misses are neutral and unresolved. Lunatic feasibility
 depends on branch sharing and incremental rebase keeping the background graph
 bounded; Gate 2 below is the explicit falsifier. The route is therefore
 architecturally plausible, while present NMNB effectiveness remains
@@ -176,7 +178,7 @@ problem.
 ### 1. Runtime-owned packed observation ring
 
 This boundary is **implemented and deterministically verified, but not yet
-physically promoted**. Protocol v3 publishes one of two leased 32 MiB packed
+physically promoted**. Protocol v4 publishes one of two leased 32 MiB packed
 roots with a monotonic generation and exact source epoch. The solver copies
 the slot once, validates and releases the lease, and uses local immutable
 bytes thereafter. Immediate sensing decodes only typed active records; the

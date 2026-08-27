@@ -88,9 +88,9 @@ def _packed_root(*, generation: int = 9, source_epoch: int = 41) -> bytes:
 
 def _request(payload: bytes, *, address: int = 0x70000000) -> bytes:
     return struct.pack(
-        "<IHHQQHHHHIIIIQQIIII",
+        "<IHHQQHHHHIIIIQQIIIIIIIIII",
         0x51523854,
-        3,
+        4,
         REQUEST_SIZE,
         41,
         42,
@@ -109,6 +109,12 @@ def _request(payload: bytes, *, address: int = 0x70000000) -> bytes:
         address,
         len(payload),
         2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
         0,
     )
 
@@ -195,7 +201,7 @@ class LinuxImmutableSnapshotTests(unittest.TestCase):
         self.assertEqual(root.generation, 9)
         self.assertTrue(client.respond(SHOOT | FOCUS))
 
-        response = game.recv(32)
+        response = game.recv(40)
         release = game.recv(24)
         self.assertEqual(struct.unpack_from("<I", response)[0], 0x53523854)
         self.assertEqual(struct.unpack_from("<I", release)[0], SNAPSHOT_RELEASE_MAGIC)

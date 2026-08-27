@@ -42,16 +42,18 @@ objective parameters.
   they are not allowed to relax survival. Bomb output remains forbidden.
 - Deadline: the next native input sample. Every packing, process-copy, decode,
   and planning cost remains ordinary wall time.
-- Fallback: a connected miss holds the complete current mask; disconnect or
-  bridge failure selects neutral Shot+Focus. The finite safety of repeated
-  held fallback is still unproved.
+- Fallback: a miss repeats a complete mask only under a finite, exact-root
+  runtime lease whose context still matches. Otherwise it selects neutral
+  Shot+Focus and remains unresolved. The current route publishes no lease:
+  local two-frame clearance alone does not prove that the repeated action is
+  a predecessor of the second global viability layer.
 - Falsifier: game-thread wait, clock subtraction, slot overwrite while leased,
   a mismatched certificate, any later live-state read entering immediate or
   background model authority, wrong-epoch action, or Bomb.
 
 ## Runtime publication
 
-Protocol v3 publishes an 80-byte `T8RQ` record. Two 32 MiB runtime-owned slots
+Protocol v4 publishes a 104-byte `T8RQ` record. Two 32 MiB runtime-owned slots
 carry `T8SN` v1 roots. A root has an 80-byte header, bounded range directory,
 and copied bytes. It binds:
 
@@ -106,14 +108,24 @@ publication/query/constraint counts were zero. It recorded 1,205 stale
 captures, 2,424 stale plans, and 4,341 deadline misses. CE-0273 retains that
 evidence.
 
-**Observed:** authored source checkpoint `5f31fd5` builds as i386 with SHA-256
-`3f4ed29e60c024e9bf97b7f9eb7672bdf3f3f595b63545cbdcfdd0cb646fa561`;
+**Observed:** authored source checkpoint `a548b9d` builds as i386 with SHA-256
+`f10a0222cd000ac50f933ec8e2ebcf7ff97431aaa094faebc003aa21c2eb43ee`;
 the fixed-layout verifier and target-independent CI pass. Complete solver
-discovery passes 1,696 tests with five conditional skips. Focused tests cover
+discovery passes 1,698 tests with five conditional skips. Focused tests cover
 bounded parsing, immutable-copy ownership, sparse compatibility
 reconstruction, compact active decoding, action-before-release ordering, no
 foreground full-pool read, and background identity/scale/future use of the
 submitted root reader.
+
+**Observed:** the Linux route now fails closed unless the native hazard and
+beam-reducer kernels are loadable. A no-item structure-of-arrays expansion
+removes per-draft Python objects while preserving the existing 8/12/8 action,
+reducer, and objective contracts. Across deterministic same-root synthetic
+roots, actions and hard labels matched the legacy path; at 800 bullets p95
+planning fell from 17.545 to 10.362 ms, and at 1,536 from 23.101 to 14.979 ms.
+An 8 MiB `/proc/self/mem` copy benchmark fell from 3.943 to 2.360 ms p95 after
+returning the owned immutable `pread` bytes directly. These numbers exclude
+runtime packing and are not physical-route evidence.
 
 **Inferred:** because packing runs on the same game thread immediately after
 the complete calc chain, and leased bytes are not overwritten, every accepted
@@ -137,9 +149,12 @@ hit reduction, NMNB, and Wine replay equivalence remain unobserved.
 
 ## Next evidence gate
 
-First measure packed size, active counts, copy/decode/decision latency, slot
-drops, exact future failure reasons, and consecutive held fallbacks without
-changing planner parameters. A later explicitly authorized physical run must
+First measure packed size, active counts, runtime pack/copy/decode/decision
+latency, slot drops, exact future failure reasons, and consecutive neutral
+fallbacks without changing planner parameters. Before route leases may be
+enabled, the repeated action must also pass a same-version second-layer global
+predecessor query; a local collision witness is insufficient. A later
+explicitly authorized physical run must
 show nonzero future completion, corridor publication, policy query, and
 constrained issued action before this producer is called physically connected.
 Original-Wine `.rpy` playback remains the final equivalence gate.

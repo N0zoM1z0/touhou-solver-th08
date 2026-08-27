@@ -38,8 +38,9 @@ ordered implementation plan are in
   retired from route authority. It may remain only as a bounded semantic
   differential harness. The new runtime publishes a coherent post-update
   notification without blocking, targets each action at the exact next input
-  epoch, discards late actions, retains the held complete mask on a connected
-  deadline miss, and releases to neutral Shot+Focus after disconnect/failure.
+  epoch, and discards late actions. Protocol v4 now selects neutral Shot+Focus
+  on every unresolved miss unless an exact-generation finite continuation
+  lease remains valid; disconnect/failure is also neutral.
   The Linux solver now captures future sources asynchronously, solves a
   version-joined global policy, and passes a real winning set as non-relaxable
   online action authority. Its hard recurrence has one physical frame per
@@ -62,28 +63,38 @@ ordered implementation plan are in
   misses, seven hits, and zero Bomb. Only 1,176 gameplay actions were delivered
   on time, all `stay`; this is deadline selection, not policy evidence. CE-0273
   and `notes/runs/easy_linux_online_gate1_20260827.md` retain the failure.
-  Protocol v3 now implements the required runtime-owned immutable packed post-
+  Protocol v4 implements the required runtime-owned immutable packed post-
   update root: two bounded generation-leased slots, one solver copy, exact
   release, direct active-record foreground decode, and the same local root for
   background runtime identity, scale, future, and global work. No complete
-  pool or large live source scan remains in the action deadline. This is
-  build/test evidence only; no game was run, so 60 Hz capacity and physical
-  authority remain unobserved. Do not tune lead, grid, beam, or objectives and
-  do not repeat the physical gate without explicit authorization. The next
-  unchanged-parameter evidence must retain packed-root size/count/drop,
-  producer, deadline, and held-fallback telemetry. The one-frame action proof
-  also still does not certify a connected held fallback. The
+  pool or large live source scan remains in the action deadline. The Linux
+  route now requires the parity-gated native hazard/reducer backends and uses
+  a structure-of-arrays beam expansion; deterministic same-root synthetic
+  checks retained exact actions/hard labels and reduced 8/12/8 p95 planning
+  from 17.545 to 10.362 ms at 800 bullets and from 23.101 to 14.979 ms at
+  1,536 bullets. Direct immutable `pread` removed a second whole-root copy
+  (8 MiB p95 3.943 to 2.360 ms). These are implementation benchmarks, not
+  physical validity. Runtime protocol telemetry now exposes pack time and
+  certified/neutral/consecutive fallback counters. The route intentionally
+  publishes no continuation lease: a local two-frame clearance witness does
+  not prove that repeating the action remains inside the second global
+  viability layer. Therefore every current miss is neutral and unresolved.
+  No game was run, so total 60 Hz capacity and physical authority remain
+  unobserved. Do not tune lead, grid, beam, or objectives and do not repeat the
+  physical gate without explicit authorization. The next unchanged-parameter
+  evidence must retain packed-root size/count/drop, producer, deadline, and
+  fallback telemetry. The
   compact execution contract is
   `notes/architecture/TH08_LINUX_ONLINE_AUTHORITY_20260827.md`; the authored-
   source architecture decision is
   `notes/architecture/TH08_SOURCE_DRIVEN_ONLINE_SOLVER_20260827.md`; the packed
   root decision is
   `notes/architecture/TH08_LINUX_IMMUTABLE_ROOT_20260827.md`. The source
-  runtime checkpoint is `5f31fd5` on `solver/linux-online-authority`; its
+  runtime checkpoint is `a548b9d` on `solver/linux-online-authority`; its
   verified i386 ELF SHA-256 is
-  `3f4ed29e60c024e9bf97b7f9eb7672bdf3f3f595b63545cbdcfdd0cb646fa561`.
-  Complete Linux discovery passes 1,696 tests with five conditional skips;
-  immutable/online focused suites pass 4/22 tests. The authored source build,
+  `f10a0222cd000ac50f933ec8e2ebcf7ff97431aaa094faebc003aa21c2eb43ee`.
+  Complete Linux discovery passes 1,698 tests with five conditional skips;
+  affected online/immutable/planner/beam/process suites pass 40 tests. The authored source build,
   fixed-layout verifier, and target-independent CI pass.
 - **Pre-pivot checkpoint:** `main` and annotated tag
   `pre-linux-native-pivot-20260826` point to `d7a66c5`. The Linux runtime is a

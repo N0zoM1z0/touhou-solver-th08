@@ -162,7 +162,13 @@ class OnlineSolverBridgeClient:
         finally:
             self._queue_snapshot_release(request)
 
-    def respond(self, input_mask: int) -> bool:
+    def respond(
+        self,
+        input_mask: int,
+        *,
+        continuation_frames: int = 0,
+        snapshot_generation: int = 0,
+    ) -> bool:
         if self._connection is None:
             raise RuntimeError("online solver bridge client is closed")
         if self._pending is None:
@@ -172,6 +178,8 @@ class OnlineSolverBridgeClient:
             source_epoch=request.source_epoch,
             target_epoch=request.target_epoch,
             input_mask=input_mask,
+            continuation_frames=continuation_frames,
+            snapshot_generation=snapshot_generation,
         )
         self._pending = None
         # Queue ownership transfer before the deadline-sensitive send, but
@@ -193,7 +201,7 @@ class OnlineSolverBridgeClient:
         return True
 
     def abandon(self) -> None:
-        """Explicitly choose the game-owned held-input fallback for this target."""
+        """Leave this target unresolved so the runtime applies its fallback."""
 
         if self._pending is None:
             raise RuntimeError("no pending online input target")

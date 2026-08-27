@@ -56,8 +56,10 @@ that exact lease, and gives one local immutable reader to both immediate and
 background consumers. The immediate path decodes packed active records
 directly; no full-pool or unchanged-frame live scan belongs to its action
 deadline. At the next input epoch the runtime atomically consumes only an
-action tagged for that exact epoch; otherwise it retains the held complete
-mask. The bridge supplies only input and observation data and never writes
+action tagged for that exact epoch. Otherwise it repeats a complete mask only
+inside a finite exact-generation continuation lease whose runtime context
+still matches; without such a lease it selects neutral Shot+Focus. The bridge
+supplies only input and observation data and never writes
 gameplay/RNG state.
 Linux/original semantic replay differential is required before its generated
 replay receives candidate authority.
@@ -67,16 +69,17 @@ epoch. Future-source projection and global viability may execute
 asynchronously, but they are live rather than decorative: the action
 transaction must consume their exact-version result whenever complete coverage
 exists. Missing, stale, late, action-diverged, or incomplete future/global
-state cannot claim authority. The connected runtime holds the last complete
-mask on a miss, but the transitional planner currently certifies only its
-published one-frame edge; it does **not** certify an unbounded sequence of held
-deadline fallbacks. A trace with such misses may be useful delivery evidence
-but cannot promote hard online safety. Further objective or local-ranking work
+state cannot claim authority. Protocol v4 can carry a finite continuation
+lease, but the live route currently publishes none: two-frame local collision
+clearance does not establish that repeating the selected action remains inside
+the second global viability layer. Every present miss is therefore neutral and
+unresolved. A trace with such misses may be useful delivery evidence but cannot
+promote hard online safety. Further objective or local-ranking work
 is deferred until the route trace demonstrates nonzero fresh future/global
 action constraints. The first physical delivery trace did not: all 574 future
 captures failed and no corridor/query/constraint existed despite 2,866 clock-
 certified roots. The transitional producer therefore has no live authority
-and must not be described as physically connected. Protocol v3 corrects that
+and must not be described as physically connected. Protocol v4 corrects that
 producer boundary in code, but has not yet been physically measured.
 
 The transitional online global policy uses a 4px continuous-position lower
@@ -87,7 +90,7 @@ contract and cannot authorize a controller that chooses again next frame. Any
 named hard action set may be intersected with fresher local safety but may not
 be relaxed. The Stage 1--5 no-writer and Final-B dynamic scale authorities are
 both wired into this exact-version join in code. Physical Gate 1 showed that
-protocol v2 could not reach that join. Protocol v3 now moves runtime ECL
+protocol v2 could not reach that join. Protocol v4 now moves runtime ECL
 identity, initial no-writer/dynamic scale-source binding, and future capture to
 background workers over the same immutable root generation. Its immediate
 tier enumerates packed active records rather than reconstructing complete
@@ -112,16 +115,18 @@ or an unknown clock gate revokes the complete asynchronous clock generation.
 This is the implemented transitional unit-cadence boundary, not a claim that
 `enemy_manager_frame` became a universal physical clock.
 
-The retained smallest foreground profile (`8/12/8`) measured 17.72 ms mean
-and 32.17 ms p95 for complete read, decode, and plan. This is **observed**
-capacity evidence that the present Python foreground cannot be assumed to
-publish at 60 Hz. The online route therefore uses `8/12/8` only as its
-transitional immediate tier while the H80/4px global worker supplies depth.
-The packed-root foreground boundary is implemented, but meeting the hard
-deadline remains a hypothesis until its runtime pack, copy, compact decode,
-plan, and send distribution is measured. A shared native transition shield or
-an explicitly modeled finite fallback lease may still be required; increasing
-the Python beam is not an accepted remedy.
+The retained pre-packed-root foreground profile (`8/12/8`) measured 17.72 ms
+mean and 32.17 ms p95 for complete read, decode, and plan, so that path could
+not be assumed to publish at 60 Hz. The route now requires native hazard and
+beam-reducer kernels and expands its unchanged no-item beam as NumPy
+structure-of-arrays. **Observed synthetic same-root evidence:** actions and
+hard labels matched the legacy path; 800-bullet planning p95 fell from 17.545
+to 10.362 ms and 1,536-bullet p95 from 23.101 to 14.979 ms. Returning one owned
+immutable `pread` result rather than copying through a bytearray reduced an
+8 MiB process-copy p95 from 3.943 to 2.360 ms. These are implementation
+benchmarks, not a route proof. Meeting the hard deadline remains a hypothesis
+until runtime pack, copy, compact decode, plan, send, and fallback telemetry is
+observed together. Increasing the beam is not an accepted remedy.
 
 Authored update order also limits what this transitional policy can prove.
 Player movement/focus occurs before enemy damage/ECL births, and newly born

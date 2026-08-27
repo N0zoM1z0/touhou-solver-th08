@@ -64,9 +64,9 @@ from tools.th08_linux_online_easy_route import RESULT_UPDATE_SYMBOL
 
 def _request(source_epoch: int, *, published_us: int = 123_000) -> bytes:
     return struct.pack(
-        "<IHHQQHHHHIIIIQQIIII",
+        "<IHHQQHHHHIIIIQQIIIIIIIIII",
         0x51523854,
-        3,
+        4,
         REQUEST_SIZE,
         source_epoch,
         source_epoch + 1,
@@ -84,6 +84,12 @@ def _request(source_epoch: int, *, published_us: int = 123_000) -> bytes:
         0,
         0,
         0,
+        700,
+        3,
+        5,
+        1,
+        4,
+        2,
     )
 
 
@@ -140,6 +146,12 @@ class LinuxOnlineProtocolTests(unittest.TestCase):
         self.assertEqual(request.deadline_misses, 4)
         self.assertEqual(request.late_responses, 2)
         self.assertEqual(request.dropped_requests, 1)
+        self.assertEqual(request.snapshot_pack_us, 700)
+        self.assertEqual(request.certified_fallbacks, 3)
+        self.assertEqual(request.uncertified_fallbacks, 5)
+        self.assertEqual(request.consecutive_fallbacks, 1)
+        self.assertEqual(request.maximum_consecutive_fallbacks, 4)
+        self.assertEqual(request.lease_revocations, 2)
         self.assertEqual(request.publication_age_ms(now_ns=124_000_000), 1.0)
 
     def test_response_cannot_target_a_later_or_bomb_epoch(self) -> None:
@@ -149,8 +161,19 @@ class LinuxOnlineProtocolTests(unittest.TestCase):
             input_mask=SHOOT | FOCUS | LEFT,
         )
         self.assertEqual(
-            struct.unpack("<IHHQQHHI", payload),
-            (RESPONSE_MAGIC, 3, 32, 7, 8, SHOOT | FOCUS | LEFT, 0, 0),
+            struct.unpack("<IHHQQHHQI", payload),
+            (RESPONSE_MAGIC, 4, 40, 7, 8, SHOOT | FOCUS | LEFT, 0, 0, 0),
+        )
+        leased = encode_online_response(
+            source_epoch=7,
+            target_epoch=8,
+            input_mask=SHOOT | FOCUS | LEFT,
+            continuation_frames=1,
+            snapshot_generation=19,
+        )
+        self.assertEqual(
+            struct.unpack("<IHHQQHHQI", leased)[5:8],
+            (SHOOT | FOCUS | LEFT, 1, 19),
         )
         with self.assertRaisesRegex(ValueError, "exactly source epoch"):
             encode_online_response(
@@ -178,7 +201,7 @@ class LinuxOnlineProtocolTests(unittest.TestCase):
         self.assertEqual(client.drained_publications, 1)
         self.assertEqual(client.observed_epoch_gaps, 1)
         self.assertTrue(client.respond(SHOOT | FOCUS | LEFT))
-        response = game.recv(32)
+        response = game.recv(40)
         self.assertEqual(struct.unpack_from("<QQ", response, 8), (12, 13))
 
 
@@ -433,6 +456,7 @@ class LinuxOnlineAuthorityTests(unittest.TestCase):
         self.assertIs(captured["future_hazard_projection"], future)
         self.assertEqual(captured["future_projection_offset"], 3)
         self.assertEqual(plan.reason, "local+global+future-online-plan")
+        self.assertIsNone(plan.fallback_lease)
 
     def test_named_online_authority_cannot_relax_to_a_local_action(self) -> None:
         root = _snapshot()

@@ -35,6 +35,7 @@ from th08_linux.planner import (  # noqa: E402
     LinuxOneEpochPlanner,
     LinuxPlannerConfig,
     NEUTRAL_GAMEPLAY_MASK,
+    require_native_online_planner_backends,
 )
 from th08_linux.protocol import validate_hard_no_bomb_mask  # noqa: E402
 from th08_linux.result import (  # noqa: E402
@@ -124,6 +125,14 @@ def _request_record(request: object) -> dict[str, int | float]:
         "snapshot_generation": request.snapshot_generation,
         "snapshot_size": request.snapshot_size,
         "snapshot_entry_count": request.snapshot_entry_count,
+        "snapshot_pack_us": request.snapshot_pack_us,
+        "certified_fallbacks": request.certified_fallbacks,
+        "uncertified_fallbacks": request.uncertified_fallbacks,
+        "consecutive_fallbacks": request.consecutive_fallbacks,
+        "maximum_consecutive_fallbacks": (
+            request.maximum_consecutive_fallbacks
+        ),
+        "lease_revocations": request.lease_revocations,
     }
 
 
@@ -173,6 +182,10 @@ def run(args: argparse.Namespace) -> int:
         beam_width=args.beam_width,
         capture_items=args.capture_items,
     )
+    # This is implementation selection, not planner tuning.  The Linux
+    # deadline route must not silently inherit the historical NumPy hazard
+    # and per-draft Python beam defaults.
+    require_native_online_planner_backends()
     result_callback = resolve_defined_symbol(executable, RESULT_UPDATE_SYMBOL)
     title_driver = RouteTitleDriver(
         difficulty_index=EASY_DIFFICULTY,
@@ -209,6 +222,7 @@ def run(args: argparse.Namespace) -> int:
         "pool_read": [],
         "decode": [],
         "planning": [],
+        "fallback_certificate": [],
         "decision_total": [],
     }
     bridge_publications = 0
@@ -219,6 +233,7 @@ def run(args: argparse.Namespace) -> int:
     stale_plan_abandons = 0
     response_queue_drops = 0
     response_packets_sent = 0
+    fallback_leases_sent = 0
     bridge_drained_publications = 0
     bridge_observed_epoch_gaps = 0
     bridge_snapshot_releases_sent = 0
@@ -380,6 +395,15 @@ def run(args: argparse.Namespace) -> int:
                             guidance=update.guidance,
                         )
                         validate_hard_no_bomb_mask(plan.input_mask)
+                        lease = plan.fallback_lease
+                        if lease is not None and (
+                            lease.source_input_epoch != request.source_epoch
+                            or lease.snapshot_generation != root.generation
+                            or lease.input_mask != plan.input_mask
+                        ):
+                            raise RuntimeError(
+                                "fallback lease disagrees with its exact root/action"
+                            )
                         if (
                             session.reader.u32(session.input_epoch_address)
                             != (request.source_epoch & 0xFFFFFFFF)
@@ -387,8 +411,21 @@ def run(args: argparse.Namespace) -> int:
                             session.bridge.abandon()
                             stale_plan_abandons += 1
                             continue
-                        sent = session.bridge.respond(plan.input_mask)
+                        sent = session.bridge.respond(
+                            plan.input_mask,
+                            continuation_frames=(
+                                lease.continuation_frames
+                                if lease is not None
+                                else 0
+                            ),
+                            snapshot_generation=(
+                                lease.snapshot_generation
+                                if lease is not None
+                                else 0
+                            ),
+                        )
                         response_packets_sent += int(sent)
+                        fallback_leases_sent += int(sent and lease is not None)
                         response_queue_drops += int(not sent)
                         action_counts[plan.action] += 1
                         record = {
@@ -412,6 +449,19 @@ def run(args: argparse.Namespace) -> int:
                             "action": plan.action,
                             "mask": plan.input_mask,
                             "reason": plan.reason,
+                            "fallback_lease": (
+                                {
+                                    "continuation_frames": (
+                                        lease.continuation_frames
+                                    ),
+                                    "minimum_clearance": lease.min_clearance,
+                                    "authority_version": (
+                                        lease.authority_version
+                                    ),
+                                }
+                                if lease is not None
+                                else None
+                            ),
                             "global_status": update.authority.status,
                             "global_reasons": list(update.authority.reasons),
                             "global_constraint": (
@@ -447,6 +497,9 @@ def run(args: argparse.Namespace) -> int:
                         timings["snapshot_copy"].append(root.process_copy_ms)
                         timings["decode"].append(snapshot.decode_ms)
                         timings["planning"].append(plan.planning_ms)
+                        timings["fallback_certificate"].append(
+                            plan.fallback_certificate_ms
+                        )
                         timings["decision_total"].append(
                             (time.perf_counter() - decision_started) * 1000.0
                         )
@@ -536,7 +589,7 @@ def run(args: argparse.Namespace) -> int:
         )
     }
     report = {
-        "schema": "th08-linux-online-easy-route-v2-immutable-root",
+        "schema": "th08-linux-online-easy-route-v3-finite-fallback",
         "runtime": runtime_record,
         "target": {
             "difficulty_index": EASY_DIFFICULTY,
@@ -554,15 +607,27 @@ def run(args: argparse.Namespace) -> int:
             ),
             "response": "exact next input epoch or discard",
             "fallback": (
-                "connected deadline miss holds complete input mask; "
-                "disconnect/failure selects neutral Shot+Focus"
+                "the live route currently publishes no continuation lease; "
+                "all misses, disconnects, and failures select neutral "
+                "Shot+Focus and remain unresolved"
             ),
             "control_delay_frames": [0],
             "action_hold_frames": 1,
-            "held_fallback_horizon_certified": False,
+            "runtime_maximum_fallback_lease_frames": 8,
+            "route_maximum_fallback_lease_frames": 0,
+            "fallback_lease_publication": (
+                "withheld until the selected repeat action has a "
+                "same-version second-layer global viability predecessor"
+            ),
+            "uncertified_held_fallback_allowed": False,
             "global_future_action_authority": "exact-version fail-closed",
         },
         "planner": asdict(planner_config),
+        "planner_backends": {
+            "hazards": "native",
+            "beam_expansion": "vectorized-structure-of-arrays",
+            "beam_reducer": "native",
+        },
         "finish_reason": finish_reason,
         "failure": failure,
         "elapsed_wall_seconds": time.perf_counter() - started,
@@ -576,6 +641,7 @@ def run(args: argparse.Namespace) -> int:
         "bridge_snapshot_releases_sent": bridge_snapshot_releases_sent,
         "runtime_counter_delta": counter_delta,
         "response_packets_sent": response_packets_sent,
+        "fallback_leases_sent": fallback_leases_sent,
         "response_queue_drops": response_queue_drops,
         "coherent_gameplay_captures": coherent_gameplay_captures,
         "stale_capture_abandons": stale_capture_abandons,

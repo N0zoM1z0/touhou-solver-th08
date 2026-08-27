@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
+import th08_linux.planner as linux_planner
 from th08_linux.planner import (
     LinuxOneEpochPlanner,
     LinuxPlannerConfig,
     LinuxPlannerSnapshot,
     NEUTRAL_GAMEPLAY_MASK,
+    require_native_online_planner_backends,
     validate_lockstep_root_frames,
 )
 from th08_live.models import Bullet
@@ -35,6 +38,54 @@ def _snapshot(
 
 
 class LinuxOneEpochPlannerTests(unittest.TestCase):
+    def test_online_route_requires_both_native_deadline_backends(self) -> None:
+        with (
+            patch.object(
+                linux_planner.live_controller.native_backend,
+                "_load_local_hazards_function",
+                return_value=object(),
+            ),
+            patch.object(
+                linux_planner.live_controller.native_backend,
+                "_load_local_beam_reduce_function",
+                return_value=object(),
+            ),
+            patch.object(
+                linux_planner.live_controller,
+                "_configure_local_hazard_backend",
+            ) as configure_hazards,
+            patch.object(
+                linux_planner.live_controller,
+                "_configure_local_beam_reducer",
+            ) as configure_beam,
+        ):
+            require_native_online_planner_backends()
+
+        configure_hazards.assert_called_once_with("native")
+        configure_beam.assert_called_once_with("native")
+
+    def test_online_route_fails_before_partial_backend_selection(self) -> None:
+        with (
+            patch.object(
+                linux_planner.live_controller.native_backend,
+                "_load_local_hazards_function",
+                return_value=object(),
+            ),
+            patch.object(
+                linux_planner.live_controller.native_backend,
+                "_load_local_beam_reduce_function",
+                return_value=None,
+            ),
+            patch.object(
+                linux_planner.live_controller,
+                "_configure_local_hazard_backend",
+            ) as configure_hazards,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "beam reducer"):
+                require_native_online_planner_backends()
+
+        configure_hazards.assert_not_called()
+
     def test_root_validator_rejects_any_capture_drift(self) -> None:
         self.assertEqual(validate_lockstep_root_frames(10, 10, 10), 10)
         with self.assertRaisesRegex(RuntimeError, "root changed"):

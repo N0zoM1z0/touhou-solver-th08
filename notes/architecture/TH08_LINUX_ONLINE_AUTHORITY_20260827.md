@@ -10,7 +10,7 @@ produce route-search or performance authority.
 Physical Gate 1 on 2026-08-27 validated the non-blocking wire and cadence gate
 but falsified the protocol-v2 `/proc` future/source producer: 574/574 future
 submissions failed and no corridor, query, or constrained action existed.
-CE-0273 remains the physical authority. Protocol v3 now implements the packed
+CE-0273 remains the physical authority. Protocol v4 now implements the packed
 immutable runtime publication below. It is build/test observed and has not yet
 received a physical delivery or 60 Hz performance claim.
 
@@ -91,7 +91,8 @@ Inside the solver, an action record is a complete no-Bomb mask tagged with:
 - publication timestamp and expiry;
 - authority source and fallback provenance.
 
-Protocol v3 sends source epoch, target epoch, and the complete mask back to the
+Protocol v4 sends source epoch, target epoch, the complete mask, and an
+optional exact-generation finite continuation lease back to the
 game. Content/model/policy versions are checked before that send and retained
 in solver telemetry; the runtime enforces epoch and mask validity but does not
 independently decode those solver versions. A separate `T8RL` record releases
@@ -99,17 +100,17 @@ only the exact `(slot, generation)` lease. The client sends the action packet
 before release traffic.
 
 At an input sample the runtime performs one non-blocking mailbox lookup. An
-exact-target valid action is sampled. Otherwise the held complete mask remains
-active as no-write. Late or skipped-epoch actions are discarded permanently;
-there is no delayed pending command. While connected, a deadline miss retains
-the held mask. Disconnect, invalid-packet, and bridge-failure handling use
-neutral Shot+Focus, releasing every direction without emitting Bomb.
+exact-target valid action is sampled. On a miss it repeats the complete mask
+only while a finite source-generation lease and runtime context still match;
+otherwise it uses neutral Shot+Focus. Late or skipped-epoch actions are
+discarded permanently; there is no delayed pending command. Disconnect,
+invalid-packet, and bridge-failure handling are also neutral and never emit Bomb.
 
-The runtime fallback is defined, but the transitional planner presently proves
-only one physical-frame action edge. It does not prove that repeating that
-action through an arbitrary run of missed responses stays viable. Therefore a
-miss-bearing trace is delivery telemetry, not hard-safety promotion, until a
-finite modeled fallback lease or an always-on immediate shield is installed.
+The runtime fallback mechanism is bounded, but the live route publishes no
+lease yet. Its local two-frame clearance witness does not prove that repeating
+the action remains in the second global viability layer. Present misses are
+neutral and unresolved; a miss-bearing trace is delivery telemetry rather than
+hard-safety promotion.
 
 ## Planner authority
 
@@ -139,7 +140,7 @@ decision. The physical integration gate requires nonzero complete future joins,
 fresh global queries, globally constrained issued actions, and nonzero
 clock-certified observations in an online trace. The protocol-v2 trace produced
 2,866 certified roots but zero joins/queries/constraints, so this planner
-authority remains code-only and failed physical admission. Protocol v3 closes
+authority remains code-only and failed physical admission. Protocol v4 closes
 the known immutable-observation wiring defect in code; it does not
 retroactively promote that trace.
 
@@ -153,7 +154,7 @@ path. The target shared-kernel architecture and its falsifiers are recorded in
 
 Retain snapshot-publication, solver-start/end, action-publication, input-sample,
 and game-frame timestamps from a monotonic clock. Report p50/p95/p99/max,
-deadline misses, discarded late actions, held fallbacks, consecutive misses,
+deadline misses, discarded late actions, certified/neutral fallbacks, consecutive misses,
 policy age/lead, and actual sampled-mask echo.
 
 Any of the following invalidates a route run:
@@ -166,9 +167,9 @@ Any of the following invalidates a route run:
 - a manager-frame policy is queried without its matching input-epoch binding;
 - online cadence/deadline evidence is missing.
 
-For policy promotion, a held fallback beyond its explicitly certified horizon
-also invalidates the run. The current horizon is one frame, so the first
-diagnostic had to measure this gap rather than conceal it. It recorded a 4,341
+For policy promotion, a repeated fallback beyond its explicitly certified
+horizon also invalidates the run. The current route lease horizon is zero, so
+every miss remains unresolved. The first diagnostic recorded a 4,341
 deadline-miss delta but omitted maximum consecutive hold, final resources, and
 exact future/scale failure subreasons. Those telemetry fields are mandatory
 before the next gate.

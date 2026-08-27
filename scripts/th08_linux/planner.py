@@ -9,10 +9,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from typing import Callable, Mapping
+import math
 import time
 
 from th08_live.bullet_decode import decode_bullets
-from th08_live.controller import choose_action
+import th08_live.controller as live_controller
 from th08_live.enemy_sensor import (
     ENEMY_MANAGER_SCANNED_SLOT_COUNT,
     ENEMY_SLOT_ZERO_BASE,
@@ -47,8 +48,25 @@ from th08_linux.immutable_snapshot import (
 from th08_linux.protocol import validate_hard_no_bomb_mask
 
 
+choose_action = live_controller.choose_action
+
+
 NEUTRAL_GAMEPLAY_MASK = SHOT | FOCUS
 UNCONTROLLABLE_PLAYER_PHASES = frozenset((1, 2))
+
+
+def require_native_online_planner_backends() -> None:
+    """Fail closed unless both parity-gated deadline kernels are available."""
+
+    if live_controller.native_backend._load_local_hazards_function() is None:
+        raise RuntimeError("native online local hazard kernel is unavailable")
+    if (
+        live_controller.native_backend._load_local_beam_reduce_function()
+        is None
+    ):
+        raise RuntimeError("native online local beam reducer is unavailable")
+    live_controller._configure_local_hazard_backend("native")
+    live_controller._configure_local_beam_reducer("native")
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +111,29 @@ class LinuxPlannerSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class LinuxFallbackLease:
+    """Finite repeated-mask authority derived from one exact packed root."""
+
+    source_input_epoch: int
+    snapshot_generation: int
+    input_mask: int
+    continuation_frames: int
+    min_clearance: float
+    authority_version: str
+
+    def __post_init__(self) -> None:
+        if self.source_input_epoch <= 0 or self.snapshot_generation <= 0:
+            raise ValueError("fallback lease requires a positive root version")
+        validate_hard_no_bomb_mask(self.input_mask)
+        if not 1 <= self.continuation_frames <= 8:
+            raise ValueError("fallback lease horizon must be in [1, 8]")
+        if not math.isfinite(self.min_clearance) or self.min_clearance <= 0.0:
+            raise ValueError("fallback lease requires positive signed clearance")
+        if not self.authority_version:
+            raise ValueError("fallback lease requires an authority version")
+
+
+@dataclass(frozen=True, slots=True)
 class LinuxEpochPlan:
     """One complete immediate response to one input request."""
 
@@ -101,6 +142,8 @@ class LinuxEpochPlan:
     reason: str
     planning_ms: float
     decision: Decision | None
+    fallback_lease: LinuxFallbackLease | None = None
+    fallback_certificate_ms: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -442,12 +485,98 @@ class LinuxOneEpochPlanner:
         self._chooser = chooser
         self._clock = clock
 
+    @staticmethod
+    def _certify_one_missed_epoch(
+        snapshot: LinuxPlannerSnapshot,
+        *,
+        previous_mask: int,
+        decision: Decision,
+        guidance: LinuxPlannerGuidance,
+    ) -> LinuxFallbackLease | None:
+        """Certify exactly one continuation frame or withhold the lease.
+
+        The ordinary one-epoch action stays unchanged.  A lease is admitted
+        only when a versioned global viable-action set, complete future-birth
+        envelope, exact scale schedule, and controllable runtime gates all
+        describe the same immutable root.  The selected complete mask is then
+        checked for two physical transitions from that root: its requested
+        target plus one possible deadline fallback.
+        """
+
+        if (
+            snapshot.source_input_epoch is None
+            or snapshot.source_input_epoch <= 0
+            or snapshot.root_generation is None
+            or snapshot.root_generation <= 0
+            or snapshot.dialogue_active is not False
+            or snapshot.scripted_update_freeze is not False
+            or guidance.allowed_first_actions is None
+            or guidance.allowed_action_authority is None
+            or decision.action not in guidance.allowed_first_actions
+            or guidance.future_hazard_projection is None
+            or guidance.time_scale_schedule is None
+            or guidance.authority_version is None
+        ):
+            return None
+        selected = next(
+            (
+                action
+                for action in live_controller._PLANNER_ACTIONS
+                if action.name == decision.action
+            ),
+            None,
+        )
+        if selected is None:
+            raise RuntimeError("online decision has no local planner action")
+        continuation_horizon = 2
+        certificates = live_controller._robust_action_certificates(
+            player_x=snapshot.player_x,
+            player_y=snapshot.player_y,
+            previous_mask=previous_mask,
+            actions=(selected,),
+            delay_frames=(0,),
+            action_hold_frames=continuation_horizon,
+            bullets=snapshot.bullets,
+            lasers=snapshot.lasers,
+            enemy_bodies=snapshot.enemy_bodies,
+            snapshot_lag=0,
+            bullet_snapshot_age_support=(0,),
+            player_scale_bits=(
+                guidance.time_scale_schedule.require_player_horizon(
+                    continuation_horizon
+                )
+            ),
+            laser_scale_bits=(
+                guidance.time_scale_schedule.require_laser_horizon(
+                    continuation_horizon
+                )
+            ),
+            future_hazard_projection=guidance.future_hazard_projection,
+            future_projection_offset=guidance.future_projection_offset,
+        )
+        certificate = certificates.get(decision.action)
+        if (
+            certificate is None
+            or certificate.worst_collisions != 0
+            or certificate.min_clearance <= 0.0
+        ):
+            return None
+        return LinuxFallbackLease(
+            source_input_epoch=snapshot.source_input_epoch,
+            snapshot_generation=snapshot.root_generation,
+            input_mask=decision.mask,
+            continuation_frames=1,
+            min_clearance=certificate.min_clearance,
+            authority_version=guidance.authority_version,
+        )
+
     def choose(
         self,
         snapshot: LinuxPlannerSnapshot,
         *,
         previous_mask: int,
         guidance: LinuxPlannerGuidance = LinuxPlannerGuidance(),
+        certify_fallback_lease: bool = False,
     ) -> LinuxEpochPlan:
         validate_hard_no_bomb_mask(previous_mask)
         if snapshot.player_phase in UNCONTROLLABLE_PLAYER_PHASES:
@@ -514,12 +643,29 @@ class LinuxOneEpochPlanner:
             future_hazard_projection=guidance.future_hazard_projection,
             future_projection_offset=guidance.future_projection_offset,
         )
-        planning_ms = (self._clock() - started) * 1000.0
         mask = validate_hard_no_bomb_mask(decision.mask)
         if mask & BOMB or decision.bomb:
             raise RuntimeError("local planner attempted to use Bomb")
         if not mask & SHOT:
             raise RuntimeError("local planner returned a non-shooting gameplay mask")
+        fallback_lease = None
+        fallback_certificate_ms = 0.0
+        if certify_fallback_lease:
+            # This opt-in remains outside the live Easy route until the
+            # selected repeated action also has a same-version second-layer
+            # global viability predecessor.  Local two-frame clearance alone
+            # is insufficient action authority.
+            certificate_started = self._clock()
+            fallback_lease = self._certify_one_missed_epoch(
+                snapshot,
+                previous_mask=previous_mask,
+                decision=decision,
+                guidance=guidance,
+            )
+            fallback_certificate_ms = (
+                self._clock() - certificate_started
+            ) * 1000.0
+        planning_ms = (self._clock() - started) * 1000.0
         return LinuxEpochPlan(
             input_mask=mask,
             action=decision.action,
@@ -535,11 +681,14 @@ class LinuxOneEpochPlanner:
             ),
             planning_ms=planning_ms,
             decision=decision,
+            fallback_lease=fallback_lease,
+            fallback_certificate_ms=fallback_certificate_ms,
         )
 
 
 __all__ = (
     "LinuxEpochPlan",
+    "LinuxFallbackLease",
     "LinuxHazardCapture",
     "LinuxOnlineHazardCapture",
     "LinuxOneEpochPlanner",
@@ -548,5 +697,6 @@ __all__ = (
     "LinuxPlannerSnapshot",
     "NEUTRAL_GAMEPLAY_MASK",
     "UNCONTROLLABLE_PLAYER_PHASES",
+    "require_native_online_planner_backends",
     "validate_lockstep_root_frames",
 )
