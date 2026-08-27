@@ -3441,7 +3441,7 @@ normalizing only trace-local epoch and RNG-count origins.
 
 ### AUD-113 — The Wine outer barrier is a sparse replay sampler
 
-Status: **IMPLEMENTED AND TESTED OFFLINE; PHYSICAL EXTENSION PENDING**
+Status: **IMPLEMENTED; 12,000-SAMPLE RETAIL EXTENSION VALIDATED**
 
 The Wine calculation-call barrier does not observe every internal
 ReplayManager input epoch. The retained complete-attempt partial trace reached
@@ -3458,13 +3458,55 @@ normalizes each trace's RNG-call origin at the first matched frame. Manager
 clock, RNG seed/delta, input, player, resources, spell state, and all optional
 deep projections remain exact. Unit tests cover a `10649 -> 10652` gap,
 nonmonotonic rejection, sparse equality, and first nested semantic difference.
-The 16-root physical opcode-148 window passes this aligned comparator; a new
-long Wine capture is still required before any whole-stage claim.
+The 16-root physical opcode-148 window and the later 12,000-sample physical
+extension both pass this aligned comparator. The latter remains a partial
+Stage-5 replay observation, not a whole-stage or route-clear claim.
+
+### AUD-114 — Reconstructed defeat mode 2 incorrectly destroyed retained effects
+
+Status: **ROOT CAUSE FIXED IN LINUX RUNTIME; 12,000-SAMPLE RETAIL GATE PASSED**
+
+After the opcode-148 and no-life repairs, the first remaining compact semantic
+split appeared at replay frame 6,838: Linux had consumed exactly 60 more RNG
+words than retail. A pointer-free effect-lifecycle projection localized the
+cause to six opcode-128 effect-ID-13 instances. Both runtimes created the same
+six allocator slots, but old Linux marked all six for fade during the preceding
+boss phase transition; after 16 updates their freed slots were reused by six
+effect-ID-38 initializers, each consuming ten RNG words. Retail retained the
+original effects and therefore never made those 60 calls.
+
+The source reconstruction looked plausible but was control-flow wrong. Its
+`EnemyManagerUpdate.cpp` placed `case 2` immediately before
+`common_death_mode`, which calls `Enemy::FUN_0042a820` and clears the fixed
+24-entry enemy-to-effect owner registry. The v1.00d switch table at
+`0x0042DE96` instead maps defeat modes 0--3 to `0x0042D876`, `0x0042D809`,
+`0x0042D8EE`, and `0x0042D6B6`. Mode 2 therefore enters at `0x0042D8EE`,
+after the boss-only GUI and owner cleanup at `0x0042D8C8..0x0042D8E9`.
+This is an intentional lifetime distinction between generic defeat modes,
+not a Stage-5 or spell-specific exception.
+
+Generic owner-registry diagnostics now retain primary/secondary flags, death
+mode, death latch, no-death, callback subroutine, owner count, and effect
+allocator slots without process-dependent effect pointers. At replay frames
+6,135--6,137, Linux and Wine agree on every death gate; only old Linux cleared
+the six references. Linux runtime commit `efcf3e8` sends mode 2 directly to
+the retail post-cleanup continuation. The rebuilt i386 ELF has SHA-256
+`031c51abb78427ae9131752cef763634a2515d8b807e315afb2c8c3a6427000f`.
+
+The corrected death-edge run retains all six identical slots. In the former
+failure window, replay frames 6,830--6,849 now match retail on every RNG call
+count and seed, including 1,630 trace-local calls and seed 9,822 at the final
+root. More importantly, replay-aligned comparison of the retained Wine
+12,000-sample compact trace is exact for every sampled frame from replay 1
+through 12,494: 11,506 matched samples through replay 12,000 plus an exact
+494-sample tail. This removes the old first discrete split across the complete
+available retail baseline. It does not prove continuous geometry identity,
+full Stage 5, replay portability, Easy NMNB, or any hit reduction.
 
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
-VPS: 1,649 tests run, 5 conditionally skipped, zero failures or errors. The
+VPS: 1,652 tests run, 5 conditionally skipped, zero failures or errors. The
 Win32 planner build separately produced a PE32 i386 DLL with all
 46 manifest exports. These offline/build gates are supplemented by the Wine
 smoke record below; full-route policy validation remains separate.

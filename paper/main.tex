@@ -255,9 +255,27 @@ claims before expensive full-route experiments.
 The same deep capture corrected a separate portability defect: valid relocated
 ECL pointers in the high half of the i386 address space had been rejected by a
 Win32-specific $0x7fffffff$ bound.  Exact image intervals now validate those
-pointers.  The next gate extends the differential until the first remaining
-discrete threshold crossing; Linux replay generation and complete NMNB
-authority remain open.
+pointers.
+
+Extending the differential exposed a second reconstruction error that source
+alone did not reveal.  Six generic opcode-128 effects were born identically,
+but Linux destroyed them at a mode-2 boss transition while retail retained
+them.  Six later allocator reuses each consumed ten RNG words, explaining the
+entire sixty-word split at replay frame 6,838.  The decisive evidence was the
+original switch table: mode~2 enters after the boss-only effect-owner cleanup,
+whereas the reconstructed C++ had allowed it to fall through that cleanup.
+Restoring the retail edge preserves the six owner slots and removes the RNG
+split without a stage or card condition.  This illustrates the proper role of
+the recovered source: it supplies state layout and intent, while binary
+control flow remains the falsifier for ambiguous reconstruction.
+
+After that repair, replay-aligned comparison is exact for every one of the
+12,000 roots sampled by the available retail Stage~5 trace, spanning replay
+frames 1 through 12,494.  The result materially strengthens native Linux as an
+offline oracle because no later compact discrete divergence replaces the old
+one.  It does not establish continuous geometry identity, a complete stage,
+portable replay acceptance, hit reduction, or NMNB; those remain separate
+gates rather than conclusions inferred from a long matching prefix.
 
 \section{Source-Stateful Offline Laboratory}
 
