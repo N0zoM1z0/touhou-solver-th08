@@ -3679,6 +3679,72 @@ algorithm work; they do not invalidate the fuzzer or describe a game route.
 Only the 2.4 MiB raw diagnostic remains in `/tmp`; the tracked compact evidence
 is `artifacts/runtime_reports/source_stateful_extreme_12000_20260827.json`.
 
+### AUD-119 — Native lockstep completes Easy, but the minimal policy regresses
+
+Status: **VALIDATED PHYSICALLY; 31-HIT BASELINE, SURVIVAL FIX OPEN**
+
+The corrected uncapped native route completed all expected indices
+`0,1,2,3,5,7`, entered the ordinary ResultScreen, and normally saved a replay.
+All 360,400 bridge requests passed their memory witness. There were no
+authoritative same-lifecycle input-echo mismatches, no Bomb-policy violation,
+and no Bomb frame in the decoded six-stage Easy route-2 replay. Runtime errors
+and the gameplay-duration limit are both null. This closes AUD-117's route
+completion gate for the Linux harness.
+
+It does not close Easy survival. The epoch-by-epoch phase tracker records 31
+hits with stage counts `0/1/1/3/7/19`. The earlier asynchronous Wine Easy route
+recorded 13 (`0/0/0/1/1/11`), although different RNG, damage feedback,
+configuration, and revisions prevent a controlled platform delta. The result
+still falsifies the intended simplification: a zero-lag native seam plus the
+minimal `8/12/8` current-hazard planner is not automatically stronger than the
+mature Easy controller.
+
+The twelve-root precursor for each hit divides the selected last decisions
+into 16 with nonpositive planned clearance or a robust collision, nine with
+positive clearance below two pixels, and six with clearance at least two
+pixels. The last group reaches as high as 29.06 pixels one frame before native
+contact and is the strongest future-birth/geometry/update-order falsifier. The
+first group cannot be repaired solely by adding unseen births. Fast actions
+appear on 21/31 last rows, horizontal boundaries on 18/31 contacts, and the
+bottom edge on 20/31. Complete alternative-action certificates were not
+retained, so this report does not promote selected-path loss to action-set
+exhaustion.
+
+Mean/p95 synchronous cost is 5.45/7.12 ms for complete pool reads,
+2.01/7.36 ms for decode, 10.26/20.74 ms for planning, and 17.72/32.17 ms total.
+The report and 96 KiB replay remain under
+`artifacts/runtime_reports/easy_linux_lockstep_full_route_20260827.json` and
+`artifacts/replays/easy_linux_lockstep_full_route_20260827.rpy`. The detailed
+review is `notes/runs/easy_linux_lockstep_full_route_20260827.md`.
+
+### AUD-120 — Source scene state exposes avoidable native transition work
+
+Status: **SOURCE-LOCATED AND OBSERVED; GENERIC DRIVER PENDING**
+
+The route records 278,630 planned epochs but ends combat at manager frame
+217,594. That excess is not all dialogue, because loading and special stage
+gates also freeze or replace the manager clock. Direct live inspection did
+identify ordinary message episodes: FRScreen's source predicate blocked the
+enemy clock, the current message instruction was skippable wait opcode `0x04`,
+and the Linux adapter still copied every pool and ran the local beam.
+
+`GuiImpl::RunMsg` supplies a generic solution. When `dialogueSkippable` and
+`TH_BUTTON_SKIP` are set, it advances to the current authored instruction.
+Route-choice opcode `0x15` is the exception: source requires a rising Up/Down
+edge to set `routeChoice`, at least 60 paused frames, then a rising Shot edge;
+opcode `0x16` commits that value to `isGoingToFinalB`. A driver can therefore
+select Final B without any stage or spell test.
+
+After gameplay unregistered, the run spent another 79,511 bridge epochs in
+Ending before ResultScreen. The live chain argument for `Ending::OnUpdate`
+reported `hasSeenEnding == 1`, so source explicitly allowed `TH_BUTTON_SKIP`.
+The main ending file then transferred to a finite credits file through opcode
+`@F`. Future drivers should detect the exact callback/state, honor the
+source skip flag, and retain file identity plus cursor for progress. No
+duration kill or memory mutation is needed. This optimization reduces
+experiment wall time and prevents route-choice contamination, but it makes no
+survival claim.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
