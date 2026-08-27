@@ -206,6 +206,45 @@ def wait_for_patched_target(
             reader.close()
 
 
+def wait_for_retail_target(
+    api: Win32,
+    *,
+    expected_exe: Path,
+    timeout_seconds: float,
+) -> tuple[int, dict[str, object]]:
+    """Wait for exact TH08 while requiring the original AddLives(-1) byte."""
+
+    deadline = time.perf_counter() + timeout_seconds
+    reader: ProcessReader | None = None
+    identity: dict[str, object] | None = None
+    try:
+        while time.perf_counter() < deadline and reader is None:
+            matches = matching_targets(api, expected_exe)
+            if len(matches) > 1:
+                raise RuntimeError(
+                    "multiple exact TH08 targets appeared after launch"
+                )
+            if matches:
+                pid, identity = matches[0]
+                reader = ProcessReader(api, pid)
+                break
+            time.sleep(0.1)
+        if reader is None or identity is None:
+            raise TimeoutError(
+                "timed out waiting for the exact TH08 executable"
+            )
+        while time.perf_counter() < deadline:
+            if reader.u8(ADDR_NO_LIFE_DECREMENT_PATCH) == 0xFF:
+                return reader.pid, verify_target(reader)
+            time.sleep(0.05)
+        raise TimeoutError(
+            "timed out waiting for original retail life-decrement byte"
+        )
+    finally:
+        if reader is not None:
+            reader.close()
+
+
 def target_windows(api: Win32, pid: int) -> tuple[int, ...]:
     windows: list[int] = []
 

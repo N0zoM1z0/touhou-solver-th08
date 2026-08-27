@@ -69,6 +69,35 @@ class WindowsReplaySemanticSmokeTests(unittest.TestCase):
         self.assertEqual(args.start_manager_frame, 600)
         self.assertEqual(args.gameplay_epochs, 300)
         self.assertEqual(args.root_timeout, 300.0)
+        self.assertFalse(args.retail_life_decrement)
+
+    def test_parser_can_require_original_life_decrement(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args = build_parser().parse_args(
+                [
+                    "--game-dir",
+                    str(root),
+                    "--launch-bat",
+                    str(root / "launch.bat"),
+                    "--report",
+                    str(root / "report.json"),
+                    "--fingerprint-output",
+                    str(root / "trace.jsonl.gz"),
+                    "--replay-slot",
+                    "1",
+                    "--expected-replay-sha256",
+                    "a" * 64,
+                    "--expected-route-id",
+                    "2",
+                    "--expected-difficulty-index",
+                    "0",
+                    "--expected-stage-index",
+                    "0",
+                    "--retail-life-decrement",
+                ]
+            )
+        self.assertTrue(args.retail_life_decrement)
 
     def test_sample_contract_accepts_exact_aligned_replay(self) -> None:
         validate_semantic_sample(

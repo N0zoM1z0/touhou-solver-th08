@@ -329,6 +329,7 @@ def build_windows_controller_command(
     replay_gameplay_epochs: int = 300,
     replay_root_timeout: float = 300.0,
     replay_stop_at_stage_terminal: bool = False,
+    replay_retail_life_decrement: bool = False,
     replay_collision_control_projection: bool = False,
     replay_effect_lifecycle_summary: bool = False,
 ) -> list[str]:
@@ -439,6 +440,8 @@ def build_windows_controller_command(
         ]
         if replay_stop_at_stage_terminal:
             command.append("--stop-at-stage-terminal")
+        if replay_retail_life_decrement:
+            command.append("--retail-life-decrement")
         if replay_collision_control_projection:
             command.append("--collision-control-projection")
         if replay_effect_lifecycle_summary:
@@ -565,6 +568,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
     )
     parser.add_argument(
+        "--replay-retail-life-decrement",
+        action="store_true",
+        help=(
+            "launch exact retail TH08 without the no-life patch for a short "
+            "game-over replay diagnostic"
+        ),
+    )
+    parser.add_argument(
         "--replay-collision-control-projection",
         action="store_true",
         help=(
@@ -658,6 +669,9 @@ def run(args: argparse.Namespace) -> int:
         "replay_stop_at_stage_terminal": bool(
             args.replay_stop_at_stage_terminal
         ),
+        "replay_retail_life_decrement": bool(
+            args.replay_retail_life_decrement
+        ),
         "replay_collision_control_projection": bool(
             args.replay_collision_control_projection
         ),
@@ -717,6 +731,13 @@ def run(args: argparse.Namespace) -> int:
             and args.trial_timeout <= args.agent_duration
         ):
             raise ValueError("trial timeout must exceed agent duration")
+        if (
+            args.replay_retail_life_decrement
+            and args.mode != "replay-differential"
+        ):
+            raise ValueError(
+                "retail life decrement is a replay-differential diagnostic"
+            )
         replay_input: Path | None = None
         replay_sha256: str | None = None
         if args.mode == "replay-differential":
@@ -938,6 +959,8 @@ def run(args: argparse.Namespace) -> int:
                 ),
             }
         )
+        if args.replay_retail_life_decrement:
+            environment["TH08_RETAIL_LIFE_DECREMENT"] = "1"
         version = subprocess.run(
             [str(wine), "--version"],
             check=True,
@@ -1076,6 +1099,9 @@ def run(args: argparse.Namespace) -> int:
             replay_root_timeout=args.replay_root_timeout,
             replay_stop_at_stage_terminal=(
                 args.replay_stop_at_stage_terminal
+            ),
+            replay_retail_life_decrement=(
+                args.replay_retail_life_decrement
             ),
             replay_collision_control_projection=(
                 args.replay_collision_control_projection

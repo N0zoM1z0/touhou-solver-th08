@@ -3505,7 +3505,7 @@ full Stage 5, replay portability, Easy NMNB, or any hit reduction.
 
 ### AUD-115 — Linux replay authority was missing the normal save path
 
-Status: **LINUX GENERATION VALIDATED; ORIGINAL-WINE REVERSE PLAYBACK PENDING**
+Status: **LINUX GENERATION/REPLAY VALIDATED; ORIGINAL-WINE PLAYBACK PENDING**
 
 The old bridge always mirrored the no-life analysis patch. That is appropriate
 for route hit counting but prevents a short diagnostic game from reaching the
@@ -3532,6 +3532,13 @@ The file and compact report are retained under `artifacts/replays/` and
 `artifacts/runtime_reports/`. This proves Linux normal-save generation only.
 Fresh-Linux playback and original-v1.00d Wine playback of the exact retained
 SHA remain mandatory before any Linux-generated solver replay is authoritative.
+
+A second, fresh Linux process has now closed the first half. It loaded the
+unchanged replay SHA from a separate data directory with retail life decrement,
+captured 2,162 contiguous manager/replay roots, and observed ReplayManager
+removal at relative epoch 2,163. No fixed gameplay-duration limit was used;
+8,192 was only a fail-closed sample-cap guard beyond the decoded 2,167-word
+storage extent. Original-v1.00d playback is still required.
 
 ## Offline Verification Record
 

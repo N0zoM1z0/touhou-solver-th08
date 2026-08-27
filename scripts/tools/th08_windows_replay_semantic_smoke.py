@@ -26,6 +26,7 @@ from th08_automation.practice_windows import (
     matching_targets,
     terminate_exact_target,
     wait_for_patched_target,
+    wait_for_retail_target,
 )
 from th08_linux import (
     MANAGER_FRAME_TRANSITION_SAME,
@@ -64,6 +65,14 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "treat gameplay-inactive replay-binding teardown as successful "
             "completion before the epoch guard"
+        ),
+    )
+    parser.add_argument(
+        "--retail-life-decrement",
+        action="store_true",
+        help=(
+            "require the original AddLives(-1) byte for a short game-over "
+            "replay; never use this result as NMNB authority"
         ),
     )
     parser.add_argument("--launch-timeout", type=float, default=60.0)
@@ -201,6 +210,7 @@ def run(args: argparse.Namespace) -> int:
         "status": "failed",
         "scope": "bounded barrier-aligned replay differential; no route claim",
         "route_duration_limit": None,
+        "retail_life_decrement": bool(args.retail_life_decrement),
     }
     api: Win32 | None = None
     reader: ProcessReader | None = None
@@ -234,7 +244,12 @@ def run(args: argparse.Namespace) -> int:
             launch_bat=args.launch_bat.resolve(),
             log_path=args.report.with_suffix(".launch.log"),
         )
-        pid, identity = wait_for_patched_target(
+        wait_for_target = (
+            wait_for_retail_target
+            if args.retail_life_decrement
+            else wait_for_patched_target
+        )
+        pid, identity = wait_for_target(
             api,
             expected_exe=expected_exe,
             timeout_seconds=args.launch_timeout,
@@ -266,6 +281,13 @@ def run(args: argparse.Namespace) -> int:
         )
         report["initial_gameplay_state"] = initial_state
         report["target"] = verify_target(reader)
+        target_patch = report["target"]["runtime_patch"]
+        observed_no_life_decrement = bool(
+            target_patch["no_life_decrement"]
+        )
+        expected_no_life_decrement = not args.retail_life_decrement
+        if observed_no_life_decrement != expected_no_life_decrement:
+            raise RuntimeError("retail replay life-decrement mode drifted")
         initial_manager_frame = int(initial_state["enemy_manager_frame"])
         if initial_manager_frame >= args.start_manager_frame:
             raise RuntimeError(

@@ -1,0 +1,364 @@
+{
+  "bootstrap_last_epoch": 161,
+  "collision_control_projection": false,
+  "effect_lifecycle_summary": false,
+  "fingerprint_output": null,
+  "first": {
+    "difficulty_index": 0,
+    "game_manager_flags": 229388,
+    "gameplay_active": true,
+    "input": {
+      "gui_current": 0,
+      "gui_previous": 0,
+      "supervisor_current": 0,
+      "supervisor_previous": 0
+    },
+    "manager_frame": 1,
+    "player": {
+      "bomb_active": 0,
+      "bomb_index": 0,
+      "bomb_lockout": 0,
+      "bomb_timer": 0,
+      "deathbomb": 0,
+      "focus_logic": 0,
+      "focus_transition_counter": 0,
+      "forced_bomb": 0,
+      "phase": 3,
+      "predeath_counter": 10,
+      "secondary_character_active": false,
+      "x_bits": 1128267776,
+      "y_bits": 1136656384
+    },
+    "relative_epoch": 1,
+    "replay": {
+      "flags": 0,
+      "frame_counter": 1,
+      "input_delay": 0,
+      "is_demo": 1,
+      "rng_seed": 0
+    },
+    "resources": {
+      "bombs_bits": 1077936128,
+      "lives_bits": 1073741824,
+      "power_bits": 0
+    },
+    "rng": {
+      "calls_since_trace_start": 0,
+      "seed": 59272
+    },
+    "schema": "th08-semantic-spine-v3",
+    "shot_type_index": 2,
+    "spell": {
+      "active": false,
+      "flags": 0,
+      "name": "",
+      "spell_id": 0,
+      "timer_elapsed": -1
+    },
+    "stage_index": 0,
+    "time_scale_bits": 1065353216,
+    "trace_locators": {
+      "bridge_epoch": 162,
+      "manager_frame_delta_from_previous_root": 0,
+      "rng_calls_absolute": 90
+    }
+  },
+  "inactive_gameplay_epochs": 0,
+  "last": {
+    "difficulty_index": 0,
+    "game_manager_flags": 229388,
+    "gameplay_active": true,
+    "input": {
+      "gui_current": 0,
+      "gui_previous": 0,
+      "supervisor_current": 0,
+      "supervisor_previous": 0
+    },
+    "manager_frame": 2162,
+    "player": {
+      "bomb_active": 0,
+      "bomb_index": 0,
+      "bomb_lockout": 0,
+      "bomb_timer": 0,
+      "deathbomb": 0,
+      "focus_logic": 0,
+      "focus_transition_counter": 2009,
+      "forced_bomb": 0,
+      "phase": 1,
+      "predeath_counter": 0,
+      "secondary_character_active": false,
+      "x_bits": 1128267776,
+      "y_bits": 1136656384
+    },
+    "relative_epoch": 2162,
+    "replay": {
+      "flags": 15974,
+      "frame_counter": 2162,
+      "input_delay": 0,
+      "is_demo": 1,
+      "rng_seed": 0
+    },
+    "resources": {
+      "bombs_bits": 1082130432,
+      "lives_bits": 0,
+      "power_bits": 0
+    },
+    "rng": {
+      "calls_since_trace_start": 84154,
+      "seed": 44924
+    },
+    "schema": "th08-semantic-spine-v3",
+    "shot_type_index": 2,
+    "spell": {
+      "active": false,
+      "flags": 0,
+      "name": "",
+      "spell_id": 0,
+      "timer_elapsed": -2162
+    },
+    "stage_index": 0,
+    "time_scale_bits": 1065353216,
+    "trace_locators": {
+      "bridge_epoch": 2323,
+      "manager_frame_delta_from_previous_root": 1,
+      "rng_calls_absolute": 84244
+    }
+  },
+  "lives_preserved_attested": false,
+  "manager_forward_jump_epochs": 0,
+  "manager_frames_skipped": 0,
+  "maximum_sample_epochs": 8192,
+  "nonzero_gui_input_epochs": 0,
+  "replay": {
+    "difficulty_index": 0,
+    "path": "/home/yann/yann/touhou/th08-research/th08-linux-solver-runtime/local/reverse-linux-replay-data/replay/th8_01.rpy",
+    "route_id": 2,
+    "sha256": "c4a0abba793395dd93e6a3419e95b722aac8babb6c97e267e218568c50ecb3b1",
+    "stage_index": 0,
+    "stage_rng_seed": 12708,
+    "stage_stored_input_word_count": 2167
+  },
+  "replay_frame_range": [
+    1,
+    2162
+  ],
+  "retail_life_decrement": true,
+  "rng_calls_origin": 90,
+  "route_duration_limit": null,
+  "runtime": {
+    "path": "/home/yann/yann/touhou/th08-research/th08-linux-solver-runtime/build/modern-linux/th08-modern",
+    "sha256": "0bd9685c8c1a7cc57a4aaee9c1a449485b8539c9a6272bcb22d70c7a9fe9f1f1",
+    "size": 3948452
+  },
+  "same_manager_input_epochs": 0,
+  "sample_epochs": 2162,
+  "schema": "th08-linux-replay-semantic-smoke-v7",
+  "scope": "bounded retail-life replay terminal diagnostic; no NMNB claim",
+  "semantic_spine_sha256": "77cdefbfcca24ea593931eec604ebf6e808ca1d63feec82a85ce3f6b63d8c57f",
+  "skipped_gameplay_epochs": 0,
+  "stage_terminal": {
+    "gameplay_active": false,
+    "manager_frame": 2162,
+    "reason": "replay manager is absent",
+    "relative_epoch": 2163,
+    "replay_frame": null
+  },
+  "start_manager_frame": 1,
+  "start_replay_frame": 1,
+  "stop_at_stage_terminal": true,
+  "transitions": [
+    {
+      "action": "wait-title-root",
+      "epoch": 1,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "wait-title-lifecycle",
+      "cursor": 0,
+      "epoch": 2,
+      "input_mask": 0,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 0
+    },
+    {
+      "action": "wait-screen-ready",
+      "cursor": 0,
+      "epoch": 38,
+      "input_mask": 0,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 0
+    },
+    {
+      "action": "select-replay-menu",
+      "cursor": 0,
+      "epoch": 48,
+      "input_mask": 32,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 49,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "select-replay-menu",
+      "cursor": 1,
+      "epoch": 50,
+      "input_mask": 32,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 51,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "select-replay-menu",
+      "cursor": 2,
+      "epoch": 52,
+      "input_mask": 32,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 53,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "select-replay-menu",
+      "cursor": 3,
+      "epoch": 54,
+      "input_mask": 32,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 55,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "wait-start-confirm-gate",
+      "cursor": 4,
+      "epoch": 56,
+      "input_mask": 0,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "confirm-replay-menu",
+      "cursor": 4,
+      "epoch": 57,
+      "input_mask": 1,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 58,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "wait-replay-list",
+      "cursor": 0,
+      "epoch": 59,
+      "input_mask": 0,
+      "phase": "title",
+      "replay_count": 1,
+      "screen": 7,
+      "screen_state": 0
+    },
+    {
+      "action": "wait-replay-confirm-gate",
+      "cursor": 0,
+      "epoch": 67,
+      "input_mask": 0,
+      "phase": "title",
+      "replay_count": 1,
+      "screen": 7,
+      "screen_state": 1
+    },
+    {
+      "action": "confirm-replay",
+      "cursor": 0,
+      "epoch": 76,
+      "input_mask": 1,
+      "phase": "title",
+      "replay_count": 1,
+      "screen": 7,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 77,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "confirm-replay-stage",
+      "cursor": 0,
+      "epoch": 78,
+      "input_mask": 1,
+      "phase": "title",
+      "replay_count": 1,
+      "screen": 7,
+      "screen_state": 2
+    },
+    {
+      "action": "release",
+      "epoch": 79,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "confirm-replay-mode",
+      "cursor": 0,
+      "epoch": 80,
+      "input_mask": 1,
+      "phase": "title",
+      "replay_count": 1,
+      "screen": 7,
+      "screen_state": 3
+    },
+    {
+      "action": "release",
+      "epoch": 81,
+      "phase": "release-or-root"
+    },
+    {
+      "epoch": 82,
+      "gameplay_active": false,
+      "loading_state": 1,
+      "phase": "gameplay-load"
+    },
+    {
+      "epoch": 136,
+      "gameplay_active": true,
+      "loading_state": 1,
+      "phase": "gameplay-load"
+    },
+    {
+      "epoch": 161,
+      "gameplay_active": true,
+      "loading_state": 0,
+      "phase": "gameplay-load"
+    }
+  ]
+}

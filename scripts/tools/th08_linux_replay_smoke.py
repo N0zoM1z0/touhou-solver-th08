@@ -53,12 +53,25 @@ def build_parser() -> argparse.ArgumentParser:
             "completion before the epoch guard"
         ),
     )
+    parser.add_argument(
+        "--retail-life-decrement",
+        action="store_true",
+        help=(
+            "restore retail life decrement for a short game-over replay; "
+            "this is diagnostic terminal authority, never NMNB authority"
+        ),
+    )
     parser.add_argument("--maximum-bootstrap-epochs", type=int, default=4096)
     parser.add_argument("--startup-timeout-seconds", type=float, default=120.0)
     parser.add_argument(
         "--fingerprint-output",
         type=Path,
         help="write every sampled spine to a new .jsonl or .jsonl.gz file",
+    )
+    parser.add_argument(
+        "--report-output",
+        type=Path,
+        help="write the compact terminal report to a new JSON file",
     )
     parser.add_argument(
         "--collision-control-projection",
@@ -95,6 +108,10 @@ def run(args: argparse.Namespace) -> int:
         raise FileExistsError(
             f"refusing to replace semantic trace: {args.fingerprint_output}"
         )
+    if args.report_output is not None and args.report_output.exists():
+        raise FileExistsError(
+            f"refusing to replace replay report: {args.report_output}"
+        )
     replay_path = args.data_directory / "replay" / args.replay_name
     metadata, _decoded = decode_replay(replay_path)
     stage = next(
@@ -115,12 +132,15 @@ def run(args: argparse.Namespace) -> int:
     transitions: list[dict[str, object]] = []
     fingerprints: list[dict[str, object]] = []
     previous_key: tuple[object, ...] | None = None
+    environment = {"SDL_AUDIODRIVER": "dummy"}
+    if args.retail_life_decrement:
+        environment["TH08_SOLVER_PRESERVE_LIVES"] = "0"
     session = LinuxGameSession(
         executable=args.executable,
         data_directory=args.data_directory,
         expected_sha256=args.expected_sha256,
         display=args.display,
-        environment={"SDL_AUDIODRIVER": "dummy"},
+        environment=environment,
         startup_timeout_seconds=args.startup_timeout_seconds,
     )
     try:
@@ -251,11 +271,20 @@ def run(args: argparse.Namespace) -> int:
                     if (
                         args.stop_at_stage_terminal
                         and not request_lives_preserved
+                        and not args.retail_life_decrement
                     ):
                         session.bridge.respond(0)
                         raise RuntimeError(
                             "stage-terminal authority requires a runtime "
                             "that attests no-life-decrement parity"
+                        )
+                    if (
+                        args.retail_life_decrement
+                        and request_lives_preserved
+                    ):
+                        session.bridge.respond(0)
+                        raise RuntimeError(
+                            "runtime did not restore retail life decrement"
                         )
                     if relative_epoch == 1:
                         seek_manager_frame = session.reader.u32(
@@ -444,6 +473,7 @@ def run(args: argparse.Namespace) -> int:
                 "sample_epochs": sample_epochs,
                 "maximum_sample_epochs": args.gameplay_epochs,
                 "stop_at_stage_terminal": bool(args.stop_at_stage_terminal),
+                "retail_life_decrement": bool(args.retail_life_decrement),
                 "lives_preserved_attested": lives_preserved_attested,
                 "stage_terminal": terminal_observation,
                 "semantic_spine_sha256": digest.hexdigest(),
@@ -463,7 +493,11 @@ def run(args: argparse.Namespace) -> int:
                 "last": last,
                 "transitions": transitions,
                 "route_duration_limit": None,
-                "scope": "bounded replay differential bootstrap; no route claim",
+                "scope": (
+                    "bounded retail-life replay terminal diagnostic; no NMNB claim"
+                    if args.retail_life_decrement
+                    else "bounded replay differential bootstrap; no route claim"
+                ),
                 "collision_control_projection": bool(
                     args.collision_control_projection
                 ),
@@ -471,7 +505,19 @@ def run(args: argparse.Namespace) -> int:
                     args.effect_lifecycle_summary
                 ),
             }
-            print(json.dumps(report, ensure_ascii=False, sort_keys=True))
+            encoded_report = (
+                json.dumps(
+                    report,
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n"
+            )
+            if args.report_output is not None:
+                args.report_output.parent.mkdir(parents=True, exist_ok=True)
+                args.report_output.write_text(encoded_report, encoding="utf-8")
+            print(encoded_report, end="")
     except BaseException:
         if (
             args.fingerprint_output is not None
