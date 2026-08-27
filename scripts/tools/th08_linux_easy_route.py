@@ -42,6 +42,7 @@ from th08_linux.planner import (  # noqa: E402
     UNCONTROLLABLE_PLAYER_PHASES,
 )
 from th08_linux.protocol import BOMB, validate_hard_no_bomb_mask  # noqa: E402
+from th08_linux.title import GameplayBootstrapSnapshot  # noqa: E402
 from th08_replay import decode_replay  # noqa: E402
 from th08_runtime.sensing import observe_state  # noqa: E402
 
@@ -116,6 +117,33 @@ def _spell_id(state: Mapping[str, object]) -> int | None:
         return None
     value = spell.get("spell_id")
     return int(value) if value is not None else None
+
+
+def _input_echo_is_authoritative(
+    previous: GameplayBootstrapSnapshot | None,
+    current: GameplayBootstrapSnapshot,
+) -> bool:
+    """Return whether Supervisor preserves the prior input across this epoch."""
+
+    return bool(
+        previous is not None
+        and previous.ready
+        and current.ready
+        and previous.calc_callback == current.calc_callback
+        and previous.stage_route_index == current.stage_route_index
+    )
+
+
+def _input_echo_context(
+    snapshot: GameplayBootstrapSnapshot | None,
+) -> dict[str, int | bool] | None:
+    if snapshot is None:
+        return None
+    return {
+        "registered": snapshot.registered,
+        "loading_state": snapshot.loading_state,
+        "stage_route_index": snapshot.stage_route_index,
+    }
 
 
 def _compact_plan(
@@ -252,7 +280,9 @@ def run(args: argparse.Namespace) -> int:
     hit_count = 0
     bomb_policy_violations = 0
     input_echo_mismatches: list[dict[str, int]] = []
+    input_echo_lifecycle_resets: list[dict[str, object]] = []
     previous_response: int | None = None
+    previous_gameplay_context: GameplayBootstrapSnapshot | None = None
     previous_player_phase: int | None = None
     gameplay_ready_epoch: int | None = None
     first_gameplay_frame: int | None = None
@@ -299,6 +329,7 @@ def run(args: argparse.Namespace) -> int:
                     )
                     session.bridge.respond(mask)
                     previous_response = mask
+                    previous_gameplay_context = gameplay
                     _record_transition(
                         transitions,
                         transition_key,
@@ -334,6 +365,7 @@ def run(args: argparse.Namespace) -> int:
                 )
                 session.bridge.respond(decision.input_mask)
                 previous_response = decision.input_mask
+                previous_gameplay_context = None
                 _record_transition(
                     transitions,
                     transition_key,
@@ -379,10 +411,15 @@ def run(args: argparse.Namespace) -> int:
                     ),
                 )
                 wire_checks += 1
-                if (
+                echo_differs = bool(
                     previous_response is not None
                     and request.current_input != previous_response
-                ):
+                )
+                echo_authoritative = _input_echo_is_authoritative(
+                    previous_gameplay_context,
+                    gameplay,
+                )
+                if echo_differs and echo_authoritative:
                     mismatch = {
                         "epoch": request.epoch,
                         "expected": previous_response,
@@ -393,10 +430,23 @@ def run(args: argparse.Namespace) -> int:
                         "native input did not echo the preceding complete mask: "
                         f"{mismatch}"
                     )
+                if echo_differs:
+                    input_echo_lifecycle_resets.append(
+                        {
+                            "epoch": request.epoch,
+                            "expected": previous_response,
+                            "observed": request.current_input,
+                            "previous": _input_echo_context(
+                                previous_gameplay_context
+                            ),
+                            "current": _input_echo_context(gameplay),
+                        }
+                    )
 
                 if full_route and replay_path.is_file():
                     session.bridge.respond(0)
                     previous_response = 0
+                    previous_gameplay_context = gameplay
                     finish_reason = "replay-saved"
                     break
 
@@ -517,6 +567,7 @@ def run(args: argparse.Namespace) -> int:
                     action_counts[action] += 1
                     session.bridge.respond(mask)
                     previous_response = mask
+                    previous_gameplay_context = gameplay
                     _record_transition(
                         transitions,
                         transition_key,
@@ -605,6 +656,7 @@ def run(args: argparse.Namespace) -> int:
                 validate_hard_no_bomb_mask(decision.input_mask)
                 session.bridge.respond(decision.input_mask)
                 previous_response = decision.input_mask
+                previous_gameplay_context = gameplay
                 _record_transition(
                     transitions,
                     transition_key,
@@ -685,6 +737,7 @@ def run(args: argparse.Namespace) -> int:
         },
         "bomb_policy_violations": bomb_policy_violations,
         "input_echo_mismatches": input_echo_mismatches,
+        "input_echo_lifecycle_resets": input_echo_lifecycle_resets,
         "action_counts": dict(sorted(action_counts.items())),
         "maximum_hazard_counts": maximum_hazard_counts,
         "minimum_clearances": minimum_clearances,

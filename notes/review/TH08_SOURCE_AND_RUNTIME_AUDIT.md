@@ -3617,6 +3617,38 @@ preserves that outcome while reducing planner p95 from 220.87 ms to 108.59 ms;
 six further seeds pass at the smaller configuration. The smaller generic
 configuration is therefore the Easy route default, not a stage/spell branch.
 
+### AUD-117 — Input echo is not authoritative across a Supervisor lifecycle
+
+Status: **SOURCE-LOCATED; FIXED OFFLINE; FULL-ROUTE RERUN PENDING**
+
+The first uncapped native Easy run completed Stage 1 with zero hit edges and
+zero Bomb input. At bridge epoch 22,801, GameManager had entered loading state
+1 for route-stage index 1 and the driver returned its neutral gameplay mask
+`0x0005`. The next request correctly reported current input `0x0000`, but the
+driver treated the difference as a delivery failure and disconnected before
+Stage 2. The retained compact report contains 22,667 plans through manager
+frame 18,643 and names the sole failure:
+`artifacts/runtime_reports/easy_linux_stage1_transition_failure_20260827.json`.
+
+This is a witness-domain bug, not an actuator or policy failure. In the pinned
+source runtime at commit `c38a92a`, `Supervisor::OnUpdate` normally copies
+`g_CurFrameInput` to `g_LastFrameInput` and obtains the next controller mask.
+After any requested Supervisor state transition, however, it explicitly sets
+both globals to zero. The bridge request reports those source globals, so the
+mask returned before a stage lifecycle boundary is not required to echo after
+that boundary. GameManager loading and stage identity expose the boundary
+without a stage/spell predicate.
+
+The route driver now validates input echo only when both adjacent observations
+are ready GameManager epochs with the same calc callback and route-stage index.
+It still fails closed on every differing mask inside that authoritative
+interval. Differences across loading, registration, callback, or stage changes
+are retained as compact `input_echo_lifecycle_resets` evidence rather than
+misclassified as delivery errors. A regression covers ready-to-ready,
+ready-to-loading, loading-to-ready, direct stage change, and missing-context
+cases. This narrows a diagnostic claim; it does not suppress or alter gameplay
+input and grants no hit or route-completion result until the rerun finishes.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this

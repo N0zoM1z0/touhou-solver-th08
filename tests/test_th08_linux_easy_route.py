@@ -8,13 +8,30 @@ from unittest import mock
 
 from th08_linux.elf import resolve_defined_symbol
 from tools.th08_linux_easy_route import (
+    _input_echo_is_authoritative,
     _spell_id,
     _timing_summary,
     build_parser,
 )
+from th08_linux.title import GameplayBootstrapSnapshot
 
 
 class LinuxEasyRouteToolTests(unittest.TestCase):
+    @staticmethod
+    def _gameplay(
+        *,
+        callback: int = 0x8040000,
+        loading: int = 0,
+        stage: int = 0,
+    ) -> GameplayBootstrapSnapshot:
+        return GameplayBootstrapSnapshot(
+            calc_callback=callback,
+            loading_state=loading,
+            difficulty_index=0,
+            shot_type_index=2,
+            stage_route_index=stage,
+        )
+
     def test_full_route_has_no_gameplay_cap_by_default(self) -> None:
         arguments = build_parser().parse_args(
             [
@@ -47,6 +64,31 @@ class LinuxEasyRouteToolTests(unittest.TestCase):
     def test_spell_id_requires_active_observation(self) -> None:
         self.assertIsNone(_spell_id({"spell": {"active": False, "spell_id": 9}}))
         self.assertEqual(_spell_id({"spell": {"active": True, "spell_id": 9}}), 9)
+
+    def test_input_echo_is_authoritative_only_inside_one_ready_stage(self) -> None:
+        ready_stage_1 = self._gameplay(stage=0)
+        self.assertTrue(
+            _input_echo_is_authoritative(ready_stage_1, ready_stage_1)
+        )
+        self.assertFalse(
+            _input_echo_is_authoritative(
+                ready_stage_1,
+                self._gameplay(loading=1, stage=1),
+            )
+        )
+        self.assertFalse(
+            _input_echo_is_authoritative(
+                self._gameplay(loading=1, stage=1),
+                self._gameplay(stage=1),
+            )
+        )
+        self.assertFalse(
+            _input_echo_is_authoritative(
+                ready_stage_1,
+                self._gameplay(stage=1),
+            )
+        )
+        self.assertFalse(_input_echo_is_authoritative(None, ready_stage_1))
 
     def test_elf_symbol_resolution_requires_one_exact_definition(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

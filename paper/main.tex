@@ -913,6 +913,23 @@ or hit result.  A proposed native timeline ABI was exact but showed no idle
 median gain and was removed, favoring the smaller execution change over
 another batching layer.
 
+The first uncapped synchronous Linux trial supplies a sharper lifecycle and
+performance result.  The generic planner completes Stage~1 with no hit edge or
+Bomb across 22,667 planned epochs, but the harness initially disconnects at the
+Stage~2 loading boundary: it expects the preceding mask $0x0005$ while the next
+request carries zero.  Source inspection resolves the apparent actuator error.
+The Supervisor explicitly zeros both current and previous input globals after
+a requested state transition, so echo equality is authoritative only between
+adjacent ready observations in the same GameManager callback and route-stage
+lifecycle.  The corrected witness keeps strict equality inside that domain and
+records boundary resets separately.  A ten-second nonblocking profile also
+places 77 of 98 on-CPU samples in the baseline beam, including 28 movement-step
+samples, compared with ten in vectorized hazard evaluation and eleven in pool
+capture.  Native execution has removed asynchronous Wine delivery from this
+experiment, but it has not made the inherited per-epoch beam free; no complete
+route or NMNB claim follows until the corrected run reaches a normal replay
+save.
+
 Development after this correction uses source-driven, complete-stage, and
 retained-root differentials as the primary experiment.  Physical Wine trials
 are delayed until submissions, completions, version matching, and producer
