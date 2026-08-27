@@ -1,6 +1,6 @@
 # Touhou Solver Strategy Ledger
 
-Last updated: 2026-08-25.
+Last updated: 2026-08-27.
 
 This file records current action authority, not chronology. Evidence belongs
 in compact reports, run dossiers, and counterexamples.
@@ -28,6 +28,43 @@ geometry/future coverage, planning, issue latency, and delivered input. Search
 cost is not an adequate explanation for an Easy hit without profiler evidence.
 
 ## Live
+
+### L0 — Native-Linux non-blocking online execution
+
+The active route solver runs at the original input cadence. No solver path may
+block the game thread, freeze a virtual clock, or subtract computation from a
+game-visible timer. A completed-update epoch notification brackets coherent
+`/proc` capture for an explicit next input epoch. The solver checks content and
+policy versions before sending; the runtime wire accepts only an exact-epoch
+complete mask. Late results are discarded and connected deadline misses retain
+the held no-write mask. Hard no-Bomb validation applies at publication and
+sampling.
+
+Local safety is the per-epoch consumer. Future-birth coverage and global
+viability run ahead asynchronously and must produce nonzero fresh constraints
+in the live transaction before further local objective tuning is promoted.
+The implemented transitional policy uses a 4px lower lattice and one physical
+frame per control layer. A named winning set is hard: local evidence may
+narrow it but cannot silently relax it. Stages 1--5 and Final-B bind their
+respective exact scale authorities. This is test-observed integration, not yet
+physical delivery evidence; the first online trace must show nonzero complete
+future joins, global publications, queries, and constrained issued actions.
+The earliest pending future policy is preserved until activation so faster
+newer solves cannot starve it. Retained foreground timing is 17.72/32.17 ms
+mean/p95, and the current one-frame action edge does not certify an arbitrary
+run of held deadline misses. A miss-bearing trace is therefore integration
+telemetry rather than L0 hard-safety promotion until a finite fallback lease or
+always-on immediate shield closes that boundary.
+
+Manager-frame policy time is live only inside the implemented dual-clock gate.
+Two safe coherent roots must prove equal positive input-epoch/manager-frame
+deltas; every policy carries both source coordinates and its cadence
+generation. Dialogue, scripted freeze, manager skip-update, player/Bomb gate,
+context change, or unequal delta revokes all older async work. This closes the
+known wrong-clock authority bug but remains transitional until the shared
+source-order kernel models those lifecycle transitions directly.
+The former blocking Linux bridge is offline semantic-differential evidence
+only.
 
 ### L1 — Robust no-Bomb survival
 
@@ -534,6 +571,13 @@ Bombs. Query availability and median solve latency improved, so missing
 publication alone does not explain the regression. Retain the sound lower
 bound, but require adaptive/local exact refinement before any outcome claim.
 
+The Linux online transition baseline does not reuse that policy's eight-frame
+macro-action semantics. It uses a 4px lower lattice, consumes the 2.828px cell
+radius, and computes one physical frame per control layer. Synthetic H80
+solves currently take roughly 0.34--0.52 seconds with 100--400 moving AABBs,
+so this belongs in the rolling background tier rather than the 16.67ms input
+deadline.
+
 ## Offline Native Authority
 
 ### O1 — Rolling native snapshot wind tunnel
@@ -651,23 +695,36 @@ set. Promote only when a native transaction crosses a Power threshold and a
 later combat/survival join improves. Later dense phases remain survival-first.
 Post-death Power recovery is outside NMNB.
 
-### P4 — Hierarchical robust solver
+### P4 — Source-driven rolling robust solver
 
-The intended general architecture is:
+The authored update order changes the earlier hierarchical design. Keep two
+deadline tiers, but make them consumers of one source-order transition kernel:
 
-1. hard robust viability/collision filter;
-2. action-factor expansion over direction, hold duration, and Focus;
-3. inside the viable set, short-horizon objectives for interior clearance,
-   useful position, nonspell damage/exposure, and Power;
-4. exact or conservatively bounded refinement at canonical losing roots;
-5. native-root validation and live deadline-safe delivery.
+1. an exact next-physical-frame shield inside the online deadline;
+2. a rolling background graph over the same transitions, with action-
+   conditioned aimed births, damage/phase branches, RNG, transforms, and
+   lifecycle state;
+3. one-frame edges near the root and only proof-preserving adaptive temporal/
+   spatial refinement farther ahead;
+4. survival, viable volume, and escape width before damage/Power/position;
+5. native/source differential, exact publication version, and Wine replay
+   validation.
 
-Prefer proof-backed feasibility, dominance, canonicalization, and admissible
-bounds. MCTS, learned value functions, Monte Carlo, beam widening, and
-imitation may rank or propose candidates offline, but cannot prune hard-safety
-branches or gain live authority without an independent exact verifier.
+The source proves why a fixed hazard movie is incomplete: the selected input
+moves/focuses the player before enemy damage/ECL, aimed birth, and same-frame
+bullet update/collision. Branch sharing must therefore be by complete world
+dependency signature, not position alone. Prefer proof-backed feasibility,
+dominance, canonicalization, and admissible bounds. MCTS, learned value
+functions, Monte Carlo, beam widening, and imitation may rank or propose
+candidates offline, but cannot prune hard-safety branches or gain live
+authority without an independent exact verifier. The full decision and
+falsifiers are in
+`notes/architecture/TH08_SOURCE_DRIVEN_ONLINE_SOLVER_20260827.md`.
 
-The first scalar pre-exhaustion implementation is physically rejected.
+The current future-envelope/corridor composition remains a transitional
+online baseline because connecting it first exposes delivery defects and
+provides metrics. It is not presumed to be the final architecture. The first
+scalar pre-exhaustion implementation is physically rejected.
 Stage-4A run `20260731_152921` produced zero live constraints because of an
 incorrect native eligibility predicate, and its retained roots show that a
 predicate-only repair still permits the losing action and aliases every

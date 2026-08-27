@@ -1,13 +1,12 @@
-"""Synchronous one-input-epoch adapter for the native Linux TH08 runtime.
+"""Native Linux sensing and one-input-epoch local planning adapters.
 
-The Linux bridge holds the game thread inside the DirectInput callback.  Pool
-captures made here therefore describe one immutable post-update root: there is
-no polling lag, pending command, or game-visible solver deadline to model.
+The historical capture is synchronous.  ``LinuxOnlineHazardCapture`` adds the
+input-epoch bracket required when the game continues at 60 Hz.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable, Mapping
 import time
 
@@ -26,7 +25,14 @@ from th08_live.movement import BOMB, FOCUS, SHOT
 from th08_live.sensor import ENEMY_MANAGER_FRAME_ADDRESS, Sensor
 from th08_local_planner.models import Decision
 from th08_runtime.sensing import capture_player_control_root
+from th08_runtime.game_state import (
+    ADDR_FRSCREEN_IMPL_POINTER,
+    ADDR_SCRIPTED_UPDATE_FREEZE,
+    FRSCREEN_MSG_STATE_OFFSET,
+)
 from th08_time_scale import Th08TimeScaleSchedule
+from th08_future_hazard_projection import OrdinaryFutureHazardProjection
+from th08_linux.online_protocol import OnlineInputRequest
 
 from th08_linux.protocol import validate_hard_no_bomb_mask
 
@@ -37,7 +43,7 @@ UNCONTROLLABLE_PLAYER_PHASES = frozenset((1, 2))
 
 @dataclass(frozen=True, slots=True)
 class LinuxPlannerConfig:
-    """Small generic local-planner contract for one blocked input epoch."""
+    """Small generic local-planner contract for one input epoch."""
 
     horizon: int = 8
     threat_horizon: int = 12
@@ -55,7 +61,7 @@ class LinuxPlannerConfig:
 
 @dataclass(frozen=True, slots=True)
 class LinuxPlannerSnapshot:
-    """Decoded physical state belonging to one immutable bridge root."""
+    """Decoded physical state belonging to one coherent bridge root."""
 
     frame: int
     player_phase: int
@@ -70,6 +76,9 @@ class LinuxPlannerSnapshot:
     items: tuple[Item, ...]
     pool_read_ms: float = 0.0
     decode_ms: float = 0.0
+    source_input_epoch: int | None = None
+    dialogue_active: bool | None = None
+    scripted_update_freeze: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,6 +90,48 @@ class LinuxEpochPlan:
     reason: str
     planning_ms: float
     decision: Decision | None
+
+
+@dataclass(frozen=True, slots=True)
+class LinuxPlannerGuidance:
+    """Fresh future/global constraints admitted to one online local decision."""
+
+    target_x: float | None = None
+    target_y: float | None = None
+    target_deadline: int | None = None
+    allowed_first_actions: tuple[str, ...] | None = None
+    allowed_action_authority: str | None = None
+    viability_repair_volumes: tuple[tuple[str, int], ...] = ()
+    viability_recovery_distances: tuple[tuple[str, float], ...] = ()
+    viability_safety_actions: tuple[str, ...] = ()
+    viability_safety_state_value: float | None = None
+    viability_survival_actions: tuple[str, ...] = ()
+    viability_survival_frames: int | None = None
+    viability_survival_bottleneck_margin: float | None = None
+    viability_position_error: float = 0.0
+    future_hazard_projection: OrdinaryFutureHazardProjection | None = None
+    future_projection_offset: int = 0
+    time_scale_schedule: Th08TimeScaleSchedule | None = None
+    authority_version: str | None = None
+
+    def __post_init__(self) -> None:
+        if (
+            self.allowed_action_authority is not None
+            and self.allowed_first_actions is None
+        ):
+            raise ValueError("global action authority requires allowed actions")
+        if self.future_projection_offset < 0:
+            raise ValueError("future projection offset cannot be negative")
+        if self.authority_version is not None and not self.authority_version:
+            raise ValueError("authority version cannot be empty")
+
+    @property
+    def constrains_action(self) -> bool:
+        return self.allowed_first_actions is not None
+
+    @property
+    def predicts_future_births(self) -> bool:
+        return self.future_hazard_projection is not None
 
 
 def validate_lockstep_root_frames(*frames: int) -> int:
@@ -195,8 +246,69 @@ class LinuxHazardCapture:
         )
 
 
+class LinuxOnlineHazardCapture(LinuxHazardCapture):
+    """Reject any observation that crosses the published input epoch."""
+
+    def __init__(
+        self,
+        reader: object,
+        *,
+        input_epoch_address: int,
+        capture_items: bool = False,
+        clock: Callable[[], float] = time.perf_counter,
+    ) -> None:
+        if input_epoch_address <= 0:
+            raise ValueError("online input epoch address must be positive")
+        super().__init__(
+            reader,
+            capture_items=capture_items,
+            clock=clock,
+        )
+        self._input_epoch_address = input_epoch_address
+
+    def capture_transaction(
+        self,
+        request: OnlineInputRequest,
+        *,
+        observe: Callable[[], Mapping[str, object]],
+    ) -> tuple[Mapping[str, object], LinuxPlannerSnapshot]:
+        expected = request.source_epoch & 0xFFFFFFFF
+        epoch_before = self._reader.u32(self._input_epoch_address)
+        if epoch_before != expected:
+            raise RuntimeError(
+                "online source epoch expired before observation: "
+                f"published {expected}, native {epoch_before}"
+            )
+        state = observe()
+        snapshot = self.capture(state)
+        impl_pointer = self._reader.u32(ADDR_FRSCREEN_IMPL_POINTER)
+        message_state = (
+            self._reader.i32(impl_pointer + FRSCREEN_MSG_STATE_OFFSET)
+            if impl_pointer
+            else None
+        )
+        scripted_update_freeze = bool(
+            self._reader.u8(ADDR_SCRIPTED_UPDATE_FREEZE)
+        )
+        epoch_after = self._reader.u32(self._input_epoch_address)
+        if epoch_after != expected:
+            raise RuntimeError(
+                "online observation crossed its input epoch: "
+                f"published {expected}, native {epoch_before}->{epoch_after}"
+            )
+        return state, replace(
+            snapshot,
+            source_input_epoch=request.source_epoch,
+            dialogue_active=bool(
+                message_state is not None
+                and (message_state >= 0 or message_state == -2)
+            ),
+            scripted_update_freeze=scripted_update_freeze,
+        )
+
+
 class LinuxOneEpochPlanner:
-    """Convert one decoded blocked root into one hard-no-Bomb input mask."""
+    """Convert one coherent root into one exact-epoch no-Bomb input mask."""
 
     def __init__(
         self,
@@ -214,6 +326,7 @@ class LinuxOneEpochPlanner:
         snapshot: LinuxPlannerSnapshot,
         *,
         previous_mask: int,
+        guidance: LinuxPlannerGuidance = LinuxPlannerGuidance(),
     ) -> LinuxEpochPlan:
         validate_hard_no_bomb_mask(previous_mask)
         if snapshot.player_phase in UNCONTROLLABLE_PLAYER_PHASES:
@@ -228,12 +341,14 @@ class LinuxOneEpochPlanner:
         # The root proves the next player scale only.  This bounded constant
         # continuation is an explicit local-planner assumption, recomputed on
         # every epoch; it is not promoted as future scale authority.
-        schedule = Th08TimeScaleSchedule.constant(
-            snapshot.time_scale_bits,
-            horizon=max(self.config.horizon, self.config.threat_horizon),
-            provenance="linux_lockstep_root_constant_horizon_assumption",
-            source_frame=snapshot.frame,
-        )
+        schedule = guidance.time_scale_schedule
+        if schedule is None:
+            schedule = Th08TimeScaleSchedule.constant(
+                snapshot.time_scale_bits,
+                horizon=max(self.config.horizon, self.config.threat_horizon),
+                provenance="linux_online_root_constant_horizon_assumption",
+                source_frame=snapshot.frame,
+            )
         started = self._clock()
         decision = self._chooser(
             player_x=snapshot.player_x,
@@ -255,7 +370,28 @@ class LinuxOneEpochPlanner:
             horizon=self.config.horizon,
             threat_horizon=self.config.threat_horizon,
             beam_width=self.config.beam_width,
+            target_x=guidance.target_x,
+            target_y=guidance.target_y,
+            target_deadline=guidance.target_deadline,
+            allowed_first_actions=guidance.allowed_first_actions,
+            allowed_action_authority=guidance.allowed_action_authority,
+            viability_repair_volumes=guidance.viability_repair_volumes,
+            viability_recovery_distances=(
+                guidance.viability_recovery_distances
+            ),
+            viability_safety_actions=guidance.viability_safety_actions,
+            viability_safety_state_value=(
+                guidance.viability_safety_state_value
+            ),
+            viability_survival_actions=guidance.viability_survival_actions,
+            viability_survival_frames=guidance.viability_survival_frames,
+            viability_survival_bottleneck_margin=(
+                guidance.viability_survival_bottleneck_margin
+            ),
+            viability_position_error=guidance.viability_position_error,
             time_scale_schedule=schedule,
+            future_hazard_projection=guidance.future_hazard_projection,
+            future_projection_offset=guidance.future_projection_offset,
         )
         planning_ms = (self._clock() - started) * 1000.0
         mask = validate_hard_no_bomb_mask(decision.mask)
@@ -266,7 +402,16 @@ class LinuxOneEpochPlanner:
         return LinuxEpochPlan(
             input_mask=mask,
             action=decision.action,
-            reason="local-current-hazard-plan",
+            reason=(
+                "local+global+future-online-plan"
+                if guidance.constrains_action
+                and guidance.predicts_future_births
+                else "local+global-online-plan"
+                if guidance.constrains_action
+                else "local+future-online-plan"
+                if guidance.predicts_future_births
+                else "local-current-hazard-plan"
+            ),
             planning_ms=planning_ms,
             decision=decision,
         )
@@ -275,8 +420,10 @@ class LinuxOneEpochPlanner:
 __all__ = (
     "LinuxEpochPlan",
     "LinuxHazardCapture",
+    "LinuxOnlineHazardCapture",
     "LinuxOneEpochPlanner",
     "LinuxPlannerConfig",
+    "LinuxPlannerGuidance",
     "LinuxPlannerSnapshot",
     "NEUTRAL_GAMEPLAY_MASK",
     "UNCONTROLLABLE_PLAYER_PHASES",

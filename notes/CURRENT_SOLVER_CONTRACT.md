@@ -1,6 +1,6 @@
 # Current TH08 Solver Contract
 
-Last updated: 2026-08-26.
+Last updated: 2026-08-27.
 
 This is the compact authority boundary for the active solver. Historical
 derivations are recoverable from tag `pre-workspace-prune-20260731`.
@@ -13,20 +13,25 @@ Extra is deferred until Lunatic closes. Survival is a hard constraint. Within
 the viable set, prefer useful position, damage, Power collection, and shorter
 dangerous nonspell exposure.
 
-The native Linux reconstruction may pause between original logical input
-epochs to search and may generate a candidate replay. It is not the physical
-completion authority. Only a complete zero-hit, zero-Bomb playback of that
-replay by the original Japanese v1.00d executable under isolated Wine closes
-the target.
+The native Linux reconstruction must run continuously at the original logical
+input cadence. The game thread may not block on solver work, and solver wait
+may not be subtracted from `timeGetTime`, QPC, replay timing, or any other
+game-visible clock. A Linux run must retain deadline evidence and may generate
+a candidate replay. Only a complete zero-hit, zero-Bomb playback of that replay
+by the original Japanese v1.00d executable under isolated Wine closes the
+target.
 
 A state includes the native player state, complete active hazards, relevant
 enemy/phase state, resources, active input, held desired input, pending issue
 belief, timing/cadence support, and immutable model/content version.
 
-An action is one complete no-Bomb mask. Choosing the held mask is no-write:
-there is no new pickup-delay sample and any pending command remains pending.
-The policy sees only observations available before issue. Hidden states with
-the same next observation are merged before the next controller choice.
+An action is one complete no-Bomb mask tagged with its source snapshot epoch,
+target input epoch, immutable model/content version, and expiry. Choosing the
+held mask is no-write. The Linux mailbox has no delayed OS input transaction:
+an exact-target action is sampled or it is not. A late action is discarded and
+must never become pending for a later epoch. The policy sees only observations
+available before publication. Hidden states with the same next observation are
+merged before the next controller choice.
 
 ## Live Stack
 
@@ -40,13 +45,71 @@ The promoted live path is:
 6. version-checked publication and the fresh/global action transaction;
 7. hard no-Bomb actuation.
 
-The Linux lockstep path may replace cross-process Wine sensing and actuation,
-but not the logical transition contract. Solver wall time is excluded from the
-game-visible clock; every `Controller::GetInput` sample, including callback-
-chain restarts, remains a distinct ordered epoch. The bridge supplies only an
-input mask and never writes gameplay/RNG state. Linux/original semantic replay
-differential is required before its generated replay receives candidate
-authority.
+The Linux online path replaces cross-process Wine sensing and actuation, but
+not the logical transition contract. Every `Controller::GetInput` sample,
+including callback-chain restarts, is a distinct ordered input epoch. The
+runtime publishes the latest coherent completed-update snapshot without
+waiting. At the next input epoch it atomically consumes only an action tagged
+for that exact epoch; otherwise it retains the held complete mask. The bridge
+supplies only input and observation data and never writes gameplay/RNG state.
+Linux/original semantic replay differential is required before its generated
+replay receives candidate authority.
+
+The foreground planner attempts hard safety for each observed target input
+epoch. Future-source projection and global viability may execute
+asynchronously, but they are live rather than decorative: the action
+transaction must consume their exact-version result whenever complete coverage
+exists. Missing, stale, late, action-diverged, or incomplete future/global
+state cannot claim authority. The connected runtime holds the last complete
+mask on a miss, but the transitional planner currently certifies only its
+published one-frame edge; it does **not** certify an unbounded sequence of held
+deadline fallbacks. A trace with such misses may be useful delivery evidence
+but cannot promote hard online safety. Further objective or local-ranking work
+is deferred until the route trace demonstrates nonzero fresh future/global
+action constraints.
+
+The transitional online global policy uses a 4px continuous-position lower
+lattice with its 2.828px half-diagonal consumed as clearance and exactly one
+physical frame per control layer. The generic predecessor holds its selected
+action for a complete layer; therefore an eight-frame layer is a macro-action
+contract and cannot authorize a controller that chooses again next frame. Any
+named hard action set may be intersected with fresher local safety but may not
+be relaxed. The Stage 1--5 no-writer and Final-B dynamic scale authorities are
+both wired into this exact-version join. Physical nonzero publication and
+constraint counts remain unobserved until an explicitly authorized trial. The
+earliest completed future policy is preserved while pending and blocks newer
+submissions until activation; otherwise fast solves continually advance the
+pending source epoch and starve action authority.
+
+Manager-frame policy time has no standalone online authority. Each coherent
+Linux root also carries its source input epoch, dialogue predicate, and
+scripted-freeze state. A global policy may constrain input only after two safe
+roots in the same context establish equal positive input-epoch and manager-
+frame deltas. Its manager `source_frame` is bound to a distinct
+`source_input_epoch`, and the affine binding is checked at pending activation
+and every query. Dialogue, scripted freeze, GameManager bit-`0x400`
+skip-update, uncontrollable player/Bomb state, context change, unequal delta,
+or an unknown clock gate revokes the complete asynchronous clock generation.
+This is the implemented transitional unit-cadence boundary, not a claim that
+`enemy_manager_frame` became a universal physical clock.
+
+The retained smallest foreground profile (`8/12/8`) measured 17.72 ms mean
+and 32.17 ms p95 for complete read, decode, and plan. This is **observed**
+capacity evidence that the present Python foreground cannot be assumed to
+publish at 60 Hz. The online route therefore uses `8/12/8` only as its
+transitional immediate tier while the H80/4px global worker supplies depth.
+Meeting the hard deadline requires the proposed packed-root/shared native
+transition shield or an explicitly modeled finite fallback lease; increasing
+the Python beam is not an accepted remedy.
+
+Authored update order also limits what this transitional policy can prove.
+Player movement/focus occurs before enemy damage/ECL births, and newly born
+bullets update/collide later in the same frame. Aimed births and phase/RNG
+paths are therefore action-conditioned. The target architecture uses one flat
+source-order transition kernel for an immediate exact shield and a rolling
+branch-aware viability graph; an action-independent future envelope is not
+assumed to be the final world model. See
+`architecture/TH08_SOURCE_DRIVEN_ONLINE_SOLVER_20260827.md`.
 
 The implemented bridge/session now has route-bootstrap integration authority.
 It verifies one exact ELF and child PID, enforces contiguous wire epochs and
@@ -65,15 +128,17 @@ culling decisions, hit edges, and replay synchronization cannot be excused by
 a tolerance.  Any continuous error that crosses such a boundary is the first
 real divergence and fails the gate.
 
-The Easy execution profile uses no stage or spell policy. It reads native
+The historical Easy lockstep profile used no stage or spell policy. It reads native
 enemy slots 0--63 synchronously and retains a complete asynchronous read of
 source slots 0--479. The background pass is one contiguous process-memory
 read with a reusable buffer rather than hundreds of scalar reads. It does not
 use `EnemyManager::EnemyCount` as a completeness oracle: source order proves
 that field is a scan-encounter counter and can disagree with current
-occupancy after same-frame death or lower-slot birth. With ordinary global
-authority disabled Easy also selects the existing local-only resource path;
-enabling that authority keeps the global framework available.
+occupancy after same-frame death or lower-slot birth. Its local-only result is
+a rejected baseline, not the online execution profile. The online Easy path
+must request complete future-source coverage and enable the matching global
+action transaction; a zero-query route is an integration failure, not a
+successful fallback campaign.
 
 The exact Final-B player-laser global-time-scale schedule is live only inside
 its pinned Route-2 content identity. Unknown or mismatched schedule state
@@ -169,6 +234,11 @@ bound for continuous position instead of center-only occupancy. Physical
 18 hits with zero Bombs. The sound fixed coarse representation is therefore
 retained but physically ineffective; adaptive/local exact refinement is the
 next representation gate if TH08 resumes.
+
+That paragraph describes the historical Wine/global policy. The Linux online
+hard path is separately pinned to the 4px/one-physical-frame contract above;
+it does not reinterpret an intermediate point in an eight-frame policy layer
+as a valid per-frame predecessor.
 
 The ordinary-stage root-only continuation remains diagnostic by default.
 `--ordinary-preexhaustion-authority` does not promote it or the shadow
@@ -479,6 +549,8 @@ have no active code or strategy authority.
 - Desired/last-issued input is not native active input.
 - `enemy_manager_frame` is not a universal physical input clock. During
   dialogue/post-spell freezes, held input may continue moving the player.
+- A manager-frame future/global artifact enters online action authority only
+  with its exact input-epoch binding and current unit-cadence generation.
 - Signed clearance is the safety quantity. Lattice transitions subtract
   nearest-sample error.
 - A recorded replay future is valid only for the action history that created

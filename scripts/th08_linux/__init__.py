@@ -1,4 +1,4 @@
-"""Native Linux TH08 lockstep and local-process integration."""
+"""Native Linux TH08 replay, process, and non-blocking online integration."""
 
 from th08_linux.bridge import SolverBridgeClient
 from th08_linux.fingerprint import (
@@ -9,6 +9,25 @@ from th08_linux.fingerprint import (
     enrich_with_effect_lifecycle_summary,
 )
 from th08_linux.process import LinuxProcessReader
+from th08_linux.online_authority import (
+    ONLINE_GLOBAL_ACTION_AUTHORITY,
+    TH08_ONLINE_AUTHORITY_CONFIG,
+    OnlineActionAuthority,
+    OnlineAuthorityResult,
+)
+from th08_linux.online_bridge import OnlineSolverBridgeClient
+from th08_linux.online_clock import (
+    OnlineClockAssessment,
+    OnlineClockObservation,
+    OnlineUnitCadenceAuthority,
+)
+from th08_linux.online_protocol import OnlineInputRequest
+from th08_linux.online_session import LinuxOnlineGameSession
+from th08_linux.online_services import (
+    LinuxOnlineFutureGlobalService,
+    LinuxOnlineServiceConfig,
+    LinuxOnlineServiceUpdate,
+)
 from th08_linux.protocol import InputRequest
 from th08_linux.result import (
     ReplaySaveDriver,
@@ -53,6 +72,10 @@ __all__ = (
     "LinuxGameSession",
     "LockstepMemoryWitness",
     "LinuxProcessReader",
+    "LinuxOnlineGameSession",
+    "LinuxOnlineFutureGlobalService",
+    "LinuxOnlineServiceConfig",
+    "LinuxOnlineServiceUpdate",
     "LinuxRuntimeIdentity",
     "MANAGER_FRAME_TRANSITION_ADVANCED",
     "MANAGER_FRAME_TRANSITION_SAME",
@@ -65,6 +88,15 @@ __all__ = (
     "RetryMenuSnapshot",
     "SAKUYA_REMILIA_SHOT_TYPE",
     "SolverBridgeClient",
+    "OnlineSolverBridgeClient",
+    "OnlineInputRequest",
+    "OnlineClockAssessment",
+    "OnlineClockObservation",
+    "OnlineUnitCadenceAuthority",
+    "OnlineActionAuthority",
+    "OnlineAuthorityResult",
+    "ONLINE_GLOBAL_ACTION_AUTHORITY",
+    "TH08_ONLINE_AUTHORITY_CONFIG",
     "TitleSnapshot",
     "canonical_fingerprint_bytes",
     "capture_memory_witness",

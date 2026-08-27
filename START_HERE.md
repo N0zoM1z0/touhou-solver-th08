@@ -19,7 +19,9 @@ The user authorized a separately cloned native Linux runtime as the search and
 replay-generation platform. The original Japanese v1.00d executable under
 isolated Wine remains the final authority: a Linux result counts only when its
 replay completes the same route there with zero native hit edges and zero Bomb
-input. Extra remains deferred, and fixed-root wind tunnels remain diagnostic.
+input. Route solving is strictly online: the game thread may never wait for the
+solver and solver time may never be removed from a game-visible clock. Extra
+remains deferred, and fixed-root wind tunnels remain diagnostic.
 
 The 2026-08-01 Hard/pause state is historical. Preserve its useful physical
 and authority evidence, but do not let its stale scope override the current
@@ -30,15 +32,50 @@ ordered implementation plan are in
 
 ## Checkpoint
 
-- Branch: `codex/th08-linux-native-replay-bridge`.
+- Branch: `codex/th08-linux-online-authority`.
+- **Current online pivot:** `main` now contains the complete native-Linux
+  replay-bridge baseline at `b758455`. The blocking/time-excluded bridge is
+  retired from route authority. It may remain only as a bounded semantic
+  differential harness. The new runtime publishes a coherent post-update
+  notification without blocking, targets each action at the exact next input
+  epoch, discards late actions, retains the held complete mask on a connected
+  deadline miss, and releases to neutral Shot+Focus after disconnect/failure.
+  The Linux solver now captures future sources asynchronously, solves a
+  version-joined global policy, and passes a real winning set as non-relaxable
+  online action authority. Its hard recurrence has one physical frame per
+  layer; the historical eight-frame macro-action policy is not consumed as a
+  one-frame proof. Stages 1--5 use exact no-scale-writer authority and Final-B
+  uses its existing exact dynamic scale-source authority. Focused integration
+  and real-policy tests pass. Static review also found and fixed a pending-
+  publication starvation bug: a newer future solve may not keep moving the
+  first queryable epoch forward. A final clock audit also found that the first
+  hookup staged and queried policies on `enemy_manager_frame` alone. The fixed
+  join now requires two safe roots with equal positive input/manager deltas,
+  binds both source coordinates, tags async work by cadence generation, and
+  revokes on dialogue, scripted freeze, manager skip, player/Bomb gate,
+  context change, or unequal delta. No gameplay trace has yet observed nonzero
+  online publications/constraints. Moreover, retained `8/12/8` foreground
+  timing is 17.72 ms mean / 32.17 ms p95, and its one-frame action proof does
+  not certify an unbounded connected held fallback. Thus the next gate is a
+  delivery diagnostic, not physical policy promotion or NMNB evidence. The
+  compact execution contract is
+  `notes/architecture/TH08_LINUX_ONLINE_AUTHORITY_20260827.md`; the authored-
+  source architecture decision is
+  `notes/architecture/TH08_SOURCE_DRIVEN_ONLINE_SOLVER_20260827.md`. The source
+  runtime checkpoint is `e0c181e` on `solver/linux-online-authority`; its
+  verified i386 ELF SHA-256 is
+  `141cb3b69040626cf51e1837acad4600a409f332acd8ccfe1ae8cca5396c2995`.
+  Complete post-clock Linux discovery passes 1,686 tests with five conditional
+  skips.
 - **Pre-pivot checkpoint:** `main` and annotated tag
   `pre-linux-native-pivot-20260826` point to `d7a66c5`. The Linux runtime is a
   separate clone at source revision `4cffb2afa8d4a62083a5afc4a1968f51e96ac2cf`
   on branch `solver/linux-lockstep-replay-bridge`; its verified i386 build is
-  playable and exposes the original fixed target-owned globals. The adopted
-  architecture pauses at the Linux DirectInput sampling boundary, excludes
-  solver wait from the game-visible clock, and records a normal replay. It
-  must preserve every original logical update, input, held-key, and RNG epoch.
+  playable and exposes the original fixed target-owned globals. That historical
+  architecture paused at the Linux DirectInput sampling boundary and excluded
+  solver wait from the game-visible clock; it no longer has route authority.
+  Its retained evidence must preserve every original logical update, input,
+  held-key, and RNG epoch.
   Linux NMNB is only a candidate; original-Wine replay NMNB is completion.
   The protocol, replay-identity caveat, numerical risks, and differential gate
   are specified in

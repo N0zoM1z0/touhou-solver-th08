@@ -44,6 +44,8 @@ class LinuxGameSession:
     gameplay duration or route timeout exists in this ownership layer.
     """
 
+    temporary_prefix = "th08-linux-lockstep-"
+
     def __init__(
         self,
         *,
@@ -133,7 +135,7 @@ class LinuxGameSession:
                 )
             self._identity = identity
             self._temporary = tempfile.TemporaryDirectory(
-                prefix="th08-linux-lockstep-"
+                prefix=self.temporary_prefix
             )
             temporary_path = Path(self._temporary.name)
             self._socket_path = temporary_path / "input.sock"

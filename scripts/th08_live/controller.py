@@ -566,24 +566,16 @@ ORDINARY_CAUSAL_CONTINUATION_LEASE_AUTHORITY = (
     "causal_ordinary_nonspell_terminal_continuation_lease_v4"
 )
 CORRIDOR_ALLOWED_ACTION_AUTHORITY = "exact_corridor_viability_v1"
-_NONRELAXABLE_ALLOWED_ACTION_AUTHORITIES = frozenset(
-    {
-        CORRIDOR_ALLOWED_ACTION_AUTHORITY,
-        ORDINARY_PREEXHAUSTION_AUTHORITY,
-        ORDINARY_CAUSAL_HOLD_AUTHORITY,
-        ORDINARY_CAUSAL_DELAYED_ISSUE_AUTHORITY,
-        ORDINARY_CAUSAL_CONTINUATION_LEASE_AUTHORITY,
-    }
-)
 
 
 def _allow_coarse_viability_relaxation(
     allowed_action_authority: str | None,
 ) -> bool:
-    return (
-        allowed_action_authority
-        not in _NONRELAXABLE_ALLOWED_ACTION_AUTHORITIES
-    )
+    # A named publisher has claimed hard authority for the supplied set.
+    # Consumers may intersect that set with fresher evidence, but silently
+    # widening it would sever the authority contract.  Unguarded coarse
+    # guidance carries no name and retains the historical relaxation path.
+    return allowed_action_authority is None
 
 
 _ORDINARY_PREEXHAUSTION_ACTIONS = tuple(
@@ -2661,6 +2653,7 @@ def choose_action(
     target_y: float | None = None,
     target_deadline: int | None = None,
     allowed_first_actions: tuple[str, ...] | None = None,
+    allowed_action_authority: str | None = None,
     viability_repair_volumes: tuple[tuple[str, int], ...] = (),
     viability_recovery_distances: tuple[tuple[str, float], ...] = (),
     viability_safety_actions: tuple[str, ...] = (),
@@ -2733,6 +2726,12 @@ def choose_action(
                 target_y=target_y,
                 target_deadline=target_deadline,
                 allowed_first_actions=allowed_first_actions,
+                allowed_action_authority=allowed_action_authority,
+                allow_coarse_viability_relaxation=(
+                    _allow_coarse_viability_relaxation(
+                        allowed_action_authority
+                    )
+                ),
                 viability_repair_volumes=viability_repair_volumes,
                 viability_recovery_distances=(
                     viability_recovery_distances

@@ -1,11 +1,14 @@
 # TH08 Sakuya/Remilia Lunatic NMNB Research Taskbook
 
-Last updated: 2026-08-25.
+Last updated: 2026-08-27.
 
-> Active scope override (2026-08-23): the user restored Lunatic Sakuya/Remilia
-> Route-2 Final-B NMNB as the current target and resumed implementation on the
-> VPS. The 2026-08-01 Hard/pause text elsewhere is historical evidence, not
-> current authority. Source/runtime findings are tracked in
+> Active scope override (2026-08-27): first close Sakuya/Remilia Easy Route-2
+> Final-B NMNB as the online execution/model proof, then raise the unchanged
+> general solver to Lunatic. The game may never wait for solver work or remove
+> solver time from a game-visible clock. Linux is the search/replay-generation
+> platform; original v1.00d Wine replay is final equivalence authority. The
+> 2026-08-01 Hard/pause text elsewhere is historical evidence, not current
+> authority. Source/runtime findings are tracked in
 > `notes/review/TH08_SOURCE_AND_RUNTIME_AUDIT.md`.
 
 ## 1. Program Objective
@@ -221,6 +224,26 @@ mechanics, and naming. They are not authority for this exact binary, patch,
 route, timing seam, or live memory layout.
 
 ### WS-C — Robust solver
+
+Current 2026-08-27 priority override: the non-blocking Linux path now
+structurally connects future-source closure and a real one-frame 4 px/H80
+global winning set to named, non-relaxable local action authority. Preserve the
+earliest pending policy so rolling solves cannot starve activation. Manager-
+frame artifacts also require the implemented input/manager unit-cadence
+certificate and matching async generation; dialogue/freeze/skip/mismatch
+revokes them. Do not tune objectives until an authorized short Easy delivery
+trace shows nonzero clock-certified roots, future captures, global
+publications, queryable policies, and constrained issued actions.
+
+That trace is not yet a hard-safety promotion gate. Retained foreground timing
+is 17.72/32.17 ms mean/p95, and the current one-frame edge does not certify
+repeating a held direction across missed deadlines. The parallel nonphysical
+research gate is an H32 all-17-action source factorization that measures the
+first player/aim/damage/RNG/lifecycle divergence. Its result decides whether to
+build the proposed shared flat source-order transition kernel directly or use
+an exact-near/conservative-far hybrid. The complete decision is in
+`notes/architecture/TH08_SOURCE_DRIVEN_ONLINE_SOLVER_20260827.md`; CE-0272
+records the three corrected integration failures.
 
 Keep robust reach-avoid/viability as the hard-safety backbone. The intended
 hierarchy is:

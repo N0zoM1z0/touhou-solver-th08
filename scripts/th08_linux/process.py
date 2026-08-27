@@ -96,6 +96,9 @@ class LinuxProcessReader:
     def u32(self, address: int) -> int:
         return struct.unpack("<I", self.read(address, 4))[0]
 
+    def u64(self, address: int) -> int:
+        return struct.unpack("<Q", self.read(address, 8))[0]
+
     def i32(self, address: int) -> int:
         return struct.unpack("<i", self.read(address, 4))[0]
 
