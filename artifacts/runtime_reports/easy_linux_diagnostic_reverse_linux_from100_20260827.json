@@ -1,0 +1,364 @@
+{
+  "bootstrap_last_epoch": 160,
+  "collision_control_projection": false,
+  "effect_lifecycle_summary": false,
+  "fingerprint_output": "artifacts/runtime_reports/easy_linux_diagnostic_reverse_linux_from100_20260827.jsonl.gz",
+  "first": {
+    "difficulty_index": 0,
+    "game_manager_flags": 229388,
+    "gameplay_active": true,
+    "input": {
+      "gui_current": 0,
+      "gui_previous": 0,
+      "supervisor_current": 0,
+      "supervisor_previous": 0
+    },
+    "manager_frame": 100,
+    "player": {
+      "bomb_active": 0,
+      "bomb_index": 0,
+      "bomb_lockout": 0,
+      "bomb_timer": 0,
+      "deathbomb": 0,
+      "focus_logic": 0,
+      "focus_transition_counter": 99,
+      "forced_bomb": 0,
+      "phase": 3,
+      "predeath_counter": 10,
+      "secondary_character_active": false,
+      "x_bits": 1128267776,
+      "y_bits": 1136656384
+    },
+    "relative_epoch": 1,
+    "replay": {
+      "flags": 5120,
+      "frame_counter": 100,
+      "input_delay": 0,
+      "is_demo": 1,
+      "rng_seed": 0
+    },
+    "resources": {
+      "bombs_bits": 1077936128,
+      "lives_bits": 1073741824,
+      "power_bits": 0
+    },
+    "rng": {
+      "calls_since_trace_start": 0,
+      "seed": 34642
+    },
+    "schema": "th08-semantic-spine-v3",
+    "shot_type_index": 2,
+    "spell": {
+      "active": false,
+      "flags": 0,
+      "name": "",
+      "spell_id": 0,
+      "timer_elapsed": -100
+    },
+    "stage_index": 0,
+    "time_scale_bits": 1065353216,
+    "trace_locators": {
+      "bridge_epoch": 260,
+      "manager_frame_delta_from_previous_root": 0,
+      "rng_calls_absolute": 4666
+    }
+  },
+  "inactive_gameplay_epochs": 0,
+  "last": {
+    "difficulty_index": 0,
+    "game_manager_flags": 229388,
+    "gameplay_active": true,
+    "input": {
+      "gui_current": 0,
+      "gui_previous": 0,
+      "supervisor_current": 0,
+      "supervisor_previous": 0
+    },
+    "manager_frame": 2162,
+    "player": {
+      "bomb_active": 0,
+      "bomb_index": 0,
+      "bomb_lockout": 0,
+      "bomb_timer": 0,
+      "deathbomb": 0,
+      "focus_logic": 0,
+      "focus_transition_counter": 2009,
+      "forced_bomb": 0,
+      "phase": 1,
+      "predeath_counter": 0,
+      "secondary_character_active": false,
+      "x_bits": 1128267776,
+      "y_bits": 1136656384
+    },
+    "relative_epoch": 2063,
+    "replay": {
+      "flags": 15974,
+      "frame_counter": 2162,
+      "input_delay": 0,
+      "is_demo": 1,
+      "rng_seed": 0
+    },
+    "resources": {
+      "bombs_bits": 1082130432,
+      "lives_bits": 0,
+      "power_bits": 0
+    },
+    "rng": {
+      "calls_since_trace_start": 79578,
+      "seed": 44924
+    },
+    "schema": "th08-semantic-spine-v3",
+    "shot_type_index": 2,
+    "spell": {
+      "active": false,
+      "flags": 0,
+      "name": "",
+      "spell_id": 0,
+      "timer_elapsed": -2162
+    },
+    "stage_index": 0,
+    "time_scale_bits": 1065353216,
+    "trace_locators": {
+      "bridge_epoch": 2322,
+      "manager_frame_delta_from_previous_root": 1,
+      "rng_calls_absolute": 84244
+    }
+  },
+  "lives_preserved_attested": false,
+  "manager_forward_jump_epochs": 0,
+  "manager_frames_skipped": 0,
+  "maximum_sample_epochs": 8192,
+  "nonzero_gui_input_epochs": 0,
+  "replay": {
+    "difficulty_index": 0,
+    "path": "/home/yann/yann/touhou/th08-research/th08-linux-solver-runtime/local/reverse-linux-replay-data/replay/th8_01.rpy",
+    "route_id": 2,
+    "sha256": "c4a0abba793395dd93e6a3419e95b722aac8babb6c97e267e218568c50ecb3b1",
+    "stage_index": 0,
+    "stage_rng_seed": 12708,
+    "stage_stored_input_word_count": 2167
+  },
+  "replay_frame_range": [
+    100,
+    2162
+  ],
+  "retail_life_decrement": true,
+  "rng_calls_origin": 4666,
+  "route_duration_limit": null,
+  "runtime": {
+    "path": "/home/yann/yann/touhou/th08-research/th08-linux-solver-runtime/build/modern-linux/th08-modern",
+    "sha256": "0bd9685c8c1a7cc57a4aaee9c1a449485b8539c9a6272bcb22d70c7a9fe9f1f1",
+    "size": 3948452
+  },
+  "same_manager_input_epochs": 0,
+  "sample_epochs": 2063,
+  "schema": "th08-linux-replay-semantic-smoke-v7",
+  "scope": "bounded retail-life replay terminal diagnostic; no NMNB claim",
+  "semantic_spine_sha256": "1a8ff2edcf68a6e091e09b2c6380faf4114225bc591f620eaa38d09056349c7f",
+  "skipped_gameplay_epochs": 99,
+  "stage_terminal": {
+    "gameplay_active": false,
+    "manager_frame": 2162,
+    "reason": "replay manager is absent",
+    "relative_epoch": 2064,
+    "replay_frame": null
+  },
+  "start_manager_frame": 100,
+  "start_replay_frame": 100,
+  "stop_at_stage_terminal": true,
+  "transitions": [
+    {
+      "action": "wait-title-root",
+      "epoch": 1,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "wait-title-lifecycle",
+      "cursor": 0,
+      "epoch": 2,
+      "input_mask": 0,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 0
+    },
+    {
+      "action": "wait-screen-ready",
+      "cursor": 0,
+      "epoch": 37,
+      "input_mask": 0,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 0
+    },
+    {
+      "action": "select-replay-menu",
+      "cursor": 0,
+      "epoch": 47,
+      "input_mask": 32,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 48,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "select-replay-menu",
+      "cursor": 1,
+      "epoch": 49,
+      "input_mask": 32,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 50,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "select-replay-menu",
+      "cursor": 2,
+      "epoch": 51,
+      "input_mask": 32,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 52,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "select-replay-menu",
+      "cursor": 3,
+      "epoch": 53,
+      "input_mask": 32,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 54,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "wait-start-confirm-gate",
+      "cursor": 4,
+      "epoch": 55,
+      "input_mask": 0,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "confirm-replay-menu",
+      "cursor": 4,
+      "epoch": 56,
+      "input_mask": 1,
+      "phase": "title",
+      "replay_count": 0,
+      "screen": 0,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 57,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "wait-replay-list",
+      "cursor": 0,
+      "epoch": 58,
+      "input_mask": 0,
+      "phase": "title",
+      "replay_count": 1,
+      "screen": 7,
+      "screen_state": 0
+    },
+    {
+      "action": "wait-replay-confirm-gate",
+      "cursor": 0,
+      "epoch": 66,
+      "input_mask": 0,
+      "phase": "title",
+      "replay_count": 1,
+      "screen": 7,
+      "screen_state": 1
+    },
+    {
+      "action": "confirm-replay",
+      "cursor": 0,
+      "epoch": 75,
+      "input_mask": 1,
+      "phase": "title",
+      "replay_count": 1,
+      "screen": 7,
+      "screen_state": 1
+    },
+    {
+      "action": "release",
+      "epoch": 76,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "confirm-replay-stage",
+      "cursor": 0,
+      "epoch": 77,
+      "input_mask": 1,
+      "phase": "title",
+      "replay_count": 1,
+      "screen": 7,
+      "screen_state": 2
+    },
+    {
+      "action": "release",
+      "epoch": 78,
+      "phase": "release-or-root"
+    },
+    {
+      "action": "confirm-replay-mode",
+      "cursor": 0,
+      "epoch": 79,
+      "input_mask": 1,
+      "phase": "title",
+      "replay_count": 1,
+      "screen": 7,
+      "screen_state": 3
+    },
+    {
+      "action": "release",
+      "epoch": 80,
+      "phase": "release-or-root"
+    },
+    {
+      "epoch": 81,
+      "gameplay_active": false,
+      "loading_state": 1,
+      "phase": "gameplay-load"
+    },
+    {
+      "epoch": 136,
+      "gameplay_active": true,
+      "loading_state": 1,
+      "phase": "gameplay-load"
+    },
+    {
+      "epoch": 160,
+      "gameplay_active": true,
+      "loading_state": 0,
+      "phase": "gameplay-load"
+    }
+  ]
+}

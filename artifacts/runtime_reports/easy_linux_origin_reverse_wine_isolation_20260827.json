@@ -1,0 +1,36 @@
+{
+  "controller_returncode": 0,
+  "cpu_list": "8-15",
+  "display": ":98",
+  "leftover_prefix_processes": [],
+  "original_target": {
+    "life_decrement_patch_byte": 255,
+    "no_life_decrement": false,
+    "sha256": "330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924"
+  },
+  "prefix": "reference/wine-prefixes/th08-retail",
+  "provisioned_replay_owned": true,
+  "provisioned_replay_removed": true,
+  "replay": {
+    "bomb_press_frames": [],
+    "difficulty_index": 0,
+    "route_id": 2,
+    "sha256": "c4a0abba793395dd93e6a3419e95b722aac8babb6c97e267e218568c50ecb3b1",
+    "stage_index": 0,
+    "stored_input_word_count": 2167
+  },
+  "repository_commit": "2d86b01a3f8e19aa3e64a9619a7dd9455928388b",
+  "sample": {
+    "end_manager_frame": 2162,
+    "end_replay_frame": 2162,
+    "sample_epochs": 2063,
+    "start_manager_frame": 100,
+    "start_replay_frame": 100,
+    "terminal_reason": "replay manager is absent",
+    "terminal_relative_epoch": 2064
+  },
+  "schema": "th08-linux-origin-retail-reverse-isolation-v1",
+  "status": "passed",
+  "timeout_seconds": 3600.0,
+  "wine_version": "wine-8.0 (Debian 8.0~repack-4)"
+}

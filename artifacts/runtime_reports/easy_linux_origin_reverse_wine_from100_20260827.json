@@ -1,0 +1,409 @@
+{
+  "barrier": {
+    "action_authority": false,
+    "callsite": 4464461,
+    "external_effect_coverage": "unresolved",
+    "natural_next_call_trap": true,
+    "original_target": 4442704,
+    "promotable_endpoint_root": true,
+    "remote_base": 84017152,
+    "render_chain_executed_inside_step": false,
+    "role": "offline_same_session_native_calculation_snapshot",
+    "rolling_endpoint_fx": true,
+    "schema": "th08-native-calculation-snapshot-v3",
+    "update_chain_head": 23393608
+  },
+  "collision_control_projection": false,
+  "effect_lifecycle_summary": false,
+  "fingerprint_output": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\artifacts\\wine-th08\\linux-origin-easy-reverse-20260827\\windows-replay-semantic.jsonl.gz",
+  "fingerprint_output_sha256": "019ca8f21c98e4f43aad95b8adf115bd37b5ce27ed282758e01c3671c327ae66",
+  "finished_utc": "2026-08-27T01:49:06.301879+00:00",
+  "first": {
+    "difficulty_index": 0,
+    "game_manager_flags": 229388,
+    "gameplay_active": true,
+    "input": {
+      "gui_current": 0,
+      "gui_previous": 0,
+      "supervisor_current": 0,
+      "supervisor_previous": 0
+    },
+    "manager_frame": 100,
+    "player": {
+      "bomb_active": 0,
+      "bomb_index": 0,
+      "bomb_lockout": 0,
+      "bomb_timer": 0,
+      "deathbomb": 0,
+      "focus_logic": 0,
+      "focus_transition_counter": 99,
+      "forced_bomb": 0,
+      "phase": 3,
+      "predeath_counter": 10,
+      "secondary_character_active": false,
+      "x_bits": 1128267776,
+      "y_bits": 1136656384
+    },
+    "relative_epoch": 1,
+    "replay": {
+      "flags": 5120,
+      "frame_counter": 100,
+      "input_delay": 0,
+      "is_demo": 1,
+      "rng_seed": 0
+    },
+    "resources": {
+      "bombs_bits": 1077936128,
+      "lives_bits": 1073741824,
+      "power_bits": 0
+    },
+    "rng": {
+      "calls_since_trace_start": 0,
+      "seed": 34642
+    },
+    "schema": "th08-semantic-spine-v3",
+    "shot_type_index": 2,
+    "spell": {
+      "active": false,
+      "flags": 0,
+      "name": "",
+      "spell_id": 0,
+      "timer_elapsed": -100
+    },
+    "stage_index": 0,
+    "time_scale_bits": 1065353216,
+    "trace_locators": {
+      "barrier_arrival_serial": 1,
+      "manager_frame_delta_from_previous_root": 0,
+      "rng_calls_absolute": 4668
+    }
+  },
+  "game_terminated": true,
+  "inactive_gameplay_epochs": 0,
+  "initial_gameplay_state": {
+    "difficulty_index": 0,
+    "enemy_manager_frame": 0,
+    "engine_flags": 229388,
+    "gameplay_active": true,
+    "input_current": 0,
+    "input_previous": 0,
+    "input_raw": 0,
+    "player": {
+      "bomb_active": 0,
+      "bomb_index": 0,
+      "bomb_lockout": 0,
+      "bomb_timer": 0,
+      "deathbomb": 0,
+      "focus_logic": 2,
+      "focus_transition_counter": 0,
+      "forced_bomb": 0,
+      "phase": 1,
+      "predeath_counter": 10,
+      "secondary_character_active": false,
+      "x": 192.0,
+      "y": 384.0
+    },
+    "resources": {
+      "bombs": 3.0,
+      "lives": 2.0,
+      "power": 0.0
+    },
+    "rng_calls": 92,
+    "rng_state": 59272,
+    "route_id": 2,
+    "spell": {
+      "active": false,
+      "enemy_pointer": 0,
+      "flags": 0,
+      "name": "",
+      "spell_id": 0,
+      "timer_elapsed": 0
+    },
+    "stage_route_index": 0,
+    "time_scale_bits": 1065353216,
+    "wall_time_ns": 1787795301763457400
+  },
+  "last": {
+    "difficulty_index": 0,
+    "game_manager_flags": 229388,
+    "gameplay_active": true,
+    "input": {
+      "gui_current": 0,
+      "gui_previous": 0,
+      "supervisor_current": 0,
+      "supervisor_previous": 0
+    },
+    "manager_frame": 2162,
+    "player": {
+      "bomb_active": 0,
+      "bomb_index": 0,
+      "bomb_lockout": 0,
+      "bomb_timer": 0,
+      "deathbomb": 0,
+      "focus_logic": 0,
+      "focus_transition_counter": 2009,
+      "forced_bomb": 0,
+      "phase": 1,
+      "predeath_counter": 0,
+      "secondary_character_active": false,
+      "x_bits": 1128267776,
+      "y_bits": 1136656384
+    },
+    "relative_epoch": 2063,
+    "replay": {
+      "flags": 15974,
+      "frame_counter": 2162,
+      "input_delay": 0,
+      "is_demo": 1,
+      "rng_seed": 0
+    },
+    "resources": {
+      "bombs_bits": 1082130432,
+      "lives_bits": 0,
+      "power_bits": 0
+    },
+    "rng": {
+      "calls_since_trace_start": 79578,
+      "seed": 44924
+    },
+    "schema": "th08-semantic-spine-v3",
+    "shot_type_index": 2,
+    "spell": {
+      "active": false,
+      "flags": 0,
+      "name": "",
+      "spell_id": 0,
+      "timer_elapsed": -2162
+    },
+    "stage_index": 0,
+    "time_scale_bits": 1065353216,
+    "trace_locators": {
+      "barrier_arrival_serial": 2063,
+      "manager_frame_delta_from_previous_root": 1,
+      "rng_calls_absolute": 84246
+    }
+  },
+  "manager_forward_jump_epochs": 0,
+  "manager_frame_range": [
+    100,
+    2162
+  ],
+  "manager_frames_skipped": 0,
+  "maximum_sample_epochs": 8192,
+  "menu_trace": [
+    {
+      "label": "replay_main_entry_selected",
+      "state": {
+        "cursor": 4,
+        "difficulty_cursor": 3,
+        "difficulty_index": 0,
+        "manager": 82035648,
+        "mode": 0,
+        "practice_stage_availability_mask": 1,
+        "route_id": 0,
+        "screen_age": 102,
+        "stage_route_index": 0,
+        "substate": 1
+      },
+      "taps": [
+        {
+          "key": "down",
+          "purpose": "select Replay feedback step 1",
+          "wait_after_ms": 90
+        },
+        {
+          "key": "down",
+          "purpose": "select Replay feedback step 2",
+          "wait_after_ms": 90
+        },
+        {
+          "key": "down",
+          "purpose": "select Replay feedback step 3",
+          "wait_after_ms": 90
+        },
+        {
+          "key": "down",
+          "purpose": "select Replay feedback step 4",
+          "wait_after_ms": 90
+        }
+      ]
+    },
+    {
+      "label": "replay_list_entered",
+      "state": {
+        "cursor": 0,
+        "difficulty_cursor": 3,
+        "difficulty_index": 0,
+        "manager": 82035648,
+        "mode": 7,
+        "practice_stage_availability_mask": 1,
+        "replay_entry_count": 1,
+        "replay_selected_entry": 0,
+        "replay_selected_stage": 0,
+        "route_id": 0,
+        "screen_age": 22,
+        "stage_route_index": 0,
+        "substate": 1
+      },
+      "taps": [
+        {
+          "key": "confirm",
+          "purpose": "enter Replay",
+          "wait_after_ms": 350
+        }
+      ]
+    },
+    {
+      "label": "replay_entry_selected",
+      "state": {
+        "cursor": 0,
+        "difficulty_cursor": 3,
+        "difficulty_index": 0,
+        "manager": 82035648,
+        "mode": 7,
+        "practice_stage_availability_mask": 1,
+        "replay_entry_count": 1,
+        "replay_selected_entry": 0,
+        "replay_selected_stage": 0,
+        "route_id": 0,
+        "screen_age": 22,
+        "stage_route_index": 0,
+        "substate": 1
+      },
+      "taps": []
+    },
+    {
+      "label": "replay_stage_list_entered",
+      "state": {
+        "cursor": 0,
+        "difficulty_cursor": 3,
+        "difficulty_index": 0,
+        "manager": 82035648,
+        "mode": 7,
+        "practice_stage_availability_mask": 1,
+        "replay_entry_count": 1,
+        "replay_selected_entry": 0,
+        "replay_selected_stage": 0,
+        "route_id": 0,
+        "screen_age": 48,
+        "stage_route_index": 0,
+        "substate": 2
+      },
+      "taps": [
+        {
+          "key": "confirm",
+          "purpose": "open fixed replay slot 1",
+          "wait_after_ms": 350
+        }
+      ]
+    },
+    {
+      "label": "replay_stage_selected",
+      "state": {
+        "cursor": 0,
+        "difficulty_cursor": 3,
+        "difficulty_index": 0,
+        "manager": 82035648,
+        "mode": 7,
+        "practice_stage_availability_mask": 1,
+        "replay_entry_count": 1,
+        "replay_selected_entry": 0,
+        "replay_selected_stage": 0,
+        "route_id": 0,
+        "screen_age": 48,
+        "stage_route_index": 0,
+        "substate": 2
+      },
+      "taps": []
+    },
+    {
+      "label": "replay_confirmation_entered",
+      "state": {
+        "cursor": 0,
+        "difficulty_cursor": 3,
+        "difficulty_index": 0,
+        "manager": 82035648,
+        "mode": 7,
+        "practice_stage_availability_mask": 1,
+        "replay_entry_count": 1,
+        "replay_selected_entry": 0,
+        "replay_selected_stage": 0,
+        "route_id": 0,
+        "screen_age": 73,
+        "stage_route_index": 0,
+        "substate": 3
+      },
+      "taps": [
+        {
+          "key": "confirm",
+          "purpose": "open replay confirmation",
+          "wait_after_ms": 350
+        }
+      ]
+    },
+    {
+      "label": "replay_launch_confirmed",
+      "state": {
+        "replay_selected_entry": 0,
+        "replay_selected_stage": 0
+      },
+      "taps": [
+        {
+          "key": "confirm",
+          "purpose": "start native-verified stage 0 replay",
+          "wait_after_ms": 350
+        }
+      ]
+    }
+  ],
+  "pid": 284,
+  "replay": {
+    "compact_index": 0,
+    "difficulty_index": 0,
+    "path": "Z:/home/yann/yann/touhou/th08-research/touhou-solver-th08/reference/th08-game-original/th08/replay/th8_01.rpy",
+    "route_id": 2,
+    "sha256": "c4a0abba793395dd93e6a3419e95b722aac8babb6c97e267e218568c50ecb3b1",
+    "slot": 1,
+    "stage_bomb_press_frames": [],
+    "stage_input_sha256": "62d1340d3c29751d84fd3580adcea6ff3585e89c20553fed52f1b9d0fc5f059f",
+    "stage_route_index": 0,
+    "stage_stored_input_word_count": 2167
+  },
+  "replay_forward_jump_epochs": 0,
+  "replay_frame_range": [
+    100,
+    2162
+  ],
+  "replay_frames_skipped": 0,
+  "retail_life_decrement": true,
+  "rng_calls_origin": 4668,
+  "route_duration_limit": null,
+  "same_manager_input_epochs": 0,
+  "sample_epochs": 2063,
+  "schema": "th08-windows-replay-semantic-smoke-v5",
+  "scope": "bounded barrier-aligned replay differential; no route claim",
+  "semantic_spine_sha256": "1a8ff2edcf68a6e091e09b2c6380faf4114225bc591f620eaa38d09056349c7f",
+  "stage_terminal": {
+    "gameplay_active": false,
+    "manager_frame": 2162,
+    "reason": "replay manager is absent",
+    "relative_epoch": 2064,
+    "replay_frame": null
+  },
+  "start_manager_frame": 100,
+  "start_replay_frame": 100,
+  "started_utc": "2026-08-27T01:48:08.196425+00:00",
+  "status": "passed",
+  "stop_at_stage_terminal": true,
+  "target": {
+    "image_path": "Z:\\home\\yann\\yann\\touhou\\th08-research\\touhou-solver-th08\\reference\\th08-game-original\\th08\\th08.exe",
+    "pid": 284,
+    "runtime_patch": {
+      "address": 4509946,
+      "byte": 255,
+      "no_life_decrement": false
+    },
+    "sha256": "330fbdbf58a710829d65277b4f312cfbb38d5448b3df523e79350b879213d924"
+  },
+  "window": 327764
+}

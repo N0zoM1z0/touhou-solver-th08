@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from contextlib import redirect_stdout
+import io
+import json
 import tempfile
 from pathlib import Path
 import unittest
@@ -16,6 +19,7 @@ from th08_linux.semantic_trace import (
     replay_stage_terminal_reason,
     write_semantic_trace,
 )
+from tools.th08_compare_semantic_spines import build_parser, run
 
 
 def _record(
@@ -181,6 +185,23 @@ class LinuxSemanticTraceTests(unittest.TestCase):
             report = compare_semantic_traces(left, right)
             self.assertFalse(report["equal"])
             self.assertEqual(report["compared_records"], 1)
+
+    def test_comparison_tool_writes_report_and_refuses_overwrite(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            left = root / "left.jsonl"
+            right = root / "right.jsonl"
+            output = root / "reports" / "comparison.json"
+            write_semantic_trace(left, [_record(1, 100)])
+            write_semantic_trace(right, [_record(1, 900)])
+            arguments = build_parser().parse_args(
+                [str(left), str(right), "--output", str(output)]
+            )
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(run(arguments), 0)
+            self.assertTrue(json.loads(output.read_text())["equal"])
+            with self.assertRaisesRegex(FileExistsError, "refusing to replace"):
+                run(arguments)
 
     def test_replay_aligned_comparison_accepts_sparse_sample(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

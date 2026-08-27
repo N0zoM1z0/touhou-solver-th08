@@ -1,6 +1,6 @@
 # Touhou Solver Current Handoff
 
-Last updated: 2026-08-26.
+Last updated: 2026-08-27.
 
 This is the only volatile entrypoint. Read `AGENTS.md`, `GOAL.MD`, then this
 file, `STRATEGY.md`, and the focused task card in
@@ -43,17 +43,20 @@ ordered implementation plan are in
   The protocol, replay-identity caveat, numerical risks, and differential gate
   are specified in
   `notes/architecture/TH08_LINUX_LOCKSTEP_REPLAY_AUTHORITY_20260826.md`.
-  The runtime bridge is implemented at `8ffe729`/`02ca583`, and runtime
-  correction `99c8ba3` restores retail's signed RNG for focused random-spread
-  shots; solver-side
-  protocol, local process access, and exact-child ownership are committed at
-  `878c3e4`/`eaa643a`.  The current ELF SHA-256 is `52b450b9...1a04`.
-  A live neutral-input probe observed contiguous epochs 1--3 whose request
-  current/previous masks and RNG seed exactly matched fixed-address memory.
-  The retained Stage-5 differential now agrees through the former frame-268
-  collision/RNG split after the signed-RNG repair; one-ULP trigonometric
-  velocity residuals remain.  The next gate extends to the next discrete
-  split, not planner promotion or a full Easy route.
+  The runtime branch is now at `c38a92a`; its verified ELF SHA-256 is
+  `0bd9685c8c1a7cc57a4aaee9c1a449485b8539c9a6272bcb22d70c7a9fe9f1f1`.
+  The generic signed-RNG, opcode-148 clock, defeat-mode-2 effect-owner, and
+  diagnostic retail-life corrections are active. The retained Stage-5
+  differential is exact for all 12,000 sampled roots through replay frame
+  12,494. Solver-side Linux replay generation and retail-life playback support
+  are committed through `2d86b01`.
+  A normally saved Linux-origin Easy Stage-1 replay now terminates naturally
+  in both a fresh Linux process and the unpatched canonical v1.00d executable.
+  From manager/replay frame 100 through 2,162, all 2,063 aligned semantic roots
+  are exact after excluding only sampler-address provenance. This closes the
+  reverse-replay compatibility gate for the retained trajectory. The next
+  implementation step is a small synchronous one-epoch generic local-planner
+  driver; do not port the historical asynchronous Wine loop wholesale.
 - **Current Easy physical/local checkpoint:** accepted Final-B Practice
   `easy_route2_stage6b_unattended_20260826_051733` remains the best result at
   nine hits and zero Bomb input, versus 18 hits in the paired baseline.  Source and native
@@ -822,12 +825,13 @@ full route or re-enable non-authoritative global work yet:
 3. define a compact semantic fingerprint with exact discrete fields and
    separately reported absolute/ULP float drift; stop on the first discrete
    divergence or threshold crossing;
-4. replay a retained Windows-origin sample in both runtimes, then perform the
-   mandatory reverse Linux-generated replay in a fresh Linux process and the
-   original v1.00d Wine process;
-5. only after that compatibility gate, connect a generic one-epoch Easy local
-   planner.  Practice and full-route runs remain milestone validations rather
-   than the development loop.
+4. **Done for one physical trajectory:** replay a retained Windows-origin
+   sample in both runtimes, then replay a normally saved Linux-origin file in a
+   fresh Linux process and the original v1.00d Wine process. The aligned
+   reverse trace is exact through natural game over;
+5. **In progress:** connect a generic one-epoch Easy local planner. Practice
+   and full-route runs remain milestone validations rather than the development
+   loop.
 
 Never unblock corridor action authority by provenance alone. The current
 active-spell request can omit future births, so scale, complete reached-source

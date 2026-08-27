@@ -2,7 +2,7 @@
 
 Date: 2026-08-26
 
-Status: **Aligned physical differential active; first discrete divergence localized to update 267--268**
+Status: **Linux-origin reverse replay validated in canonical v1.00d; one-epoch planner integration active**
 
 This note records a deliberate change in viewpoint. The Linux reconstruction
 is not merely a cheaper replacement for Wine process sensing. It can become a
@@ -57,12 +57,12 @@ addresses. Examples include `g_EnemyManager=0x00577f20`,
 process reader without translating the whole state model. Fixed placement is
 an integration convenience, not proof of runtime equivalence.
 
-The first implementation checkpoint is now concrete.  The runtime branch
+The implementation checkpoint is now concrete.  The runtime branch
 `solver/linux-lockstep-replay-bridge` contains the bridge commits `8ffe729`
-and `02ca583`, retail-semantics corrections `99c8ba3`, `d031d97`, and
-`35da24c`, plus capability attestation `1269547`; its current verified ELF
-SHA-256 is
-`ec5576d5e6c170964ab4bcb6c88710a231c5df540233f8a5cfb0ce25138c3235`.
+and `02ca583`, retail-semantics corrections through `efcf3e8`, capability
+attestation, and the diagnostic retail-life mode at `c38a92a`; its current
+verified ELF SHA-256 is
+`0bd9685c8c1a7cc57a4aaee9c1a449485b8539c9a6272bcb22d70c7a9fe9f1f1`.
 The solver branch contains the protocol/process adapter at `878c3e4` and the
 exact-child session owner at `eaa643a`.  These identities are out-of-band
 configuration and audit evidence; protocol metadata does not substitute for
@@ -311,10 +311,13 @@ Linux runtime, and original replay is a localization tool, not a vote.
    jump, and a replay-frame-aligned 16-root gate is exact. Deep projections
    retain decoded combat, effect/ANM, and ECL state without raw pools and
    accept exact high-half relocated-image bounds. A first normally saved Easy
-   Sakuya/Remilia Stage-1 diagnostic replay now exists; its fresh-Linux and
-   original-Wine reverse-playback gate is in progress.
-7. Only after that reverse-playback gate, connect the generic local planner
-   epoch driver and solve Easy practice roots followed by the full Easy route.
+   Sakuya/Remilia Stage-1 diagnostic replay now exists. Fresh Linux and the
+   unpatched original v1.00d both consume it through manager/replay frame 2,162
+   and terminate naturally; all 2,063 aligned roots from frame 100 are exact
+   after excluding only sampler-address provenance.
+7. **In progress:** connect the generic local planner epoch driver with zero
+   game-visible solver delay, then solve Easy practice roots followed by the
+   full Easy route.
 8. Accept success only after the original Wine runtime completes that replay
    NMNB.
 

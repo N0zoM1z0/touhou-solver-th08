@@ -1,0 +1,11 @@
+{
+  "compared_records": 2063,
+  "equal": true,
+  "first_difference": null,
+  "ignored_fields": [
+    "/trace_locators"
+  ],
+  "left": "artifacts/runtime_reports/easy_linux_diagnostic_reverse_linux_from100_20260827.jsonl.gz",
+  "right": "artifacts/runtime_reports/easy_linux_origin_reverse_wine_from100_20260827.jsonl.gz",
+  "schema": "th08-semantic-spine-comparison-v1"
+}

@@ -1,6 +1,6 @@
 # TH08 Source And Runtime Audit
 
-Last updated: 2026-08-25.
+Last updated: 2026-08-27.
 
 This ledger tracks discrepancies found while rebasing the live solver on the
 exact Japanese TH08 1.00d executable, using the independently reconstructed
@@ -3505,7 +3505,7 @@ full Stage 5, replay portability, Easy NMNB, or any hit reduction.
 
 ### AUD-115 — Linux replay authority was missing the normal save path
 
-Status: **LINUX GENERATION/REPLAY VALIDATED; ORIGINAL-WINE PLAYBACK PENDING**
+Status: **VALIDATED PHYSICALLY FOR ONE LINUX-ORIGIN GAME-OVER TRAJECTORY**
 
 The old bridge always mirrored the no-life analysis patch. That is appropriate
 for route hit counting but prevents a short diagnostic game from reaching the
@@ -3538,7 +3538,29 @@ unchanged replay SHA from a separate data directory with retail life decrement,
 captured 2,162 contiguous manager/replay roots, and observed ReplayManager
 removal at relative epoch 2,163. No fixed gameplay-duration limit was used;
 8,192 was only a fail-closed sample-cap guard beyond the decoded 2,167-word
-storage extent. Original-v1.00d playback is still required.
+storage extent.
+
+The canonical Japanese v1.00d executable closes the second half. Its verified
+life-decrement target remained the retail byte `0xFF`; the playback controller
+reported `no_life_decrement=false`, so neither runtime used the analysis
+no-death patch for this experiment. Wine loaded the unchanged 1,015-byte replay
+and produced 2,063 contiguous semantic roots from manager/replay frame 100
+through 2,162 before natural game-over removed ReplayManager at relative epoch
+2,064. There was no replay-frame jump and no Bomb word in the decoded input.
+
+A fresh Linux playback was sampled over the identical frame interval. The
+cross-runtime comparator reports equality for all 2,063 roots after excluding
+only `/trace_locators`, whose sampler addresses are capture provenance rather
+than game state. Input, RNG trajectory, binary32 player state, resources,
+clocks, route, and spell state are exact; `first_difference` is null. The Wine
+run used a dedicated display and prefix, removed only its owned replay slot,
+terminated the game, and left no process in that prefix.
+
+This is physical evidence that a replay normally saved by the Linux runtime can
+be consumed by the unpatched original along the retained naturally terminated
+trajectory. It authorizes the next one-epoch planner integration step. It is
+not evidence for a complete route, NMNB, arbitrary replay portability, or
+continuous floating-point identity outside this trajectory.
 
 ## Offline Verification Record
 
