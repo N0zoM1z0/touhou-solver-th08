@@ -1,0 +1,396 @@
+{
+  "bomb_policy_violations": 0,
+  "gameplay_ready_epoch": 138,
+  "lives_preserved_attested": false,
+  "replay": {
+    "checksum": 1057050797,
+    "compressed_size": 679,
+    "difficulty_index": 0,
+    "encoded_main_size": 783,
+    "extended_input_records": false,
+    "file_size": 1015,
+    "name": "th8_01.rpy",
+    "rolling_key": 167,
+    "route_id": 2,
+    "sha256": "c4a0abba793395dd93e6a3419e95b722aac8babb6c97e267e218568c50ecb3b1",
+    "stages": [
+      {
+        "auxiliary_offset": 4678,
+        "bomb_press_frames": [],
+        "bombs": 3,
+        "byte_1c": 0,
+        "byte_1f": 10,
+        "data_offset": 308,
+        "frame_count": 2167,
+        "input_record_stride": 2,
+        "input_sha256": "62d1340d3c29751d84fd3580adcea6ff3585e89c20553fed52f1b9d0fc5f059f",
+        "lives": 2,
+        "rng_seed": 12708,
+        "stage_index": 0
+      }
+    ],
+    "trailing_size": 232,
+    "uncompressed_size": 4648
+  },
+  "replay_visible_epoch": 2524,
+  "route_duration_limit": null,
+  "runtime": {
+    "path": "/home/yann/yann/touhou/th08-research/th08-linux-solver-runtime/build/modern-linux/th08-modern",
+    "result_update_address": 135100268,
+    "result_update_symbol": "_ZN4th0812ResultScreen8OnUpdateEPS0_",
+    "sha256": "0bd9685c8c1a7cc57a4aaee9c1a449485b8539c9a6272bcb22d70c7a9fe9f1f1",
+    "size": 3948452
+  },
+  "schema": "th08-linux-normal-save-diagnostic-replay-v1",
+  "scope": "diagnostic normal-save replay only; original-v1.00d reverse playback still required",
+  "target": {
+    "difficulty_index": 0,
+    "replay_slot": 1,
+    "shot_type_index": 2
+  },
+  "transitions": [
+    {
+      "action": "wait-title-root",
+      "cursor": null,
+      "epoch": 1,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "wait-title-lifecycle",
+      "cursor": 0,
+      "epoch": 2,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": 0
+    },
+    {
+      "action": "wait-screen-ready",
+      "cursor": 0,
+      "epoch": 37,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": 0
+    },
+    {
+      "action": "wait-start-confirm-gate",
+      "cursor": 0,
+      "epoch": 47,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": 0
+    },
+    {
+      "action": "confirm-start",
+      "cursor": 0,
+      "epoch": 56,
+      "input_mask": 1,
+      "phase": "title",
+      "screen": 0
+    },
+    {
+      "action": "release",
+      "cursor": null,
+      "epoch": 57,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "wait-screen-ready",
+      "cursor": 0,
+      "epoch": 58,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": 4
+    },
+    {
+      "action": "confirm-difficulty",
+      "cursor": 0,
+      "epoch": 66,
+      "input_mask": 1,
+      "phase": "title",
+      "screen": 4
+    },
+    {
+      "action": "release",
+      "cursor": null,
+      "epoch": 67,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "wait-screen-ready",
+      "cursor": 0,
+      "epoch": 68,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": 5
+    },
+    {
+      "action": "select-shot-type",
+      "cursor": 0,
+      "epoch": 76,
+      "input_mask": 128,
+      "phase": "title",
+      "screen": 5
+    },
+    {
+      "action": "release",
+      "cursor": null,
+      "epoch": 77,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "select-shot-type",
+      "cursor": 1,
+      "epoch": 78,
+      "input_mask": 128,
+      "phase": "title",
+      "screen": 5
+    },
+    {
+      "action": "release",
+      "cursor": null,
+      "epoch": 79,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "confirm-shot-type",
+      "cursor": 2,
+      "epoch": 80,
+      "input_mask": 1,
+      "phase": "title",
+      "screen": 5
+    },
+    {
+      "action": "release",
+      "cursor": null,
+      "epoch": 81,
+      "input_mask": 0,
+      "phase": "title",
+      "screen": null
+    },
+    {
+      "action": "wait-gameplay-load",
+      "epoch": 82,
+      "loading_state": 1,
+      "phase": "gameplay-load",
+      "stage_route_index": 0
+    },
+    {
+      "action": "gameplay-ready",
+      "epoch": 138,
+      "loading_state": 0,
+      "phase": "gameplay-load",
+      "stage_route_index": 0
+    },
+    {
+      "action": "neutral-gameplay",
+      "epoch": 139,
+      "gameplay_registered": true,
+      "input_mask": 0,
+      "phase": "gameplay-or-transition",
+      "stage_route_index": 0,
+      "supervisor_state": 2
+    },
+    {
+      "action": "wait-retry-menu-init",
+      "epoch": 2299,
+      "frame_timer": 0,
+      "input_mask": 0,
+      "phase": "retry",
+      "retry_state": 0,
+      "supervisor_state": 2
+    },
+    {
+      "action": "wait-no-retry-confirm-gate",
+      "epoch": 2300,
+      "frame_timer": 1,
+      "input_mask": 0,
+      "phase": "retry",
+      "retry_state": 2,
+      "supervisor_state": 2
+    },
+    {
+      "action": "confirm-no-retry",
+      "epoch": 2329,
+      "frame_timer": 30,
+      "input_mask": 1,
+      "phase": "retry",
+      "retry_state": 2,
+      "supervisor_state": 2
+    },
+    {
+      "action": "release",
+      "epoch": 2330,
+      "frame_timer": 1,
+      "input_mask": 0,
+      "phase": "retry",
+      "retry_state": 4,
+      "supervisor_state": 2
+    },
+    {
+      "action": "wait-result-transition",
+      "epoch": 2331,
+      "frame_timer": 2,
+      "input_mask": 0,
+      "phase": "retry",
+      "retry_state": 4,
+      "supervisor_state": 2
+    },
+    {
+      "action": "neutral-gameplay",
+      "epoch": 2350,
+      "gameplay_registered": true,
+      "input_mask": 0,
+      "phase": "gameplay-or-transition",
+      "stage_route_index": 0,
+      "supervisor_state": 6
+    },
+    {
+      "action": "wait-stats-confirm-gate",
+      "cursor": 0,
+      "epoch": 2351,
+      "frame_timer": 1,
+      "input_mask": 0,
+      "phase": "result",
+      "result_state": 15,
+      "selected_character": 0,
+      "supervisor_state": 6
+    },
+    {
+      "action": "confirm-stats",
+      "cursor": 0,
+      "epoch": 2440,
+      "frame_timer": 90,
+      "input_mask": 1,
+      "phase": "result",
+      "result_state": 15,
+      "selected_character": 0,
+      "supervisor_state": 6
+    },
+    {
+      "action": "release",
+      "cursor": 0,
+      "epoch": 2441,
+      "frame_timer": 1,
+      "input_mask": 0,
+      "phase": "result",
+      "result_state": 16,
+      "selected_character": 0,
+      "supervisor_state": 6
+    },
+    {
+      "action": "wait-save-question-transition",
+      "cursor": 0,
+      "epoch": 2442,
+      "frame_timer": 2,
+      "input_mask": 0,
+      "phase": "result",
+      "result_state": 16,
+      "selected_character": 0,
+      "supervisor_state": 6
+    },
+    {
+      "action": "wait-save-question-gate",
+      "cursor": 0,
+      "epoch": 2471,
+      "frame_timer": 10,
+      "input_mask": 0,
+      "phase": "result",
+      "result_state": 10,
+      "selected_character": 0,
+      "supervisor_state": 6
+    },
+    {
+      "action": "confirm-save-replay",
+      "cursor": 0,
+      "epoch": 2473,
+      "frame_timer": 12,
+      "input_mask": 1,
+      "phase": "result",
+      "result_state": 10,
+      "selected_character": 0,
+      "supervisor_state": 6
+    },
+    {
+      "action": "release",
+      "cursor": 0,
+      "epoch": 2474,
+      "frame_timer": 1,
+      "input_mask": 0,
+      "phase": "result",
+      "result_state": 12,
+      "selected_character": 0,
+      "supervisor_state": 6
+    },
+    {
+      "action": "wait-replay-slot-gate",
+      "cursor": 0,
+      "epoch": 2475,
+      "frame_timer": 2,
+      "input_mask": 0,
+      "phase": "result",
+      "result_state": 12,
+      "selected_character": 0,
+      "supervisor_state": 6
+    },
+    {
+      "action": "confirm-replay-slot",
+      "cursor": 0,
+      "epoch": 2493,
+      "frame_timer": 20,
+      "input_mask": 1,
+      "phase": "result",
+      "result_state": 12,
+      "selected_character": 0,
+      "supervisor_state": 6
+    },
+    {
+      "action": "release",
+      "cursor": 0,
+      "epoch": 2494,
+      "frame_timer": 1,
+      "input_mask": 0,
+      "phase": "result",
+      "result_state": 13,
+      "selected_character": 95,
+      "supervisor_state": 6
+    },
+    {
+      "action": "wait-replay-name-gate",
+      "cursor": 0,
+      "epoch": 2495,
+      "frame_timer": 2,
+      "input_mask": 0,
+      "phase": "result",
+      "result_state": 13,
+      "selected_character": 95,
+      "supervisor_state": 6
+    },
+    {
+      "action": "save-replay",
+      "cursor": 0,
+      "epoch": 2523,
+      "frame_timer": 30,
+      "input_mask": 1,
+      "phase": "result",
+      "result_state": 13,
+      "selected_character": 95,
+      "supervisor_state": 6
+    },
+    {
+      "action": "replay-file-visible",
+      "epoch": 2524,
+      "phase": "saved"
+    }
+  ],
+  "wire_memory_checks": 2524
+}

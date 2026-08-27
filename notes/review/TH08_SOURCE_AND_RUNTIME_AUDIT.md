@@ -3503,6 +3503,36 @@ through 12,494: 11,506 matched samples through replay 12,000 plus an exact
 available retail baseline. It does not prove continuous geometry identity,
 full Stage 5, replay portability, Easy NMNB, or any hit reduction.
 
+### AUD-115 — Linux replay authority was missing the normal save path
+
+Status: **LINUX GENERATION VALIDATED; ORIGINAL-WINE REVERSE PLAYBACK PENDING**
+
+The old bridge always mirrored the no-life analysis patch. That is appropriate
+for route hit counting but prevents a short diagnostic game from reaching the
+normal game-over/result-screen path, so no Linux-origin replay could be saved
+without running an entire route. Runtime commit `c38a92a` adds an explicit,
+default-off diagnostic override that restores retail life decrement. The wire
+request omits `LIVES_PRESERVED` in this mode; invalid values fail closed. The
+same rebuilt ELF reports flags 3 in the default mode and flags 1 with the
+diagnostic override, and its portable layout verifier passes.
+
+The replay-save controller is source-driven rather than time-scripted. It
+traverses `g_Chain @ 0x0164F548`, matches the pinned ELF symbol for
+`ResultScreen::OnUpdate`, reads its heap argument, and decodes the exact i386
+member offsets for state, timers, cursor, selected replay/character, and name.
+It independently reads `AsciiManager::retryMenu @ g_AsciiManager + 0x9FB4`.
+The controller follows No Retry, stats, save question, empty replay slot, and
+name confirmation only after each source-defined timer gate.
+
+The first physical run reached gameplay at epoch 138 and wrote a 1,015-byte
+replay at epoch 2,524 through the ordinary `ReplayManager::SaveReplay` call.
+Every bridge request matched fixed input/RNG memory, no request attested
+preserved lives, and the decoded Stage-1 input extent contains no Bomb press.
+The file and compact report are retained under `artifacts/replays/` and
+`artifacts/runtime_reports/`. This proves Linux normal-save generation only.
+Fresh-Linux playback and original-v1.00d Wine playback of the exact retained
+SHA remain mandatory before any Linux-generated solver replay is authoritative.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this

@@ -10,6 +10,16 @@ from th08_linux.fingerprint import (
 )
 from th08_linux.process import LinuxProcessReader
 from th08_linux.protocol import InputRequest
+from th08_linux.result import (
+    ReplaySaveDriver,
+    ResultDecision,
+    ResultScreenSnapshot,
+    RetryExitDriver,
+    RetryMenuSnapshot,
+    capture_result_screen,
+    capture_retry_menu,
+    capture_supervisor_state,
+)
 from th08_linux.session import LinuxGameSession, LinuxRuntimeIdentity
 from th08_linux.semantic_trace import (
     MANAGER_FRAME_TRANSITION_ADVANCED,
@@ -48,6 +58,11 @@ __all__ = (
     "MANAGER_FRAME_TRANSITION_SAME",
     "RouteTitleDriver",
     "ReplayTitleDriver",
+    "ReplaySaveDriver",
+    "ResultDecision",
+    "ResultScreenSnapshot",
+    "RetryExitDriver",
+    "RetryMenuSnapshot",
     "SAKUYA_REMILIA_SHOT_TYPE",
     "SolverBridgeClient",
     "TitleSnapshot",
@@ -55,7 +70,10 @@ __all__ = (
     "capture_memory_witness",
     "capture_gameplay_bootstrap",
     "capture_runtime_semantic_spine",
+    "capture_result_screen",
+    "capture_retry_menu",
     "capture_semantic_spine",
+    "capture_supervisor_state",
     "enrich_with_collision_control_projection",
     "enrich_with_effect_lifecycle_summary",
     "capture_title_snapshot",
