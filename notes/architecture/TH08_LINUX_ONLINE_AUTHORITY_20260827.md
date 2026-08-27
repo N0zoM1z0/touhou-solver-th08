@@ -7,6 +7,12 @@ and virtual-clock compensation are forbidden for route solving. Lockstep may
 be used only by an explicitly bounded semantic differential test and cannot
 produce route-search or performance authority.
 
+Physical Gate 1 on 2026-08-27 validated the non-blocking wire and cadence gate
+but falsified the `/proc` future/source producer: 574/574 future submissions
+failed and no corridor, query, or constrained action existed. CE-0273 is the
+current implementation authority. The packed immutable runtime publication
+below is now required before another physical delivery gate.
+
 ## Physical objective and hard constraints
 
 - Sakuya/Remilia Easy Route-2 Final-B NMNB, followed by Lunatic Route-2.
@@ -29,8 +35,11 @@ actual held input, complete current hazards, relevant enemy/ECL producer state,
 and time-scale state through `/proc/<pid>/mem`. Reads receive observation
 authority only when the exported input epoch equals the notification both
 before and after the complete capture; otherwise they are abandoned. A policy
-may use only that coherent observation and older retained artifacts. A packed
-immutable runtime-owned snapshot ring is proposed, not implemented.
+may use only that coherent observation and older retained artifacts. This
+bracket remains valid for small current-state reads, but Gate 1 proved it is
+not a workable producer for the large future/source root. A packed immutable
+runtime-owned snapshot ring or equivalent double buffer is required and not
+yet implemented.
 
 ### Dual-clock admission decision
 
@@ -119,7 +128,9 @@ the global winning action set with the fresh local safe set. A missing or stale
 global result cannot widen local safety and cannot be reported as a global
 decision. The first integration gate requires nonzero complete future joins,
 fresh global queries, globally constrained issued actions, and nonzero
-clock-certified observations in an online trace.
+clock-certified observations in an online trace. The first trace produced
+2,866 certified roots but zero joins/queries/constraints, so this planner
+authority remains code-only and failed physical admission.
 
 This future/corridor composition is the connected transition baseline, not a
 presumption that its world representation is optimal. Authored source shows
@@ -146,7 +157,10 @@ Any of the following invalidates a route run:
 
 For policy promotion, a held fallback beyond its explicitly certified horizon
 also invalidates the run. The current horizon is one frame, so the first
-diagnostic must measure this gap rather than conceal it.
+diagnostic had to measure this gap rather than conceal it. It recorded a 4,341
+deadline-miss delta but omitted maximum consecutive hold, final resources, and
+exact future/scale failure subreasons. Those telemetry fields are mandatory
+before the next gate.
 
 Wine replay validates the realized trajectory against the original program. It
 does not prove that the Linux solver met its online deadline; both evidence

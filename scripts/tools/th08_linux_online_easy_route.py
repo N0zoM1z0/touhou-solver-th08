@@ -56,7 +56,7 @@ from th08_replay import decode_replay  # noqa: E402
 from th08_runtime.sensing import observe_state  # noqa: E402
 
 
-RESULT_UPDATE_SYMBOL = "_ZN4th0812ResultScreen8OnUpdateEPv"
+RESULT_UPDATE_SYMBOL = "_ZN4th0812ResultScreen8OnUpdateEPS0_"
 
 
 def build_parser() -> argparse.ArgumentParser:

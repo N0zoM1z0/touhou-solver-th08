@@ -578,6 +578,17 @@ solves currently take roughly 0.34--0.52 seconds with 100--400 moving AABBs,
 so this belongs in the rolling background tier rather than the 16.67ms input
 deadline.
 
+The first physical Linux online Gate 1 **rejects this transition baseline as a
+live producer**. On 3,600 coherent Easy Stage-1 observations, the dual clock
+certified 2,866 roots but all 574 future captures failed; corridor submission,
+query, and constrained-action counts were zero. The foreground scale inventory
+also stayed unknown, contributing to 1,205 stale captures, 2,424 stale plans,
+and 4,341 native deadline misses. CE-0273 is the current authority. Retire
+unchanged-frame large `/proc` capture from the online design: next build the
+runtime-owned immutable packed source publication and keep the foreground to a
+small lookup/shield transaction. This is a producer-boundary correction, not
+permission to stop time or tune the corridor.
+
 ## Offline Native Authority
 
 ### O1 — Rolling native snapshot wind tunnel

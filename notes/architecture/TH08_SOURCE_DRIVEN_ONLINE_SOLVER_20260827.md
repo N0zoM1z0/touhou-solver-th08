@@ -331,9 +331,28 @@ seconds with no hazards. This is compatible with a rolling background worker
 and a 48+ frame lead; it is not compatible with recomputing global viability
 inside every 16.67 ms action deadline.
 
-This transitional path is **implemented and test-observed**, but physical
-online publication/constraint counts are not yet observed because no gameplay
-trial was authorized in this checkpoint.
+This transitional path is **implemented but physically falsified as a
+producer**. The authorized 3,600-observation Easy Stage-1 Gate 1 certified the
+input/manager clock on 2,866 roots with zero cadence mismatch, yet rejected all
+574 future captures. Scale remained
+`root_only_source_inventory_unknown`; corridor submissions, policy queries,
+and constrained actions were all zero. The run also recorded 1,205 stale
+captures, 2,424 stale plans, and 4,341 native deadline misses.
+
+The implementation explains the failed boundary. Moving the ordinary future
+capture to a worker did not remove its requirement that a roughly 10 MiB
+source observation and supporting reads fit inside one unchanged manager/
+update-serial bracket. The Stage 1--5 scale authority still retries a complete
+source inventory synchronously before the foreground action is published.
+The exact exception/status subreasons were not retained, so their attribution
+is **inferred from code plus aggregate physical statuses**, not an exception-
+level observation. CE-0273 retains that distinction.
+
+The runtime-owned packed observation ring is therefore no longer an optional
+latency refinement for this route. It, or an equivalent immutable double-
+buffered source publication, is the next producer boundary. A foreground
+action transaction may read only the small published root/certificate; it may
+not attempt the large inventory itself.
 
 It is not yet a 60 Hz hard-safety implementation. The retained native
 `8/12/8` synchronous foreground measured 17.72 ms mean and 32.17 ms p95 for
@@ -357,6 +376,11 @@ deadline misses, exact sampled-mask echoes, certified clock generations, and
 every cadence/gate revocation. A zero authority count or any constraint outside
 the certified clock interval is an integration failure, not a local fallback
 success.
+
+**Observed result, 2026-08-27:** Gate 1 failed with 0/574 complete future
+captures and zero corridor/query/constraint counts. Do not repeat it after
+interval or lead tuning. Repeat only after the immutable runtime publication
+and missing failure/resource/consecutive-hold telemetry are installed.
 
 ### Gate 2: source dependency factorization
 

@@ -66,7 +66,10 @@ published one-frame edge; it does **not** certify an unbounded sequence of held
 deadline fallbacks. A trace with such misses may be useful delivery evidence
 but cannot promote hard online safety. Further objective or local-ranking work
 is deferred until the route trace demonstrates nonzero fresh future/global
-action constraints.
+action constraints. The first physical delivery trace did not: all 574 future
+captures failed and no corridor/query/constraint existed despite 2,866 clock-
+certified roots. The transitional producer therefore has no live authority
+and must not be described as physically connected.
 
 The transitional online global policy uses a 4px continuous-position lower
 lattice with its 2.828px half-diagonal consumed as clearance and exactly one
@@ -75,11 +78,15 @@ action for a complete layer; therefore an eight-frame layer is a macro-action
 contract and cannot authorize a controller that chooses again next frame. Any
 named hard action set may be intersected with fresher local safety but may not
 be relaxed. The Stage 1--5 no-writer and Final-B dynamic scale authorities are
-both wired into this exact-version join. Physical nonzero publication and
-constraint counts remain unobserved until an explicitly authorized trial. The
-earliest completed future policy is preserved while pending and blocks newer
-submissions until activation; otherwise fast solves continually advance the
-pending source epoch and starve action authority.
+both wired into this exact-version join in code. Physical Gate 1 showed that
+neither producer can currently reach that join: the future capture still
+requires a large unchanged-frame observation and the no-writer source
+inventory remains synchronous in the foreground. The next implementation must
+publish a runtime-owned immutable packed root/certificate and perform no large
+source inventory inside the action deadline. The earliest completed future
+policy is preserved while pending and blocks newer submissions until
+activation; otherwise fast solves continually advance the pending source epoch
+and starve action authority.
 
 Manager-frame policy time has no standalone online authority. Each coherent
 Linux root also carries its source input epoch, dialogue predicate, and

@@ -54,6 +54,7 @@ from th08_runtime.game_state import (
     ADDR_FRSCREEN_IMPL_POINTER,
     ADDR_SCRIPTED_UPDATE_FREEZE,
 )
+from tools.th08_linux_online_easy_route import RESULT_UPDATE_SYMBOL
 
 
 def _request(source_epoch: int, *, published_us: int = 123_000) -> bytes:
@@ -115,6 +116,12 @@ def _clock_observation(
 
 
 class LinuxOnlineProtocolTests(unittest.TestCase):
+    def test_route_uses_the_authored_result_callback_symbol(self) -> None:
+        self.assertEqual(
+            RESULT_UPDATE_SYMBOL,
+            "_ZN4th0812ResultScreen8OnUpdateEPS0_",
+        )
+
     def test_request_names_source_and_exact_next_target(self) -> None:
         request = decode_online_request(_request(41))
         self.assertEqual(request.source_epoch, 41)

@@ -231,9 +231,12 @@ global winning set to named, non-relaxable local action authority. Preserve the
 earliest pending policy so rolling solves cannot starve activation. Manager-
 frame artifacts also require the implemented input/manager unit-cadence
 certificate and matching async generation; dialogue/freeze/skip/mismatch
-revokes them. Do not tune objectives until an authorized short Easy delivery
-trace shows nonzero clock-certified roots, future captures, global
-publications, queryable policies, and constrained issued actions.
+revokes them. The authorized short Easy delivery trace has now failed this
+gate: 2,866 roots were clock-certified, but 574/574 future submissions failed
+and publication/query/constraint counts were zero. CE-0273 is the authority.
+Do not tune objectives, lead, grid, or beam and do not repeat the physical
+trace until a runtime-owned immutable packed source root/certificate replaces
+unchanged-frame `/proc` capture and the foreground owns no large source scan.
 
 That trace is not yet a hard-safety promotion gate. Retained foreground timing
 is 17.72/32.17 ms mean/p95, and the current one-frame edge does not certify
@@ -243,7 +246,8 @@ first player/aim/damage/RNG/lifecycle divergence. Its result decides whether to
 build the proposed shared flat source-order transition kernel directly or use
 an exact-near/conservative-far hybrid. The complete decision is in
 `notes/architecture/TH08_SOURCE_DRIVEN_ONLINE_SOLVER_20260827.md`; CE-0272
-records the three corrected integration failures.
+records the static integration corrections and CE-0273 records the physical
+producer failure.
 
 Keep robust reach-avoid/viability as the hard-safety backbone. The intended
 hierarchy is:

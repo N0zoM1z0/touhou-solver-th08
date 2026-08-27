@@ -53,11 +53,20 @@ ordered implementation plan are in
   join now requires two safe roots with equal positive input/manager deltas,
   binds both source coordinates, tags async work by cadence generation, and
   revokes on dialogue, scripted freeze, manager skip, player/Bomb gate,
-  context change, or unequal delta. No gameplay trace has yet observed nonzero
-  online publications/constraints. Moreover, retained `8/12/8` foreground
-  timing is 17.72 ms mean / 32.17 ms p95, and its one-frame action proof does
-  not certify an unbounded connected held fallback. Thus the next gate is a
-  delivery diagnostic, not physical policy promotion or NMNB evidence. The
+  context change, or unequal delta. The authorized 3,600-observation Easy
+  Stage-1 Gate 1 now physically falsifies the producer hookup: 2,866 roots were
+  clock-certified with zero cadence mismatch, but all 574 future captures
+  failed, scale remained `root_only_source_inventory_unknown`, and corridor
+  submissions, policy queries, and constrained actions were all zero. It also
+  recorded 1,205 stale captures, 2,424 stale plans, 4,341 native deadline
+  misses, seven hits, and zero Bomb. Only 1,176 gameplay actions were delivered
+  on time, all `stay`; this is deadline selection, not policy evidence. CE-0273
+  and `notes/runs/easy_linux_online_gate1_20260827.md` retain the failure.
+  Do not tune lead, grid, beam, or objectives and do not repeat the physical
+  gate. The next implementation is a runtime-owned immutable packed post-
+  update source root/certificate (or equivalent double buffer), with no large
+  source inventory in the foreground action deadline. The one-frame action
+  proof also still does not certify a connected held fallback. The
   compact execution contract is
   `notes/architecture/TH08_LINUX_ONLINE_AUTHORITY_20260827.md`; the authored-
   source architecture decision is
@@ -66,7 +75,7 @@ ordered implementation plan are in
   verified i386 ELF SHA-256 is
   `141cb3b69040626cf51e1837acad4600a409f332acd8ccfe1ae8cca5396c2995`.
   Complete post-clock Linux discovery passes 1,686 tests with five conditional
-  skips.
+  skips; the focused route-symbol correction passes 17 online tests.
 - **Pre-pivot checkpoint:** `main` and annotated tag
   `pre-linux-native-pivot-20260826` point to `d7a66c5`. The Linux runtime is a
   separate clone at source revision `4cffb2afa8d4a62083a5afc4a1968f51e96ac2cf`
