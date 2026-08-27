@@ -3649,6 +3649,36 @@ ready-to-loading, loading-to-ready, direct stage change, and missing-context
 cases. This narrows a diagnostic claim; it does not suppress or alter gameplay
 input and grants no hit or route-completion result until the rerun finishes.
 
+### AUD-118 — The long fuzzer now exceeds the native finite-pool workload
+
+Status: **12,000-FRAME EXTREME SOURCE/C GATE PASSES**
+
+The source-stateful laboratory has now completed one deterministic 12,000-frame
+`extreme` program after the future-event, spawn-lifecycle, callback-12/14,
+finite-pool, laser, and source-C-oracle integrations. The program requested
+11,752,779 births. Source allocation admitted 158,086 and suppressed
+11,594,693 against the real 1,536-slot limit; the pool remained saturated for
+1,220 frames. It also exercised 50,180 spawn-lifecycle activations, 104,159
+transform activations, 56,188 callback-12 changes, 58,671 callback-14 changes,
+4,220 callback-14 reactivations, 336 lasers, and 24 clears. This is materially
+denser and more transition-heavy than the intended Easy or Lunatic route.
+
+All 400 planner roots obtained complete future joins, including 36,649 direct
+fire events, 336 laser events, and 384 tagged callbacks. The independent C
+oracle compared 4,107,137 lifecycle samples across all 12,000 frames with zero
+lifecycle-position error, identical terminal RNG state/call count, and no first
+mismatch. Another 1,200 geometry comparisons have zero collision, clearance,
+clearance-sign, or risk mismatch. The campaign has zero infrastructure failure
+and zero Bomb-policy violation.
+
+This does not claim that the workload is survivable. Its 370 normalized hits
+and 1,476 collision frames are intentional pressure observations under a
+30-frame held action, and the `10/16/24` planner reaches 2.80 s median and
+7.15 s p95 at saturation. Those results expose capacity limits for future
+algorithm work; they do not invalidate the fuzzer or describe a game route.
+Only the 2.4 MiB raw diagnostic remains in `/tmp`; the tracked compact evidence
+is `artifacts/runtime_reports/source_stateful_extreme_12000_20260827.json`.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
