@@ -3562,6 +3562,36 @@ trajectory. It authorizes the next one-epoch planner integration step. It is
 not evidence for a complete route, NMNB, arbitrary replay portability, or
 continuous floating-point identity outside this trajectory.
 
+### AUD-116 — The Linux epoch seam removes the asynchronous actuator model
+
+Status: **MINIMAL GENERIC ADAPTER PASSES OFFLINE; PHYSICAL SMOKE PENDING**
+
+The historical Wine controller observes and publishes from different polling
+epochs, so its local request legitimately carries snapshot lag, command pickup
+support, held/no-write state, and issue recertification. Copying those fields to
+the native bridge would invent uncertainty: the game thread is blocked inside
+the input callback until the solver supplies the mask for that same epoch.
+
+`th08_linux/planner.py` now defines the smaller contract. One capture owns
+reusable buffers for the complete bullet and laser pools plus the exact 480
+manager-scanned enemy slots beginning at source slot 0. It retains bullet
+transform runtime, source laser lifecycle, and enemy contact geometry, and
+requires the state, player, bullet, enemy, and final frame brackets all to name
+one immutable root. Item capture is optional and disabled for the first Easy
+survival workload. Every plan fixes snapshot lag and pickup delay to zero,
+action hold to one epoch, and Bomb capability to false; the returned complete
+mask must include Shot and pass the hard-no-Bomb validator.
+
+This first adapter deliberately has no future-birth authority. It extends the
+observed root time scale as a named bounded constant-horizon assumption and
+replans at the next epoch. Therefore it can falsify sensing, geometry, local
+planning, Focus/fast, and boundary behavior without reviving the Wine delivery
+model, but it cannot yet certify hazards born inside the local horizon or an
+ECL time-scale transition. Five focused tests cover the zero-delay contract,
+root coherence, death/respawn fallback, hard Bomb rejection, and one real
+incoming-bullet planner decision. Native pool capture and physical input remain
+the next falsifiers.
+
 ## Offline Verification Record
 
 After the fixes above, the latest complete repository suite passed on this
